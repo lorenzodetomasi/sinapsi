@@ -1,0 +1,74 @@
+{
+  "@context": [
+    "https://schema.org",
+    {
+      "meetoo": "https://meetoo.eu#"
+    }
+  ],
+  "@type": ["Event", "LiteraryEvent"],
+  "@id": "20260723T1830-IT00122-reading_party",
+  "additionalType": "Leggere insieme",
+  "keywords": "Club del libro Ostia, Urbanbookclub, Feltrinelli Librerie di Ostia, L'Amanusa Beach, reading party, lettura ad alta voce",
+  "name": "Reading Party",
+  "description": "Portate un libro da leggere in spiaggia, in silenziosa compagnia. Poi chiacchiereremo di libri e non solo!",
+  "image": "media-sources/cover.jpg",
+  "logo": "media-sources/logo.svg",
+  "startDate": "2026-07-23T18:30:00+02:00",
+  "endDate": "2026-07-23T21:00:00+02:00",
+  "typicalAgeRange": "All Ages",
+  "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+  "maximumPhysicalAttendeeCapacity": 100,
+  "maximumVirtualAttendeeCapacity": 0,
+  "maximumAttendeeCapacity": 100,
+  "remainingAttendeeCapacity": 20,
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "availability": "https://schema.org/LimitedAvailability",
+    "price": 0,
+    "priceCurrency": "EUR",
+    "url": ""
+  },
+  "location": {
+    "@id": "places/IT00122-spiaggialamanusa",
+    "@type": "Place",
+    "name": "L'Amanusa Beach"
+  },
+  "organizer": [
+    { "@id": "organizations/clubdellibro-ostia", "@type": "Organization", "name": "Club del libro Ostia" },
+    { "@id": "organizations/urbanbookclub-roma", "@type": "Organization", "name": "Urbanbookclub" },
+    { "@id": "organizations/feltrinelli-ostia", "@type": "Organization", "name": "Feltrinelli Librerie di Ostia" }
+  ],
+  "subEvent": [
+    {
+      "@type": "Event",
+      "name": "Accoglienza",
+      "startDate": "2026-07-23T18:30:00+02:00",
+      "endDate": "2026-07-23T19:00:00+02:00"
+    },
+    {
+      "@type": "Event",
+      "name": "Lettura silenziosa",
+      "description": "Lettura silenziosa del proprio libro",
+      "startDate": "2026-07-23T19:00:00+02:00",
+      "endDate": "2026-07-23T20:00:00+02:00"
+    },
+    {
+      "@type": "Event",
+      "name": "Chiacchierata",
+      "description": "Chiacchierata tra i partecipanti su libri e non solo",
+      "startDate": "2026-07-23T20:00:00+02:00",
+      "endDate": "2026-07-23T21:00:00+02:00"
+    }
+  ],
+  "eventStatus": "https://schema.org/EventScheduled",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5",
+    "bestRating": "5"
+  },
+  "meetoo": {
+    "@type": "meetoo:EventSingle",
+    "meetoo:macrocategory": "culture"
+  }
+}

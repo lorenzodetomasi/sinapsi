@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Event xmlns="https://schema.org"
+       xmlns:meetoo="https://meetoo.eu"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xml:base="https://www.example.org/"
+       xsi:type="LiteraryEvent"
+       id="20260723T1830-IT00122-reading_party">
+    <additionalType>Leggere insieme</additionalType>
+    <keywords>Club del libro Ostia, Urbanbookclub, Feltrinelli Librerie di Ostia, L'Amanusa Beach, reading party, lettura ad alta voce</keywords>
+    <name>Reading Party</name>
+    <description>Portate un libro da leggere in spiaggia, in silenziosa compagnia. Poi chiacchiereremo di libri e non solo!</description>
+    <image>media-sources/cover.jpg</image>
+    <logo>media-sources/logo.svg</logo>
+    <startDate>2026-07-23T18:30:00+02:00</startDate>
+    <endDate>2026-07-23T21:00:00+02:00</endDate>
+    <typicalAgeRange>All Ages</typicalAgeRange>
+    <eventAttendanceMode>https://schema.org/OfflineEventAttendanceMode</eventAttendanceMode>
+    <maximumPhysicalAttendeeCapacity>100</maximumPhysicalAttendeeCapacity>
+    <maximumVirtualAttendeeCapacity>0</maximumVirtualAttendeeCapacity>
+    <maximumAttendeeCapacity>100</maximumAttendeeCapacity>
+    <remainingAttendeeCapacity>20</remainingAttendeeCapacity>
+    <isAccessibleForFree>true</isAccessibleForFree>
+    <offers xsi:type="Offer">
+        <availability>https://schema.org/LimitedAvailability</availability>
+        <price>0</price>
+        <priceCurrency>EUR</priceCurrency>
+        <url></url>
+    </offers>
+
+    <location xsi:type="Place" xlink:href="places/IT00122-spiaggialamanusa">
+        <name>L'Amanusa Beach</name>
+    </location>
+
+    <organizer xsi:type="Organization" xlink:href="organizations/clubdellibro-ostia">
+        <name>Club del libro Ostia</name>
+    </organizer>
+    <organizer xsi:type="Organization" xlink:href="organizations/urbanbookclub-roma">
+        <name>Urbanbookclub</name>
+    </organizer>
+    <organizer xsi:type="Organization" xlink:href="organizations/feltrinelli-ostia">
+        <name>Feltrinelli Librerie di Ostia</name>
+    </organizer>
+
+    <subEvent xsi:type="Event">
+        <name>Accoglienza</name>
+        <startDate>2026-07-23T18:30:00+02:00</startDate>
+        <endDate>2026-07-23T19:00:00+02:00</endDate>
+    </subEvent>
+    <subEvent xsi:type="Event">
+        <name>Lettura silenziosa</name>
+        <description>Lettura silenziosa del proprio libro</description>
+        <startDate>2026-07-23T19:00:00+02:00</startDate>
+        <endDate>2026-07-23T20:00:00+02:00</endDate>
+    </subEvent>
+    <subEvent xsi:type="Event">
+        <name>Chiacchierata</name>
+        <description>Chiacchierata tra i partecipanti su libri e non solo</description>
+        <startDate>2026-07-23T20:00:00+02:00</startDate>
+        <endDate>2026-07-23T21:00:00+02:00</endDate>
+    </subEvent>
+    <eventStatus>https://schema.org/EventScheduled</eventStatus>
+    <aggregateRating xsi:type="AggregateRating">
+        <ratingValue>5</ratingValue>
+        <bestRating>5</bestRating>
+    </aggregateRating>
+    <meetoo:meetoo type="EventSingle">
+        <meetoo:macrocategory>culture</meetoo:macrocategory>
+    </meetoo:meetoo>
+</Event>
