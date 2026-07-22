@@ -1,23 +1,25 @@
 // JSON Schema (dati) — copertura COMPLETA di index.json.
 // I campi rich-text usano "format": "xhtml" (renderer custom).
+// Tendine con etichetta (title) distinta dal valore salvato (const): JSON Forms
+// mostra il title e memorizza il const. Modifica pure le etichette qui sotto.
 const ATTENDANCE_MODE = [
-  'https://schema.org/OfflineEventAttendanceMode',
-  'https://schema.org/OnlineEventAttendanceMode',
-  'https://schema.org/MixedEventAttendanceMode',
+  { const: 'https://schema.org/OfflineEventAttendanceMode', title: 'In presenza' },
+  { const: 'https://schema.org/OnlineEventAttendanceMode', title: 'Online' },
+  { const: 'https://schema.org/MixedEventAttendanceMode', title: 'Ibrido (presenza + online)' },
 ];
 const EVENT_STATUS = [
-  'https://schema.org/EventScheduled',
-  'https://schema.org/EventPostponed',
-  'https://schema.org/EventRescheduled',
-  'https://schema.org/EventCancelled',
-  'https://schema.org/EventMovedOnline',
+  { const: 'https://schema.org/EventScheduled', title: 'Programmato' },
+  { const: 'https://schema.org/EventPostponed', title: 'Rimandato' },
+  { const: 'https://schema.org/EventRescheduled', title: 'Riprogrammato' },
+  { const: 'https://schema.org/EventCancelled', title: 'Annullato' },
+  { const: 'https://schema.org/EventMovedOnline', title: 'Spostato online' },
 ];
 const AVAILABILITY = [
-  'https://schema.org/InStock',
-  'https://schema.org/LimitedAvailability',
-  'https://schema.org/SoldOut',
-  'https://schema.org/PreOrder',
-  'https://schema.org/OutOfStock',
+  { const: 'https://schema.org/InStock', title: 'Disponibile' },
+  { const: 'https://schema.org/LimitedAvailability', title: 'Disponibilità limitata' },
+  { const: 'https://schema.org/SoldOut', title: 'Esaurito' },
+  { const: 'https://schema.org/PreOrder', title: 'Preordine' },
+  { const: 'https://schema.org/OutOfStock', title: 'Non disponibile' },
 ];
 
 export const schema = {
@@ -28,14 +30,14 @@ export const schema = {
     additionalType: { type: 'string', title: 'additionalType' },
     keywords: { type: 'string', title: 'Keywords' },
     name: { type: 'string', title: 'Nome evento' },
-    description: { type: 'string', title: 'Descrizione (XHTML)', format: 'xhtml' },
+    description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
     image: { type: 'string', title: 'Immagine' },
     logo: { type: 'string', title: 'Logo' },
     startDate: { type: 'string', format: 'date-time', title: 'Inizio' },
     endDate: { type: 'string', format: 'date-time', title: 'Fine' },
     typicalAgeRange: { type: 'string', title: "Fascia d'età" },
-    eventAttendanceMode: { type: 'string', title: 'Modalità', enum: ATTENDANCE_MODE },
-    eventStatus: { type: 'string', title: 'Stato evento', enum: EVENT_STATUS },
+    eventAttendanceMode: { type: 'string', title: 'Modalità', oneOf: ATTENDANCE_MODE },
+    eventStatus: { type: 'string', title: 'Stato evento', oneOf: EVENT_STATUS },
     maximumPhysicalAttendeeCapacity: { type: 'integer', title: 'Cap. fisica max' },
     maximumVirtualAttendeeCapacity: { type: 'integer', title: 'Cap. virtuale max' },
     maximumAttendeeCapacity: { type: 'integer', title: 'Cap. totale max' },
@@ -45,7 +47,7 @@ export const schema = {
       type: 'object',
       title: 'Offerta',
       properties: {
-        availability: { type: 'string', title: 'Disponibilità', enum: AVAILABILITY },
+        availability: { type: 'string', title: 'Disponibilità', oneOf: AVAILABILITY },
         price: { type: 'number', title: 'Prezzo' },
         priceCurrency: { type: 'string', title: 'Valuta', default: 'EUR' },
         url: { type: 'string', title: 'URL' },
@@ -78,7 +80,7 @@ export const schema = {
         type: 'object',
         properties: {
           name: { type: 'string', title: 'Nome' },
-          description: { type: 'string', title: 'Descrizione (XHTML)', format: 'xhtml' },
+          description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
           startDate: { type: 'string', format: 'date-time', title: 'Inizio' },
           endDate: { type: 'string', format: 'date-time', title: 'Fine' },
         },

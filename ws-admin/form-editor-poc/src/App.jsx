@@ -4,10 +4,12 @@ import { vanillaRenderers, vanillaCells } from '@jsonforms/vanilla-renderers';
 import { schema, uischema } from './schema.js';
 import { fromJsonLd, toJsonLd, sampleJsonLd } from './jsonld-adapter.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
+import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
 
 const renderers = [
   ...vanillaRenderers,
   { tester: xhtmlControlTester, renderer: XhtmlRichTextRenderer },
+  { tester: labeledEnumTester, renderer: LabeledEnumRenderer },
 ];
 
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.
