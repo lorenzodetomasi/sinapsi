@@ -10,7 +10,8 @@
     <additionalType>Leggere insieme</additionalType>
     <keywords>Club del libro Ostia, Urbanbookclub, Feltrinelli Librerie di Ostia, L'Amanusa Beach, reading party, lettura ad alta voce</keywords>
     <name>Reading Party</name>
-    <description>Portate un libro da leggere in spiaggia, in silenziosa compagnia. Poi chiacchiereremo di libri e non solo!</description>
+    <description><![CDATA[Portate un libro da <strong>leggere in spiaggia, in silenziosa compagnia</strong>. <br />
+Poi chiacchiereremo di libri e non solo!]]></description>
     <image>media-sources/cover.jpg</image>
     <logo>media-sources/logo.svg</logo>
     <startDate>2026-07-23T18:30:00+02:00</startDate>

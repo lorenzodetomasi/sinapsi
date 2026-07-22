@@ -2,30 +2,33 @@
   "@context": [
     "https://schema.org",
     {
-      "meetoo": "https://meetoo.eu#"
+      "meetoo": "https://meetoo.eu"
     }
   ],
-  "@type": ["Event", "LiteraryEvent"],
+  "@type": [
+    "Event",
+    "LiteraryEvent"
+  ],
   "@id": "20260723T1830-IT00122-reading_party",
   "additionalType": "Leggere insieme",
   "keywords": "Club del libro Ostia, Urbanbookclub, Feltrinelli Librerie di Ostia, L'Amanusa Beach, reading party, lettura ad alta voce",
   "name": "Reading Party",
-  "description": "Portate un libro da leggere in spiaggia, in silenziosa compagnia. Poi chiacchiereremo di libri e non solo!",
+  "description": "Portate un libro da <strong>leggere in spiaggia, in silenziosa compagnia</strong>. <br />\nPoi chiacchiereremo di libri e non solo!",
   "image": "media-sources/cover.jpg",
   "logo": "media-sources/logo.svg",
   "startDate": "2026-07-23T18:30:00+02:00",
   "endDate": "2026-07-23T21:00:00+02:00",
   "typicalAgeRange": "All Ages",
   "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
-  "maximumPhysicalAttendeeCapacity": 100,
-  "maximumVirtualAttendeeCapacity": 0,
-  "maximumAttendeeCapacity": 100,
-  "remainingAttendeeCapacity": 20,
-  "isAccessibleForFree": true,
+  "maximumPhysicalAttendeeCapacity": "100",
+  "maximumVirtualAttendeeCapacity": "0",
+  "maximumAttendeeCapacity": "100",
+  "remainingAttendeeCapacity": "20",
+  "isAccessibleForFree": "true",
   "offers": {
     "@type": "Offer",
     "availability": "https://schema.org/LimitedAvailability",
-    "price": 0,
+    "price": "0",
     "priceCurrency": "EUR",
     "url": ""
   },
@@ -35,9 +38,21 @@
     "name": "L'Amanusa Beach"
   },
   "organizer": [
-    { "@id": "organizations/clubdellibro-ostia", "@type": "Organization", "name": "Club del libro Ostia" },
-    { "@id": "organizations/urbanbookclub-roma", "@type": "Organization", "name": "Urbanbookclub" },
-    { "@id": "organizations/feltrinelli-ostia", "@type": "Organization", "name": "Feltrinelli Librerie di Ostia" }
+    {
+      "@id": "organizations/clubdellibro-ostia",
+      "@type": "Organization",
+      "name": "Club del libro Ostia"
+    },
+    {
+      "@id": "organizations/urbanbookclub-roma",
+      "@type": "Organization",
+      "name": "Urbanbookclub"
+    },
+    {
+      "@id": "organizations/feltrinelli-ostia",
+      "@type": "Organization",
+      "name": "Feltrinelli Librerie di Ostia"
+    }
   ],
   "subEvent": [
     {
