@@ -93,7 +93,7 @@ function jsonToWsx(string $jsonString): string {
                     if (is_array($item)) {
                         $appendNode($item, $node, $key, false);
                     } else {
-                        $node->nodeValue = htmlspecialchars(is_bool($item) ? ($item ? 'true' : 'false') : (string)$item);
+                        appendTextOrCdata($dom, $node, $item);
                     }
                     $parentElement->appendChild($node);
                 }
@@ -103,9 +103,9 @@ function jsonToWsx(string $jsonString): string {
                 $appendNode($value, $node, $key, true);
                 $parentElement->appendChild($node);
             } else {
-                // Valore scalare
+                // Valore scalare (text node, o CDATA se contiene markup XHTML)
                 $node = $dom->createElement($nodeName);
-                $node->appendChild($dom->createTextNode(is_bool($value) ? ($value ? 'true' : 'false') : (string)$value));
+                appendTextOrCdata($dom, $node, $value);
                 $parentElement->appendChild($node);
             }
         }
@@ -114,7 +114,7 @@ function jsonToWsx(string $jsonString): string {
     $bodyData = array_diff_key($data, ['@context' => '', '@type' => '', '@id' => '']);
     $buildXml($bodyData, $root, $rootName);
 
-    return tabifyIndentation($dom->saveXML(), 2);
+    return tabifyIndentation($dom->saveXML(), 2, true);
 }
 
 /**
@@ -172,11 +172,17 @@ function WsxToJson(string $xmlString): string {
             $cleanName = ($child->prefix) ? $child->prefix . ':' . $child->localName : $child->localName;
             if ($cleanName === 'meetoo:meetoo') $cleanName = 'meetoo';
 
-            $hasElementChildren = false;
-            foreach ($child->childNodes as $grandChild) {
-                if ($grandChild instanceof DOMElement) { $hasElementChildren = true; break; }
+            if (isXhtmlContainer($child)) {
+                // Contenuto XHTML inline (es. <description>testo <strong>x</strong></description>)
+                // → stringa rich-text verbatim, non un oggetto annidato.
+                $childData = innerXhtml($child);
+            } else {
+                $hasElementChildren = false;
+                foreach ($child->childNodes as $grandChild) {
+                    if ($grandChild instanceof DOMElement) { $hasElementChildren = true; break; }
+                }
+                $childData = $hasElementChildren ? $parseNode($child) : $child->textContent;
             }
-            $childData = $hasElementChildren ? $parseNode($child) : $child->textContent;
 
             $xsiTypeVal = $child->getAttributeNS($xsiNs, 'type');
             if ($xsiTypeVal !== '') {
@@ -216,11 +222,253 @@ function WsxToJson(string $xmlString): string {
     return tabifyIndentation($json, 4);
 }
 
-/** Converte l'indentazione a spazi (passo fisso) generata da DOMDocument/json_encode in tab. */
-function tabifyIndentation(string $text, int $spacesPerLevel): string {
-    return preg_replace_callback('/^ +/m', function ($m) use ($spacesPerLevel) {
-        return str_repeat("\t", intdiv(strlen($m[0]), $spacesPerLevel));
-    }, $text);
+/**
+ * Converte l'indentazione a spazi (passo fisso) generata da DOMDocument/json_encode in tab.
+ * Con $protectCdata=true (XML) protegge il contenuto delle sezioni <![CDATA[…]]> lasciandolo
+ * verbatim, così l'HTML incorporato non viene alterato.
+ */
+function tabifyIndentation(string $text, int $spacesPerLevel, bool $protectCdata = false): string {
+    $convert = function (string $chunk) use ($spacesPerLevel) {
+        return preg_replace_callback('/^ +/m', function ($m) use ($spacesPerLevel) {
+            return str_repeat("\t", intdiv(strlen($m[0]), $spacesPerLevel));
+        }, $chunk);
+    };
+
+    if (!$protectCdata) return $convert($text);
+
+    // Divide sui blocchi CDATA (catturati) e tabula solo i segmenti strutturali (indici pari).
+    $parts = preg_split('/(<!\[CDATA\[.*?\]\]>)/s', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+    foreach ($parts as $i => $part) {
+        if ($i % 2 === 0) $parts[$i] = $convert($part);
+    }
+    return implode('', $parts);
+}
+
+/** True se la stringa contiene almeno un vero tag XHTML (non un semplice '<' o '&' di prosa). */
+function containsXhtmlMarkup(string $value): bool {
+    return (bool)preg_match('/<\/?[a-zA-Z][\w:-]*(\s[^<>]*)?\/?>/', $value);
+}
+
+/** Insieme dei nomi di tag XHTML riconosciuti come contenuto rich-text (non dati strutturati schema.org). */
+function xhtmlTagSet(): array {
+    static $set = null;
+    if ($set === null) {
+        $tags = ['a','abbr','address','b','blockquote','br','cite','code','dd','del','dfn','div','dl','dt',
+            'em','figcaption','figure','h1','h2','h3','h4','h5','h6','hr','i','img','ins','kbd','li','mark',
+            'ol','p','pre','q','s','samp','small','span','strong','sub','sup','table','tbody','td','tfoot',
+            'th','thead','tr','u','ul','var','wbr'];
+        $set = array_fill_keys($tags, true);
+    }
+    return $set;
+}
+
+/** True se l'elemento ha figli-elemento che sono tag XHTML (→ va trattato come stringa rich-text, non ricorso). */
+function isXhtmlContainer(DOMElement $el): bool {
+    foreach ($el->childNodes as $child) {
+        if ($child instanceof DOMElement && isset(xhtmlTagSet()[strtolower($child->localName)])) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Serializza verbatim il contenuto interno di un elemento (mixed content XHTML) come stringa. */
+function innerXhtml(DOMElement $el): string {
+    $out = '';
+    foreach ($el->childNodes as $child) {
+        $out .= $el->ownerDocument->saveXML($child);
+    }
+    return $out;
+}
+
+/**
+ * Spezza una stringa in segmenti [tipo, contenuto] sicuri per CDATA: se contiene la sequenza
+ * ']]>' la divide in più sezioni preservando i byte esatti (round-trip via textContent).
+ */
+function splitForCdata(string $str): array {
+    $chunks = explode(']]>', $str);
+    $last = count($chunks) - 1;
+    $segments = [];
+    foreach ($chunks as $i => $chunk) {
+        $segments[] = ['cdata', $chunk . ($i < $last ? ']]' : '')];
+        if ($i < $last) $segments[] = ['text', '>'];
+    }
+    return $segments;
+}
+
+/** Aggiunge a $node il valore come CDATA (se contiene markup XHTML) o come text node normale. */
+function appendTextOrCdata(DOMDocument $dom, DOMElement $node, $value): void {
+    $str = is_bool($value) ? ($value ? 'true' : 'false') : (string)$value;
+    if (!containsXhtmlMarkup($str)) {
+        $node->appendChild($dom->createTextNode($str));
+        return;
+    }
+    foreach (splitForCdata($str) as [$kind, $content]) {
+        $node->appendChild($kind === 'cdata' ? $dom->createCDATASection($content) : $dom->createTextNode($content));
+    }
+}
+
+/** Mappa entità HTML nominate → carattere UTF-8, escluse le 5 predefinite in XML. Costruita una volta. */
+function htmlEntityMap(): array {
+    static $map = null;
+    if ($map === null) {
+        $table = get_html_translation_table(HTML_ENTITIES, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $flip = array_flip($table); // '&nbsp;' => "\u{00A0}", ecc.
+        unset($flip['&lt;'], $flip['&gt;'], $flip['&amp;'], $flip['&quot;'], $flip['&apos;'], $flip['&#039;']);
+        $map = $flip;
+    }
+    return $map;
+}
+
+/**
+ * Valida un frammento XHTML come ben formato. Le entità HTML nominate (es. &nbsp;, &egrave;)
+ * vengono risolte in caratteri solo ai fini della validazione, così restano ammesse.
+ * Ritorna ['valid' => bool, 'message' => string, 'line' => ?int (relativa al frammento)].
+ */
+function validateXhtmlFragment(string $fragment): array {
+    $resolved = strtr($fragment, htmlEntityMap());
+
+    libxml_use_internal_errors(true);
+    $doc = new DOMDocument();
+    $ok = $doc->loadXML("<xhtmlfragroot>" . $resolved . "</xhtmlfragroot>");
+    $result = ['valid' => (bool)$ok, 'message' => '', 'line' => null];
+
+    if (!$ok) {
+        $first = libxml_get_errors()[0] ?? null;
+        if ($first) {
+            $result['message'] = trim($first->message);
+            $result['line'] = $first->line; // relativa al frammento wrappato
+        } else {
+            $result['message'] = 'frammento XHTML non ben formato.';
+        }
+    }
+    libxml_clear_errors();
+    return $result;
+}
+
+/**
+ * Tenta di correggere un frammento XHTML malformato con il parser HTML permissivo di libxml
+ * (chiude i tag, normalizza) e lo restituisce come XHTML ben formato. Suggerimento opt-in.
+ */
+function fixXhtmlFragment(string $fragment): string {
+    libxml_use_internal_errors(true);
+    $doc = new DOMDocument('1.0', 'UTF-8');
+    $doc->loadHTML(
+        '<?xml encoding="UTF-8"?><xhtmlfixroot>' . $fragment . '</xhtmlfixroot>',
+        LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+    );
+    libxml_clear_errors();
+
+    $root = $doc->getElementsByTagName('xhtmlfixroot')->item(0);
+    if (!$root) return $fragment;
+
+    $out = '';
+    foreach ($root->childNodes as $child) {
+        $out .= $doc->saveXML($child);
+    }
+    return $out;
+}
+
+/** Riga (1-based) della prima occorrenza di $needle nel testo grezzo, o null. */
+function locateNeedleLine(string $raw, string $needle): ?int {
+    $pos = strpos($raw, $needle);
+    return $pos === false ? null : substr_count($raw, "\n", 0, $pos) + 1;
+}
+
+/** Raccoglie errori di XHTML malformato nei valori stringa di una struttura JSON decodificata. */
+function collectJsonXhtmlErrors($node, string $raw, ?string $key = null): array {
+    $errors = [];
+    if (is_array($node)) {
+        foreach ($node as $k => $v) {
+            $errors = array_merge($errors, collectJsonXhtmlErrors($v, $raw, is_string($k) ? $k : $key));
+        }
+    } elseif (is_string($node) && containsXhtmlMarkup($node)) {
+        $res = validateXhtmlFragment($node);
+        if (!$res['valid']) {
+            $errors[] = [
+                'message' => "<strong>XHTML non valido nel campo '" . htmlspecialchars((string)$key) . "':</strong> " . $res['message']
+                    . " Usa il pulsante \"Correggi XHTML\" per applicare la correzione suggerita.",
+                'line' => $key !== null ? locateNeedleLine($raw, '"' . $key . '"') : null,
+                'fixable' => true,
+            ];
+        }
+    }
+    return $errors;
+}
+
+/** Raccoglie errori di XHTML malformato nei nodi foglia (testo/CDATA) di un documento XML. */
+function collectXmlXhtmlErrors(DOMDocument $dom, string $raw): array {
+    $errors = [];
+    foreach ($dom->getElementsByTagName('*') as $el) {
+        $hasElementChild = false;
+        foreach ($el->childNodes as $child) {
+            if ($child instanceof DOMElement) { $hasElementChild = true; break; }
+        }
+        if ($hasElementChild) continue;
+
+        $text = $el->textContent;
+        if ($text !== '' && containsXhtmlMarkup($text)) {
+            $res = validateXhtmlFragment($text);
+            if (!$res['valid']) {
+                $errors[] = [
+                    'message' => "<strong>XHTML non valido in &lt;" . $el->localName . "&gt;:</strong> " . $res['message']
+                        . " Usa il pulsante \"Correggi XHTML\" per applicare la correzione suggerita.",
+                    'line' => locateNeedleLine($raw, '<' . $el->localName),
+                    'fixable' => true,
+                ];
+            }
+        }
+    }
+    return $errors;
+}
+
+/** Applica ricorsivamente la correzione XHTML ai valori stringa malformati di una struttura JSON. */
+function fixXhtmlInData($node) {
+    if (is_array($node)) {
+        foreach ($node as $k => $v) $node[$k] = fixXhtmlInData($v);
+        return $node;
+    }
+    if (is_string($node) && containsXhtmlMarkup($node)) {
+        $res = validateXhtmlFragment($node);
+        if (!$res['valid']) return fixXhtmlFragment($node);
+    }
+    return $node;
+}
+
+/** Corregge l'XHTML malformato nell'intero documento (JSON o XML) e lo riserializza. */
+function fixXhtmlDocument(string $type, string $doc): string {
+    if ($type === 'json') {
+        $data = json_decode($doc, true);
+        if (!is_array($data)) return $doc;
+        $fixed = fixXhtmlInData($data);
+        return tabifyIndentation(json_encode($fixed, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), 4);
+    }
+
+    if (trim($doc) === '') return $doc;
+    libxml_use_internal_errors(true);
+    $dom = new DOMDocument();
+    $loaded = $dom->loadXML($doc);
+    libxml_clear_errors();
+    if (!$loaded) return $doc;
+
+    foreach (iterator_to_array($dom->getElementsByTagName('*')) as $el) {
+        $hasElementChild = false;
+        foreach ($el->childNodes as $child) {
+            if ($child instanceof DOMElement) { $hasElementChild = true; break; }
+        }
+        if ($hasElementChild) continue;
+
+        $text = $el->textContent;
+        if ($text === '' || !containsXhtmlMarkup($text)) continue;
+        if (validateXhtmlFragment($text)['valid']) continue;
+
+        $fixedFragment = fixXhtmlFragment($text);
+        while ($el->firstChild) $el->removeChild($el->firstChild);
+        foreach (splitForCdata($fixedFragment) as [$kind, $content]) {
+            $el->appendChild($kind === 'cdata' ? $dom->createCDATASection($content) : $dom->createTextNode($content));
+        }
+    }
+    return tabifyIndentation($dom->saveXML(), 2, true);
 }
 
 /** Cerca la riga di una virgola finale non ammessa (trailing comma) prima di } o ]. */
@@ -302,6 +550,8 @@ function validateJsonPayload(string $inputData): array {
                 }
             }
         }
+
+        $errors = array_merge($errors, collectJsonXhtmlErrors($parsed, $inputData));
     }
 
     return ['valid' => empty($errors), 'errors' => $errors, 'format' => $detectedFormat];
@@ -332,6 +582,7 @@ function validateXmlPayload(string $inputData): array {
         if ($root && ($root->getAttribute('xmlns:meetoo') || $root->getAttribute('xmlns:xi'))) {
             $detectedFormat = 'ws-xml';
         }
+        $errors = array_merge($errors, collectXmlXhtmlErrors($dom, $inputData));
     }
 
     return ['valid' => empty($errors), 'errors' => $errors, 'format' => $detectedFormat];

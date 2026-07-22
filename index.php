@@ -26,6 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $converted = $_POST['converted'] ?? '';
                 echo json_encode(['success' => true] + checkIntegrity($direction, $inputData, $converted));
                 break;
+            case 'fix_xhtml':
+                $type = $_POST['type'] ?? 'json';
+                echo json_encode(['success' => true, 'result' => fixXhtmlDocument($type, $inputData)]);
+                break;
             default:
                 echo json_encode(['success' => false, 'error' => 'Azione non valida']);
         }
@@ -203,6 +207,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         .debug-panel ul { margin: 0; list-style: none; padding: 0; }
         .debug-panel li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px;}
         .debug-panel input[type="checkbox"] { margin-top: 4px; }
+        .debug-panel h4 span { display: inline-flex; gap: 8px; }
         .debug-panel button.btn-validate {
             background: var(--danger);
             color: #111;
@@ -210,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             font-size: 12px;
             border-radius: 4px;
         }
+        .debug-panel button.btn-fix { background: var(--warning); }
 
         .actions-bar {
             display: flex;
@@ -247,7 +253,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
             
             <div id="debug-json" class="debug-panel">
-                <h4>⚠️ Errori rilevati dal server <button class="btn-validate" onclick="manualValidate('json')">Rivalida Ora</button></h4>
+                <h4>⚠️ Errori rilevati dal server <span>
+                    <button class="btn-validate btn-fix" id="fix-json" onclick="fixXhtml('json')" style="display:none;">Correggi XHTML</button>
+                    <button class="btn-validate" onclick="manualValidate('json')">Rivalida Ora</button>
+                </span></h4>
                 <ul id="error-list-json"></ul>
             </div>
 
@@ -270,7 +279,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
             <div id="debug-xml" class="debug-panel">
-                <h4>⚠️ Errori rilevati dal server <button class="btn-validate" onclick="manualValidate('xml')">Rivalida Ora</button></h4>
+                <h4>⚠️ Errori rilevati dal server <span>
+                    <button class="btn-validate btn-fix" id="fix-xml" onclick="fixXhtml('xml')" style="display:none;">Correggi XHTML</button>
+                    <button class="btn-validate" onclick="manualValidate('xml')">Rivalida Ora</button>
+                </span></h4>
                 <ul id="error-list-xml"></ul>
             </div>
 
@@ -345,6 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 errorList.innerHTML += `<li><label><input type="checkbox"> <span>${err.message}</span></label></li>`;
             });
             document.getElementById(`debug-${type}`).style.display = 'block';
+            document.getElementById(`fix-${type}`).style.display = errors.some(e => e.fixable) ? 'inline-flex' : 'none';
             setStatus(type, false);
             highlightErrorLines(type, errors.map(e => e.line));
         }
@@ -353,6 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             const statusIcon = document.getElementById(`status-${type}`);
             if (ok) {
                 document.getElementById(`debug-${type}`).style.display = 'none';
+                document.getElementById(`fix-${type}`).style.display = 'none';
                 statusIcon.textContent = 'check_circle';
                 statusIcon.style.color = 'var(--success)';
             } else {
@@ -360,6 +374,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 statusIcon.style.color = 'var(--danger)';
             }
             statusIcon.style.display = 'block';
+        }
+
+        // Applica la correzione XHTML suggerita all'intero documento, poi rivalida/converte.
+        async function fixXhtml(type) {
+            const content = document.getElementById(`editor-${type}`).value;
+            if (!content.trim()) return;
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'fix_xhtml');
+            formData.append('type', type);
+            formData.append('payload', content);
+
+            try {
+                const res = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById(`editor-${type}`).value = data.result;
+                    syncLines(type);
+                    await validateThenConvert(type);
+                }
+            } catch (err) {
+                console.error("Errore nella correzione XHTML:", err);
+            }
         }
 
         async function validateCode(type) {
