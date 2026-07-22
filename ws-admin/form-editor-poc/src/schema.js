@@ -170,7 +170,15 @@ export const uischema = {
     },
     {
       type: 'Group',
-      label: 'Offerta (oggetto annidato)',
+      label: 'Offerta',
+      // CONDIZIONE: mostra la sezione solo se l'evento NON è gratuito.
+      rule: {
+        effect: 'SHOW',
+        condition: {
+          scope: '#/properties/isAccessibleForFree',
+          schema: { const: false },
+        },
+      },
       elements: [
         {
           type: 'HorizontalLayout',

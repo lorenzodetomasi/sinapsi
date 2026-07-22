@@ -19,14 +19,14 @@ function FieldControl({ name, schema, value, onChange }) {
   }
   if (schema.format === 'date-time') {
     return (
-      <div className="rf">
+      <div className="rf rf-date">
         <label className="field-label">{label}</label>
         <input type="datetime-local" value={toLocal(value)} onChange={(e) => onChange(e.target.value)} />
       </div>
     );
   }
   return (
-    <div className="rf">
+    <div className="rf rf-text">
       <label className="field-label">{label}</label>
       <input type="text" value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
     </div>

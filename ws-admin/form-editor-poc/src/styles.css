@@ -82,7 +82,7 @@ h2 small { color: #9399b2; font-weight: normal; }
   margin-bottom: 4px;
   color: var(--text);
 }
-.field-label .material-symbols-outlined { font-size: 18px; color: #fff; }
+.field-label .material-symbols-outlined { font-size: 18px; color: inherit; }
 
 /* Layout orizzontali di JSON Forms: affianca davvero i campi */
 .horizontal-layout { display: flex; gap: 14px; align-items: flex-start; }
@@ -219,7 +219,10 @@ button.primary { margin-top: 12px; }
 .card-remove { flex: none; margin-bottom: 1px; }
 .card-fields { flex: 1; min-width: 0; display: grid; gap: 10px 14px; }
 .variant-row .card-fields { grid-template-columns: 1fr 2fr; }   /* organizer: @id | name (largo) */
-.variant-stack .card-fields { display: flex; flex-direction: column; } /* subEvent: multi-riga */
+/* subEvent: testo e rich-text a tutta riga, le due date affiancate */
+.variant-stack .card-fields { grid-template-columns: 1fr 1fr; }
+.variant-stack .rf.full,
+.variant-stack .rf-text { grid-column: 1 / -1; }
 .rf { display: flex; flex-direction: column; min-width: 0; }
 .rf.full { width: 100%; }
 
