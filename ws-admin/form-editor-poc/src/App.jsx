@@ -83,6 +83,28 @@ export default function App() {
 
   const hasFixable = validation.errors.some((e) => e.fixable);
 
+  // Porta nel campo Keywords i name di organizer e luogo quando il campo che li
+  // contiene perde il focus (evita di aggiungere i frammenti digitati a metà).
+  // Va invocata anche dopo una compilazione automatica (es. Google Places).
+  function syncKeywords() {
+    setData((d) => {
+      const names = [...(d.organizer ?? []).map((o) => o?.name), d.location?.name];
+      const keywords = Array.isArray(d.keywords) ? [...d.keywords] : [];
+      let changed = false;
+
+      names.forEach((name) => {
+        const value = (name ?? '').trim();
+        if (!value) return;
+        if (!keywords.some((k) => (k ?? '').trim().toLowerCase() === value.toLowerCase())) {
+          keywords.push(value);
+          changed = true;
+        }
+      });
+
+      return changed ? { ...d, keywords } : d;
+    });
+  }
+
   return (
     <div className={'app tab-' + tab}>
       <div className="tabs">
@@ -95,7 +117,7 @@ export default function App() {
       </div>
 
       <div className="layout">
-        <section className="pane pane-form">
+        <section className="pane pane-form" onBlur={syncKeywords}>
           <h2>Form (JSON Forms, schema-driven)</h2>
           <JsonForms
             schema={schema}
