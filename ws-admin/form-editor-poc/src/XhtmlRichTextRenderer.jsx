@@ -2,13 +2,15 @@ import { useEffect, useRef } from 'react';
 import { rankWith, and, isStringControl, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 
-// Normalizzazione leggera verso XHTML; la validazione/correzione XHTML stretta
-// resta delegata alla pipeline PHP (validate_json + fix_xhtml) già esistente.
+// Normalizzazione leggera verso XHTML: auto-chiude tutti gli elementi "void"
+// (img, br, hr, input, …) che i browser serializzano senza slash. La validazione/
+// correzione XHTML stretta resta delegata alla pipeline PHP (validate_json + fix_xhtml).
+const VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr';
 function toXhtml(html) {
-  return html
-    .replace(/<br>/gi, '<br />')
-    .replace(/<hr>/gi, '<hr />')
-    .replace(/&nbsp;/g, '&nbsp;');
+  return html.replace(
+    new RegExp(`<(${VOID_ELEMENTS})\\b([^>]*?)\\s*/?>`, 'gi'),
+    (_, tag, attrs) => `<${tag}${attrs} />`
+  );
 }
 
 const XhtmlControl = ({ data, handleChange, path, label, id, enabled }) => {
