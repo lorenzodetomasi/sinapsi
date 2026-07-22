@@ -1,5 +1,6 @@
 <?php
-include('functions.php');
+require __DIR__ . '/functions.php';
+
 // --- BACKEND AJAX ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
@@ -7,71 +8,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
 
     try {
-        if ($action === 'to_xml') {
-            echo json_encode(['success' => true, 'result' => jsonToWsx($inputData)]);
-        } elseif ($action === 'to_json') {
-            echo json_encode(['success' => true, 'result' => WsxToJson($inputData)]);
-        } 
-        // --- NUOVA ACTION: VALIDAZIONE JSON ---
-        elseif ($action === 'validate_json') {
-            $errors = [];
-            $detectedFormat = 'json';
-            $parsed = json_decode($inputData, true);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $errors[] = "<strong>Errore Sintassi JSON:</strong> " . json_last_error_msg();
-                $errors[] = "Controlla la presenza di virgole finali (Trailing commas) non ammesse, virgolette mancanti o parentesi graffe non bilanciate.";
-            } else {
-                // Rilevamento automatico del formato specifico
-                if (isset($parsed['@context'])) {
-                    if (isset($parsed['@type']) && (is_array($parsed['@type']) || strpos(json_encode($parsed['@context']), 'meetoo') !== false)) {
-                        $detectedFormat = 'ws-json-ld';
-                    } else {
-                        $detectedFormat = 'json-ld';
-                    }
-                }
-                
-                // Controllo strutturale avanzato su stringa grezza (le chiavi duplicate vengono sovrascritte da json_decode)
-                if (preg_match_all('/"([^"]+)"\s*:/', $inputData, $matches)) {
-                    $keys = $matches[1];
-                    $counts = array_count_values($keys);
-                    if (isset($counts['organizer']) && $counts['organizer'] > 1 && (!isset($parsed['organizer']) || !is_array($parsed['organizer']) || !isset($parsed['organizer'][0]))) {
-                        $errors[] = "<strong>Anomalia Strutturale WS:</strong> La chiave 'organizer' è ripetuta più volte. Nello standard JSON-LD esteso, le chiavi devono essere univoche: raggruppa gli organizzatori all'interno di un array di oggetti `[]`.";
-                    }
-                    if (isset($counts['subEvent']) && $counts['subEvent'] > 1 && (!isset($parsed['subEvent']) || !is_array($parsed['subEvent']) || !isset($parsed['subEvent'][0]))) {
-                        $errors[] = "<strong>Anomalia Strutturale WS:</strong> La chiave 'subEvent' è ripetuta più volte come oggetto singolo duplicato. Deve essere strutturata come una lista array `[]`.";
-                    }
-                }
-            }
-            echo json_encode(['success' => true, 'valid' => empty($errors), 'errors' => $errors, 'format' => $detectedFormat]);
-        } 
-        // --- NUOVA ACTION: VALIDAZIONE XML ---
-        elseif ($action === 'validate_xml') {
-            libxml_use_internal_errors(true);
-            $dom = new DOMDocument();
-            $errors = [];
-            $detectedFormat = 'xml';
-            
-            if (!trim($inputData)) {
-                $errors[] = "Il codice XML fornito è completamente vuoto.";
-            } else {
-                $isValid = $dom->loadXML($inputData);
-                if (!$isValid) {
-                    foreach (libxml_get_errors() as $error) {
-                        $errors[] = "<strong>Errore XML (Riga {$error->line}, Colonna {$error->column}):</strong> " . trim($error->message);
-                    }
-                    libxml_clear_errors();
-                } else {
-                    // Rilevamento automatico formato XML
-                    $root = $dom->documentElement;
-                    if ($root && ($root->getAttribute('xmlns:meetoo') || $root->getAttribute('xmlns:xi'))) {
-                        $detectedFormat = 'ws-xml';
-                    }
-                }
-            }
-            echo json_encode(['success' => true, 'valid' => empty($errors), 'errors' => $errors, 'format' => $detectedFormat]);
+        switch ($action) {
+            case 'to_xml':
+                echo json_encode(['success' => true, 'result' => jsonToWsx($inputData)]);
+                break;
+            case 'to_json':
+                echo json_encode(['success' => true, 'result' => WsxToJson($inputData)]);
+                break;
+            case 'validate_json':
+                echo json_encode(['success' => true] + validateJsonPayload($inputData));
+                break;
+            case 'validate_xml':
+                echo json_encode(['success' => true] + validateXmlPayload($inputData));
+                break;
+            case 'check_integrity':
+                $direction = $_POST['direction'] ?? '';
+                $converted = $_POST['converted'] ?? '';
+                echo json_encode(['success' => true] + checkIntegrity($direction, $inputData, $converted));
+                break;
+            default:
+                echo json_encode(['success' => false, 'error' => 'Azione non valida']);
         }
-    } catch (Exception $e) {
+    } catch (\Throwable $e) {
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
     exit;
@@ -211,8 +169,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             color: var(--gutter-text); 
             text-align: right; 
             user-select: none; 
-            overflow: hidden; 
+            overflow: hidden;
             min-width: 45px;
+        }
+        .line-numbers span.line-error {
+            color: var(--danger);
+            font-weight: 700;
         }
         
         textarea { 
@@ -275,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <section class="editor-container">
         <section class="pane">
             <header class="pane-header">
-                <h3>JSON-LD</option></h3>
+                <h3>JSON-LD</h3>
                 <span id="status-json" class="status-indicator material-symbols-outlined" style="color: var(--success); display:none;">check_circle</span>
             </header>
             
@@ -290,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
             <footer class="actions-bar">
-                <button onclick="convert('to_xml')"><span class="material-symbols-outlined">swap_horizontal_circle</span> Converti in XML</button>
+                <button onclick="validateThenConvert('json')"><span class="material-symbols-outlined">swap_horizontal_circle</span> Converti in XML</button>
                 <button class="copy-btn" onclick="copyToClipboard('editor-json')"><span class="material-symbols-outlined">content_copy</span> Copia</button>
                 <button onclick="downloadFile('json')"><span class="material-symbols-outlined">download</span> Salva</button>
             </footer>
@@ -313,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             </div>
 
             <footer class="actions-bar">
-                <button onclick="convert('to_json')"><span class="material-symbols-outlined">swap_horizontal_circle</span> Converti in JSON</button>
+                <button onclick="validateThenConvert('xml')"><span class="material-symbols-outlined">swap_horizontal_circle</span> Converti in JSON</button>
                 <button class="copy-btn" onclick="copyToClipboard('editor-xml')"><span class="material-symbols-outlined">content_copy</span> Copia</button>
                 <button onclick="downloadFile('xml')"><span class="material-symbols-outlined">download</span> Salva</button>
             </footer>
@@ -359,31 +321,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         function handleInput(type) {
             syncLines(type);
             clearTimeout(inputTimeout);
-            inputTimeout = setTimeout(async () => {
-                const isValid = await validateCode(type);
-                if(isValid) {
-                    convert(type === 'json' ? 'to_xml' : 'to_json');
-                }
-            }, 800);
+            inputTimeout = setTimeout(() => validateThenConvert(type), 800);
         }
 
         async function manualValidate(type) {
+            await validateThenConvert(type);
+        }
+
+        // Valida la sorgente e, solo se valida, esegue la conversione (usata da input automatico,
+        // pulsante "Rivalida Ora" e pulsanti manuali "Converti in XML/JSON").
+        async function validateThenConvert(type) {
             const isValid = await validateCode(type);
             if (isValid) {
-                convert(type === 'json' ? 'to_xml' : 'to_json');
+                await convert(type === 'json' ? 'to_xml' : 'to_json');
             }
+            return isValid;
+        }
+
+        function renderErrors(type, errors) {
+            const errorList = document.getElementById(`error-list-${type}`);
+            errorList.innerHTML = '';
+            errors.forEach(err => {
+                errorList.innerHTML += `<li><label><input type="checkbox"> <span>${err.message}</span></label></li>`;
+            });
+            document.getElementById(`debug-${type}`).style.display = 'block';
+            setStatus(type, false);
+            highlightErrorLines(type, errors.map(e => e.line));
+        }
+
+        function setStatus(type, ok) {
+            const statusIcon = document.getElementById(`status-${type}`);
+            if (ok) {
+                document.getElementById(`debug-${type}`).style.display = 'none';
+                statusIcon.textContent = 'check_circle';
+                statusIcon.style.color = 'var(--success)';
+            } else {
+                statusIcon.textContent = 'error';
+                statusIcon.style.color = 'var(--danger)';
+            }
+            statusIcon.style.display = 'block';
         }
 
         async function validateCode(type) {
             const content = document.getElementById(`editor-${type}`).value;
-            const debugPanel = document.getElementById(`debug-${type}`);
-            const errorList = document.getElementById(`error-list-${type}`);
-            const statusIcon = document.getElementById(`status-${type}`);
-            const selectEl = document.getElementById(`select-${type}`);
-            
+
             if (!content.trim()) {
-                debugPanel.style.display = 'none';
-                statusIcon.style.display = 'none';
+                document.getElementById(`debug-${type}`).style.display = 'none';
+                document.getElementById(`status-${type}`).style.display = 'none';
+                highlightErrorLines(type, []);
                 return false;
             }
 
@@ -398,35 +383,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     body: formData.toString()
                 });
                 const data = await res.json();
-                
-                if (data.success) {
-                    // Imposta la select in base al formato rilevato dal server
-                    if (data.format) {
-                        selectEl.value = data.format;
-                    }
+                if (!data.success) return false;
 
-                    if (!data.valid) {
-                        errorList.innerHTML = '';
-                        data.errors.forEach(err => {
-                            errorList.innerHTML += `<li><label><input type="checkbox"> <span>${err}</span></label></li>`;
-                        });
-                        debugPanel.style.display = 'block';
-                        statusIcon.textContent = 'error';
-                        statusIcon.style.color = 'var(--danger)';
-                        statusIcon.style.display = 'block';
-                        return false;
-                    } else {
-                        debugPanel.style.display = 'none';
-                        statusIcon.textContent = 'check_circle';
-                        statusIcon.style.color = 'var(--success)';
-                        statusIcon.style.display = 'block';
-                        return true;
-                    }
+                if (!data.valid) {
+                    renderErrors(type, data.errors);
+                    return false;
                 }
+
+                setStatus(type, true);
+                highlightErrorLines(type, []);
+                return true;
             } catch (err) {
                 console.error("Errore di validazione server-side:", err);
+                return false;
             }
-            return false;
         }
 
         // --- UTILITY EDITOR ---
@@ -434,19 +404,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             const textarea = document.getElementById(`editor-${type}`);
             const linesDiv = document.getElementById(`lines-${type}`);
             const linesCount = textarea.value.split('\n').length;
-            linesDiv.innerHTML = Array.from({length: linesCount || 1}, (_, i) => i + 1).join('<br>');
+            linesDiv.innerHTML = Array.from({length: linesCount || 1}, (_, i) => i + 1)
+                .map(n => `<span data-line="${n}">${n}</span>`)
+                .join('<br>');
         }
         function syncScroll(type) {
             document.getElementById(`lines-${type}`).scrollTop = document.getElementById(`editor-${type}`).scrollTop;
         }
+        function highlightErrorLines(type, lineNumbers) {
+            const targets = new Set(lineNumbers.filter(n => n));
+            document.querySelectorAll(`#lines-${type} span[data-line]`).forEach(span => {
+                span.classList.toggle('line-error', targets.has(Number(span.dataset.line)));
+            });
+        }
 
         // --- AJAX CONVERSION LOGIC ---
         async function convert(action) {
-            const sourceId = action === 'to_xml' ? 'editor-json' : 'editor-xml';
+            const sourceType = action === 'to_xml' ? 'json' : 'xml';
             const targetType = action === 'to_xml' ? 'xml' : 'json';
-            const payload = document.getElementById(sourceId).value;
+            const payload = document.getElementById(`editor-${sourceType}`).value;
 
-            if(!payload.trim()) return;
+            if (!payload.trim()) return;
 
             const formData = new URLSearchParams();
             formData.append('action', action);
@@ -459,20 +437,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     body: formData.toString()
                 });
                 const data = await res.json();
-                
-                if (data.success) {
-                    document.getElementById(`editor-${targetType}`).value = data.result;
-                    // Chiamiamo solo syncLines e la validazione visiva di successo per non innescare loop infiniti di conversioni reciproche
-                    syncLines(targetType);
-                    const debugPanel = document.getElementById(`debug-${targetType}`);
-                    const statusIcon = document.getElementById(`status-${targetType}`);
-                    debugPanel.style.display = 'none';
-                    statusIcon.textContent = 'check_circle';
-                    statusIcon.style.color = 'var(--success)';
-                    statusIcon.style.display = 'block';
+                if (!data.success) return;
+
+                document.getElementById(`editor-${targetType}`).value = data.result;
+                syncLines(targetType);
+
+                // Dopo ogni conversione: valida il risultato e verifica l'integrità dei dati (round-trip).
+                const targetValid = await validateCode(targetType);
+                if (targetValid) {
+                    await checkIntegrityAfterConversion(action, payload, data.result, targetType);
                 }
             } catch (err) {
                 console.error(err);
+            }
+        }
+
+        async function checkIntegrityAfterConversion(action, original, converted, targetType) {
+            const formData = new URLSearchParams();
+            formData.append('action', 'check_integrity');
+            formData.append('direction', action === 'to_xml' ? 'json_to_xml' : 'xml_to_json');
+            formData.append('payload', original);
+            formData.append('converted', converted);
+
+            try {
+                const res = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                });
+                const data = await res.json();
+
+                if (data.success && !data.match) {
+                    renderErrors(targetType, data.diffs.map(d => ({ message: `<strong>Integrità dati:</strong> ${d}`, line: null })));
+                    return;
+                }
+                setStatus(targetType, true);
+            } catch (err) {
+                console.error("Errore nel check di integrità:", err);
             }
         }
 
