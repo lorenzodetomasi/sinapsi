@@ -47,11 +47,14 @@ body {
 .tabs { display: none; }
 .tabs button {
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--surface); color: var(--text);
+  background: var(--bg); color: var(--gutter-text);
   border: 1px solid var(--border); border-bottom: none;
   border-radius: 8px 8px 0 0; padding: 8px 14px; font-weight: 600; cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
-.tabs button.active { background: var(--accent); color: #11111b; border-color: var(--accent); }
+.tabs button:hover { color: var(--accent); }
+/* Tab selezionato: stesso grigio del contenitore del form, così risulta unito al pannello */
+.tabs button.active { background: var(--surface); color: var(--text); }
 .tabs .material-symbols-outlined { font-size: 18px; }
 
 @media (max-width: 999px) {
@@ -137,6 +140,16 @@ h2 small { color: #9399b2; font-weight: normal; }
   transform: rotate(-45deg) translate(1px, -2px);
   opacity: 0;
 }
+/* Controllo booleano: checkbox a SINISTRA del testo, con 0.5em di margine destro */
+.pane .control:has(> input[type='checkbox']) {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pane .control:has(> input[type='checkbox']) > label { margin: 0; }
+.pane .control > input[type='checkbox'] { order: -1; margin: 0 0.5em 0 0; }
+.pane .control:has(> input[type='checkbox']) > .validation { flex-basis: 100%; }
+
 .pane input[type='checkbox']:hover { border-color: var(--accent); }
 .pane input[type='checkbox']:checked { background: var(--accent); border-color: var(--accent); }
 .pane input[type='checkbox']:checked::before { opacity: 1; border-color: #11111b; }
@@ -210,10 +223,10 @@ button.primary { margin-top: 12px; }
 
 /* Selettore creabile con ricerca (@type) */
 .creatable-select { position: relative; margin: 4px 0 12px; }
+/* Nessun box visibile: i tag "galleggiano" come in keywords */
 .cs-box {
   display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-  background: var(--editor-bg); border: 1px solid var(--border); border-radius: 6px;
-  padding: 6px 8px; cursor: text;
+  background: transparent; border: none; padding: 0; cursor: text;
 }
 /* i tag di @type usano lo stesso stile di quelli di keywords */
 .cs-input {
