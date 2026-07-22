@@ -1,0 +1,23 @@
+{
+  "name": "form-editor-poc",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "Proof-of-concept: editor JSON-LD basato su JSON Forms (schema-driven), con fieldset ripetibili, oggetti annidati, tipi vari e widget rich-text XHTML.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@jsonforms/core": "^3.8.0",
+    "@jsonforms/react": "^3.8.0",
+    "@jsonforms/vanilla-renderers": "^3.8.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7"
+  }
+}

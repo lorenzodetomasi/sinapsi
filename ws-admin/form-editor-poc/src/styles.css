@@ -1,0 +1,94 @@
+:root {
+  --bg: #1e1e2e;
+  --surface: #313244;
+  --text: #cdd6f4;
+  --accent: #89b4fa;
+  --border: #45475a;
+  --editor-bg: #11111b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  align-items: start;
+}
+
+.pane {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+h2 { margin-top: 0; font-size: 16px; }
+h2 small { color: #9399b2; font-weight: normal; }
+
+/* JSON Forms vanilla: input di base */
+.pane input[type='text'],
+.pane input[type='number'],
+.pane input[type='datetime-local'],
+.pane select {
+  width: 100%;
+  padding: 6px 8px;
+  margin: 4px 0 10px;
+  background: var(--editor-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.pane label { font-size: 13px; font-weight: 600; }
+.pane fieldset {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 10px 0;
+  padding: 10px 12px;
+}
+.pane button {
+  background: var(--accent);
+  color: #11111b;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+button.primary { margin-top: 12px; }
+
+/* Editor XHTML custom */
+.xhtml-control { margin: 4px 0 12px; }
+.xhtml-toolbar { display: flex; gap: 6px; margin: 4px 0; }
+.xhtml-toolbar button { background: var(--border); color: var(--text); font-size: 12px; }
+.xhtml-editor {
+  min-height: 90px;
+  padding: 8px 10px;
+  background: var(--editor-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  outline: none;
+}
+.xhtml-editor:focus { border-color: var(--accent); }
+.xhtml-editor ul { margin: 4px 0 4px 20px; }
+
+.output {
+  background: var(--editor-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 12px;
+  overflow: auto;
+  max-height: 340px;
+  font-family: 'Fira Code', monospace;
+  font-size: 12.5px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.err { color: #f38ba8; font-size: 13px; }
