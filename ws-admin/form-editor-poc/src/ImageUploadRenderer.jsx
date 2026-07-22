@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { rankWith, and, isStringControl, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
+import { API_BASE } from './config.js';
 
 const ACCEPT = ['image/jpeg', 'image/png', 'image/svg+xml'];
 const ACCEPT_ATTR = '.jpg,.jpeg,.png,.svg';
@@ -30,7 +31,7 @@ const ImageUpload = ({ data, handleChange, path, label, id, uischema, enabled })
       const fd = new FormData();
       fd.append('action', 'upload');
       fd.append('file', file);
-      const res = await fetch('/api', { method: 'POST', body: fd });
+      const res = await fetch(API_BASE, { method: 'POST', body: fd });
       const out = await res.json();
       if (out.success) handleChange(path, out.path);
       else setError(out.error || 'Upload fallito');

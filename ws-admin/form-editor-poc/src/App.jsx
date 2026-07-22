@@ -8,6 +8,7 @@ import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.js
 import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
 import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
+import { API_BASE } from './config.js';
 
 const renderers = [
   ...vanillaRenderers,
@@ -21,7 +22,7 @@ const renderers = [
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.
 async function api(action, fields = {}) {
   const body = new URLSearchParams({ action, ...fields });
-  const res = await fetch('/api', {
+  const res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
