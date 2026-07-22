@@ -51,15 +51,14 @@ body {
 .tabs button {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--bg); color: var(--gutter-text);
-  /* bordo trasparente sul tab non selezionato: nessun bordo visibile, ma
-     le dimensioni restano identiche a quelle del tab attivo */
-  border: 1px solid transparent; border-bottom: none;
+  border: 1px solid var(--border); border-bottom: none;
   border-radius: 8px 8px 0 0; padding: 8px 14px; font-weight: 600; cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 .tabs button:hover { color: var(--accent); }
-/* Tab selezionato: stesso grigio del contenitore del form, così risulta unito al pannello */
-.tabs button.active { background: var(--surface); color: var(--text); }
+/* Tab selezionato: stesso grigio del contenitore del form, così risulta unito al
+   pannello; nessun bordo visibile (trasparente, per non alterare le dimensioni). */
+.tabs button.active { background: var(--surface); color: var(--text); border-color: transparent; }
 .tabs .material-symbols-outlined { font-size: 18px; }
 
 @media (max-width: 999px) {
@@ -209,8 +208,8 @@ button.primary { margin-top: 12px; }
   outline: none;
   padding: 2px 0;
   margin: 0;
+  /* stesso corpo del testo dei tag @type (e degli input text) */
   font: inherit;
-  font-size: 13px;
 }
 .tag button {
   display: inline-flex; align-items: center; justify-content: center;
@@ -242,7 +241,7 @@ button.primary { margin-top: 12px; }
 .cs-input {
   flex: 1; min-width: 120px; height: var(--control-h);
   background: transparent; border: none; outline: none; color: var(--text);
-  font: inherit; font-size: 13px; padding: 0 2px; margin: 0;
+  font: inherit; padding: 0 2px; margin: 0;
 }
 .cs-menu {
   position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);

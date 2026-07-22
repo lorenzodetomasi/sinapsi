@@ -62,6 +62,25 @@ export function fromJsonLd(doc) {
   };
 }
 
+/**
+ * Le keywords includono SEMPRE i `name` di tutti gli organizer e del luogo:
+ * quelli mancanti vengono aggiunti in coda (confronto case-insensitive, nessun
+ * duplicato). Le keywords scritte a mano restano e mantengono il loro ordine.
+ */
+function mergeKeywords(d) {
+  const base = Array.isArray(d.keywords) ? [...d.keywords] : d.keywords ? [String(d.keywords)] : [];
+  const auto = [...(d.organizer ?? []).map((o) => o?.name), d.location?.name];
+
+  auto.forEach((name) => {
+    const value = (name ?? '').trim();
+    if (!value) return;
+    const already = base.some((k) => (k ?? '').trim().toLowerCase() === value.toLowerCase());
+    if (!already) base.push(value);
+  });
+
+  return base.map((k) => (k ?? '').trim()).filter(Boolean).join(', ');
+}
+
 /** Dati del form -> JSON-LD (index.json), reintroducendo @context/@type/@id/namespace.
  *  L'ordine delle chiavi segue index.json. */
 export function toJsonLd(d) {
@@ -80,7 +99,7 @@ export function toJsonLd(d) {
     '@id': d.id ?? '',
     '@type': types,
     additionalType: d.additionalType ?? '',
-    keywords: Array.isArray(d.keywords) ? d.keywords.filter(Boolean).join(', ') : (d.keywords ?? ''),
+    keywords: mergeKeywords(d),
     name: d.name ?? '',
     description: d.description ?? '',
     image: d.image ?? '',
