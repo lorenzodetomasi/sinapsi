@@ -39,9 +39,14 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
   );
 };
 
+// Match su `format: "tags"` (dichiarativo, come format: "xhtml"), con fallback
+// su qualsiasi array di stringhe.
 export const tagArrayTester = rankWith(
   10,
-  and(uiTypeIs('Control'), schemaMatches((s) => s?.type === 'array' && s?.items?.type === 'string'))
+  and(
+    uiTypeIs('Control'),
+    schemaMatches((s) => s?.type === 'array' && (s?.format === 'tags' || s?.items?.type === 'string'))
+  )
 );
 
 export default withJsonFormsControlProps(TagArray);

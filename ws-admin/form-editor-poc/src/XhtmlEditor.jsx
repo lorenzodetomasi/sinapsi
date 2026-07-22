@@ -33,7 +33,6 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
         <button type="button" title="Corsivo" onClick={() => cmd('italic')}><Icon name="format_italic" /></button>
         <button type="button" title="Elenco" onClick={() => cmd('insertUnorderedList')}><Icon name="format_list_bulleted" /></button>
         <button type="button" title="Link" onClick={() => cmd('createLink', prompt('URL del link:') || '')}><Icon name="link" /></button>
-        <button type="button" title="A capo" onClick={() => cmd('insertHTML', '<br />')}><Icon name="keyboard_return" /></button>
       </div>
       <div
         ref={ref}

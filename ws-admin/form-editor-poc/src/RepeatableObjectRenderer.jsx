@@ -59,14 +59,6 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema })
       <div className="cards">
         {items.map((item, i) => (
           <fieldset className="card" key={i}>
-            <button
-              type="button"
-              className="icon-btn card-remove"
-              title="Rimuovi"
-              onClick={() => update(items.filter((_, j) => j !== i))}
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
             <div className="card-fields">
               {Object.entries(props).map(([key, sub]) => (
                 <FieldControl
@@ -78,6 +70,14 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema })
                 />
               ))}
             </div>
+            <button
+              type="button"
+              className="icon-btn card-remove"
+              title="Rimuovi"
+              onClick={() => update(items.filter((_, j) => j !== i))}
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
           </fieldset>
         ))}
       </div>

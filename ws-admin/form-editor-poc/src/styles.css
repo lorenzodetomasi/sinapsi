@@ -59,6 +59,8 @@ body {
   .tabs { display: flex; gap: 6px; padding: 16px 20px 0; }
   .tab-form .pane-validation { display: none; }
   .tab-validation .pane-form { display: none; }
+  /* Il pannello sotto i tab non deve avere l'angolo stondato in alto a sinistra */
+  .pane { border-top-left-radius: 0; }
 }
 
 .pane {
@@ -80,7 +82,11 @@ h2 small { color: #9399b2; font-weight: normal; }
   margin-bottom: 4px;
   color: var(--text);
 }
-.field-label .material-symbols-outlined { font-size: 18px; color: var(--accent); }
+.field-label .material-symbols-outlined { font-size: 18px; color: #fff; }
+
+/* Layout orizzontali di JSON Forms: affianca davvero i campi */
+.horizontal-layout { display: flex; gap: 14px; align-items: flex-start; }
+.horizontal-layout-item { flex: 1; min-width: 0; }
 
 /* Input di base (JSON Forms vanilla + custom) */
 .pane input[type='text'],
@@ -107,16 +113,18 @@ h2 small { color: #9399b2; font-weight: normal; }
   padding: 10px 12px;
 }
 
-/* Bottoni generici + bottoni-icona */
+/* Elementi interattivi: GRIGIO a riposo, AZZURRO su hover/selezione */
 .pane button {
-  background: var(--accent);
-  color: #11111b;
+  background: var(--border);
+  color: var(--text);
   border: none;
   border-radius: 4px;
   padding: 6px 10px;
   cursor: pointer;
   font-weight: 600;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
+.pane button:hover { background: var(--accent); color: #11111b; }
 button.primary { margin-top: 12px; }
 .icon-btn {
   display: inline-flex;
@@ -128,14 +136,6 @@ button.primary { margin-top: 12px; }
   border-radius: 6px;
 }
 .icon-btn .material-symbols-outlined { font-size: 18px; }
-.icon-btn.card-remove {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 24px;
-  height: 24px;
-  background: var(--danger);
-}
 
 /* Tag input compatti (@type, keywords) */
 .tag-array .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -163,14 +163,15 @@ button.primary { margin-top: 12px; }
   width: 20px; height: 20px; border: none; border-radius: 50%;
   background: transparent; color: var(--gutter-text); cursor: pointer; padding: 0;
 }
-.tag button:hover { color: var(--danger); }
+.tag button:hover { background: var(--accent) !important; color: #11111b !important; }
 .tag button .material-symbols-outlined { font-size: 16px; }
 .tag-add {
   display: inline-flex; align-items: center; justify-content: center;
   width: 26px; height: 26px; border: 1px dashed var(--border) !important;
-  border-radius: 50%; background: transparent !important; color: var(--accent) !important;
+  border-radius: 50%; background: transparent !important; color: var(--gutter-text) !important;
   cursor: pointer; padding: 0;
 }
+.tag-add:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: transparent !important; }
 .tag-add .material-symbols-outlined { font-size: 18px; }
 
 /* Selettore creabile con ricerca (@type) */
@@ -196,7 +197,8 @@ button.primary { margin-top: 12px; }
   padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px;
   display: flex; align-items: center; gap: 6px;
 }
-.cs-menu li:hover { background: var(--editor-bg); }
+.cs-menu li:hover { background: var(--accent); color: #11111b; }
+.cs-menu li:hover .material-symbols-outlined { color: #11111b; }
 .cs-menu .cs-create { color: var(--accent); font-weight: 600; }
 .cs-menu .material-symbols-outlined { font-size: 16px; }
 
@@ -206,13 +208,16 @@ button.primary { margin-top: 12px; }
 .repeat-head .field-label { margin: 0; font-size: 14px; }
 .repeat-object .cards { display: flex; flex-direction: column; gap: 10px; }
 .card {
-  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px 42px 12px 14px;
+  padding: 12px 14px;
   margin: 0;
 }
-.card-fields { display: grid; gap: 10px 14px; }
+.card-remove { flex: none; margin-bottom: 1px; }
+.card-fields { flex: 1; min-width: 0; display: grid; gap: 10px 14px; }
 .variant-row .card-fields { grid-template-columns: 1fr 2fr; }   /* organizer: @id | name (largo) */
 .variant-stack .card-fields { display: flex; flex-direction: column; } /* subEvent: multi-riga */
 .rf { display: flex; flex-direction: column; min-width: 0; }
@@ -271,7 +276,8 @@ button.primary { margin-top: 12px; }
 .banner-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 600; }
 .banner ul { margin: 8px 0 0; padding-left: 18px; }
 .banner li { margin-bottom: 6px; }
-.banner button.fix { background: var(--warning); color: #11111b; }
+.banner button.fix { background: var(--border); color: var(--text); }
+.banner button.fix:hover { background: var(--accent); color: #11111b; }
 
 .hint { color: var(--accent); font-size: 12px; }
 .err { color: var(--danger); font-size: 13px; }
