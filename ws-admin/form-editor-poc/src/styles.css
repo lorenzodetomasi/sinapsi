@@ -87,7 +87,9 @@ h2 small { color: #9399b2; font-weight: normal; }
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  margin-bottom: 4px;
+  /* nessun margine sotto: lo spazio lo dà l'elemento seguente (come per le
+     label vanilla di JSON Forms), altrimenti i campi custom risultano più bassi */
+  margin-bottom: 0;
   color: var(--text);
 }
 .field-label .material-symbols-outlined { font-size: 18px; color: inherit; }
@@ -117,7 +119,7 @@ h2 small { color: #9399b2; font-weight: normal; }
    successiva: azzera davvero il margine degli input dentro le card ripetibili,
    così la × resta allineata all'ultimo input. */
 .pane .rf input,
-.pane .rf select { margin: 0; }
+.pane .rf select { margin: 4px 0 0; }
 .pane label { font-size: 13px; font-weight: 600; }
 
 /* Checkbox: stessa dimensione e codice colore dei bottoni + (grigio → azzurro) */
@@ -190,7 +192,7 @@ button.primary { margin-top: 12px; }
 .icon-btn .material-symbols-outlined { font-size: 18px; }
 
 /* Tag input compatti (@type, keywords) */
-.tag-array .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag-array .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
 .tag {
   position: relative; /* ancora il menu di autocomplete */
   display: inline-flex;
@@ -202,6 +204,20 @@ button.primary { margin-top: 12px; }
   border-radius: calc(var(--control-h) / 2);
   padding: 0 5px 0 12px;
 }
+/* Maniglia di riordino: il drag parte solo da qui */
+.tag-handle {
+  display: inline-flex; align-items: center;
+  margin: 0 2px 0 -6px;
+  color: var(--gutter-text);
+  cursor: grab;
+}
+.tag-handle:active { cursor: grabbing; }
+.tag-handle:hover { color: var(--accent); }
+.tag-handle .material-symbols-outlined { font-size: 18px; }
+
+.tag.dragging { opacity: 0.45; }
+.tag.drop-target { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.25); }
+
 .tag input {
   background: transparent;
   border: none;
@@ -271,7 +287,31 @@ button.primary { margin-top: 12px; }
 
 /* Editor XHTML */
 .xhtml-control { margin: 4px 0 12px; }
-.xhtml-toolbar { display: flex; gap: 4px; margin: 4px 0; }
+/* Toolbar visibile solo quando l'editor ha il focus, con entrata morbida */
+.xhtml-toolbar {
+  display: flex;
+  gap: 4px;
+  overflow: hidden;
+  max-height: 0;
+  margin: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: max-height 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+              margin 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.18s ease,
+              transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.xhtml-control.focused .xhtml-toolbar {
+  max-height: calc(var(--control-h) + 4px);
+  margin: 4px 0;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .xhtml-toolbar { transition: opacity 0.1s ease; }
+}
 .xhtml-toolbar button {
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--control-h); height: var(--control-h); padding: 0;

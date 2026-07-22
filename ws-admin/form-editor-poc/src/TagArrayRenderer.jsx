@@ -17,6 +17,12 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
   const inputsRef = useRef([]);
   const focusLast = useRef(false);
 
+  // Riordino via drag & drop. Il trascinamento parte SOLO dalla maniglia:
+  // così scrivere/selezionare testo dentro al tag continua a funzionare.
+  const [dragIndex, setDragIndex] = useState(null);
+  const [overIndex, setOverIndex] = useState(null);
+  const handleGrabbed = useRef(false);
+
   useEffect(() => {
     const onDoc = (e) => {
       if (rootRef.current && !rootRef.current.contains(e.target)) setOpenIndex(null);
@@ -48,6 +54,19 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
     update([...items, '']);
   };
 
+  const moveTag = (from, to) => {
+    if (from === null || to === null || from === to) return;
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    update(next);
+  };
+  const endDrag = () => {
+    setDragIndex(null);
+    setOverIndex(null);
+    handleGrabbed.current = false;
+  };
+
   // Suggerimenti filtrati sul testo del tag, escludendo quelli già usati altrove.
   const optionsFor = (i) => {
     const query = (items[i] ?? '').trim().toLowerCase();
@@ -67,8 +86,47 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
       <div className="tags">
         {items.map((it, i) => {
           const options = openIndex === i ? optionsFor(i) : [];
+          const classes = ['tag'];
+          if (dragIndex === i) classes.push('dragging');
+          if (overIndex === i && dragIndex !== i) classes.push('drop-target');
+
           return (
-            <span className="tag" key={i}>
+            <span
+              className={classes.join(' ')}
+              key={i}
+              draggable
+              onDragStart={(e) => {
+                if (!handleGrabbed.current) {
+                  e.preventDefault(); // trascinamento consentito solo dalla maniglia
+                  return;
+                }
+                setDragIndex(i);
+                setOpenIndex(null);
+                e.dataTransfer.effectAllowed = 'move';
+                e.dataTransfer.setData('text/plain', String(i));
+              }}
+              onDragOver={(e) => {
+                if (dragIndex === null) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                setOverIndex(i);
+              }}
+              onDragLeave={() => setOverIndex((v) => (v === i ? null : v))}
+              onDrop={(e) => {
+                e.preventDefault();
+                moveTag(dragIndex, i);
+                endDrag();
+              }}
+              onDragEnd={endDrag}
+            >
+              <span
+                className="tag-handle"
+                title="Trascina per riordinare"
+                onMouseDown={() => (handleGrabbed.current = true)}
+                onMouseUp={() => (handleGrabbed.current = false)}
+              >
+                <span className="material-symbols-outlined">drag_indicator</span>
+              </span>
               <input
                 ref={(el) => (inputsRef.current[i] = el)}
                 value={it ?? ''}
