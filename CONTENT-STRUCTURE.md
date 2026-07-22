@@ -32,7 +32,9 @@ contents/{tenant}/{locale}/{collection}/{slug}/
   - `archive/{istanzaSlug}/` per le occorrenze passate
   - `reviews.xml` + `reviews/{reviewSlug}.xml` per le recensioni di un'istanza
 
-Slug istanza evento: `{yyyymmdd}T{hhmm}-{codiceLuogo}` (es. `20260723T1830-IT00122`).
+Slug istanza evento: `{yyyymmdd}T{hhmm}-{codiceLuogo}-{descrittivo}`
+(es. `20260723T1830-IT00122-reading_party`). Il descrittivo finale evita collisioni
+tra eventi con stessa data/luogo.
 
 ## Convenzione @id e riferimenti (NORMALIZZATA)
 
@@ -45,8 +47,9 @@ Slug istanza evento: `{yyyymmdd}T{hhmm}-{codiceLuogo}` (es. `20260723T1830-IT001
   `href="../../{collection}/{slug}/index.xml"` (l'entità di partenza è due livelli sotto:
   `events/{slug}/`). *(Adeguare il convertitore: oggi usa `../{@id}`.)*
 
-> Da confermare: l'`@id` dell'evento deve coincidere con lo **slug della cartella**
-> (oggi cartella `20260723T1830-IT00122` vs `@id` `...-reading_party`: allinearli).
+L'`@id` dell'evento **coincide con lo slug della cartella** (descrittivo incluso),
+es. `20260723T1830-IT00122-reading_party`. Le cartelle esistenti prive del descrittivo
+vanno rinominate per allinearsi all'`@id`.
 
 ## image / logo
 
@@ -66,9 +69,13 @@ Slug istanza evento: `{yyyymmdd}T{hhmm}-{codiceLuogo}` (es. `20260723T1830-IT001
 
 ## @context meetoo
 
-> Da confermare: `https://meetoo.eu` (usato in ws-custom) **oppure** `https://meetoo.eu#`
-> (usato in json-xml). Uniformare su uno dei due. *(Raccomando `https://meetoo.eu`,
-> coerente col contenuto reale.)*
+Valore: **`https://meetoo.eu#`** (con `#`). In JSON-LD l'espansione di un prefisso è
+concatenazione: serve un separatore finale (`#` o `/`), altrimenti `meetoo:macrocategory`
+si espande in `https://meetoo.eumacrocategory` (IRI malformato). Con `#` →
+`https://meetoo.eu#macrocategory` (corretto).
+
+> I contenuti reali in `ws-custom` usano `https://meetoo.eu` (senza `#`): da correggere
+> aggiungendo il `#`.
 
 ## Editor: ambito attuale
 
