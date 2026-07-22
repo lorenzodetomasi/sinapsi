@@ -9,6 +9,9 @@
   --border: #45475a;
   --editor-bg: #11111b;
   --gutter-text: #6c7086;
+  /* Altezza unica e touch-friendly per TUTTI i controlli:
+     input, select, tag, bottoni (×, +, toolbar XHTML), checkbox. */
+  --control-h: 33px;
 }
 
 * { box-sizing: border-box; }
@@ -48,7 +51,9 @@ body {
 .tabs button {
   display: inline-flex; align-items: center; gap: 6px;
   background: var(--bg); color: var(--gutter-text);
-  border: 1px solid var(--border); border-bottom: none;
+  /* bordo trasparente sul tab non selezionato: nessun bordo visibile, ma
+     le dimensioni restano identiche a quelle del tab attivo */
+  border: 1px solid transparent; border-bottom: none;
   border-radius: 8px 8px 0 0; padding: 8px 14px; font-weight: 600; cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
@@ -100,7 +105,8 @@ h2 small { color: #9399b2; font-weight: normal; }
 .rf input,
 .path-field {
   width: 100%;
-  padding: 6px 8px;
+  height: var(--control-h);
+  padding: 0 8px;
   margin: 4px 0 10px;
   background: var(--editor-bg);
   color: var(--text);
@@ -119,8 +125,8 @@ h2 small { color: #9399b2; font-weight: normal; }
 .pane input[type='checkbox'] {
   appearance: none;
   -webkit-appearance: none;
-  width: 26px;
-  height: 26px;
+  width: var(--control-h);
+  height: var(--control-h);
   margin: 4px 8px 10px 0;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -177,8 +183,8 @@ button.primary { margin-top: 12px; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: var(--control-h);
+  height: var(--control-h);
   padding: 0;
   border-radius: 6px;
 }
@@ -190,10 +196,11 @@ button.primary { margin-top: 12px; }
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  height: var(--control-h);
   background: var(--editor-bg);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 2px 4px 2px 10px;
+  border-radius: calc(var(--control-h) / 2);
+  padding: 0 5px 0 12px;
 }
 .tag input {
   background: transparent;
@@ -214,12 +221,15 @@ button.primary { margin-top: 12px; }
 .tag button .material-symbols-outlined { font-size: 16px; }
 .tag-add {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; border: 1px dashed var(--border) !important;
+  width: var(--control-h); height: var(--control-h); border: 1px dashed var(--border) !important;
   border-radius: 50%; background: transparent !important; color: var(--gutter-text) !important;
   cursor: pointer; padding: 0;
 }
 .tag-add:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: transparent !important; }
 .tag-add .material-symbols-outlined { font-size: 18px; }
+
+/* Select a valore singolo con ricerca (meetoo:type) */
+.search-select { position: relative; }
 
 /* Selettore creabile con ricerca (@type) */
 .creatable-select { position: relative; margin: 4px 0 12px; }
@@ -230,9 +240,9 @@ button.primary { margin-top: 12px; }
 }
 /* i tag di @type usano lo stesso stile di quelli di keywords */
 .cs-input {
-  flex: 1; min-width: 120px;
+  flex: 1; min-width: 120px; height: var(--control-h);
   background: transparent; border: none; outline: none; color: var(--text);
-  font: inherit; font-size: 13px; padding: 4px 2px; margin: 0;
+  font: inherit; font-size: 13px; padding: 0 2px; margin: 0;
 }
 .cs-menu {
   position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
@@ -263,7 +273,7 @@ button.primary { margin-top: 12px; }
   padding: 12px 14px;
   margin: 0;
 }
-.card-remove { flex: none; margin-bottom: 0; height: 33px; width: 33px; }
+.card-remove { flex: none; margin-bottom: 0; }
 .card-fields { flex: 1; min-width: 0; display: grid; gap: 10px 14px; }
 .variant-row .card-fields { grid-template-columns: 1fr 2fr; }   /* organizer: @id | name (largo) */
 /* subEvent: testo e rich-text a tutta riga, le due date affiancate */
@@ -278,7 +288,7 @@ button.primary { margin-top: 12px; }
 .xhtml-toolbar { display: flex; gap: 4px; margin: 4px 0; }
 .xhtml-toolbar button {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 28px; padding: 0;
+  width: var(--control-h); height: var(--control-h); padding: 0;
   background: var(--border); color: var(--text);
 }
 .xhtml-toolbar .material-symbols-outlined { font-size: 18px; }

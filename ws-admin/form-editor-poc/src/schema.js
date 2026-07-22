@@ -34,7 +34,7 @@ export const schema = {
     image: { type: 'string', title: 'Immagine', format: 'image' },
     logo: { type: 'string', title: 'Logo', format: 'image' },
     startDate: { type: 'string', format: 'date-time', title: 'Dal' },
-    endDate: { type: 'string', format: 'date-time', title: 'Al' },
+    endDate: { type: 'string', format: 'date-time', title: 'al' },
     typicalAgeRange: { type: 'string', title: "Fascia d'età" },
     eventStatus: { type: 'string', title: 'Stato evento', oneOf: EVENT_STATUS },
     eventAttendanceMode: { type: 'string', title: 'Modalità', oneOf: ATTENDANCE_MODE },
@@ -82,7 +82,7 @@ export const schema = {
           name: { type: 'string', title: 'Nome' },
           description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
           startDate: { type: 'string', format: 'date-time', title: 'Dal' },
-          endDate: { type: 'string', format: 'date-time', title: 'Al' },
+          endDate: { type: 'string', format: 'date-time', title: 'al' },
         },
       },
     },
@@ -114,11 +114,35 @@ const EVENT_TYPES = [
   'SportsEvent', 'TheaterEvent', 'VisualArtsEvent',
 ];
 
+// Tipi meetoo: valori predefiniti ricercabili (il campo accetta anche testo libero,
+// così puoi correggere/estendere il vocabolario quando sarà definitivo).
+const MEETOO_TYPES = [
+  'meetoo:EventSingle',
+  'meetoo:EventSeries',
+  'meetoo:EventRecurring',
+  'meetoo:EventArchived',
+];
+
 const ctrl = (scope, extra = {}) => ({ type: 'Control', scope, ...extra });
 
 export const uischema = {
   type: 'VerticalLayout',
   elements: [
+    {
+      type: 'Group',
+      label: 'Meetoo',
+      elements: [
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            ctrl('#/properties/meetoo/properties/type', {
+              options: { searchable: true, suggestions: MEETOO_TYPES },
+            }),
+            ctrl('#/properties/meetoo/properties/macrocategory'),
+          ],
+        },
+      ],
+    },
     {
       type: 'Group',
       label: 'Identità',
@@ -222,19 +246,6 @@ export const uischema = {
           elements: [
             ctrl('#/properties/aggregateRating/properties/ratingValue'),
             ctrl('#/properties/aggregateRating/properties/bestRating'),
-          ],
-        },
-      ],
-    },
-    {
-      type: 'Group',
-      label: 'Meetoo',
-      elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/meetoo/properties/type'),
-            ctrl('#/properties/meetoo/properties/macrocategory'),
           ],
         },
       ],
