@@ -19,7 +19,8 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
           <span className="tag" key={i}>
             <input
               value={it ?? ''}
-              size={Math.max(4, (it ?? '').length)}
+              /* larghezza aderente al testo (come i tag di @type), più compatta su mobile */
+              style={{ width: `${Math.max(3, (it ?? '').length + 1)}ch` }}
               onChange={(e) => {
                 const a = [...items];
                 a[i] = e.target.value;

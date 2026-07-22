@@ -59,8 +59,9 @@ body {
   .tabs { display: flex; gap: 6px; padding: 16px 20px 0; }
   .tab-form .pane-validation { display: none; }
   .tab-validation .pane-form { display: none; }
-  /* Il pannello sotto i tab non deve avere l'angolo stondato in alto a sinistra */
-  .pane { border-top-left-radius: 0; }
+  /* Il pannello sotto i tab non deve avere l'angolo stondato in alto a sinistra.
+     Specificità .layout .pane (0,2,0) per battere `.pane { border-radius }`. */
+  .layout .pane { border-top-left-radius: 0; }
 }
 
 .pane {
@@ -110,6 +111,35 @@ h2 small { color: #9399b2; font-weight: normal; }
 .pane .rf input,
 .pane .rf select { margin: 0; }
 .pane label { font-size: 13px; font-weight: 600; }
+
+/* Checkbox: stessa dimensione e codice colore dei bottoni + (grigio → azzurro) */
+.pane input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  margin: 4px 8px 10px 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  vertical-align: middle;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pane input[type='checkbox']::before {
+  content: '';
+  width: 12px;
+  height: 6px;
+  border-left: 2px solid var(--gutter-text);
+  border-bottom: 2px solid var(--gutter-text);
+  transform: rotate(-45deg) translate(1px, -2px);
+  opacity: 0;
+}
+.pane input[type='checkbox']:hover { border-color: var(--accent); }
+.pane input[type='checkbox']:checked { background: var(--accent); border-color: var(--accent); }
+.pane input[type='checkbox']:checked::before { opacity: 1; border-color: #11111b; }
 .pane fieldset {
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -185,7 +215,7 @@ button.primary { margin-top: 12px; }
   background: var(--editor-bg); border: 1px solid var(--border); border-radius: 6px;
   padding: 6px 8px; cursor: text;
 }
-.cs-box .tag { background: var(--surface); }
+/* i tag di @type usano lo stesso stile di quelli di keywords */
 .cs-input {
   flex: 1; min-width: 120px;
   background: transparent; border: none; outline: none; color: var(--text);

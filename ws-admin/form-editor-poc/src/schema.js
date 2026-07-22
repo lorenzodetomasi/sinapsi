@@ -33,8 +33,8 @@ export const schema = {
     description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
     image: { type: 'string', title: 'Immagine', format: 'image' },
     logo: { type: 'string', title: 'Logo', format: 'image' },
-    startDate: { type: 'string', format: 'date-time', title: 'Inizio' },
-    endDate: { type: 'string', format: 'date-time', title: 'Fine' },
+    startDate: { type: 'string', format: 'date-time', title: 'Dal' },
+    endDate: { type: 'string', format: 'date-time', title: 'Al' },
     typicalAgeRange: { type: 'string', title: "Fascia d'età" },
     eventStatus: { type: 'string', title: 'Stato evento', oneOf: EVENT_STATUS },
     eventAttendanceMode: { type: 'string', title: 'Modalità', oneOf: ATTENDANCE_MODE },
@@ -68,8 +68,8 @@ export const schema = {
       items: {
         type: 'object',
         properties: {
-          id: { type: 'string', title: '@id' },
           name: { type: 'string', title: 'Nome' },
+          id: { type: 'string', title: '@id' },
         },
       },
     },
@@ -81,8 +81,8 @@ export const schema = {
         properties: {
           name: { type: 'string', title: 'Nome' },
           description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
-          startDate: { type: 'string', format: 'date-time', title: 'Inizio' },
-          endDate: { type: 'string', format: 'date-time', title: 'Fine' },
+          startDate: { type: 'string', format: 'date-time', title: 'Dal' },
+          endDate: { type: 'string', format: 'date-time', title: 'Al' },
         },
       },
     },
@@ -123,8 +123,9 @@ export const uischema = {
       type: 'Group',
       label: 'Identità',
       elements: [
-        { type: 'HorizontalLayout', elements: [ctrl('#/properties/id'), ctrl('#/properties/additionalType')] },
         ctrl('#/properties/types', { options: { icon: 'category', creatable: true, suggestions: EVENT_TYPES } }),
+        { type: 'HorizontalLayout', elements: [ctrl('#/properties/id'), ctrl('#/properties/additionalType')] },
+        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
       ],
     },
     {
@@ -132,28 +133,47 @@ export const uischema = {
       label: 'Contenuto',
       elements: [
         ctrl('#/properties/name'),
-        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
         ctrl('#/properties/description', { options: { icon: 'description' } }),
         {
           type: 'HorizontalLayout',
           elements: [
-            ctrl('#/properties/image', { options: { icon: 'image' } }),
             ctrl('#/properties/logo', { options: { icon: 'branding_watermark' } }),
+            ctrl('#/properties/image', { options: { icon: 'image' } }),
           ],
         },
       ],
     },
     {
       type: 'Group',
-      label: 'Quando & pubblico',
+      label: 'Dove',
       elements: [
-        { type: 'HorizontalLayout', elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')] },
         {
           type: 'HorizontalLayout',
           elements: [
-            ctrl('#/properties/typicalAgeRange'),
+            ctrl('#/properties/location/properties/name'),
+            ctrl('#/properties/location/properties/type'),
+            ctrl('#/properties/location/properties/id'),
+          ],
+        },
+      ],
+    },
+    {
+      type: 'Group',
+      label: 'Quando',
+      elements: [
+        { type: 'HorizontalLayout', elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')] },
+        ctrl('#/properties/eventStatus'),
+      ],
+    },
+    {
+      type: 'Group',
+      label: 'Pubblico',
+      elements: [
+        {
+          type: 'HorizontalLayout',
+          elements: [
             ctrl('#/properties/eventAttendanceMode'),
-            ctrl('#/properties/eventStatus'),
+            ctrl('#/properties/typicalAgeRange'),
           ],
         },
         {
@@ -187,20 +207,6 @@ export const uischema = {
             ctrl('#/properties/offers/properties/price'),
             ctrl('#/properties/offers/properties/priceCurrency'),
             ctrl('#/properties/offers/properties/url'),
-          ],
-        },
-      ],
-    },
-    {
-      type: 'Group',
-      label: 'Luogo (oggetto annidato)',
-      elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/location/properties/id'),
-            ctrl('#/properties/location/properties/type'),
-            ctrl('#/properties/location/properties/name'),
           ],
         },
       ],
