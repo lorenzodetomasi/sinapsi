@@ -5,11 +5,13 @@ import { schema, uischema } from './schema.js';
 import { fromJsonLd, toJsonLd, sampleJsonLd } from './jsonld-adapter.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
+import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
 
 const renderers = [
   ...vanillaRenderers,
   { tester: xhtmlControlTester, renderer: XhtmlRichTextRenderer },
   { tester: labeledEnumTester, renderer: LabeledEnumRenderer },
+  { tester: imageUploadTester, renderer: ImageUploadRenderer },
 ];
 
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.

@@ -56,8 +56,11 @@ function jsonToWsx(string $jsonString): string {
         $buildXml($item, $node, $parentKey);
 
         if ($isPureReference) {
+            // I riferimenti (@id = "{collection}/{slug}") sono relativi alla radice del
+            // locale; l'entità di partenza sta due livelli sotto (es. events/{slug}/),
+            // quindi l'href XInclude risale di due livelli.
             $xi = $dom->createElement('xi:include');
-            $xi->setAttribute('href', '../' . $item['@id'] . '/index.xml');
+            $xi->setAttribute('href', '../../' . $item['@id'] . '/index.xml');
             $xi->setAttribute('xpointer', 'xpointer(/*[1])');
             $node->appendChild($xi);
         }
@@ -646,4 +649,48 @@ function checkIntegrity(string $direction, string $original, string $converted):
     } catch (\Throwable $e) {
         return ['match' => false, 'diffs' => [$e->getMessage()]];
     }
+}
+
+/**
+ * Upload di un'immagine nella media-sources/ e ritorna il path relativo da salvare
+ * nel campo (es. "media-sources/cover.jpg").
+ *
+ * PoC: sandbox fissa `uploads/media-sources/` accanto al backend (nessun path
+ * fornito dal client → nessun rischio di path traversal). In produzione il target
+ * sarà la media-sources/ della cartella dell'entità in editing, con validazione.
+ */
+function handleUpload(?array $file): array {
+    if (!$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Nessun file valido caricato.'];
+    }
+
+    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowed, true)) {
+        return ['success' => false, 'error' => "Estensione non ammessa: .{$ext} (ammesse: " . implode(', ', $allowed) . ')'];
+    }
+    if (($file['size'] ?? 0) > 10 * 1024 * 1024) {
+        return ['success' => false, 'error' => 'File troppo grande (max 10 MB).'];
+    }
+
+    // Nome sicuro: slug del basename + estensione.
+    $slug = preg_replace('/[^a-zA-Z0-9._-]+/', '-', pathinfo($file['name'], PATHINFO_FILENAME));
+    $slug = trim($slug, '-.') ?: 'file';
+
+    $targetDir = __DIR__ . '/uploads/media-sources';
+    if (!is_dir($targetDir) && !mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
+        return ['success' => false, 'error' => 'Impossibile creare la cartella di upload.'];
+    }
+
+    // Evita sovrascritture aggiungendo un suffisso numerico.
+    $name = $slug . '.' . $ext;
+    for ($i = 1; file_exists($targetDir . '/' . $name); $i++) {
+        $name = $slug . '-' . $i . '.' . $ext;
+    }
+
+    if (!move_uploaded_file($file['tmp_name'], $targetDir . '/' . $name)) {
+        return ['success' => false, 'error' => 'Salvataggio del file fallito.'];
+    }
+
+    return ['success' => true, 'path' => 'media-sources/' . $name];
 }

@@ -30,6 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $type = $_POST['type'] ?? 'json';
                 echo json_encode(['success' => true, 'result' => fixXhtmlDocument($type, $inputData)]);
                 break;
+            case 'upload':
+                echo json_encode(handleUpload($_FILES['file'] ?? null));
+                break;
             default:
                 echo json_encode(['success' => false, 'error' => 'Azione non valida']);
         }

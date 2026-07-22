@@ -109,3 +109,15 @@ button.primary { margin-top: 12px; }
 .banner ul { margin: 8px 0 0; padding-left: 18px; }
 .banner li { margin-bottom: 6px; }
 .banner button.fix { background: #f9e2af; color: #11111b; }
+
+/* Campo immagine con anteprima */
+.image-upload { margin: 4px 0 12px; }
+.image-upload-row { display: flex; gap: 12px; align-items: flex-start; margin-top: 4px; }
+.image-thumb {
+  width: 72px; height: 72px; object-fit: cover;
+  border-radius: 6px; border: 1px solid var(--border); background: var(--editor-bg);
+}
+.image-upload-fields { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.image-upload-fields input[type='file'] { font-size: 12px; color: var(--text); }
+.image-upload .path-field { margin: 0; }
+.image-upload .hint { color: var(--accent); font-size: 12px; }

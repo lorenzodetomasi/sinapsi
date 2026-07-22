@@ -3,3 +3,6 @@
 
 # Contenuti reali con dati personali — NON pubblicare sul repo pubblico
 ws-custom/
+
+# File caricati dal PoC (sandbox di upload)
+ws-admin/json-xml/uploads/
