@@ -147,7 +147,7 @@ export const uischema = {
       type: 'Group',
       label: 'Identità',
       elements: [
-        ctrl('#/properties/types', { options: { icon: 'category', creatable: true, suggestions: EVENT_TYPES } }),
+        ctrl('#/properties/types', { options: { icon: 'category', suggestions: EVENT_TYPES } }),
         { type: 'HorizontalLayout', elements: [ctrl('#/properties/id'), ctrl('#/properties/additionalType')] },
         ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
       ],

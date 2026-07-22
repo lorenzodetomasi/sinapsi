@@ -192,6 +192,7 @@ button.primary { margin-top: 12px; }
 /* Tag input compatti (@type, keywords) */
 .tag-array .tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .tag {
+  position: relative; /* ancora il menu di autocomplete */
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -218,31 +219,17 @@ button.primary { margin-top: 12px; }
 }
 .tag button:hover { background: var(--accent) !important; color: #11111b !important; }
 .tag button .material-symbols-outlined { font-size: 16px; }
-.tag-add {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: var(--control-h); height: var(--control-h); border: 1px dashed var(--border) !important;
-  border-radius: 50%; background: transparent !important; color: var(--gutter-text) !important;
-  cursor: pointer; padding: 0;
-}
-.tag-add:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: transparent !important; }
+/* .tag-add non ha stili propri: usa .icon-btn come tutti gli altri bottoni + */
+
+/* Autocomplete dentro al tag */
+.tag-menu { top: calc(100% + 4px); left: 0; right: auto; min-width: 200px; }
 .tag-add .material-symbols-outlined { font-size: 18px; }
 
 /* Select a valore singolo con ricerca (meetoo:type) */
 .search-select { position: relative; }
 
-/* Selettore creabile con ricerca (@type) */
-.creatable-select { position: relative; margin: 4px 0 12px; }
-/* Nessun box visibile: i tag "galleggiano" come in keywords */
-.cs-box {
-  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
-  background: transparent; border: none; padding: 0; cursor: text;
-}
 /* i tag di @type usano lo stesso stile di quelli di keywords */
-.cs-input {
-  flex: 1; min-width: 120px; height: var(--control-h);
-  background: transparent; border: none; outline: none; color: var(--text);
-  font: inherit; padding: 0 2px; margin: 0;
-}
+
 .cs-menu {
   position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
   margin: 0; padding: 4px; list-style: none;
@@ -255,7 +242,7 @@ button.primary { margin-top: 12px; }
 }
 .cs-menu li:hover { background: var(--accent); color: #11111b; }
 .cs-menu li:hover .material-symbols-outlined { color: #11111b; }
-.cs-menu .cs-create { color: var(--accent); font-weight: 600; }
+
 .cs-menu .material-symbols-outlined { font-size: 16px; }
 
 /* Card ripetibili (organizer, subEvent) */

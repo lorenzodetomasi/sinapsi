@@ -8,7 +8,6 @@ import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.js
 import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
 import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
-import CreatableSelectRenderer, { creatableSelectTester } from './CreatableSelectRenderer.jsx';
 import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer.jsx';
 import { API_BASE } from './config.js';
 
@@ -19,7 +18,6 @@ const renderers = [
   { tester: imageUploadTester, renderer: ImageUploadRenderer },
   { tester: tagArrayTester, renderer: TagArrayRenderer },
   { tester: repeatableObjectTester, renderer: RepeatableObjectRenderer },
-  { tester: creatableSelectTester, renderer: CreatableSelectRenderer },
   { tester: searchSelectTester, renderer: SearchSelectRenderer },
 ];
 
