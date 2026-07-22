@@ -6,12 +6,16 @@ import { fromJsonLd, toJsonLd, sampleJsonLd } from './jsonld-adapter.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
 import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
+import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
+import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
 
 const renderers = [
   ...vanillaRenderers,
   { tester: xhtmlControlTester, renderer: XhtmlRichTextRenderer },
   { tester: labeledEnumTester, renderer: LabeledEnumRenderer },
   { tester: imageUploadTester, renderer: ImageUploadRenderer },
+  { tester: tagArrayTester, renderer: TagArrayRenderer },
+  { tester: repeatableObjectTester, renderer: RepeatableObjectRenderer },
 ];
 
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.

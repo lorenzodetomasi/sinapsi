@@ -16,7 +16,9 @@ export function fromJsonLd(doc) {
     id: doc['@id'] ?? '',
     types: asArray(doc['@type']),
     additionalType: doc.additionalType ?? '',
-    keywords: doc.keywords ?? '',
+    keywords: doc.keywords
+      ? String(doc.keywords).split(',').map((s) => s.trim()).filter(Boolean)
+      : [],
     name: doc.name ?? '',
     description: doc.description ?? '',
     image: doc.image ?? '',
@@ -78,7 +80,7 @@ export function toJsonLd(d) {
     '@id': d.id ?? '',
     '@type': types,
     additionalType: d.additionalType ?? '',
-    keywords: d.keywords ?? '',
+    keywords: Array.isArray(d.keywords) ? d.keywords.filter(Boolean).join(', ') : (d.keywords ?? ''),
     name: d.name ?? '',
     description: d.description ?? '',
     image: d.image ?? '',

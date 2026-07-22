@@ -28,7 +28,7 @@ export const schema = {
     id: { type: 'string', title: '@id' },
     types: { type: 'array', title: 'Tipi (@type)', items: { type: 'string' } },
     additionalType: { type: 'string', title: 'additionalType' },
-    keywords: { type: 'string', title: 'Keywords' },
+    keywords: { type: 'array', title: 'Keywords', items: { type: 'string' } },
     name: { type: 'string', title: 'Nome evento' },
     description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
     image: { type: 'string', title: 'Immagine', format: 'image' },
@@ -116,7 +116,7 @@ export const uischema = {
       label: 'Identità',
       elements: [
         { type: 'HorizontalLayout', elements: [ctrl('#/properties/id'), ctrl('#/properties/additionalType')] },
-        ctrl('#/properties/types'),
+        ctrl('#/properties/types', { options: { icon: 'category' } }),
       ],
     },
     {
@@ -124,9 +124,15 @@ export const uischema = {
       label: 'Contenuto',
       elements: [
         ctrl('#/properties/name'),
-        ctrl('#/properties/keywords', { options: { multi: true } }),
-        ctrl('#/properties/description'),
-        { type: 'HorizontalLayout', elements: [ctrl('#/properties/image'), ctrl('#/properties/logo')] },
+        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
+        ctrl('#/properties/description', { options: { icon: 'description' } }),
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            ctrl('#/properties/image', { options: { icon: 'image' } }),
+            ctrl('#/properties/logo', { options: { icon: 'branding_watermark' } }),
+          ],
+        },
       ],
     },
     {
@@ -183,17 +189,28 @@ export const uischema = {
         },
       ],
     },
-    ctrl('#/properties/organizer', { label: 'Organizzatori (fieldset ripetibile)' }),
-    ctrl('#/properties/subEvent', { label: 'Sotto-eventi (fieldset ripetibile con XHTML)' }),
+    ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
+    ctrl('#/properties/subEvent', { label: 'Sotto-eventi', options: { icon: 'event', variant: 'stack' } }),
     {
       type: 'Group',
-      label: 'Valutazione & Meetoo',
+      label: 'Valutazione',
       elements: [
         {
           type: 'HorizontalLayout',
           elements: [
             ctrl('#/properties/aggregateRating/properties/ratingValue'),
             ctrl('#/properties/aggregateRating/properties/bestRating'),
+          ],
+        },
+      ],
+    },
+    {
+      type: 'Group',
+      label: 'Meetoo',
+      elements: [
+        {
+          type: 'HorizontalLayout',
+          elements: [
             ctrl('#/properties/meetoo/properties/type'),
             ctrl('#/properties/meetoo/properties/macrocategory'),
           ],

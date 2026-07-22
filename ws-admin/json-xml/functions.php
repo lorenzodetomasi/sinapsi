@@ -664,7 +664,7 @@ function handleUpload(?array $file): array {
         return ['success' => false, 'error' => 'Nessun file valido caricato.'];
     }
 
-    $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    $allowed = ['jpg', 'jpeg', 'png', 'svg'];
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $allowed, true)) {
         return ['success' => false, 'error' => "Estensione non ammessa: .{$ext} (ammesse: " . implode(', ', $allowed) . ')'];

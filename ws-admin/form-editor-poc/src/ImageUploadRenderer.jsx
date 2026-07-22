@@ -2,20 +2,25 @@ import { useState } from 'react';
 import { rankWith, and, isStringControl, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 
-// Campo immagine: file picker + anteprima; carica in media-sources/ (endpoint PHP)
-// e salva nel campo il path relativo restituito (es. "media-sources/cover.jpg").
-// Il path resta editabile a mano (accetta anche un URL assoluto).
-const ImageUpload = ({ data, handleChange, path, label, id, enabled }) => {
+const ACCEPT = ['image/jpeg', 'image/png', 'image/svg+xml'];
+const ACCEPT_ATTR = '.jpg,.jpeg,.png,.svg';
+
+// Campo immagine: anteprima + area drag&drop + path editabile. Carica in
+// media-sources/ (endpoint PHP) e salva il path relativo restituito.
+const ImageUpload = ({ data, handleChange, path, label, id, uischema, enabled }) => {
   const [preview, setPreview] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [drag, setDrag] = useState(false);
+  const icon = uischema?.options?.icon || 'image';
 
-  async function onFile(e) {
-    const file = e.target.files?.[0];
+  async function upload(file) {
     if (!file) return;
     setError('');
-
-    // Anteprima immediata lato client (data URL).
+    if (file.type && !ACCEPT.includes(file.type)) {
+      setError('Formato non supportato. Ammessi: JPG, JPEG, PNG, SVG.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result);
     reader.readAsDataURL(file);
@@ -30,41 +35,66 @@ const ImageUpload = ({ data, handleChange, path, label, id, enabled }) => {
       if (out.success) handleChange(path, out.path);
       else setError(out.error || 'Upload fallito');
     } catch {
-      setError('Convertitore PHP non raggiungibile su :8080 (avvia `php -S localhost:8080` in json-xml/).');
+      setError('Convertitore PHP non raggiungibile su :8080.');
     } finally {
       setBusy(false);
     }
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    setDrag(false);
+    upload(e.dataTransfer.files?.[0]);
   }
 
   const src = preview || data;
 
   return (
     <div className="control image-upload">
-      <label htmlFor={id}>{label}</label>
+      <label className="field-label" htmlFor={id}>
+        <span className="material-symbols-outlined">{icon}</span>
+        {label}
+      </label>
       <div className="image-upload-row">
-        {src && (
-          <img
-            className="image-thumb"
-            src={src}
-            alt=""
-            onError={(e) => {
-              e.currentTarget.style.visibility = 'hidden';
-            }}
-          />
-        )}
-        <div className="image-upload-fields">
-          <input id={id} type="file" accept="image/*" disabled={enabled === false || busy} onChange={onFile} />
-          <input
-            className="path-field"
-            type="text"
-            value={data ?? ''}
-            placeholder="media-sources/… oppure URL"
-            onChange={(e) => handleChange(path, e.target.value)}
-          />
-          {busy && <span className="hint">caricamento…</span>}
-          {error && <span className="err">{error}</span>}
+        <div className="image-thumb-box">
+          {src ? (
+            <img className="image-thumb" src={src} alt="" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+          ) : (
+            <span className="material-symbols-outlined image-thumb-empty">add_photo_alternate</span>
+          )}
         </div>
+
+        <label
+          className={'dropzone' + (drag ? ' drag' : '') + (busy ? ' busy' : '')}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={onDrop}
+        >
+          <input
+            id={id}
+            type="file"
+            accept={ACCEPT_ATTR}
+            hidden
+            disabled={enabled === false || busy}
+            onChange={(e) => upload(e.target.files?.[0])}
+          />
+          <span className="material-symbols-outlined">upload</span>
+          <span className="dz-text">{busy ? 'Caricamento…' : 'Trascina qui o clicca'}</span>
+          <span className="dz-formats">JPG · JPEG · PNG · SVG</span>
+        </label>
       </div>
+
+      <input
+        className="path-field"
+        type="text"
+        value={data ?? ''}
+        placeholder="media-sources/… oppure URL"
+        onChange={(e) => handleChange(path, e.target.value)}
+      />
+      {error && <span className="err">{error}</span>}
     </div>
   );
 };
