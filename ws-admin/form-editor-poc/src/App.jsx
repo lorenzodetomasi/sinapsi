@@ -8,6 +8,7 @@ import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.js
 import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
 import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
+import CreatableSelectRenderer, { creatableSelectTester } from './CreatableSelectRenderer.jsx';
 import { API_BASE } from './config.js';
 
 const renderers = [
@@ -17,6 +18,7 @@ const renderers = [
   { tester: imageUploadTester, renderer: ImageUploadRenderer },
   { tester: tagArrayTester, renderer: TagArrayRenderer },
   { tester: repeatableObjectTester, renderer: RepeatableObjectRenderer },
+  { tester: creatableSelectTester, renderer: CreatableSelectRenderer },
 ];
 
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.
@@ -32,6 +34,7 @@ async function api(action, fields = {}) {
 
 export default function App() {
   const [data, setData] = useState(() => fromJsonLd(sampleJsonLd));
+  const [tab, setTab] = useState('form');
   const [validation, setValidation] = useState({ status: 'idle', errors: [] });
   const [xml, setXml] = useState('');
   const [xmlError, setXmlError] = useState('');
@@ -79,21 +82,31 @@ export default function App() {
   const hasFixable = validation.errors.some((e) => e.fixable);
 
   return (
-    <div className="layout">
-      <section className="pane">
-        <h2>Form (JSON Forms, schema-driven)</h2>
-        <JsonForms
-          schema={schema}
-          uischema={uischema}
-          data={data}
-          renderers={renderers}
-          cells={vanillaCells}
-          onChange={({ data }) => setData(data)}
-        />
-      </section>
+    <div className={'app tab-' + tab}>
+      <div className="tabs">
+        <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
+          <span className="material-symbols-outlined">edit_document</span> Form
+        </button>
+        <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
+          <span className="material-symbols-outlined">fact_check</span> Validazione
+        </button>
+      </div>
 
-      <section className="pane">
-        <h2>Validazione live <small>(validate_json)</small></h2>
+      <div className="layout">
+        <section className="pane pane-form">
+          <h2>Form (JSON Forms, schema-driven)</h2>
+          <JsonForms
+            schema={schema}
+            uischema={uischema}
+            data={data}
+            renderers={renderers}
+            cells={vanillaCells}
+            onChange={({ data }) => setData(data)}
+          />
+        </section>
+
+        <section className="pane pane-validation">
+          <h2>Validazione live <small>(validate_json)</small></h2>
         <ValidationBanner validation={validation} onFix={fixXhtml} hasFixable={hasFixable} />
 
         <h2>JSON-LD generato <small>(via adapter)</small></h2>
@@ -107,7 +120,8 @@ export default function App() {
             <pre className="output">{xml}</pre>
           </>
         )}
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

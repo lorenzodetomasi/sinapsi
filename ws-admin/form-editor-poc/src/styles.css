@@ -43,6 +43,24 @@ body {
   align-items: start;
 }
 
+/* Tab (mostrati solo sotto i 1000px) */
+.tabs { display: none; }
+.tabs button {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-bottom: none;
+  border-radius: 8px 8px 0 0; padding: 8px 14px; font-weight: 600; cursor: pointer;
+}
+.tabs button.active { background: var(--accent); color: #11111b; border-color: var(--accent); }
+.tabs .material-symbols-outlined { font-size: 18px; }
+
+@media (max-width: 999px) {
+  .layout { grid-template-columns: 1fr; padding-top: 0; }
+  .tabs { display: flex; gap: 6px; padding: 16px 20px 0; }
+  .tab-form .pane-validation { display: none; }
+  .tab-validation .pane-form { display: none; }
+}
+
 .pane {
   background: var(--surface);
   border-radius: 8px;
@@ -154,6 +172,33 @@ button.primary { margin-top: 12px; }
   cursor: pointer; padding: 0;
 }
 .tag-add .material-symbols-outlined { font-size: 18px; }
+
+/* Selettore creabile con ricerca (@type) */
+.creatable-select { position: relative; margin: 4px 0 12px; }
+.cs-box {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  background: var(--editor-bg); border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 8px; cursor: text;
+}
+.cs-box .tag { background: var(--surface); }
+.cs-input {
+  flex: 1; min-width: 120px;
+  background: transparent; border: none; outline: none; color: var(--text);
+  font: inherit; font-size: 13px; padding: 4px 2px; margin: 0;
+}
+.cs-menu {
+  position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 4px);
+  margin: 0; padding: 4px; list-style: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  max-height: 240px; overflow: auto; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+.cs-menu li {
+  padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; gap: 6px;
+}
+.cs-menu li:hover { background: var(--editor-bg); }
+.cs-menu .cs-create { color: var(--accent); font-weight: 600; }
+.cs-menu .material-symbols-outlined { font-size: 16px; }
 
 /* Card ripetibili (organizer, subEvent) */
 .repeat-object { margin: 6px 0 14px; }

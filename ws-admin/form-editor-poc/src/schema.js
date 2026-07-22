@@ -106,6 +106,14 @@ export const schema = {
   required: ['name'],
 };
 
+// Sottotipi di Event di schema.org (suggerimenti ricercabili; @type resta creatable).
+const EVENT_TYPES = [
+  'Event', 'BusinessEvent', 'ChildrensEvent', 'ComedyEvent', 'CourseInstance', 'DanceEvent',
+  'DeliveryEvent', 'EducationEvent', 'ExhibitionEvent', 'Festival', 'FoodEvent', 'Hackathon',
+  'LiteraryEvent', 'MusicEvent', 'PublicationEvent', 'SaleEvent', 'ScreeningEvent', 'SocialEvent',
+  'SportsEvent', 'TheaterEvent', 'VisualArtsEvent',
+];
+
 const ctrl = (scope, extra = {}) => ({ type: 'Control', scope, ...extra });
 
 export const uischema = {
@@ -116,7 +124,7 @@ export const uischema = {
       label: 'Identità',
       elements: [
         { type: 'HorizontalLayout', elements: [ctrl('#/properties/id'), ctrl('#/properties/additionalType')] },
-        ctrl('#/properties/types', { options: { icon: 'category' } }),
+        ctrl('#/properties/types', { options: { icon: 'category', creatable: true, suggestions: EVENT_TYPES } }),
       ],
     },
     {
