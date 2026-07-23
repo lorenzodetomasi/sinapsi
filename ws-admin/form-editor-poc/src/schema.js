@@ -139,16 +139,16 @@ export const uischema = {
               options: { searchable: true, suggestions: MEETOO_TYPES },
             }),
             ctrl('#/properties/meetoo/properties/macrocategory'),
-          ],
+            ctrl('#/properties/id'),           ],
         },
       ],
     },
     {
       type: 'Group',
-      label: 'Identità',
+      label: 'Classificazione',
       elements: [
         ctrl('#/properties/types', { options: { icon: 'category', suggestions: EVENT_TYPES } }),
-        { type: 'HorizontalLayout', elements: [ctrl('#/properties/id'), ctrl('#/properties/additionalType')] },
+        ctrl('#/properties/additionalType'),
         ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
       ],
     },
@@ -236,7 +236,7 @@ export const uischema = {
       ],
     },
     ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
-    ctrl('#/properties/subEvent', { label: 'Sotto-eventi', options: { icon: 'event', variant: 'stack' } }),
+    ctrl('#/properties/subEvent', { label: 'Programma dell’evento', options: { icon: 'event', variant: 'stack' } }),
     {
       type: 'Group',
       label: 'Valutazione',

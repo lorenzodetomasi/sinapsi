@@ -20,7 +20,9 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
   // Riordino via drag & drop. Il trascinamento parte SOLO dalla maniglia:
   // così scrivere/selezionare testo dentro al tag continua a funzionare.
   const [dragIndex, setDragIndex] = useState(null);
-  const [overIndex, setOverIndex] = useState(null);
+  // Posizione di INSERIMENTO (0..items.length), non l'indice del tag sorvolato:
+  // così la linea azzurra indica lo spazio in cui il tag verrà inserito.
+  const [insertAt, setInsertAt] = useState(null);
   const handleGrabbed = useRef(false);
 
   useEffect(() => {
@@ -54,16 +56,18 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
     update([...items, '']);
   };
 
+  // `to` è una posizione di inserimento: va corretta se l'elemento rimosso
+  // stava prima del punto di inserimento.
   const moveTag = (from, to) => {
-    if (from === null || to === null || from === to) return;
+    if (from === null || to === null) return;
     const next = [...items];
     const [moved] = next.splice(from, 1);
-    next.splice(to, 0, moved);
+    next.splice(to > from ? to - 1 : to, 0, moved);
     update(next);
   };
   const endDrag = () => {
     setDragIndex(null);
-    setOverIndex(null);
+    setInsertAt(null);
     handleGrabbed.current = false;
   };
 
@@ -88,7 +92,8 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
           const options = openIndex === i ? optionsFor(i) : [];
           const classes = ['tag'];
           if (dragIndex === i) classes.push('dragging');
-          if (overIndex === i && dragIndex !== i) classes.push('drop-target');
+          if (insertAt === i) classes.push('insert-before');
+          if (insertAt === items.length && i === items.length - 1) classes.push('insert-after');
 
           return (
             <span
@@ -109,12 +114,13 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
                 if (dragIndex === null) return;
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
-                setOverIndex(i);
+                // metà sinistra → inserisci prima, metà destra → inserisci dopo
+                const box = e.currentTarget.getBoundingClientRect();
+                setInsertAt(e.clientX < box.left + box.width / 2 ? i : i + 1);
               }}
-              onDragLeave={() => setOverIndex((v) => (v === i ? null : v))}
               onDrop={(e) => {
                 e.preventDefault();
-                moveTag(dragIndex, i);
+                moveTag(dragIndex, insertAt);
                 endDrag();
               }}
               onDragEnd={endDrag}

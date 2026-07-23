@@ -9,6 +9,7 @@ import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.js
 import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
 import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer.jsx';
+import JsonValidationPane from './JsonValidationPane.jsx';
 import { API_BASE } from './config.js';
 
 const renderers = [
@@ -43,18 +44,22 @@ export default function App() {
   const jsonld = useMemo(() => toJsonLd(data), [data]);
   const payload = useMemo(() => JSON.stringify(jsonld, null, 2), [jsonld]);
 
-  // Validazione live (debounced) sul JSON-LD generato, riusando validate_json.
-  useEffect(() => {
+  // Validazione del JSON-LD generato, riusando validate_json del backend PHP.
+  async function runValidation(current) {
     const id = ++seq.current;
-    const t = setTimeout(async () => {
-      try {
-        const out = await api('validate_json', { payload });
-        if (id !== seq.current) return; // scarta risposte obsolete
-        setValidation(out.valid ? { status: 'valid', errors: [] } : { status: 'invalid', errors: out.errors || [] });
-      } catch {
-        if (id === seq.current) setValidation({ status: 'unreachable', errors: [] });
-      }
-    }, 500);
+    try {
+      const out = await api('validate_json', { payload: current });
+      if (id !== seq.current) return; // scarta risposte obsolete
+      setValidation(out.valid ? { status: 'valid', errors: [] } : { status: 'invalid', errors: out.errors || [] });
+    } catch {
+      if (id === seq.current) setValidation({ status: 'unreachable', errors: [] });
+    }
+  }
+  const revalidate = () => runValidation(payload);
+
+  // Live, con debounce, a ogni modifica del form.
+  useEffect(() => {
+    const t = setTimeout(() => runValidation(payload), 500);
     return () => clearTimeout(t);
   }, [payload]);
 
@@ -79,7 +84,6 @@ export default function App() {
     }
   }
 
-  const hasFixable = validation.errors.some((e) => e.fixable);
 
   // Porta nel campo Keywords i name di organizer e luogo quando il campo che li
   // contiene perde il focus (evita di aggiungere i frammenti digitati a metà).
@@ -128,48 +132,19 @@ export default function App() {
         </section>
 
         <section className="pane pane-validation">
-          <h2>Validazione live <small>(validate_json)</small></h2>
-        <ValidationBanner validation={validation} onFix={fixXhtml} hasFixable={hasFixable} />
-
-        <h2>JSON-LD generato <small>(via adapter)</small></h2>
-        <pre className="output">{payload}</pre>
-
-        <button className="primary" onClick={generateXml}>Genera XML (CDATA) →</button>
-        {xmlError && <p className="err">{xmlError}</p>}
-        {xml && (
-          <>
-            <h2>XML (dal convertitore PHP)</h2>
-            <pre className="output">{xml}</pre>
-          </>
-        )}
+          <h2>Validazione <small>(validate_json)</small></h2>
+          <JsonValidationPane
+            payload={payload}
+            validation={validation}
+            onRevalidate={revalidate}
+            onFix={fixXhtml}
+            onGenerateXml={generateXml}
+            xml={xml}
+            xmlError={xmlError}
+          />
         </section>
       </div>
     </div>
   );
 }
 
-function ValidationBanner({ validation, onFix, hasFixable }) {
-  const { status, errors } = validation;
-  if (status === 'valid') return <div className="banner ok">✓ JSON-LD valido</div>;
-  if (status === 'unreachable')
-    return (
-      <div className="banner warn">
-        Validatore PHP non raggiungibile — avvia <code>php -S localhost:8080</code> in <code>json-xml/</code>.
-      </div>
-    );
-  if (status === 'invalid')
-    return (
-      <div className="banner bad">
-        <div className="banner-head">
-          ✗ {errors.length} problema/i rilevato/i
-          {hasFixable && <button className="fix" onClick={onFix}>Correggi XHTML</button>}
-        </div>
-        <ul>
-          {errors.map((e, i) => (
-            <li key={i} dangerouslySetInnerHTML={{ __html: e.message }} />
-          ))}
-        </ul>
-      </div>
-    );
-  return <div className="banner">…</div>;
-}
