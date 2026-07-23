@@ -106,6 +106,21 @@ export default function App() {
   }
 
 
+  // L'icona nativa del datetime è soppressa via CSS per poterla ridisegnare del
+  // colore giusto, ma così perde anche il click che apriva il calendario:
+  // lo riapriamo noi quando si clicca nella zona dell'icona (a destra nel campo).
+  const ICON_ZONE = 40; // px riservati dal padding-right
+  function openDatePicker(e) {
+    const input = e.target;
+    if (!(input instanceof HTMLInputElement) || input.type !== 'datetime-local') return;
+    if (e.clientX < input.getBoundingClientRect().right - ICON_ZONE) return;
+    try {
+      input.showPicker?.();
+    } catch {
+      /* showPicker non disponibile: resta l'input testuale */
+    }
+  }
+
   // Porta nel campo Keywords i name di organizer e luogo quando il campo che li
   // contiene perde il focus (evita di aggiungere i frammenti digitati a metà).
   // Va invocata anche dopo una compilazione automatica (es. Google Places).
@@ -145,7 +160,7 @@ export default function App() {
       </div>
 
       <div className="layout">
-        <section className="pane pane-form" onBlur={syncKeywords}>
+        <section className="pane pane-form" onBlur={syncKeywords} onClick={openDatePicker}>
           <h2>Form (JSON Forms, schema-driven)</h2>
           <JsonForms
             schema={schema}
