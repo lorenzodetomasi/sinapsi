@@ -44,7 +44,8 @@
   --control-h: 2.25rem;
   --checkbox-size: 1.25rem;
   --rail-w: 1.75rem;
-  --gutter-w: 1.5rem;        /* colonna delle icone di sezione */
+  --gutter-w: 1.25rem;       /* colonna delle icone di sezione */
+  --label-gap: 0.5rem;       /* aria sotto le etichette (ridotta in compatta) */
 
   --fs-sm: 0.75rem;
   --fs-label: 0.875rem;
@@ -68,6 +69,7 @@
 /* Densità compatta: stringe spaziature e controlli */
 :root[data-density='compact'] {
   --control-h: 2rem;
+  --label-gap: 0.25rem;
   --sp-md: 0.5rem;
   --sp-lg: 0.75rem;
   --sp-xl: 1rem;
@@ -98,7 +100,9 @@ body {
   display: flex; align-items: flex-end; gap: var(--sp-md);
   padding: var(--sp-lg) var(--sp-xl) 0;
 }
-.toolbar { display: flex; align-items: center; gap: var(--sp-xs); padding-bottom: var(--sp-xs); }
+/* allineata a destra, i tab restano a sinistra */
+.toolbar { display: flex; align-items: center; gap: var(--sp-xs); margin-left: auto; padding-bottom: var(--sp-xs); }
+.options-menu { left: auto; right: 0; }
 
 .tabs { display: none; }
 .tabs button {
@@ -137,18 +141,23 @@ h2 { margin: 0 0 var(--sp-lg); font-size: var(--fs-title); font-weight: 600; }
 h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label); }
 
 /* ---------- Sezioni con gutter di icone ---------- */
-.group { display: flex; gap: var(--sp-lg); padding: var(--sp-lg) 0; }
-.group + .group { border-top: 1px solid var(--border); }
+.group {
+  display: flex; gap: var(--sp-md); padding: var(--sp-lg) 0;
+  /* linea sottile e leggera a inizio di ogni sezione */
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+/* Icona centrata sulla riga del titolo (stessa altezza di linea) */
 .group-icon {
   flex: none; width: var(--gutter-w);
-  display: flex; justify-content: center; padding-top: 0.125rem;
+  height: calc(var(--fs-label) * 1.5);
+  display: flex; align-items: center; justify-content: center;
   color: var(--text-dim);
 }
-.group-icon .material-symbols-outlined { font-size: 1.25rem; }
+.group-icon .material-symbols-outlined { font-size: 1.125rem; }
 .group-content { flex: 1; min-width: 0; }
 .group-title {
   margin: 0 0 var(--sp-md);
-  font-size: var(--fs-label); font-weight: 600;
+  font-size: var(--fs-label); font-weight: 600; line-height: 1.5;
   color: var(--text); letter-spacing: 0.01em;
 }
 .group-body > * + * { margin-top: var(--sp-sm); }
@@ -174,7 +183,7 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   width: 100%;
   height: var(--control-h);
   padding: 0 var(--sp-md);
-  margin: var(--sp-xs) 0 var(--sp-md);
+  margin: var(--label-gap) 0 var(--sp-md);
   background: var(--field-bg);
   color: var(--text);
   border: 1px solid transparent;
@@ -187,7 +196,7 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--accent) 25%, transparent);
 }
-.pane .rf input, .pane .rf select { margin: var(--sp-xs) 0 0; }
+.pane .rf input, .pane .rf select { margin: var(--label-gap) 0 0; }
 .pane label { font-size: var(--fs-label); font-weight: 500; color: var(--text-dim); }
 
 /* Checkbox compatto */
@@ -265,7 +274,7 @@ button.primary { margin-top: var(--sp-md); }
 .options-choice .material-symbols-outlined { font-size: 1.125rem; }
 
 /* ---------- Tag ---------- */
-.tag-array .tags { display: flex; flex-wrap: wrap; gap: var(--sp-xs); align-items: center; margin-top: var(--sp-xs); }
+.tag-array .tags { display: flex; flex-wrap: wrap; gap: var(--sp-xs); align-items: center; margin-top: var(--label-gap); }
 .tag {
   position: relative; display: inline-flex; align-items: center; gap: 0.125em;
   height: var(--control-h);
@@ -386,7 +395,7 @@ button.primary { margin-top: var(--sp-md); }
 .insert-gap:hover button, .insert-gap button:focus-visible { opacity: 1; transform: scale(1); }
 
 /* ---------- Editor XHTML ---------- */
-.xhtml-control { margin: var(--sp-xs) 0 var(--sp-md); }
+.xhtml-control { margin: var(--label-gap) 0 var(--sp-md); }
 .xhtml-toolbar {
   display: flex; gap: var(--sp-xs); overflow: hidden;
   max-height: 0; margin: 0; opacity: 0; transform: translateY(-0.375rem);
@@ -419,7 +428,7 @@ button.primary { margin-top: var(--sp-md); }
 
 /* ---------- Immagini ---------- */
 .image-upload { margin: var(--sp-xs) 0 var(--sp-md); }
-.image-upload-row { display: flex; gap: var(--sp-md); align-items: stretch; margin: var(--sp-xs) 0; }
+.image-upload-row { display: flex; gap: var(--sp-md); align-items: stretch; margin: var(--label-gap) 0 0; }
 .image-thumb-box {
   width: 5.5rem; height: 5.5rem; flex: none;
   border-radius: var(--r-md); border: 1px solid var(--border); background: var(--field-bg);

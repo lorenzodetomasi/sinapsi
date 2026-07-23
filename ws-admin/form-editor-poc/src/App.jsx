@@ -131,9 +131,6 @@ export default function App() {
   return (
     <div className={'app tab-' + tab}>
       <div className="topbar">
-        <div className="toolbar">
-          <OptionsMenu theme={theme} onTheme={setTheme} density={density} onDensity={setDensity} />
-        </div>
         <div className="tabs">
           <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
             <span className="material-symbols-outlined">edit_document</span> Form
@@ -141,6 +138,9 @@ export default function App() {
           <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
             <span className="material-symbols-outlined">fact_check</span> Validazione
           </button>
+        </div>
+        <div className="toolbar">
+          <OptionsMenu theme={theme} onTheme={setTheme} density={density} onDensity={setDensity} />
         </div>
       </div>
 
