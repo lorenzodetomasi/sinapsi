@@ -130,14 +130,6 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema })
                 onDragEnd={endDrag}
               >
                 <div className="card-rail">
-                  <span
-                    className="card-handle"
-                    title="Trascina per riordinare"
-                    onMouseDown={() => (handleGrabbed.current = true)}
-                    onMouseUp={() => (handleGrabbed.current = false)}
-                  >
-                    <span className="material-symbols-outlined">drag_indicator</span>
-                  </span>
                   <button
                     type="button"
                     className="icon-btn card-remove"
@@ -146,6 +138,14 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema })
                   >
                     <span className="material-symbols-outlined">close</span>
                   </button>
+                  <span
+                    className="card-handle"
+                    title="Trascina per riordinare"
+                    onMouseDown={() => (handleGrabbed.current = true)}
+                    onMouseUp={() => (handleGrabbed.current = false)}
+                  >
+                    <span className="material-symbols-outlined">drag_indicator</span>
+                  </span>
                 </div>
 
                 <div className="card-fields">
