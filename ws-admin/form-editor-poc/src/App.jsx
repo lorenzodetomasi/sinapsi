@@ -10,10 +10,13 @@ import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
 import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
+import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
+import OptionsMenu from './OptionsMenu.jsx';
 import { API_BASE } from './config.js';
 
 const renderers = [
   ...vanillaRenderers,
+  { tester: groupTester, renderer: GroupRenderer },
   { tester: xhtmlControlTester, renderer: XhtmlRichTextRenderer },
   { tester: labeledEnumTester, renderer: LabeledEnumRenderer },
   { tester: imageUploadTester, renderer: ImageUploadRenderer },
@@ -36,6 +39,24 @@ async function api(action, fields = {}) {
 export default function App() {
   const [data, setData] = useState(() => fromJsonLd(sampleJsonLd));
   const [tab, setTab] = useState('form');
+
+  // Tema: alla prima apertura segue il sistema, poi vale la scelta memorizzata.
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved;
+    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+  const [density, setDensity] = useState(() => localStorage.getItem('density') || 'comfortable');
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+  useEffect(() => {
+    document.documentElement.dataset.density = density;
+    localStorage.setItem('density', density);
+  }, [density]);
+
   const [validation, setValidation] = useState({ status: 'idle', errors: [] });
   const [xml, setXml] = useState('');
   const [xmlError, setXmlError] = useState('');
@@ -109,13 +130,18 @@ export default function App() {
 
   return (
     <div className={'app tab-' + tab}>
-      <div className="tabs">
-        <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
-          <span className="material-symbols-outlined">edit_document</span> Form
-        </button>
-        <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
-          <span className="material-symbols-outlined">fact_check</span> Validazione
-        </button>
+      <div className="topbar">
+        <div className="toolbar">
+          <OptionsMenu theme={theme} onTheme={setTheme} density={density} onDensity={setDensity} />
+        </div>
+        <div className="tabs">
+          <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
+            <span className="material-symbols-outlined">edit_document</span> Form
+          </button>
+          <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
+            <span className="material-symbols-outlined">fact_check</span> Validazione
+          </button>
+        </div>
       </div>
 
       <div className="layout">

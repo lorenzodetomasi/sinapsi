@@ -131,6 +131,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Meetoo',
+      options: { icon: 'hub' },
       elements: [
         {
           type: 'HorizontalLayout',
@@ -146,6 +147,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Classificazione',
+      options: { icon: 'category' },
       elements: [
         ctrl('#/properties/types', { options: { icon: 'category', suggestions: EVENT_TYPES } }),
         ctrl('#/properties/additionalType'),
@@ -155,6 +157,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Contenuto',
+      options: { icon: 'article' },
       elements: [
         ctrl('#/properties/name'),
         ctrl('#/properties/description', { options: { icon: 'description' } }),
@@ -170,6 +173,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Dove',
+      options: { icon: 'place' },
       elements: [
         {
           type: 'HorizontalLayout',
@@ -184,6 +188,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Quando',
+      options: { icon: 'schedule' },
       elements: [
         { type: 'HorizontalLayout', elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')] },
         ctrl('#/properties/eventStatus'),
@@ -192,6 +197,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Pubblico',
+      options: { icon: 'people' },
       elements: [
         {
           type: 'HorizontalLayout',
@@ -215,6 +221,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Offerta',
+      options: { icon: 'payments' },
       // CONDIZIONE: mostra la sezione solo se l'evento NON è gratuito.
       rule: {
         effect: 'SHOW',
@@ -240,6 +247,7 @@ export const uischema = {
     {
       type: 'Group',
       label: 'Valutazione',
+      options: { icon: 'star' },
       elements: [
         {
           type: 'HorizontalLayout',
