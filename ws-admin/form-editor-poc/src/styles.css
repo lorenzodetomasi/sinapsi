@@ -2,30 +2,49 @@
    Temi: dark di default, light su [data-theme='light'].
    Alla prima apertura App.jsx segue prefers-color-scheme.
    ============================================================ */
+/* ------------------------------------------------------------
+   GERARCHIA DEI GRIGI — tre regole, valide in entrambi i temi:
+
+   1. ELEVAZIONE. Ogni livello che "sale" verso l'utente si schiarisce
+      nel tema scuro e resta bianco/quasi bianco nel tema chiaro:
+        --bg        livello 0  sfondo pagina
+        --surface   livello 1  pannelli
+        --surface-2 livello 2  elementi sollevati su un pannello (card, menu)
+
+   2. INCAVI. I campi di input sono "scavati", non sollevati: --field-bg è
+      SEMPRE più scuro (più contrastato) del contenitore, qualunque esso sia.
+      Un solo valore basta perché è più scuro sia di --surface sia di
+      --surface-2: così un campo resta visibile anche dentro una card.
+
+   3. BORDI E TESTO. --border separa senza pesare (mai usato come sfondo);
+      --text per il contenuto, --text-dim per etichette e metadati.
+   ------------------------------------------------------------ */
 :root,
 :root[data-theme='dark'] {
-  --bg: #16161e;
-  --surface: #1e1e2a;
-  --surface-2: #262634;      /* superficie sollevata (menu, campi) */
-  --field-bg: #262634;
+  color-scheme: dark;        /* controlli nativi (date picker, scrollbar) in scuro */
+  --bg: #121218;
+  --surface: #1c1c26;
+  --surface-2: #282833;
+  --field-bg: #101017;
   --text: #e6e8f0;
   --text-dim: #9aa0b4;
   --accent: #89b4fa;
-  --on-accent: #11111b;      /* testo sopra l'accento */
+  --on-accent: #11111b;
   --danger: #f38ba8;
   --success: #a6e3a1;
   --warning: #f9e2af;
-  --border: #343446;
-  --code-bg: #11111b;
-  --code-chrome: #1a1a24;
-  --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.45);
+  --border: #33333f;
+  --code-bg: #0c0c12;
+  --code-chrome: #16161d;
+  --shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.5);
 }
 
 :root[data-theme='light'] {
-  --bg: #f6f8fc;
+  color-scheme: light;
+  --bg: #f1f3f6;
   --surface: #ffffff;
-  --surface-2: #f1f3f4;
-  --field-bg: #f1f3f4;
+  --surface-2: #f6f7f9;
+  --field-bg: #e9ecf0;
   --text: #1f1f1f;
   --text-dim: #5f6368;
   --accent: #0b57d0;
@@ -46,6 +65,8 @@
   --rail-w: 1.75rem;
   --gutter-w: 1.25rem;       /* colonna delle icone di sezione */
   --label-gap: 0.5rem;       /* aria sotto le etichette (ridotta in compatta) */
+  --field-pad-x: 0.75rem;    /* padding orizzontale dei campi */
+  --label-indent: var(--field-pad-x); /* allinea l'etichetta al testo del campo */
 
   --fs-sm: 0.75rem;
   --fs-label: 0.875rem;
@@ -163,11 +184,17 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .group-body > * + * { margin-top: var(--sp-sm); }
 
 /* ---------- Etichette ---------- */
+/* L'etichetta parte dove parte il testo del campo (stesso padding orizzontale) */
 .field-label {
   display: inline-flex; align-items: center; gap: var(--sp-xs);
   font-size: var(--fs-label); font-weight: 500;
-  margin-bottom: 0; color: var(--text-dim);
+  margin-bottom: 0; margin-left: var(--label-indent);
+  color: var(--text-dim);
 }
+/* Intestazioni e label affiancate non vanno indentate */
+.repeat-head .field-label,
+.group-title,
+.pane .control:has(> input[type='checkbox']) > label { margin-left: 0; }
 .field-label .material-symbols-outlined { font-size: 1.125rem; color: inherit; }
 
 .horizontal-layout { display: flex; gap: var(--sp-md); align-items: flex-start; }
@@ -182,7 +209,7 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .path-field {
   width: 100%;
   height: var(--control-h);
-  padding: 0 var(--sp-md);
+  padding: 0 var(--field-pad-x);
   margin: var(--label-gap) 0 var(--sp-md);
   background: var(--field-bg);
   color: var(--text);
@@ -191,13 +218,20 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   font: inherit;
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
-.pane input:hover, .pane select:hover { border-color: var(--border); }
+.pane input:hover, .pane select:hover, .pane textarea:hover { border-color: var(--border); }
 .pane input:focus, .pane select:focus {
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .pane .rf input, .pane .rf select { margin: var(--label-gap) 0 0; }
-.pane label { font-size: var(--fs-label); font-weight: 500; color: var(--text-dim); }
+.pane label { font-size: var(--fs-label); font-weight: 500; color: var(--text-dim); margin-left: var(--label-indent); }
+
+/* Icona del selettore data/ora: leggibile su fondo scuro */
+:root[data-theme='dark'] input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.6);
+  opacity: 0.7; cursor: pointer;
+}
+:root[data-theme='dark'] input[type='datetime-local']:hover::-webkit-calendar-picker-indicator { opacity: 1; }
 
 /* Checkbox compatto */
 .pane input[type='checkbox'] {
@@ -414,12 +448,14 @@ button.primary { margin-top: var(--sp-md); }
   width: var(--control-h); height: var(--control-h); padding: 0; border-radius: 50%;
 }
 .xhtml-editor {
-  min-height: 5.25rem; padding: var(--sp-sm) var(--sp-md);
+  min-height: 5.25rem; padding: var(--sp-sm) var(--field-pad-x);
   background: var(--field-bg); border: 1px solid transparent;
   border-radius: var(--r-md); outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .xhtml-editor.compact { min-height: 3.75rem; }
+/* stesso feedback di hover dei campi di testo */
+.xhtml-editor:hover { border-color: var(--border); }
 .xhtml-editor:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--accent) 25%, transparent);
