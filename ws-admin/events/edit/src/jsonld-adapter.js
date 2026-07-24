@@ -10,6 +10,25 @@ const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 // meetoo:EventSingle -> Event, meetoo:EventSeries -> EventSeries.
 const BASE_TYPES = ['Event', 'EventSeries'];
 
+// sameAs (schema.org) è un array di url. Il "social" nel form è solo un'etichetta
+// d'aiuto: al caricamento lo deduciamo dall'host, in uscita emettiamo solo gli url.
+const SOCIAL_HOSTS = [
+  [/facebook\.com/i, 'Facebook'],
+  [/instagram\.com/i, 'Instagram'],
+  [/linkedin\.com/i, 'LinkedIn'],
+  [/tiktok\.com/i, 'TikTok'],
+  [/(youtube\.com|youtu\.be)/i, 'YouTube'],
+  [/(twitter\.com|x\.com)/i, 'X'],
+  [/(t\.me|telegram\.)/i, 'Telegram'],
+  [/(wa\.me|whatsapp\.)/i, 'WhatsApp'],
+  [/threads\.net/i, 'Threads'],
+  [/pinterest\./i, 'Pinterest'],
+];
+const detectSocial = (url) => {
+  for (const [re, name] of SOCIAL_HOSTS) if (re.test(url)) return name;
+  return '';
+};
+
 // eventSchedule (schema.org Schedule) <-> modello del form della ricorrenza.
 function fromSchedule(sched) {
   const d = { frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10, timezone: '' };
@@ -54,6 +73,10 @@ export function fromJsonLd(doc) {
   return {
     id: doc['@id'] ?? '',
     url: doc.url ?? '',
+    sameAs: asArray(doc.sameAs)
+      .map((u) => String(u).trim())
+      .filter(Boolean)
+      .map((u) => ({ social: detectSocial(u), url: u })),
     primaryType,
     // Tipi = @type esclusi i tipi primari (Event/EventSeries)
     types: typeArr.filter((t) => !BASE_TYPES.includes(t)),
@@ -154,10 +177,14 @@ export function toJsonLd(d) {
   const subEvent = isSeries ? occurrences : program;
   const schedule = isSeries ? toSchedule(d.eventSchedule) : undefined;
 
+  // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
+  const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
+
   return {
     '@context': CONTEXT,
     '@id': d.id ?? '',
     ...(d.url ? { url: d.url } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
     '@type': types,
     additionalType,
     keywords: mergeKeywords(d),

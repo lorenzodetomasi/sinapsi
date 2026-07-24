@@ -12,6 +12,7 @@ import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer
 import RecurrenceRenderer, { recurrenceTester } from './RecurrenceRenderer.jsx';
 import MultiSelectRenderer, { multiSelectTester } from './MultiSelectRenderer.jsx';
 import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
+import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import OptionsMenu from './OptionsMenu.jsx';
@@ -29,6 +30,7 @@ const renderers = [
   { tester: recurrenceTester, renderer: RecurrenceRenderer },
   { tester: multiSelectTester, renderer: MultiSelectRenderer },
   { tester: computedTester, renderer: ComputedRenderer },
+  { tester: fieldRowTester, renderer: FieldRowRenderer },
 ];
 
 // Capienze derivate: totale = presenza + remoto; rimasti = totale − prenotati.
@@ -61,6 +63,34 @@ export default function App() {
     return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
   const [density, setDensity] = useState(() => localStorage.getItem('density') || 'comfortable');
+
+  // Larghezza della colonna Form (%): 50/50 di default, regolabile col divisore.
+  const [split, setSplit] = useState(() => Number(localStorage.getItem('split')) || 50);
+  useEffect(() => localStorage.setItem('split', String(split)), [split]);
+  const layoutRef = useRef(null);
+  function startDrag(e) {
+    e.preventDefault();
+    const el = layoutRef.current;
+    const cs = getComputedStyle(el);
+    const padL = parseFloat(cs.paddingLeft) || 0;
+    const padR = parseFloat(cs.paddingRight) || 0;
+    const move = (ev) => {
+      const rect = el.getBoundingClientRect();
+      const inner = rect.width - padL - padR;
+      const pct = ((ev.clientX - rect.left - padL) / inner) * 100;
+      setSplit(Math.min(75, Math.max(25, pct)));
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+  }
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -201,7 +231,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="layout">
+      <div className="layout" ref={layoutRef} style={{ '--split': split + '%' }}>
         <section className="pane pane-form" onBlur={syncKeywords} onClick={openDatePicker}>
           <h2>Form (JSON Forms, schema-driven)</h2>
           <JsonForms
@@ -213,6 +243,15 @@ export default function App() {
             onChange={({ data }) => setData(deriveCapacities(data))}
           />
         </section>
+
+        <div
+          className="col-divider"
+          role="separator"
+          aria-orientation="vertical"
+          title="Trascina per ridimensionare · doppio clic per 50/50"
+          onPointerDown={startDrag}
+          onDoubleClick={() => setSplit(50)}
+        />
 
         <section className="pane pane-validation">
           <h2>Validazione <small>(validate_json)</small></h2>

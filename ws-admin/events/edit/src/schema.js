@@ -70,12 +70,31 @@ const PRIMARY_TYPE = [
   { const: 'Event', title: 'Evento singolo' },
   { const: 'EventSeries', title: 'Collezione di eventi' },
 ];
+// Suggerimenti per il campo "Social" (accetta anche valori personalizzati).
+const SOCIAL_SUGGEST = [
+  'Facebook', 'Instagram', 'LinkedIn', 'TikTok', 'YouTube', 'X',
+  'Telegram', 'WhatsApp', 'Threads', 'Pinterest', 'Sito web',
+];
 
 export const schema = {
   type: 'object',
   properties: {
     id: { type: 'string', title: '@id' },
-    url: { type: 'string', title: 'url' },
+    url: { type: 'string', title: 'Sito web' },
+    // Altri profili/siti (schema.org sameAs): url + tipo di social (select-search
+    // con valori anche personalizzati). Il "social" è un aiuto UI: in JSON-LD
+    // esce solo l'array di url (il tipo si ricava dall'host al ricaricamento).
+    sameAs: {
+      type: 'array',
+      title: 'Social e altri siti',
+      items: {
+        type: 'object',
+        properties: {
+          social: { type: 'string', title: 'Social', format: 'suggest', examples: SOCIAL_SUGGEST },
+          url: { type: 'string', title: 'URL' },
+        },
+      },
+    },
     primaryType: { type: 'string', title: 'Tipo di evento', default: 'Event', oneOf: PRIMARY_TYPE },
     types: { type: 'array', title: 'Macrocategorie', items: { type: 'string' } },
     additionalType: { type: 'array', title: 'additionalType', format: 'tags', items: { type: 'string' } },
@@ -229,9 +248,7 @@ export const uischema = {
       type: 'Group',
       label: 'Identità',
       options: { icon: 'badge' },
-      elements: [
-        { type: 'HorizontalLayout', elements: [ctrl('#/properties/url'), ctrl('#/properties/id')] },
-      ],
+      elements: [ctrl('#/properties/id')],
     },
     {
       type: 'Group',
@@ -252,6 +269,9 @@ export const uischema = {
       elements: [
         ctrl('#/properties/name'),
         ctrl('#/properties/description', { options: { icon: 'description' } }),
+        ctrl('#/properties/url', { options: { icon: 'language' } }),
+        // Più siti/social (schema.org sameAs), ripetibili
+        ctrl('#/properties/sameAs', { label: 'Social e altri siti', options: { icon: 'share', variant: 'row' } }),
         {
           type: 'HorizontalLayout',
           elements: [
@@ -281,7 +301,11 @@ export const uischema = {
       label: 'Quando',
       options: { icon: 'schedule' },
       elements: [
-        { type: 'HorizontalLayout', elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')] },
+        {
+          type: 'HorizontalLayout',
+          options: { separator: '–' },
+          elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')],
+        },
         ctrl('#/properties/eventStatus'),
         // Ricorrenza: solo per le serie
         ctrl('#/properties/eventSchedule', { rule: showIfSeries }),
@@ -299,19 +323,16 @@ export const uischema = {
             ctrl('#/properties/typicalAgeRange'),
           ],
         },
-        // Capienze — riga 1: presenza + remoto + totale (calcolato)
+        // Capienze in griglia 3 colonne, così le due righe restano allineate:
+        //   presenza | remoto | totale(calcolato)
+        //   prenotati | rimasti(calcolato) |
         {
           type: 'HorizontalLayout',
+          options: { cols: 3 },
           elements: [
             ctrl('#/properties/maximumPhysicalAttendeeCapacity'),
             ctrl('#/properties/maximumVirtualAttendeeCapacity'),
             ctrl('#/properties/maximumAttendeeCapacity', { options: { computed: true } }),
-          ],
-        },
-        // Capienze — riga 2: prenotati + rimasti (calcolato)
-        {
-          type: 'HorizontalLayout',
-          elements: [
             ctrl('#/properties/bookedAttendeeCapacity'),
             ctrl('#/properties/remainingAttendeeCapacity', { options: { computed: true } }),
           ],
@@ -366,6 +387,7 @@ export const uischema = {
       elements: [
         {
           type: 'HorizontalLayout',
+          options: { separator: '/' },
           elements: [
             ctrl('#/properties/aggregateRating/properties/ratingValue'),
             ctrl('#/properties/aggregateRating/properties/bestRating'),

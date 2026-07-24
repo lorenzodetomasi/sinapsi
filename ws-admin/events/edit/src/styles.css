@@ -179,17 +179,33 @@ body {
 .layout {
   flex: 1; min-height: 0;
   display: grid;
-  /* form più largo del validatore; minmax(0,…) impedisce che il codice lungo
-     allarghi la colonna oltre la finestra (grid blowout) */
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  gap: var(--sp-xl); padding: var(--sp-lg) var(--sp-xl) var(--sp-xl);
+  /* Form | divisore | Validazione. Default 50/50 (--split), regolabile col
+     divisore. minmax(0,…) impedisce il grid blowout del codice lungo. */
+  grid-template-columns: minmax(0, var(--split, 50%)) var(--divider-w, 0.75rem) minmax(0, 1fr);
+  gap: 0; padding: var(--sp-lg) var(--sp-xl) var(--sp-xl);
   align-items: stretch;
+}
+
+/* Divisore trascinabile tra le due colonne */
+.col-divider {
+  align-self: stretch; cursor: col-resize; position: relative;
+  touch-action: none;
+}
+.col-divider::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 50%;
+  width: 2px; transform: translateX(-50%);
+  background: var(--border); border-radius: 1px;
+  transition: background 0.15s ease, width 0.15s ease;
+}
+.col-divider:hover::before, .col-divider:active::before {
+  background: var(--accent); width: 4px;
 }
 
 @media (max-width: 62.5rem) {
   /* Su mobile torna al flusso normale: la pagina scorre, un pannello per volta */
   .app { height: auto; overflow: visible; }
   .layout { grid-template-columns: 1fr; padding-top: 0; }
+  .col-divider { display: none; }
   .topbar { padding-top: var(--sp-md); }
   .tabs { display: flex; gap: var(--sp-xs); }
   .tab-form .pane-validation { display: none; }
@@ -253,6 +269,23 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 
 .horizontal-layout { display: flex; gap: var(--sp-md); align-items: flex-start; }
 .horizontal-layout-item { flex: 1; min-width: 0; }
+
+/* Righe di campi custom (FieldRowRenderer) */
+.field-row-grid {
+  display: grid; gap: var(--sp-md); align-items: flex-start;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+}
+.field-row-sep { display: flex; gap: var(--sp-sm); align-items: flex-start; }
+.field-row-sep > .control:not(.pair-sep-control) { flex: 1; min-width: 0; }
+/* Colonnina del separatore: etichetta-segnaposto (vuota) + carattere allineato
+   all'input, così "–" / "/" cadono sulla riga del campo, non su quella del label */
+.pair-sep-control { flex: none; }
+.pair-sep-control .field-label { visibility: hidden; }
+.pair-sep {
+  height: var(--control-h); margin-top: var(--label-gap);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); font-size: var(--fs-base);
+}
 
 /* ---------- Campi ---------- */
 .pane input[type='text'],

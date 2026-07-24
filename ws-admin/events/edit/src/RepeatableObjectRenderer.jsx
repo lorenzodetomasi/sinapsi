@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useId, useRef, useState } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import XhtmlEditor from './XhtmlEditor.jsx';
@@ -11,6 +11,27 @@ const toLocal = (v) => (v ? String(v).slice(0, 16) : '');
 
 function FieldControl({ name, schema, value, onChange }) {
   const label = schema.title || name;
+  const listId = useId();
+  // Select-search creabile: input + datalist (suggerimenti + valore personalizzato)
+  if (schema.format === 'suggest') {
+    return (
+      <div className="rf rf-text">
+        <label className="field-label">{label}</label>
+        <input
+          type="text"
+          list={listId}
+          value={value ?? ''}
+          placeholder="Cerca o scrivi…"
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <datalist id={listId}>
+          {(schema.examples || []).map((o) => (
+            <option key={o} value={o} />
+          ))}
+        </datalist>
+      </div>
+    );
+  }
   if (schema.format === 'xhtml') {
     return (
       <div className="rf full">
