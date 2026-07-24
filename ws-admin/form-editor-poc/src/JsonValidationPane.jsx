@@ -132,7 +132,7 @@ export default function JsonValidationPane({
           {copied ? 'Copiato!' : 'Copia'}
         </button>
         <button type="button" onClick={download}>
-          <span className="material-symbols-outlined">download</span> Salva
+          <span className="material-symbols-outlined">download</span> Scarica
         </button>
         <button type="button" onClick={onGenerateXml}>
           <span className="material-symbols-outlined">swap_horizontal_circle</span> Genera XML

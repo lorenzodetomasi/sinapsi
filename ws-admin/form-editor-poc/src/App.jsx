@@ -11,6 +11,7 @@ import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableOb
 import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer.jsx';
 import RecurrenceRenderer, { recurrenceTester } from './RecurrenceRenderer.jsx';
 import MultiSelectRenderer, { multiSelectTester } from './MultiSelectRenderer.jsx';
+import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import OptionsMenu from './OptionsMenu.jsx';
@@ -27,7 +28,16 @@ const renderers = [
   { tester: searchSelectTester, renderer: SearchSelectRenderer },
   { tester: recurrenceTester, renderer: RecurrenceRenderer },
   { tester: multiSelectTester, renderer: MultiSelectRenderer },
+  { tester: computedTester, renderer: ComputedRenderer },
 ];
+
+// Capienze derivate: totale = presenza + remoto; rimasti = totale − prenotati.
+// Sono di sola lettura nel form (ComputedRenderer) e ricalcolate a ogni modifica.
+function deriveCapacities(d) {
+  const total = (Number(d.maximumPhysicalAttendeeCapacity) || 0) + (Number(d.maximumVirtualAttendeeCapacity) || 0);
+  const booked = Number(d.bookedAttendeeCapacity) || 0;
+  return { ...d, maximumAttendeeCapacity: total, remainingAttendeeCapacity: Math.max(0, total - booked) };
+}
 
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.
 async function api(action, fields = {}) {
@@ -41,7 +51,7 @@ async function api(action, fields = {}) {
 }
 
 export default function App() {
-  const [data, setData] = useState(() => fromJsonLd(sampleJsonLd));
+  const [data, setData] = useState(() => deriveCapacities(fromJsonLd(sampleJsonLd)));
   const [tab, setTab] = useState('form');
 
   // Tema: alla prima apertura segue il sistema, poi vale la scelta memorizzata.
@@ -110,6 +120,21 @@ export default function App() {
   }
 
 
+  // Salvataggio: consentito SOLO a validazione perfetta. Per ora scarica il
+  // JSON-LD; in ambiente Google Workspace diventerà un salvataggio automatico
+  // con versioning (come un Google Document).
+  const canSave = validation.status === 'valid';
+  function save() {
+    if (!canSave) return;
+    const blob = new Blob([payload], { type: 'application/ld+json' });
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = 'index.json';
+    a.click();
+    URL.revokeObjectURL(href);
+  }
+
   // L'icona nativa del datetime è soppressa via CSS per poterla ridisegnare del
   // colore giusto, ma così perde anche il click che apriva il calendario:
   // lo riapriamo noi quando si clicca nella zona dell'icona (a destra nel campo).
@@ -149,6 +174,22 @@ export default function App() {
 
   return (
     <div className={'app tab-' + tab}>
+      <header className="appbar">
+        <div className="brand">Meetoo</div>
+        <div className="appbar-actions">
+          <button
+            type="button"
+            className="btn-save"
+            onClick={save}
+            disabled={!canSave}
+            title={canSave ? 'Salva il JSON-LD' : 'Salvataggio disponibile solo a validazione perfetta'}
+          >
+            <span className="material-symbols-outlined">save</span> Salva
+          </button>
+          <OptionsMenu theme={theme} onTheme={setTheme} density={density} onDensity={setDensity} />
+        </div>
+      </header>
+
       <div className="topbar">
         <div className="tabs">
           <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
@@ -157,9 +198,6 @@ export default function App() {
           <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
             <span className="material-symbols-outlined">fact_check</span> Validazione
           </button>
-        </div>
-        <div className="toolbar">
-          <OptionsMenu theme={theme} onTheme={setTheme} density={density} onDensity={setDensity} />
         </div>
       </div>
 
@@ -172,7 +210,7 @@ export default function App() {
             data={data}
             renderers={renderers}
             cells={vanillaCells}
-            onChange={({ data }) => setData(data)}
+            onChange={({ data }) => setData(deriveCapacities(data))}
           />
         </section>
 

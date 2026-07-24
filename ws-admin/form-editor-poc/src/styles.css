@@ -120,13 +120,43 @@ body {
   vertical-align: middle; -webkit-font-smoothing: antialiased;
 }
 
+/* ---------- Header applicazione: brand + azioni ---------- */
+.appbar {
+  display: flex; align-items: center; gap: var(--sp-md);
+  padding: var(--sp-md) var(--sp-xl);
+  border-bottom: 1px solid var(--border);
+}
+.appbar .brand {
+  font-weight: 700; font-size: 1.125rem; letter-spacing: 0.01em;
+  color: var(--text);
+}
+.appbar-actions { display: flex; align-items: center; gap: var(--sp-sm); margin-left: auto; }
+
+/* "Salva": attivo solo a validazione perfetta */
+.btn-save {
+  display: inline-flex; align-items: center; gap: var(--sp-xs);
+  background: var(--accent); color: var(--on-accent);
+  border: none; border-radius: var(--r-pill);
+  padding: var(--sp-xs) var(--sp-md);
+  font-size: var(--fs-label); font-weight: 600; cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.btn-save:hover:not(:disabled) { filter: brightness(1.05); }
+.btn-save:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
+.btn-save .material-symbols-outlined { font-size: 1.125rem; }
+
+/* "Opzioni" nell'header: solo glyph, senza cerchio/sfondo (come le icone datetime) */
+.appbar-actions .options .icon-btn {
+  width: auto; height: auto; border: none; border-radius: var(--r-sm);
+  padding: var(--sp-xs); background: transparent; color: var(--text-dim);
+}
+.appbar-actions .options .icon-btn:hover { background: transparent; color: var(--accent); }
+
 /* ---------- Barra superiore: icone + tab ---------- */
 .topbar {
   display: flex; align-items: flex-end; gap: var(--sp-md);
-  padding: var(--sp-lg) var(--sp-xl) 0;
+  padding: 0 var(--sp-xl);
 }
-/* allineata a destra, i tab restano a sinistra */
-.toolbar { display: flex; align-items: center; gap: var(--sp-xs); margin-left: auto; padding-bottom: var(--sp-xs); }
 .options-menu { left: auto; right: 0; }
 
 .tabs { display: none; }
@@ -150,6 +180,7 @@ body {
 
 @media (max-width: 62.5rem) {
   .layout { grid-template-columns: 1fr; padding-top: 0; }
+  .topbar { padding-top: var(--sp-md); }
   .tabs { display: flex; gap: var(--sp-xs); }
   .tab-form .pane-validation { display: none; }
   .tab-validation .pane-form { display: none; }
@@ -276,13 +307,24 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .pane input[type='checkbox']:checked { background: var(--accent); border-color: var(--accent); }
 .pane input[type='checkbox']:checked::before { opacity: 1; }
 
+/* Checkbox: flex con checkbox a sinistra e etichetta affiancata a destra */
 .pane .control:has(> input[type='checkbox']) {
   display: flex; align-items: center; flex-wrap: wrap;
-  min-height: var(--control-h); margin: var(--sp-xs) 0 var(--sp-md);
+  min-height: var(--control-h); margin: var(--sp-xs) 0;
 }
-.pane .control:has(> input[type='checkbox']) > label { margin: 0; color: var(--text); }
+.pane .control:has(> input[type='checkbox']) > label { margin: 0; color: var(--text); cursor: pointer; }
 .pane .control > input[type='checkbox'] { order: -1; }
 .pane .control:has(> input[type='checkbox']) > .validation { flex-basis: 100%; }
+
+/* Campo calcolato (sola lettura): well spento con valore + icona */
+.computed-value {
+  display: flex; align-items: center; justify-content: space-between;
+  min-height: var(--control-h); padding: 0 var(--field-pad-x);
+  background: var(--field-bg); border: 1px solid var(--border);
+  border-radius: var(--r-md); color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.computed-value .material-symbols-outlined { font-size: 1rem; opacity: 0.6; }
 
 /* niente bordi/riquadri sui fieldset generici */
 .pane fieldset { border: none; margin: 0; padding: 0; }

@@ -45,6 +45,12 @@ export function fromJsonLd(doc) {
   const primaryType = typeArr.find((t) => BASE_TYPES.includes(t)) || 'Event';
   const isSeries = primaryType === 'EventSeries';
   const subEventArr = doc.subEvent ?? [];
+  // Capienze: il totale è presenza+remoto (o il valore salvato), i prenotati si
+  // ricavano da totale − rimasti così il round-trip resta coerente.
+  const maxPhysical = doc.maximumPhysicalAttendeeCapacity ?? 0;
+  const maxVirtual = doc.maximumVirtualAttendeeCapacity ?? 0;
+  const maxTotal = doc.maximumAttendeeCapacity ?? maxPhysical + maxVirtual;
+  const remaining = doc.remainingAttendeeCapacity ?? maxTotal;
   return {
     id: doc['@id'] ?? '',
     url: doc.url ?? '',
@@ -64,10 +70,11 @@ export function fromJsonLd(doc) {
     typicalAgeRange: doc.typicalAgeRange ?? '',
     eventAttendanceMode: doc.eventAttendanceMode ?? '',
     eventStatus: doc.eventStatus ?? '',
-    maximumPhysicalAttendeeCapacity: doc.maximumPhysicalAttendeeCapacity ?? 0,
-    maximumVirtualAttendeeCapacity: doc.maximumVirtualAttendeeCapacity ?? 0,
-    maximumAttendeeCapacity: doc.maximumAttendeeCapacity ?? 0,
-    remainingAttendeeCapacity: doc.remainingAttendeeCapacity ?? 0,
+    maximumPhysicalAttendeeCapacity: maxPhysical,
+    maximumVirtualAttendeeCapacity: maxVirtual,
+    maximumAttendeeCapacity: maxTotal,
+    bookedAttendeeCapacity: Math.max(0, maxTotal - remaining),
+    remainingAttendeeCapacity: remaining,
     isAccessibleForFree: doc.isAccessibleForFree ?? false,
     offers: {
       availability: o.availability ?? '',
@@ -253,5 +260,4 @@ export const sampleJsonLd = {
   ],
   eventStatus: 'https://schema.org/EventScheduled',
   aggregateRating: { '@type': 'AggregateRating', ratingValue: '5', bestRating: '5' },
-  meetoo: { '@type': 'meetoo:EventSingle', 'meetoo:macrocategory': 'culture' },
 };

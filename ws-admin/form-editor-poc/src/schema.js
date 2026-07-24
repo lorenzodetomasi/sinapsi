@@ -8,7 +8,7 @@ const ATTENDANCE_MODE = [
   { const: 'https://schema.org/MixedEventAttendanceMode', title: 'Ibrido (presenza + online)' },
 ];
 const EVENT_STATUS = [
-  { const: 'https://schema.org/EventScheduled', title: 'Programmato' },
+  { const: 'https://schema.org/EventScheduled', title: 'In programma' },
   { const: 'https://schema.org/EventRescheduled', title: 'Riprogrammato' },
   { const: 'https://schema.org/EventPostponed', title: 'Rimandato' },
   { const: 'https://schema.org/EventMovedOnline', title: 'Spostato online' },
@@ -68,7 +68,7 @@ const MEETOO_CATEGORY = [
 // è required e NON compare nel campo Tipi.
 const PRIMARY_TYPE = [
   { const: 'Event', title: 'Evento singolo' },
-  { const: 'EventSeries', title: 'Serie di eventi' },
+  { const: 'EventSeries', title: 'Collezione di eventi' },
 ];
 
 export const schema = {
@@ -76,8 +76,8 @@ export const schema = {
   properties: {
     id: { type: 'string', title: '@id' },
     url: { type: 'string', title: 'url' },
-    primaryType: { type: 'string', title: 'Tipo', default: 'Event', oneOf: PRIMARY_TYPE },
-    types: { type: 'array', title: 'Tipi (@type)', items: { type: 'string' } },
+    primaryType: { type: 'string', title: 'Tipo di evento', default: 'Event', oneOf: PRIMARY_TYPE },
+    types: { type: 'array', title: 'Macrocategorie', items: { type: 'string' } },
     additionalType: { type: 'array', title: 'additionalType', format: 'tags', items: { type: 'string' } },
     keywords: { type: 'array', title: 'Keywords', format: 'tags', items: { type: 'string' } },
     name: { type: 'string', title: 'Nome evento' },
@@ -91,8 +91,9 @@ export const schema = {
     eventAttendanceMode: { type: 'string', title: 'Modalità', oneOf: ATTENDANCE_MODE },
     maximumPhysicalAttendeeCapacity: { type: 'integer', title: 'Posti in presenza' },
     maximumVirtualAttendeeCapacity: { type: 'integer', title: 'Posti da remoto' },
-    remainingAttendeeCapacity: { type: 'integer', title: 'Posti rimasti' },
     maximumAttendeeCapacity: { type: 'integer', title: 'Posti totali' },
+    bookedAttendeeCapacity: { type: 'integer', title: 'Posti prenotati' },
+    remainingAttendeeCapacity: { type: 'integer', title: 'Posti rimasti' },
     isChildrensEvent: { type: 'boolean', title: 'Adatto ai bambini' },
     childrenMustBeAccompanied: { type: 'boolean', title: 'Bambini accompagnati dai genitori' },
     forSeparatedParents: { type: 'boolean', title: 'Solo genitori separati' },
@@ -298,23 +299,27 @@ export const uischema = {
             ctrl('#/properties/typicalAgeRange'),
           ],
         },
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/isChildrensEvent'),
-            ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
-            ctrl('#/properties/forSeparatedParents'),
-          ],
-        },
+        // Capienze — riga 1: presenza + remoto + totale (calcolato)
         {
           type: 'HorizontalLayout',
           elements: [
             ctrl('#/properties/maximumPhysicalAttendeeCapacity'),
             ctrl('#/properties/maximumVirtualAttendeeCapacity'),
-            ctrl('#/properties/maximumAttendeeCapacity'),
-            ctrl('#/properties/remainingAttendeeCapacity'),
+            ctrl('#/properties/maximumAttendeeCapacity', { options: { computed: true } }),
           ],
         },
+        // Capienze — riga 2: prenotati + rimasti (calcolato)
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            ctrl('#/properties/bookedAttendeeCapacity'),
+            ctrl('#/properties/remainingAttendeeCapacity', { options: { computed: true } }),
+          ],
+        },
+        // Flag pubblico impilati (checkbox a sinistra, etichetta a destra)
+        ctrl('#/properties/isChildrensEvent'),
+        ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
+        ctrl('#/properties/forSeparatedParents'),
         ctrl('#/properties/isAccessibleForFree'),
       ],
     },
