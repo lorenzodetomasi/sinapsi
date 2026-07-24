@@ -41,13 +41,17 @@ export function fromJsonLd(doc) {
   const o = doc.offers ?? {};
   const loc = doc.location ?? {};
   const rating = doc.aggregateRating ?? {};
-  const meetoo = doc.meetoo ?? {};
-  const isSeries = meetoo['@type'] === 'meetoo:EventSeries' || asArray(doc['@type']).includes('EventSeries');
+  const typeArr = asArray(doc['@type']);
+  const primaryType = typeArr.find((t) => BASE_TYPES.includes(t)) || 'Event';
+  const isSeries = primaryType === 'EventSeries';
   const subEventArr = doc.subEvent ?? [];
   return {
     id: doc['@id'] ?? '',
-    types: asArray(doc['@type']).filter((t) => !BASE_TYPES.includes(t)),
-    additionalType: doc.additionalType ?? '',
+    url: doc.url ?? '',
+    primaryType,
+    // Tipi = @type esclusi i tipi primari (Event/EventSeries)
+    types: typeArr.filter((t) => !BASE_TYPES.includes(t)),
+    additionalType: asArray(doc.additionalType).map((s) => String(s).trim()).filter(Boolean),
     keywords: doc.keywords
       ? String(doc.keywords).split(',').map((s) => s.trim()).filter(Boolean)
       : [],
@@ -92,10 +96,10 @@ export function fromJsonLd(doc) {
       ratingValue: rating.ratingValue ?? '',
       bestRating: rating.bestRating ?? '',
     },
-    meetoo: {
-      type: meetoo['@type'] ?? 'meetoo:EventSingle',
-      macrocategory: meetoo['meetoo:macrocategory'] ?? '',
-    },
+    // Flag pubblico (booleani meetoo dedicati)
+    isChildrensEvent: !!doc['meetoo:isChildrensEvent'],
+    childrenMustBeAccompanied: !!doc['meetoo:childrenMustBeAccompanied'],
+    forSeparatedParents: !!doc['meetoo:forSeparatedParents'],
   };
 }
 
@@ -121,12 +125,15 @@ function mergeKeywords(d) {
 /** Dati del form -> JSON-LD (index.json), reintroducendo @context/@type/@id/namespace.
  *  L'ordine delle chiavi segue index.json. */
 export function toJsonLd(d) {
-  const isSeries = d.meetoo?.type === 'meetoo:EventSeries';
-  // Il @type di radice è imposto da meetoo:@type; i tag portano solo i sottotipi.
-  const base = isSeries ? 'EventSeries' : 'Event';
+  // primaryType (Event/EventSeries) è il primo @type e il discriminante.
+  const primaryType = d.primaryType === 'EventSeries' ? 'EventSeries' : 'Event';
+  const isSeries = primaryType === 'EventSeries';
   const subtypes = (d.types ?? []).filter((t) => !BASE_TYPES.includes(t));
-  const typeArr = [base, ...subtypes];
+  const typeArr = [primaryType, ...subtypes];
   const types = typeArr.length === 1 ? typeArr[0] : typeArr;
+
+  const addTypeArr = Array.isArray(d.additionalType) ? d.additionalType.filter(Boolean) : d.additionalType ? [d.additionalType] : [];
+  const additionalType = addTypeArr.length === 0 ? '' : addTypeArr.length === 1 ? addTypeArr[0] : addTypeArr;
 
   const program = (d.subEvent ?? []).map((s) => {
     const node = { '@type': 'Event', name: s.name ?? '' };
@@ -143,8 +150,9 @@ export function toJsonLd(d) {
   return {
     '@context': CONTEXT,
     '@id': d.id ?? '',
+    ...(d.url ? { url: d.url } : {}),
     '@type': types,
-    additionalType: d.additionalType ?? '',
+    additionalType,
     keywords: mergeKeywords(d),
     name: d.name ?? '',
     description: d.description ?? '',
@@ -184,10 +192,10 @@ export function toJsonLd(d) {
       ratingValue: d.aggregateRating?.ratingValue ?? '',
       bestRating: d.aggregateRating?.bestRating ?? '',
     },
-    meetoo: {
-      '@type': d.meetoo?.type ?? 'meetoo:EventSingle',
-      'meetoo:macrocategory': d.meetoo?.macrocategory ?? '',
-    },
+    // Flag pubblico: emessi solo se attivi (accompagnati solo se adatto ai bambini)
+    ...(d.isChildrensEvent ? { 'meetoo:isChildrensEvent': true } : {}),
+    ...(d.isChildrensEvent && d.childrenMustBeAccompanied ? { 'meetoo:childrenMustBeAccompanied': true } : {}),
+    ...(d.forSeparatedParents ? { 'meetoo:forSeparatedParents': true } : {}),
   };
 }
 

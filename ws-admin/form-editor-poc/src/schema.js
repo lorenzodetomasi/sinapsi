@@ -9,10 +9,10 @@ const ATTENDANCE_MODE = [
 ];
 const EVENT_STATUS = [
   { const: 'https://schema.org/EventScheduled', title: 'Programmato' },
-  { const: 'https://schema.org/EventPostponed', title: 'Rimandato' },
   { const: 'https://schema.org/EventRescheduled', title: 'Riprogrammato' },
-  { const: 'https://schema.org/EventCancelled', title: 'Annullato' },
+  { const: 'https://schema.org/EventPostponed', title: 'Rimandato' },
   { const: 'https://schema.org/EventMovedOnline', title: 'Spostato online' },
+  { const: 'https://schema.org/EventCancelled', title: 'Annullato' },
 ];
 const AVAILABILITY = [
   { const: 'https://schema.org/InStock', title: 'Disponibile' },
@@ -27,11 +27,11 @@ const MACROCATEGORY = [
   { const: 'meetoo:DesignEvent', title: 'Design' },
   { const: 'meetoo:ArchitectureEvent', title: 'Architettura' },
   { const: 'TheaterEvent', title: 'Teatro' },
-  { const: 'meetoo:PsycologyEvent', title: 'Psicologia' },
-  'ComedyEvent', 
+  { const: 'meetoo:PsycologyEvent', title: 'Psicologia' }, 
+  { const: 'ComedyEvent', title: 'Commedia' },
+  { const: 'Hackathon', title: 'Hackathon' },
   { const: 'DanceEvent', title: 'Danza' },
   { const: 'FoodEvent', title: 'Cibo' },
-  'Hackathon',
   { const: 'LiteraryEvent', title: 'Letteratura' },
   { const: 'MusicEvent', title: 'Musica' },
   { const: 'ScreeningEvent', title: 'Cinema' },
@@ -64,13 +64,21 @@ const MEETOO_CATEGORY = [
   { const: 'FriendshipDatingEvent', title: 'Friendship Dating' },
   { const: 'LoveDatingEvent', title: 'Love Dating' },
 ];
+// Tipo primario schema.org: unico discriminante dei conditional. È il primo @type,
+// è required e NON compare nel campo Tipi.
+const PRIMARY_TYPE = [
+  { const: 'Event', title: 'Evento singolo' },
+  { const: 'EventSeries', title: 'Serie di eventi' },
+];
+
 export const schema = {
   type: 'object',
   properties: {
     id: { type: 'string', title: '@id' },
     url: { type: 'string', title: 'url' },
+    primaryType: { type: 'string', title: 'Tipo', default: 'Event', oneOf: PRIMARY_TYPE },
     types: { type: 'array', title: 'Tipi (@type)', items: { type: 'string' } },
-    additionalType: { type: 'string', title: 'additionalType' },
+    additionalType: { type: 'array', title: 'additionalType', format: 'tags', items: { type: 'string' } },
     keywords: { type: 'array', title: 'Keywords', format: 'tags', items: { type: 'string' } },
     name: { type: 'string', title: 'Nome evento' },
     description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
@@ -85,6 +93,9 @@ export const schema = {
     maximumVirtualAttendeeCapacity: { type: 'integer', title: 'Posti da remoto' },
     remainingAttendeeCapacity: { type: 'integer', title: 'Posti rimasti' },
     maximumAttendeeCapacity: { type: 'integer', title: 'Posti totali' },
+    isChildrensEvent: { type: 'boolean', title: 'Adatto ai bambini' },
+    childrenMustBeAccompanied: { type: 'boolean', title: 'Bambini accompagnati dai genitori' },
+    forSeparatedParents: { type: 'boolean', title: 'Solo genitori separati' },
     isAccessibleForFree: { type: 'boolean', title: 'Gratuito' },
     offers: {
       type: 'object',
@@ -164,16 +175,8 @@ export const schema = {
         bestRating: { type: 'string', title: 'Voto max' },
       },
     },
-    meetoo: {
-      type: 'object',
-      title: 'Meetoo',
-      properties: {
-        type: { type: 'string', title: '@type', default: 'meetoo:EventSingle' },
-        macrocategory: { type: 'string', title: 'Macrocategoria' },
-      },
-    },
   },
-  required: ['name'],
+  required: ['name', 'primaryType'],
 };
 
 // Sottotipi di Event di schema.org (suggerimenti ricercabili; @type resta creatable).
@@ -212,35 +215,21 @@ const MEETOO_TYPES = [
 
 const ctrl = (scope, extra = {}) => ({ type: 'Control', scope, ...extra });
 
-// Regole condizionali guidate da meetoo:@type.
-const SERIES_SCOPE = '#/properties/meetoo/properties/type';
-const showIfSeries = { effect: 'SHOW', condition: { scope: SERIES_SCOPE, schema: { const: 'meetoo:EventSeries' } } };
-const showIfNotSeries = { effect: 'SHOW', condition: { scope: SERIES_SCOPE, schema: { not: { const: 'meetoo:EventSeries' } } } };
+// Regole condizionali guidate dal tipo primario schema.org (Event/EventSeries).
+const PRIMARY_SCOPE = '#/properties/primaryType';
+const showIfSeries = { effect: 'SHOW', condition: { scope: PRIMARY_SCOPE, schema: { const: 'EventSeries' } } };
+const showIfNotSeries = { effect: 'SHOW', condition: { scope: PRIMARY_SCOPE, schema: { not: { const: 'EventSeries' } } } };
+const showIfChildren = { effect: 'SHOW', condition: { scope: '#/properties/isChildrensEvent', schema: { const: true } } };
 
 export const uischema = {
   type: 'VerticalLayout',
   elements: [
     {
       type: 'Group',
-      label: 'Meetoo',
-      options: { icon: 'hub' },
+      label: 'Identità',
+      options: { icon: 'badge' },
       elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/url'),
-            ctrl('#/properties/meetoo/properties/macrocategory'),
-          ],
-        },
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/meetoo/properties/type', {
-              options: { searchable: true, suggestions: MEETOO_TYPES },
-            }),
-            ctrl('#/properties/id'),
-          ],
-        },
+        { type: 'HorizontalLayout', elements: [ctrl('#/properties/url'), ctrl('#/properties/id')] },
       ],
     },
     {
@@ -248,8 +237,10 @@ export const uischema = {
       label: 'Classificazione',
       options: { icon: 'category' },
       elements: [
-        ctrl('#/properties/types', { options: { icon: 'category', suggestions: EVENT_TYPES } }),
-        ctrl('#/properties/additionalType'),
+        ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
+        // Tipi = altri @type, scelti dalle opzioni MACROCATEGORY, senza valori custom
+        ctrl('#/properties/types', { options: { icon: 'category', select: true, suggestions: MACROCATEGORY } }),
+        ctrl('#/properties/additionalType', { options: { icon: 'label' } }),
         ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
       ],
     },
@@ -305,6 +296,14 @@ export const uischema = {
           elements: [
             ctrl('#/properties/eventAttendanceMode'),
             ctrl('#/properties/typicalAgeRange'),
+          ],
+        },
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            ctrl('#/properties/isChildrensEvent'),
+            ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
+            ctrl('#/properties/forSeparatedParents'),
           ],
         },
         {

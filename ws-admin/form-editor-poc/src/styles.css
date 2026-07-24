@@ -98,6 +98,10 @@
 
 * { box-sizing: border-box; }
 
+/* Le regole SHOW/HIDE di JSON Forms usano l'attributo [hidden]: un display
+   esplicito (es. i controlli booleani in flex) lo sovrascriverebbe. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -359,6 +363,15 @@ button.primary { margin-top: var(--sp-md); }
 .tag button:hover { background: var(--accent) !important; color: var(--on-accent) !important; }
 .tag button .material-symbols-outlined { font-size: 1em; }
 .tag-menu { top: calc(100% + var(--sp-xs)); left: 0; right: auto; min-width: 12rem; }
+
+/* Multi-select a opzioni fisse: input di ricerca inline nel contenitore dei chip */
+.multiselect .tags { position: relative; cursor: text; }
+.multiselect .ms-input {
+  flex: 1; min-width: 6rem; height: var(--control-h);
+  background: transparent; border: none; outline: none; color: var(--text);
+  font: inherit; padding: 0 0.25rem; margin: 0;
+}
+.multiselect .ms-menu { top: calc(100% + var(--sp-xs)); }
 
 /* ---------- Menu di autocomplete ---------- */
 .search-select { position: relative; }

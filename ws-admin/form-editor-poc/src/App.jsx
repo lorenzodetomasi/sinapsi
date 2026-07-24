@@ -10,6 +10,7 @@ import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
 import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer.jsx';
 import RecurrenceRenderer, { recurrenceTester } from './RecurrenceRenderer.jsx';
+import MultiSelectRenderer, { multiSelectTester } from './MultiSelectRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import OptionsMenu from './OptionsMenu.jsx';
@@ -25,6 +26,7 @@ const renderers = [
   { tester: repeatableObjectTester, renderer: RepeatableObjectRenderer },
   { tester: searchSelectTester, renderer: SearchSelectRenderer },
   { tester: recurrenceTester, renderer: RecurrenceRenderer },
+  { tester: multiSelectTester, renderer: MultiSelectRenderer },
 ];
 
 // Chiamata al convertitore/validatore PHP tramite il proxy /api di Vite.
