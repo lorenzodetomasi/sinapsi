@@ -8,19 +8,27 @@ import { withJsonFormsLayoutProps, JsonFormsDispatch } from '@jsonforms/react';
 const FieldRow = ({ uischema, schema, path, renderers, cells, enabled, visible }) => {
   if (visible === false) return null;
   const els = uischema.elements || [];
-  const { separator, cols } = uischema.options || {};
+  const { separator, cols, inline } = uischema.options || {};
 
-  const dispatch = (el, i) => (
-    <JsonFormsDispatch
-      key={i}
-      uischema={el}
-      schema={schema}
-      path={path}
-      renderers={renderers}
-      cells={cells}
-      enabled={enabled}
-    />
-  );
+  const dispatch = (el, i) =>
+    // Segnaposto vuoto per allineare le celle della griglia (es. capienze)
+    el?.type === 'Label' && el?.options?.spacer ? (
+      <div className="grid-spacer" key={i} />
+    ) : (
+      <JsonFormsDispatch
+        key={i}
+        uischema={el}
+        schema={schema}
+        path={path}
+        renderers={renderers}
+        cells={cells}
+        enabled={enabled}
+      />
+    );
+
+  if (inline) {
+    return <div className="field-row field-row-inline">{els.map(dispatch)}</div>;
+  }
 
   if (separator) {
     return (
@@ -47,7 +55,7 @@ export const fieldRowTester = rankWith(
   5,
   and(uiTypeIs('HorizontalLayout'), (uischema) => {
     const o = uischema?.options;
-    return !!(o && (o.separator || o.cols));
+    return !!(o && (o.separator || o.cols || o.inline));
   })
 );
 

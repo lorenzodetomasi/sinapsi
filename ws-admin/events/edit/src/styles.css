@@ -202,18 +202,33 @@ body {
 }
 
 @media (max-width: 62.5rem) {
-  /* Su mobile torna al flusso normale: la pagina scorre, un pannello per volta */
+  /* Su mobile torna al flusso normale: la pagina scorre, un pannello per volta.
+     Niente padding attorno al body: contenuto a tutta larghezza. */
   .app { height: auto; overflow: visible; }
-  .layout { grid-template-columns: 1fr; padding-top: 0; }
+  .appbar { padding-left: var(--sp-md); padding-right: var(--sp-md); }
+  .topbar { padding: var(--sp-md) 0 0; }
+  .layout { grid-template-columns: 1fr; padding: 0; gap: 0; }
   .col-divider { display: none; }
-  .topbar { padding-top: var(--sp-md); }
-  .tabs { display: flex; gap: var(--sp-xs); }
+  .tabs { display: flex; gap: var(--sp-xs); padding: 0 var(--sp-md); }
   .tab-form .pane-validation { display: none; }
   .tab-validation .pane-form { display: none; }
-  .layout .pane { border-top-left-radius: 0; overflow: visible; }
+  .layout .pane { border-radius: 0; padding: var(--sp-md); overflow: visible; }
   .pane-validation { overflow: visible; }
   .code-area { flex: none; max-height: 26rem; }
+  /* Righe di campi impilate su una colonna sola */
+  .horizontal-layout { flex-direction: column; }
+  .horizontal-layout-item { width: 100%; }
+  .field-row-grid { grid-template-columns: 1fr; }
+  .field-row-sep { flex-direction: column; }
+  .field-row-sep > .pair-sep-control { display: none; }
+  .grid-spacer { display: none; }
+  /* Data: precisione sopra, input sotto a tutta larghezza */
+  .smart-date .sd-row { flex-direction: column; align-items: stretch; }
+  .smart-date .sd-precision { max-width: none; }
 }
+/* Tag: mai più larghi del contenitore (niente overflow su mobile) */
+.tag { max-width: 100%; overflow-wrap: anywhere; }
+.tag-array input { max-width: 100%; }
 
 .pane {
   background: var(--surface);
@@ -286,11 +301,40 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   display: flex; align-items: center; justify-content: center;
   color: var(--text-dim); font-size: var(--fs-base);
 }
+.grid-spacer { min-width: 0; } /* cella vuota per allineare la griglia */
+
+/* Riga di checkbox su una sola linea */
+.field-row-inline {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--sp-md) var(--sp-lg); margin: var(--sp-xs) 0;
+}
+.field-row-inline > .control { flex: 0 0 auto; margin: 0; min-height: 0; }
+
+/* Data con precisione + pulsanti (calendario / cancella) */
+.smart-date .sd-row { display: flex; gap: var(--sp-xs); align-items: center; margin-top: var(--label-gap); }
+.smart-date .sd-precision {
+  flex: none; width: auto; max-width: 8rem; margin: 0;
+  padding: 0 1.25rem 0 var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim);
+}
+.smart-date .sd-input-wrap { position: relative; flex: 1 1 8rem; min-width: 0; }
+.smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 3.75rem; background-image: none; }
+.smart-date .sd-pick, .smart-date .sd-clear {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 1.5rem; height: 1.5rem; padding: 0; border: none; background: transparent;
+  color: var(--text-dim); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-sm);
+}
+.smart-date .sd-pick { right: 1.75rem; }
+.smart-date .sd-clear { right: 0.35rem; }
+.smart-date .sd-pick:hover, .smart-date .sd-clear:hover { color: var(--accent); background: transparent; }
+.smart-date .sd-pick .material-symbols-outlined, .smart-date .sd-clear .material-symbols-outlined { font-size: 1.05rem; }
 
 /* ---------- Campi ---------- */
 .pane input[type='text'],
 .pane input[type='number'],
 .pane input[type='datetime-local'],
+.pane input[type='date'],
+.pane input[type='month'],
 .pane select,
 .rf input,
 .path-field {
@@ -599,6 +643,7 @@ button.primary { margin-top: var(--sp-md); }
   display: inline-flex; align-items: center; justify-content: center;
   width: var(--control-h); height: var(--control-h); padding: 0; border-radius: 50%;
 }
+.xhtml-sep { flex: none; align-self: center; width: 1px; height: 1.25rem; background: var(--border); margin: 0 var(--sp-xs); }
 .xhtml-editor {
   min-height: 5.25rem; padding: var(--sp-sm) var(--field-pad-x);
   background: var(--field-bg); border: 1px solid transparent;
@@ -634,6 +679,12 @@ button.primary { margin-top: var(--sp-md); }
   border-color: var(--accent); color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
+/* Mobile: pulsante file (niente drag&drop) */
+.dropzone.as-button {
+  flex-direction: row; gap: var(--sp-xs); border-style: solid;
+  color: var(--text); background: var(--surface-2);
+}
+.dropzone.as-button .dz-formats { display: none; }
 .dropzone .material-symbols-outlined { font-size: 1.5rem; }
 .dz-text { font-size: var(--fs-label); font-weight: 600; }
 .dz-formats { font-size: var(--fs-sm); opacity: 0.75; }

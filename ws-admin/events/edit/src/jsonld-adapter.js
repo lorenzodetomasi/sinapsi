@@ -165,20 +165,62 @@ export function toJsonLd(d) {
   const addTypeArr = Array.isArray(d.additionalType) ? d.additionalType.filter(Boolean) : d.additionalType ? [d.additionalType] : [];
   const additionalType = addTypeArr.length === 0 ? '' : addTypeArr.length === 1 ? addTypeArr[0] : addTypeArr;
 
-  const program = (d.subEvent ?? []).map((s) => {
-    const node = { '@type': 'Event', name: s.name ?? '' };
-    if (s.description) node.description = s.description; // omessa se vuota (come in index.json)
-    node.startDate = s.startDate ?? '';
-    node.endDate = s.endDate ?? '';
-    return node;
-  });
-  const occurrences = (d.occurrences ?? []).map((o) => ({ '@id': o.id ?? '', '@type': 'Event', name: o.name ?? '' }));
-  // subEvent = programma (Single) oppure occorrenze (Series)
+  // Nodi figli con i soli campi valorizzati (niente stringhe/valori vuoti).
+  const program = (d.subEvent ?? [])
+    .filter((s) => s.name || s.description || s.startDate || s.endDate)
+    .map((s) => ({
+      '@type': 'Event',
+      ...(s.name ? { name: s.name } : {}),
+      ...(s.description ? { description: s.description } : {}),
+      ...(s.startDate ? { startDate: s.startDate } : {}),
+      ...(s.endDate ? { endDate: s.endDate } : {}),
+    }));
+  const occurrences = (d.occurrences ?? [])
+    .filter((o) => o.id || o.name)
+    .map((o) => ({ ...(o.id ? { '@id': o.id } : {}), '@type': 'Event', ...(o.name ? { name: o.name } : {}) }));
   const subEvent = isSeries ? occurrences : program;
   const schedule = isSeries ? toSchedule(d.eventSchedule) : undefined;
 
   // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
   const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
+
+  const num = (v) => Number(v) || 0;
+  const physical = num(d.maximumPhysicalAttendeeCapacity);
+  const virtual = num(d.maximumVirtualAttendeeCapacity);
+  const total = num(d.maximumAttendeeCapacity);
+  const remaining = num(d.remainingAttendeeCapacity);
+  const kw = mergeKeywords(d);
+
+  // Sotto-oggetti opzionali: inclusi solo se hanno contenuto reale.
+  const price = num(d.offers?.price);
+  const offers =
+    d.offers?.availability || price || d.offers?.url
+      ? {
+          '@type': 'Offer',
+          ...(d.offers?.availability ? { availability: d.offers.availability } : {}),
+          ...(price ? { price } : {}),
+          priceCurrency: d.offers?.priceCurrency || 'EUR',
+          ...(d.offers?.url ? { url: d.offers.url } : {}),
+        }
+      : null;
+  const location =
+    d.location?.id || d.location?.name
+      ? {
+          ...(d.location.id ? { '@id': d.location.id } : {}),
+          '@type': d.location.type || 'Place',
+          ...(d.location.name ? { name: d.location.name } : {}),
+        }
+      : null;
+  const organizer = (d.organizer ?? [])
+    .filter((x) => x.id || x.name)
+    .map((x) => ({ ...(x.id ? { '@id': x.id } : {}), '@type': 'Organization', ...(x.name ? { name: x.name } : {}) }));
+  const aggregateRating = d.aggregateRating?.ratingValue
+    ? {
+        '@type': 'AggregateRating',
+        ratingValue: d.aggregateRating.ratingValue,
+        ...(d.aggregateRating.bestRating ? { bestRating: d.aggregateRating.bestRating } : {}),
+      }
+    : null;
 
   return {
     '@context': CONTEXT,
@@ -186,46 +228,28 @@ export function toJsonLd(d) {
     ...(d.url ? { url: d.url } : {}),
     ...(sameAs.length ? { sameAs } : {}),
     '@type': types,
-    additionalType,
-    keywords: mergeKeywords(d),
+    ...(additionalType ? { additionalType } : {}),
+    ...(kw ? { keywords: kw } : {}),
     name: d.name ?? '',
-    description: d.description ?? '',
-    image: d.image ?? '',
-    logo: d.logo ?? '',
-    startDate: d.startDate ?? '',
-    endDate: d.endDate ?? '',
-    typicalAgeRange: d.typicalAgeRange ?? '',
-    eventAttendanceMode: d.eventAttendanceMode ?? '',
-    maximumPhysicalAttendeeCapacity: d.maximumPhysicalAttendeeCapacity ?? 0,
-    maximumVirtualAttendeeCapacity: d.maximumVirtualAttendeeCapacity ?? 0,
-    maximumAttendeeCapacity: d.maximumAttendeeCapacity ?? 0,
-    remainingAttendeeCapacity: d.remainingAttendeeCapacity ?? 0,
+    ...(d.description ? { description: d.description } : {}),
+    ...(d.image ? { image: d.image } : {}),
+    ...(d.logo ? { logo: d.logo } : {}),
+    ...(d.startDate ? { startDate: d.startDate } : {}),
+    ...(d.endDate ? { endDate: d.endDate } : {}),
+    ...(d.typicalAgeRange ? { typicalAgeRange: d.typicalAgeRange } : {}),
+    ...(d.eventAttendanceMode ? { eventAttendanceMode: d.eventAttendanceMode } : {}),
+    ...(physical ? { maximumPhysicalAttendeeCapacity: physical } : {}),
+    ...(virtual ? { maximumVirtualAttendeeCapacity: virtual } : {}),
+    ...(total ? { maximumAttendeeCapacity: total } : {}),
+    ...(remaining ? { remainingAttendeeCapacity: remaining } : {}),
     isAccessibleForFree: !!d.isAccessibleForFree,
-    offers: {
-      '@type': 'Offer',
-      availability: d.offers?.availability ?? '',
-      price: d.offers?.price ?? 0,
-      priceCurrency: d.offers?.priceCurrency ?? 'EUR',
-      url: d.offers?.url ?? '',
-    },
-    location: {
-      '@id': d.location?.id ?? '',
-      '@type': d.location?.type ?? 'Place',
-      name: d.location?.name ?? '',
-    },
-    organizer: (d.organizer ?? []).map((x) => ({
-      '@id': x.id ?? '',
-      '@type': 'Organization',
-      name: x.name ?? '',
-    })),
+    ...(offers ? { offers } : {}),
+    ...(location ? { location } : {}),
+    ...(organizer.length ? { organizer } : {}),
     ...(schedule ? { eventSchedule: schedule } : {}),
-    subEvent,
-    eventStatus: d.eventStatus ?? '',
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: d.aggregateRating?.ratingValue ?? '',
-      bestRating: d.aggregateRating?.bestRating ?? '',
-    },
+    ...(subEvent.length ? { subEvent } : {}),
+    ...(d.eventStatus ? { eventStatus: d.eventStatus } : {}),
+    ...(aggregateRating ? { aggregateRating } : {}),
     // Flag pubblico: emessi solo se attivi (accompagnati solo se adatto ai bambini)
     ...(d.isChildrensEvent ? { 'meetoo:isChildrensEvent': true } : {}),
     ...(d.isChildrensEvent && d.childrenMustBeAccompanied ? { 'meetoo:childrenMustBeAccompanied': true } : {}),

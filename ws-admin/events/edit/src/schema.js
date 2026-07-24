@@ -73,8 +73,10 @@ const PRIMARY_TYPE = [
 // Suggerimenti per il campo "Social" (accetta anche valori personalizzati).
 const SOCIAL_SUGGEST = [
   'Facebook', 'Instagram', 'LinkedIn', 'TikTok', 'YouTube', 'X',
-  'Telegram', 'WhatsApp', 'Threads', 'Pinterest', 'Sito web',
+  'Telegram', 'WhatsApp', 'Threads', 'Pinterest', 'Blog', 'Sito web',
 ];
+// Fasce d'età suggerite (il campo accetta anche valori personalizzati).
+const AGE_RANGES = ['All Ages', '0-3', '3-6', '6-12', '12-18', '18+', '18-30', '30-60', '60+'];
 
 export const schema = {
   type: 'object',
@@ -248,19 +250,17 @@ export const uischema = {
       type: 'Group',
       label: 'Identità',
       options: { icon: 'badge' },
-      elements: [ctrl('#/properties/id')],
-    },
-    {
-      type: 'Group',
-      label: 'Classificazione',
-      options: { icon: 'category' },
       elements: [
-        ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
-        // Tipi = altri @type, scelti dalle opzioni MACROCATEGORY, senza valori custom
-        ctrl('#/properties/types', { options: { icon: 'category', select: true, suggestions: MACROCATEGORY } }),
-        ctrl('#/properties/additionalType', { options: { icon: 'label' } }),
-        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
-      ],
+        {
+          type: 'HorizontalLayout',
+          elements: [
+            ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
+            ctrl('#/properties/id')
+          ],
+        },
+        ctrl('#/properties/url', { options: { icon: 'link' } }),
+        ctrl('#/properties/sameAs', { options: { icon: 'link_2', variant: 'row' } }),
+      ]
     },
     {
       type: 'Group',
@@ -269,9 +269,6 @@ export const uischema = {
       elements: [
         ctrl('#/properties/name'),
         ctrl('#/properties/description', { options: { icon: 'description' } }),
-        ctrl('#/properties/url', { options: { icon: 'language' } }),
-        // Più siti/social (schema.org sameAs), ripetibili
-        ctrl('#/properties/sameAs', { label: 'Social e altri siti', options: { icon: 'share', variant: 'row' } }),
         {
           type: 'HorizontalLayout',
           elements: [
@@ -279,6 +276,17 @@ export const uischema = {
             ctrl('#/properties/image', { options: { icon: 'image' } }),
           ],
         },
+      ],
+    },
+    {
+      type: 'Group',
+      label: 'Classificazione',
+      options: { icon: 'category' },
+      elements: [
+        // Tipi = altri @type, scelti dalle opzioni MACROCATEGORY, senza valori custom
+        ctrl('#/properties/types', { options: { icon: 'category', select: true, suggestions: MACROCATEGORY } }),
+        ctrl('#/properties/additionalType', { options: { icon: 'label' } }),
+        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
       ],
     },
     {
@@ -320,12 +328,15 @@ export const uischema = {
           type: 'HorizontalLayout',
           elements: [
             ctrl('#/properties/eventAttendanceMode'),
-            ctrl('#/properties/typicalAgeRange'),
+            ctrl('#/properties/typicalAgeRange', {
+              options: { searchable: true, suggestions: AGE_RANGES, icon: 'child_care' },
+            }),
           ],
         },
-        // Capienze in griglia 3 colonne, così le due righe restano allineate:
-        //   presenza | remoto | totale(calcolato)
-        //   prenotati | rimasti(calcolato) |
+        // Capienze in griglia 3 colonne. I due calcolati (totale, rimasti) stanno
+        // nella stessa colonna (3ª); uno spaziatore tiene libera la 2ª nella riga 2:
+        //   presenza | remoto  | totale(calcolato)
+        //   prenotati| ­        | rimasti(calcolato)
         {
           type: 'HorizontalLayout',
           options: { cols: 3 },
@@ -334,14 +345,21 @@ export const uischema = {
             ctrl('#/properties/maximumVirtualAttendeeCapacity'),
             ctrl('#/properties/maximumAttendeeCapacity', { options: { computed: true } }),
             ctrl('#/properties/bookedAttendeeCapacity'),
+            { type: 'Label', options: { spacer: true } },
             ctrl('#/properties/remainingAttendeeCapacity', { options: { computed: true } }),
           ],
         },
-        // Flag pubblico impilati (checkbox a sinistra, etichetta a destra)
-        ctrl('#/properties/isChildrensEvent'),
-        ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
-        ctrl('#/properties/forSeparatedParents'),
-        ctrl('#/properties/isAccessibleForFree'),
+        // Flag pubblico su una sola riga
+        {
+          type: 'HorizontalLayout',
+          options: { inline: true },
+          elements: [
+            ctrl('#/properties/isChildrensEvent'),
+            ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
+            ctrl('#/properties/forSeparatedParents'),
+            ctrl('#/properties/isAccessibleForFree'),
+          ],
+        },
       ],
     },
     {
@@ -382,7 +400,7 @@ export const uischema = {
     }),
     {
       type: 'Group',
-      label: 'Valutazione',
+      label: 'Valutazione media degli utenti',
       options: { icon: 'star' },
       elements: [
         {

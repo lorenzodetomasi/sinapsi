@@ -13,6 +13,8 @@ import RecurrenceRenderer, { recurrenceTester } from './RecurrenceRenderer.jsx';
 import MultiSelectRenderer, { multiSelectTester } from './MultiSelectRenderer.jsx';
 import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
 import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
+import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
+import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import OptionsMenu from './OptionsMenu.jsx';
@@ -31,6 +33,8 @@ const renderers = [
   { tester: multiSelectTester, renderer: MultiSelectRenderer },
   { tester: computedTester, renderer: ComputedRenderer },
   { tester: fieldRowTester, renderer: FieldRowRenderer },
+  { tester: iconTextTester, renderer: IconTextRenderer },
+  { tester: smartDateTester, renderer: SmartDateRenderer },
 ];
 
 // Capienze derivate: totale = presenza + remoto; rimasti = totale − prenotati.
@@ -172,6 +176,7 @@ export default function App() {
   function openDatePicker(e) {
     const input = e.target;
     if (!(input instanceof HTMLInputElement) || input.type !== 'datetime-local') return;
+    if (input.closest('.smart-date')) return; // SmartDate ha i suoi pulsanti
     if (e.clientX < input.getBoundingClientRect().right - ICON_ZONE) return;
     try {
       input.showPicker?.();

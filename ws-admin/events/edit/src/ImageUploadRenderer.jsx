@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { rankWith, and, isStringControl, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import { API_BASE } from './config.js';
@@ -13,6 +13,14 @@ const ImageUpload = ({ data, handleChange, path, label, id, uischema, enabled })
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [drag, setDrag] = useState(false);
+  // Su mobile niente drag&drop: solo pulsante file (come Google Calendar).
+  const [isMobile, setIsMobile] = useState(() => !!window.matchMedia?.('(max-width: 62.5rem)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 62.5rem)');
+    const on = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
   const icon = uischema?.options?.icon || 'image';
 
   async function upload(file) {
@@ -66,13 +74,10 @@ const ImageUpload = ({ data, handleChange, path, label, id, uischema, enabled })
         </div>
 
         <label
-          className={'dropzone' + (drag ? ' drag' : '') + (busy ? ' busy' : '')}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDrag(true);
-          }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={onDrop}
+          className={'dropzone' + (drag ? ' drag' : '') + (busy ? ' busy' : '') + (isMobile ? ' as-button' : '')}
+          onDragOver={isMobile ? undefined : (e) => { e.preventDefault(); setDrag(true); }}
+          onDragLeave={isMobile ? undefined : () => setDrag(false)}
+          onDrop={isMobile ? undefined : onDrop}
         >
           <input
             id={id}
@@ -82,8 +87,8 @@ const ImageUpload = ({ data, handleChange, path, label, id, uischema, enabled })
             disabled={enabled === false || busy}
             onChange={(e) => upload(e.target.files?.[0])}
           />
-          <span className="material-symbols-outlined">upload</span>
-          <span className="dz-text">{busy ? 'Caricamento…' : 'Trascina qui o clicca'}</span>
+          <span className="material-symbols-outlined">{isMobile ? 'photo_camera' : 'upload'}</span>
+          <span className="dz-text">{busy ? 'Caricamento…' : isMobile ? 'Scegli file' : 'Trascina qui o clicca'}</span>
           <span className="dz-formats">JPG · JPEG · PNG · SVG</span>
         </label>
       </div>
