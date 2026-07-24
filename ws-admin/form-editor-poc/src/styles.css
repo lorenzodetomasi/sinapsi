@@ -448,6 +448,31 @@ button.primary { margin-top: var(--sp-md); }
 .insert-gap:hover::before { opacity: 1; }
 .insert-gap:hover button, .insert-gap button:focus-visible { opacity: 1; transform: scale(1); }
 
+/* ---------- Ricorrenza (stile Google Calendar) ---------- */
+.recurrence { margin: var(--label-gap) 0 var(--sp-md); display: flex; flex-direction: column; gap: var(--sp-sm); }
+.rec-line { display: flex; align-items: center; gap: var(--sp-sm); flex-wrap: wrap; }
+.rec-line span { color: var(--text-dim); font-size: var(--fs-label); }
+/* specificità alta per battere `.pane input[type=number]` { width:100% } */
+.recurrence input.rec-interval { width: 4rem; margin: 0; }
+.recurrence .rec-line select { width: auto; min-width: 8rem; margin: 0; }
+.rec-days { display: flex; gap: var(--sp-xs); }
+.rec-day {
+  width: var(--control-h); height: var(--control-h); padding: 0;
+  border-radius: 50%; background: var(--field-bg); color: var(--text-dim);
+  font-weight: 600; cursor: pointer; border: 1px solid transparent;
+}
+.rec-day:hover { border-color: var(--border); background: var(--field-bg); color: var(--text); }
+.rec-day.on { background: var(--accent); color: var(--on-accent); }
+.rec-end { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.rec-end > span { color: var(--text-dim); font-size: var(--fs-label); font-weight: 500; }
+.rec-end-opts { display: flex; flex-direction: column; gap: var(--sp-xs); }
+.rec-end-opts label { display: flex; align-items: center; gap: var(--sp-sm); color: var(--text); font-weight: 400; margin: 0; }
+.rec-end-opts input[type='radio'] { width: 1rem; height: 1rem; accent-color: var(--accent); margin: 0; }
+.recurrence input.rec-until { width: auto; min-width: 9rem; margin: 0; }
+.recurrence input.rec-count { width: 4rem; margin: 0; }
+.rec-tz .field-label { margin-left: 0; }
+.rec-tz input { max-width: 16rem; }
+
 /* ---------- Editor XHTML ---------- */
 .xhtml-control { margin: var(--label-gap) 0 var(--sp-md); }
 .xhtml-toolbar {

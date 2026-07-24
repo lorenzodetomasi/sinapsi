@@ -46,7 +46,8 @@ function InsertGap({ onInsert }) {
   );
 }
 
-const RepeatableObject = ({ data, handleChange, path, label, schema, uischema }) => {
+const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, visible }) => {
+  if (visible === false) return null; // rispetta le regole SHOW/HIDE dell'uischema
   const items = Array.isArray(data) ? data : [];
   const props = schema.items?.properties || {};
   const icon = uischema?.options?.icon;

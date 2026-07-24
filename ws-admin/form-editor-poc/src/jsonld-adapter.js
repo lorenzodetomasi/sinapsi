@@ -6,15 +6,47 @@ const CONTEXT = ['https://schema.org', { meetoo: 'https://meetoo.eu#' }];
 
 const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 
+// Tipi schema.org di RADICE derivati da meetoo:@type (non editabili tra i tag):
+// meetoo:EventSingle -> Event, meetoo:EventSeries -> EventSeries.
+const BASE_TYPES = ['Event', 'EventSeries'];
+
+// eventSchedule (schema.org Schedule) <-> modello del form della ricorrenza.
+function fromSchedule(sched) {
+  const d = { frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10, timezone: '' };
+  if (!sched) return d;
+  const m = /^P(\d+)([DWMY])$/.exec(sched.repeatFrequency || '');
+  if (m) {
+    d.frequency = { D: 'daily', W: 'weekly', M: 'monthly', Y: 'yearly' }[m[2]];
+    d.interval = Number(m[1]);
+  }
+  if (sched.byDay) d.byDay = String(sched.byDay).split(',').map((x) => x.trim()).filter(Boolean);
+  if (sched.endDate) { d.endMode = 'until'; d.until = sched.endDate; }
+  else if (sched.repeatCount) { d.endMode = 'count'; d.count = Number(sched.repeatCount); }
+  if (sched.scheduleTimezone) d.timezone = sched.scheduleTimezone;
+  return d;
+}
+function toSchedule(s) {
+  if (!s) return undefined;
+  const unit = { daily: 'D', weekly: 'W', monthly: 'M', yearly: 'Y' }[s.frequency] || 'W';
+  const out = { '@type': 'Schedule', repeatFrequency: `P${Math.max(1, Number(s.interval) || 1)}${unit}` };
+  if (s.frequency === 'weekly' && s.byDay?.length) out.byDay = s.byDay.join(',');
+  if (s.endMode === 'until' && s.until) out.endDate = s.until;
+  if (s.endMode === 'count' && s.count) out.repeatCount = Number(s.count);
+  if (s.timezone) out.scheduleTimezone = s.timezone;
+  return out;
+}
+
 /** JSON-LD (index.json) -> dati del form. */
 export function fromJsonLd(doc) {
   const o = doc.offers ?? {};
   const loc = doc.location ?? {};
   const rating = doc.aggregateRating ?? {};
   const meetoo = doc.meetoo ?? {};
+  const isSeries = meetoo['@type'] === 'meetoo:EventSeries' || asArray(doc['@type']).includes('EventSeries');
+  const subEventArr = doc.subEvent ?? [];
   return {
     id: doc['@id'] ?? '',
-    types: asArray(doc['@type']),
+    types: asArray(doc['@type']).filter((t) => !BASE_TYPES.includes(t)),
     additionalType: doc.additionalType ?? '',
     keywords: doc.keywords
       ? String(doc.keywords).split(',').map((s) => s.trim()).filter(Boolean)
@@ -45,12 +77,17 @@ export function fromJsonLd(doc) {
       name: loc.name ?? '',
     },
     organizer: (doc.organizer ?? []).map((x) => ({ id: x['@id'] ?? '', name: x.name ?? '' })),
-    subEvent: (doc.subEvent ?? []).map((s) => ({
-      name: s.name ?? '',
-      description: s.description ?? '',
-      startDate: s.startDate ?? '',
-      endDate: s.endDate ?? '',
-    })),
+    // subEvent è il programma per un Single, le occorrenze (link @id) per una Series
+    subEvent: isSeries
+      ? []
+      : subEventArr.map((s) => ({
+          name: s.name ?? '',
+          description: s.description ?? '',
+          startDate: s.startDate ?? '',
+          endDate: s.endDate ?? '',
+        })),
+    occurrences: isSeries ? subEventArr.map((s) => ({ id: s['@id'] ?? '', name: s.name ?? '' })) : [],
+    eventSchedule: fromSchedule(doc.eventSchedule),
     aggregateRating: {
       ratingValue: rating.ratingValue ?? '',
       bestRating: rating.bestRating ?? '',
@@ -84,15 +121,24 @@ function mergeKeywords(d) {
 /** Dati del form -> JSON-LD (index.json), reintroducendo @context/@type/@id/namespace.
  *  L'ordine delle chiavi segue index.json. */
 export function toJsonLd(d) {
-  const types = d.types?.length ? (d.types.length === 1 ? d.types[0] : d.types) : 'Event';
+  const isSeries = d.meetoo?.type === 'meetoo:EventSeries';
+  // Il @type di radice è imposto da meetoo:@type; i tag portano solo i sottotipi.
+  const base = isSeries ? 'EventSeries' : 'Event';
+  const subtypes = (d.types ?? []).filter((t) => !BASE_TYPES.includes(t));
+  const typeArr = [base, ...subtypes];
+  const types = typeArr.length === 1 ? typeArr[0] : typeArr;
 
-  const subEvent = (d.subEvent ?? []).map((s) => {
+  const program = (d.subEvent ?? []).map((s) => {
     const node = { '@type': 'Event', name: s.name ?? '' };
     if (s.description) node.description = s.description; // omessa se vuota (come in index.json)
     node.startDate = s.startDate ?? '';
     node.endDate = s.endDate ?? '';
     return node;
   });
+  const occurrences = (d.occurrences ?? []).map((o) => ({ '@id': o.id ?? '', '@type': 'Event', name: o.name ?? '' }));
+  // subEvent = programma (Single) oppure occorrenze (Series)
+  const subEvent = isSeries ? occurrences : program;
+  const schedule = isSeries ? toSchedule(d.eventSchedule) : undefined;
 
   return {
     '@context': CONTEXT,
@@ -130,6 +176,7 @@ export function toJsonLd(d) {
       '@type': 'Organization',
       name: x.name ?? '',
     })),
+    ...(schedule ? { eventSchedule: schedule } : {}),
     subEvent,
     eventStatus: d.eventStatus ?? '',
     aggregateRating: {

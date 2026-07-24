@@ -21,11 +21,54 @@ const AVAILABILITY = [
   { const: 'https://schema.org/PreOrder', title: 'Preordine' },
   { const: 'https://schema.org/OutOfStock', title: 'Non disponibile' },
 ];
-
+const MACROCATEGORY = [
+  { const: 'Event', title: 'Evento' },
+  { const: 'VisualArtsEvent', title: 'Arti visive' },
+  { const: 'meetoo:DesignEvent', title: 'Design' },
+  { const: 'meetoo:ArchitectureEvent', title: 'Architettura' },
+  { const: 'TheaterEvent', title: 'Teatro' },
+  { const: 'meetoo:PsycologyEvent', title: 'Psicologia' },
+  'ComedyEvent', 
+  { const: 'DanceEvent', title: 'Danza' },
+  { const: 'FoodEvent', title: 'Cibo' },
+  'Hackathon',
+  { const: 'LiteraryEvent', title: 'Letteratura' },
+  { const: 'MusicEvent', title: 'Musica' },
+  { const: 'ScreeningEvent', title: 'Cinema' },
+  { const: 'SportsEvent', title: 'Sport' },
+  { const: 'GamingEvent', title: 'Giochi' },
+  { const: 'BusinessEvent', title: 'Lavoro' },
+  { const: 'meetoo:WellbeingEvent', title: 'Benessere' },
+  { const: 'meetoo:NatureEvent', title: 'Natura' },
+  { const: 'meetoo:AnimalsEvent', title: 'Animali domestici' },
+  { const: 'meetoo:FriendshipEvent', title: 'Amicizia' },
+  { const: 'meetoo:LoveEvent', title: 'Relazioni' },
+  { const: 'meetoo:LoveEvent', title: 'Amore' },
+];
+const MEETOO_GENERIC_CATEGORY = [
+  'ChildrensEvent', 
+  'DeliveryEvent', 
+  'EducationEvent', 
+  'ExhibitionEvent', 
+  'Festival', 
+  'PublicationEvent', 
+  'SaleEvent', 
+  'SocialEvent',
+  { const: 'PartyEvent', title: 'Party' },
+  'CourseInstance', 
+]
+const MEETOO_CATEGORY = [
+  { const: 'ReadingPartyEvent', title: 'Reading Party' },
+  { const: 'DatingEvent', title: 'Dating' },
+  { const: 'BusinessDatingEvent', title: 'Business Dating' },
+  { const: 'FriendshipDatingEvent', title: 'Friendship Dating' },
+  { const: 'LoveDatingEvent', title: 'Love Dating' },
+];
 export const schema = {
   type: 'object',
   properties: {
     id: { type: 'string', title: '@id' },
+    url: { type: 'string', title: 'url' },
     types: { type: 'array', title: 'Tipi (@type)', items: { type: 'string' } },
     additionalType: { type: 'string', title: 'additionalType' },
     keywords: { type: 'array', title: 'Keywords', format: 'tags', items: { type: 'string' } },
@@ -86,6 +129,33 @@ export const schema = {
         },
       },
     },
+    // Occorrenze di una serie: riferimenti @id (+ nome) agli eventi figli.
+    occurrences: {
+      type: 'array',
+      title: 'Occorrenze',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', title: 'Nome' },
+          id: { type: 'string', title: '@id' },
+        },
+      },
+    },
+    // Ricorrenza (schema.org Schedule) — renderer custom stile Google Calendar.
+    eventSchedule: {
+      type: 'object',
+      title: 'Ricorrenza',
+      format: 'recurrence',
+      properties: {
+        frequency: { type: 'string' },
+        interval: { type: 'integer' },
+        byDay: { type: 'array', items: { type: 'string' } },
+        endMode: { type: 'string' },
+        until: { type: 'string' },
+        count: { type: 'integer' },
+        timezone: { type: 'string' },
+      },
+    },
     aggregateRating: {
       type: 'object',
       title: 'Valutazione',
@@ -108,10 +178,27 @@ export const schema = {
 
 // Sottotipi di Event di schema.org (suggerimenti ricercabili; @type resta creatable).
 const EVENT_TYPES = [
-  'Event', 'BusinessEvent', 'ChildrensEvent', 'ComedyEvent', 'CourseInstance', 'DanceEvent',
-  'DeliveryEvent', 'EducationEvent', 'ExhibitionEvent', 'Festival', 'FoodEvent', 'Hackathon',
-  'LiteraryEvent', 'MusicEvent', 'PublicationEvent', 'SaleEvent', 'ScreeningEvent', 'SocialEvent',
-  'SportsEvent', 'TheaterEvent', 'VisualArtsEvent',
+  'Event', 
+  'BusinessEvent', 
+  'ChildrensEvent', 
+  'ComedyEvent', 
+  'CourseInstance', 
+  'DanceEvent',
+  'DeliveryEvent', 
+  'EducationEvent', 
+  'ExhibitionEvent', 
+  'Festival', 
+  'FoodEvent', 
+  'Hackathon',
+  'LiteraryEvent', 
+  'MusicEvent', 
+  'PublicationEvent', 
+  'SaleEvent', 
+  'ScreeningEvent', 
+  'SocialEvent',
+  'SportsEvent', 
+  'TheaterEvent', 
+  'VisualArtsEvent',
 ];
 
 // Tipi meetoo: valori predefiniti ricercabili (il campo accetta anche testo libero,
@@ -125,6 +212,11 @@ const MEETOO_TYPES = [
 
 const ctrl = (scope, extra = {}) => ({ type: 'Control', scope, ...extra });
 
+// Regole condizionali guidate da meetoo:@type.
+const SERIES_SCOPE = '#/properties/meetoo/properties/type';
+const showIfSeries = { effect: 'SHOW', condition: { scope: SERIES_SCOPE, schema: { const: 'meetoo:EventSeries' } } };
+const showIfNotSeries = { effect: 'SHOW', condition: { scope: SERIES_SCOPE, schema: { not: { const: 'meetoo:EventSeries' } } } };
+
 export const uischema = {
   type: 'VerticalLayout',
   elements: [
@@ -136,11 +228,18 @@ export const uischema = {
         {
           type: 'HorizontalLayout',
           elements: [
+            ctrl('#/properties/url'),
+            ctrl('#/properties/meetoo/properties/macrocategory'),
+          ],
+        },
+        {
+          type: 'HorizontalLayout',
+          elements: [
             ctrl('#/properties/meetoo/properties/type', {
               options: { searchable: true, suggestions: MEETOO_TYPES },
             }),
-            ctrl('#/properties/meetoo/properties/macrocategory'),
-            ctrl('#/properties/id'),           ],
+            ctrl('#/properties/id'),
+          ],
         },
       ],
     },
@@ -192,6 +291,8 @@ export const uischema = {
       elements: [
         { type: 'HorizontalLayout', elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')] },
         ctrl('#/properties/eventStatus'),
+        // Ricorrenza: solo per le serie
+        ctrl('#/properties/eventSchedule', { rule: showIfSeries }),
       ],
     },
     {
@@ -243,7 +344,17 @@ export const uischema = {
       ],
     },
     ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
-    ctrl('#/properties/subEvent', { label: 'Programma dell’evento', options: { icon: 'event', variant: 'stack' } }),
+    // Single → programma interno; Series → occorrenze (link @id)
+    ctrl('#/properties/subEvent', {
+      label: 'Programma dell’evento',
+      options: { icon: 'event', variant: 'stack' },
+      rule: showIfNotSeries,
+    }),
+    ctrl('#/properties/occurrences', {
+      label: 'Occorrenze',
+      options: { icon: 'event_repeat', variant: 'row' },
+      rule: showIfSeries,
+    }),
     {
       type: 'Group',
       label: 'Valutazione',
