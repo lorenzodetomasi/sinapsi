@@ -120,6 +120,10 @@ body {
   vertical-align: middle; -webkit-font-smoothing: antialiased;
 }
 
+/* Shell a tutta altezza: header in cima, le colonne riempiono il resto e
+   scrollano internamente (il form scorre, il validatore resta fermo). */
+.app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
 /* ---------- Header applicazione: brand + azioni ---------- */
 .appbar {
   display: flex; align-items: center; gap: var(--sp-md);
@@ -173,25 +177,40 @@ body {
 .tabs .material-symbols-outlined { font-size: 1.125rem; }
 
 .layout {
-  display: grid; grid-template-columns: 1fr 1fr;
+  flex: 1; min-height: 0;
+  display: grid;
+  /* form più largo del validatore; minmax(0,…) impedisce che il codice lungo
+     allarghi la colonna oltre la finestra (grid blowout) */
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: var(--sp-xl); padding: var(--sp-lg) var(--sp-xl) var(--sp-xl);
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 62.5rem) {
+  /* Su mobile torna al flusso normale: la pagina scorre, un pannello per volta */
+  .app { height: auto; overflow: visible; }
   .layout { grid-template-columns: 1fr; padding-top: 0; }
   .topbar { padding-top: var(--sp-md); }
   .tabs { display: flex; gap: var(--sp-xs); }
   .tab-form .pane-validation { display: none; }
   .tab-validation .pane-form { display: none; }
-  .layout .pane { border-top-left-radius: 0; }
+  .layout .pane { border-top-left-radius: 0; overflow: visible; }
+  .pane-validation { overflow: visible; }
+  .code-area { flex: none; max-height: 26rem; }
 }
 
 .pane {
   background: var(--surface);
   border-radius: var(--r-lg);
   padding: var(--sp-xl);
+  min-width: 0;              /* consente lo shrink: niente overflow orizzontale */
+  overflow-y: auto;          /* ogni colonna scorre per conto suo */
+  overflow-x: hidden;
 }
+/* Il validatore riempie l'altezza: solo l'area di codice scorre al suo interno */
+.pane-validation { display: flex; flex-direction: column; overflow: hidden; }
+.pane-validation > h2 { flex: none; }
+.pane-validation .code-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 h2 { margin: 0 0 var(--sp-lg); font-size: var(--fs-title); font-weight: 600; }
 h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label); }
@@ -596,7 +615,7 @@ button.primary { margin-top: var(--sp-md); }
   font-size: var(--fs-label); font-weight: 700;
 }
 .code-header .status-indicator { font-size: 1.25rem; }
-.code-area { display: flex; max-height: 26rem; overflow: auto; }
+.code-area { display: flex; flex: 1; min-height: 0; overflow: auto; }
 .line-numbers, .code-content {
   font-family: var(--font-mono); font-size: var(--fs-label); line-height: 1.5;
   padding-top: var(--sp-md); padding-bottom: var(--sp-md); margin: 0;
