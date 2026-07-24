@@ -85,3 +85,111 @@ si espande in `https://meetoo.eumacrocategory` (IRI malformato). Con `#` →
 - Google Places assiste la ricerca/compilazione del `name`; l'`@id` è generato come
   slug dal nome ed è **editabile**. La chiave Maps JS/Places sta in `.env.local`
   (non committata).
+
+---
+
+# Tipi di evento: EventSingle ed EventSeries
+
+Il form edita **un documento evento alla volta**. Il tipo del documento è dato da
+`meetoo:@type` e determina, con regole condizionali, quali campi mostrare.
+
+| `meetoo:@type` | `@type` schema.org (radice) | Natura |
+|----------------|-----------------------------|--------|
+| `meetoo:EventSingle` | `Event` (+ sottotipo, es. `LiteraryEvent`) | Un evento con un **programma** interno |
+| `meetoo:EventSeries` | `EventSeries` (+ sottotipo) | Un contenitore con **occorrenze** (eventi figli) e una **ricorrenza** |
+
+- `meetoo:@type` è il **discriminante unico**: sceglierlo imposta anche il `@type`
+  schema.org di radice (`Event` ⇄ `EventSeries`). Non si editano separatamente.
+- Il modello è **ricorsivo per composizione, non per annidamento**: un'occorrenza di
+  una serie è essa stessa un evento (Single o Series) con **JSON-LD proprio** in una
+  cartella figlia. La serie la referenzia; non la contiene inline. Un festival è così
+  una Series le cui occorrenze annuali sono a loro volta Series (con giornate) o Single.
+
+## Campi condivisi (Single e Series)
+
+`@id`, `@type`, `additionalType`, `keywords`, `name`, `description`, `image`, `logo`,
+`typicalAgeRange`, `eventAttendanceMode`, `isAccessibleForFree`, `offers`,
+`aggregateRating`, `organizer` (riferimenti), `meetoo` (`@type`, `macrocategory`).
+
+## Specifico di EventSingle
+
+- **`startDate` / `endDate`** = data-ora dell'evento.
+- **`subEvent`** = **programma interno**: array di sotto-eventi *inline*
+  (`name`, `description`, `startDate`, `endDate`) — es. Accoglienza, Lettura, Chiacchierata.
+- **`location`** = luogo proprio dell'evento.
+
+## Specifico di EventSeries
+
+- **`startDate`** = inizio della serie (prima edizione, es. Sanremo «dal 1951»);
+  **`endDate`** opzionale (serie conclusa) o assente (in corso). La sezione *Quando*
+  resta ma cambia significato rispetto al singolo.
+- **`eventSchedule`** (schema.org `Schedule`) = **ricorrenza**, modellata sull'editor
+  di Google Calendar → mappata sulle proprietà `Schedule`:
+
+  | UI (stile Google Calendar) | schema.org `Schedule` |
+  |---|---|
+  | Frequenza: Giornaliera/Settimanale/Mensile/Annuale | `repeatFrequency` (`P1D`/`P1W`/`P1M`/`P1Y`) |
+  | «Ogni N …» (intervallo) | `repeatFrequency` = `P{N}{unità}` (es. ogni 2 settimane → `P2W`) |
+  | Giorni della settimana (settimanale) | `byDay` (`MO,WE,FR`) |
+  | Mensile: per giorno del mese / per n-esimo giorno | `byMonthDay` / `byDay` con ordinale |
+  | Fine: Mai / In data / Dopo N volte | assente / `endDate` / `repeatCount` |
+  | Date escluse | `exceptDate` |
+  | Fuso orario | `scheduleTimezone` |
+
+- **`subEvent`** = **occorrenze**: array di **riferimenti `@id`** (+ `name`) agli eventi
+  figli. Ogni figlio ha JSON-LD proprio in una cartella. Editabile con:
+  - **ricerca** tra eventi esistenti (richiede endpoint di elenco eventi);
+  - **quick-create** minimale (nome + date), che genera un figlio con `superEvent`
+    verso il genitore; il figlio si edita poi integralmente caricando il suo JSON.
+- **`location` e capienze** = **default di serie con override**: impostati sulla serie
+  valgono per tutte le occorrenze; ogni occorrenza può sovrascriverli (es. Sanremo
+  sempre stesso teatro, ma un'edizione altrove). *(L'ereditarietà è applicata in fase di
+  pubblicazione/rendering, non duplicata nel JSON del figlio salvo override esplicito.)*
+
+## Relazioni genitore ↔ figlio
+
+- Serie → occorrenze: **`subEvent`** (riferimenti `@id`).
+- Occorrenza → serie: **`superEvent`** (riferimento `@id`).
+- Il form mostra i **pulsanti** per aprire/editare il genitore e i figli, caricando di
+  volta in volta il JSON del documento scelto (un documento alla volta).
+
+## Path e `@id` delle occorrenze
+
+Le occorrenze vivono **sotto** la cartella della serie:
+
+```
+events/{serieSlug}/                     ← la serie (index.json)
+events/{serieSlug}/{occorrenzaSlug}/    ← occorrenza in programma
+events/{serieSlug}/archive/{occorrenzaSlug}/  ← occorrenza passata
+```
+
+- `@id` di un'occorrenza (self) = slug nudo (`{occorrenzaSlug}`); **riferimento** dalla
+  serie o verso la serie = path relativo alla radice del locale
+  (`events/{serieSlug}/{occorrenzaSlug}`, `events/{serieSlug}`), coerente con la regola
+  generale degli `@id`.
+- Ne consegue che l'href XInclude **non è sempre `../../`**: dipende dalla posizione
+  relativa tra sorgente e destinazione (una serie che include una sua occorrenza scende
+  di un livello; un'occorrenza che punta alla serie sale di uno). *(Il convertitore deve
+  calcolare l'href relativo in generale, non assumere `../../`.)*
+
+## Regole condizionali (uischema, guidate da `meetoo:@type`)
+
+| Sezione / campo | EventSingle | EventSeries |
+|---|---|---|
+| Quando (`startDate`/`endDate`) | data-ora evento | arco della serie |
+| Ricorrenza (`eventSchedule`) | nascosta | **mostrata** |
+| `subEvent` | Programma (inline) | **Occorrenze** (link `@id` + quick-create) |
+| Luogo / capienze | proprie | default con override |
+
+Meccanismo: **schema unico** (superset) + regole `SHOW`/`HIDE` dell'uischema su
+`meetoo:@type` (stesso pattern già usato per *Offerta*); due controlli distinti sullo
+stesso `subEvent`, uno per tipo. I campi nascosti da una condizione **vengono esclusi**
+dal JSON-LD generato (una serie non emette il programma inline né viceversa).
+
+## Dipendenze d'implementazione (da costruire a parte)
+
+1. **Endpoint elenco eventi** (PHP): elenca gli eventi esistenti per la ricerca delle
+   occorrenze; utile anche ai selettori `location`/`organizer`.
+2. **Load/Save JSON** dal form: la navigazione genitore↔figli e la persistenza dei figli
+   richiedono di caricare un `index.json` nel form e di salvarlo nella cartella.
+3. **Convertitore**: href XInclude relativo generale (vedi sopra).
