@@ -1,7 +1,8 @@
-import { Fragment, useId, useRef, useState } from 'react';
+import { Fragment, useId } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import XhtmlEditor from './XhtmlEditor.jsx';
+import { usePointerReorder } from './usePointerReorder.js';
 
 // Array di oggetti resi come "card" su più righe. Ogni card ha una striscia
 // verticale a sinistra (maniglia di riordino + rimozione) e si può riordinare
@@ -74,10 +75,6 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
   const icon = uischema?.options?.icon;
   const variant = uischema?.options?.variant || 'stack';
 
-  const [dragIndex, setDragIndex] = useState(null);
-  const [insertAt, setInsertAt] = useState(null);
-  const handleGrabbed = useRef(false);
-
   const update = (arr) => handleChange(path, arr);
   const setField = (i, key, val) => {
     const next = items.map((x) => ({ ...x }));
@@ -90,17 +87,13 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
     update(next);
   };
   const moveCard = (from, to) => {
-    if (from === null || to === null) return;
     const next = [...items];
     const [moved] = next.splice(from, 1);
     next.splice(to > from ? to - 1 : to, 0, moved);
     update(next);
   };
-  const endDrag = () => {
-    setDragIndex(null);
-    setInsertAt(null);
-    handleGrabbed.current = false;
-  };
+  // Riordino con Pointer Events (mouse + touch)
+  const { dragIndex, overIndex, onHandlePointerDown } = usePointerReorder(moveCard, { axis: 'y' });
 
   return (
     <div className={'control repeat-object variant-' + variant}>
@@ -114,43 +107,18 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
         </button>
       </div>
 
-      <div className="cards">
+      <div className="cards" data-reorder-root>
         {items.map((item, i) => {
           const classes = ['card'];
           if (dragIndex === i) classes.push('dragging');
-          if (insertAt === i) classes.push('insert-before');
-          if (insertAt === items.length && i === items.length - 1) classes.push('insert-after');
+          if (overIndex === i && dragIndex !== null) classes.push('insert-before');
+          if (overIndex === items.length && i === items.length - 1 && dragIndex !== null)
+            classes.push('insert-after');
 
           return (
             <Fragment key={i}>
               {i > 0 && <InsertGap onInsert={() => insertAtIndex(i)} />}
-              <fieldset
-                className={classes.join(' ')}
-                draggable
-                onDragStart={(e) => {
-                  if (!handleGrabbed.current) {
-                    e.preventDefault(); // si trascina solo dalla maniglia
-                    return;
-                  }
-                  setDragIndex(i);
-                  e.dataTransfer.effectAllowed = 'move';
-                  e.dataTransfer.setData('text/plain', String(i));
-                }}
-                onDragOver={(e) => {
-                  if (dragIndex === null) return;
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = 'move';
-                  // metà superiore → inserisci sopra, metà inferiore → sotto
-                  const box = e.currentTarget.getBoundingClientRect();
-                  setInsertAt(e.clientY < box.top + box.height / 2 ? i : i + 1);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  moveCard(dragIndex, insertAt);
-                  endDrag();
-                }}
-                onDragEnd={endDrag}
-              >
+              <fieldset className={classes.join(' ')} data-reorder-index={i}>
                 <div className="card-rail">
                   <button
                     type="button"
@@ -163,8 +131,7 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
                   <span
                     className="card-handle"
                     title="Trascina per riordinare"
-                    onMouseDown={() => (handleGrabbed.current = true)}
-                    onMouseUp={() => (handleGrabbed.current = false)}
+                    onPointerDown={(e) => onHandlePointerDown(e, i)}
                   >
                     <span className="material-symbols-outlined">drag_indicator</span>
                   </span>

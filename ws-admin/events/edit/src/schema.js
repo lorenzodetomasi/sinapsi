@@ -349,7 +349,7 @@ export const uischema = {
             ctrl('#/properties/remainingAttendeeCapacity', { options: { computed: true } }),
           ],
         },
-        // Flag pubblico su una sola riga
+        // I tre flag "bambini/genitori" su una riga, Gratuito sulla successiva
         {
           type: 'HorizontalLayout',
           options: { inline: true },
@@ -357,9 +357,9 @@ export const uischema = {
             ctrl('#/properties/isChildrensEvent'),
             ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
             ctrl('#/properties/forSeparatedParents'),
-            ctrl('#/properties/isAccessibleForFree'),
           ],
         },
+        ctrl('#/properties/isAccessibleForFree'),
       ],
     },
     {

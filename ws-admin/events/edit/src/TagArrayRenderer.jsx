@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
+import { usePointerReorder } from './usePointerReorder.js';
 
 // Array di stringhe come tag editabili: si scrive direttamente dentro al tag,
 // una × per rimuoverlo e un + per aggiungerne uno.
@@ -16,14 +17,6 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
   const rootRef = useRef(null);
   const inputsRef = useRef([]);
   const focusLast = useRef(false);
-
-  // Riordino via drag & drop. Il trascinamento parte SOLO dalla maniglia:
-  // così scrivere/selezionare testo dentro al tag continua a funzionare.
-  const [dragIndex, setDragIndex] = useState(null);
-  // Posizione di INSERIMENTO (0..items.length), non l'indice del tag sorvolato:
-  // così la linea azzurra indica lo spazio in cui il tag verrà inserito.
-  const [insertAt, setInsertAt] = useState(null);
-  const handleGrabbed = useRef(false);
 
   useEffect(() => {
     const onDoc = (e) => {
@@ -57,19 +50,14 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
   };
 
   // `to` è una posizione di inserimento: va corretta se l'elemento rimosso
-  // stava prima del punto di inserimento.
+  // stava prima del punto di inserimento. Riordino con Pointer Events (mouse+touch).
   const moveTag = (from, to) => {
-    if (from === null || to === null) return;
     const next = [...items];
     const [moved] = next.splice(from, 1);
     next.splice(to > from ? to - 1 : to, 0, moved);
     update(next);
   };
-  const endDrag = () => {
-    setDragIndex(null);
-    setInsertAt(null);
-    handleGrabbed.current = false;
-  };
+  const { dragIndex, overIndex, onHandlePointerDown } = usePointerReorder(moveTag, { axis: 'x' });
 
   // Suggerimenti filtrati sul testo del tag, escludendo quelli già usati altrove.
   const optionsFor = (i) => {
@@ -87,49 +75,21 @@ const TagArray = ({ data, handleChange, path, label, uischema }) => {
         {icon && <span className="material-symbols-outlined">{icon}</span>}
         {label}
       </label>
-      <div className="tags">
+      <div className="tags" data-reorder-root>
         {items.map((it, i) => {
           const options = openIndex === i ? optionsFor(i) : [];
           const classes = ['tag'];
           if (dragIndex === i) classes.push('dragging');
-          if (insertAt === i) classes.push('insert-before');
-          if (insertAt === items.length && i === items.length - 1) classes.push('insert-after');
+          if (overIndex === i && dragIndex !== null) classes.push('insert-before');
+          if (overIndex === items.length && i === items.length - 1 && dragIndex !== null)
+            classes.push('insert-after');
 
           return (
-            <span
-              className={classes.join(' ')}
-              key={i}
-              draggable
-              onDragStart={(e) => {
-                if (!handleGrabbed.current) {
-                  e.preventDefault(); // trascinamento consentito solo dalla maniglia
-                  return;
-                }
-                setDragIndex(i);
-                setOpenIndex(null);
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', String(i));
-              }}
-              onDragOver={(e) => {
-                if (dragIndex === null) return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                // metà sinistra → inserisci prima, metà destra → inserisci dopo
-                const box = e.currentTarget.getBoundingClientRect();
-                setInsertAt(e.clientX < box.left + box.width / 2 ? i : i + 1);
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                moveTag(dragIndex, insertAt);
-                endDrag();
-              }}
-              onDragEnd={endDrag}
-            >
+            <span className={classes.join(' ')} key={i} data-reorder-index={i}>
               <span
                 className="tag-handle"
                 title="Trascina per riordinare"
-                onMouseDown={() => (handleGrabbed.current = true)}
-                onMouseUp={() => (handleGrabbed.current = false)}
+                onPointerDown={(e) => { setOpenIndex(null); onHandlePointerDown(e, i); }}
               >
                 <span className="material-symbols-outlined">drag_indicator</span>
               </span>

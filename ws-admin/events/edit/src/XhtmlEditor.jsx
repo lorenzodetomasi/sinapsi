@@ -30,7 +30,14 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
     if (el && el.innerHTML !== (value ?? '')) el.innerHTML = value ?? '';
   }, [value]);
 
-  const emit = () => onChange(toXhtml(ref.current.innerHTML));
+  // Un contenteditable "svuotato" resta con un <br>: lo trattiamo come vuoto (''),
+  // così il campo non risulta compilato e il nodo sparisce dal JSON.
+  const emit = () => {
+    const el = ref.current;
+    const html = el.innerHTML;
+    const empty = !el.textContent.trim() && !/<(img|hr|iframe|video|audio)\b/i.test(html);
+    onChange(empty ? '' : toXhtml(html));
+  };
   const cmd = (command, val = null) => {
     document.execCommand('styleWithCSS', false, false); // preferisce tag a stili inline
     document.execCommand(command, false, val);
@@ -41,22 +48,45 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
     const url = prompt('URL del link:');
     if (url) cmd('createLink', url);
   };
+  const clearAll = () => {
+    ref.current.innerHTML = '';
+    ref.current.focus();
+    onChange('');
+  };
+
+  // I pulsanti NON sono tab-stop (tabIndex -1): il Tab passa dal campo di testo
+  // direttamente al successivo, senza attraversare la toolbar (anche da nascosta).
+  const Btn = ({ title, name, onClick }) => (
+    <button type="button" title={title} tabIndex={-1} onClick={onClick}><Icon name={name} /></button>
+  );
 
   return (
     <div className={'xhtml-control' + (focused ? ' focused' : '')}>
       {/* preventDefault: cliccando un pulsante l'editor non perde il focus,
           quindi la toolbar non sparisce a metà interazione */}
       <div className="xhtml-toolbar" onMouseDown={(e) => e.preventDefault()}>
-        <button type="button" title="Grassetto" onClick={() => cmd('bold')}><Icon name="format_bold" /></button>
-        <button type="button" title="Corsivo" onClick={() => cmd('italic')}><Icon name="format_italic" /></button>
-        <button type="button" title="Sottolineato" onClick={() => cmd('underline')}><Icon name="format_underlined" /></button>
+        <Btn title="Grassetto" name="format_bold" onClick={() => cmd('bold')} />
+        <Btn title="Corsivo" name="format_italic" onClick={() => cmd('italic')} />
+        <Btn title="Sottolineato" name="format_underlined" onClick={() => cmd('underline')} />
         <span className="xhtml-sep" />
-        <button type="button" title="Elenco puntato" onClick={() => cmd('insertUnorderedList')}><Icon name="format_list_bulleted" /></button>
-        <button type="button" title="Elenco numerato" onClick={() => cmd('insertOrderedList')}><Icon name="format_list_numbered" /></button>
+        <Btn title="Elenco puntato" name="format_list_bulleted" onClick={() => cmd('insertUnorderedList')} />
+        <Btn title="Elenco numerato" name="format_list_numbered" onClick={() => cmd('insertOrderedList')} />
         <span className="xhtml-sep" />
-        <button type="button" title="Link" onClick={addLink}><Icon name="link" /></button>
-        <button type="button" title="Rimuovi formattazione" onClick={() => cmd('removeFormat')}><Icon name="format_clear" /></button>
+        <Btn title="Link" name="link" onClick={addLink} />
+        <Btn title="Rimuovi formattazione" name="format_clear" onClick={() => cmd('removeFormat')} />
       </div>
+      {value ? (
+        <button
+          type="button"
+          className="xhtml-clear"
+          title="Svuota"
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clearAll}
+        >
+          <Icon name="close" />
+        </button>
+      ) : null}
       <div
         ref={ref}
         className={'xhtml-editor' + (compact ? ' compact' : '')}

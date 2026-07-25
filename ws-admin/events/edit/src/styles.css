@@ -129,6 +129,7 @@ body {
   display: flex; align-items: center; gap: var(--sp-md);
   padding: var(--sp-md) var(--sp-xl);
   border-bottom: 1px solid var(--border);
+  background: var(--bg);
 }
 .appbar .brand {
   font-weight: 700; font-size: 1.125rem; letter-spacing: 0.01em;
@@ -205,7 +206,8 @@ body {
   /* Su mobile torna al flusso normale: la pagina scorre, un pannello per volta.
      Niente padding attorno al body: contenuto a tutta larghezza. */
   .app { height: auto; overflow: visible; }
-  .appbar { padding-left: var(--sp-md); padding-right: var(--sp-md); }
+  /* Header fisso in cima su mobile */
+  .appbar { position: sticky; top: 0; z-index: 20; padding-left: var(--sp-md); padding-right: var(--sp-md); }
   .topbar { padding: var(--sp-md) 0 0; }
   .layout { grid-template-columns: 1fr; padding: 0; gap: 0; }
   .col-divider { display: none; }
@@ -317,17 +319,20 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   padding: 0 1.25rem 0 var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim);
 }
 .smart-date .sd-input-wrap { position: relative; flex: 1 1 8rem; min-width: 0; }
-.smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 3.75rem; background-image: none; }
+.smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 4rem; background-image: none; }
 .smart-date .sd-pick, .smart-date .sd-clear {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 1.5rem; height: 1.5rem; padding: 0; border: none; background: transparent;
   color: var(--text-dim); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   border-radius: var(--r-sm);
 }
-.smart-date .sd-pick { right: 1.75rem; }
+.smart-date .sd-pick { right: 1.9rem; }
 .smart-date .sd-clear { right: 0.35rem; }
 .smart-date .sd-pick:hover, .smart-date .sd-clear:hover { color: var(--accent); background: transparent; }
-.smart-date .sd-pick .material-symbols-outlined, .smart-date .sd-clear .material-symbols-outlined { font-size: 1.05rem; }
+/* Calendario grande (per aprire il picker), × piccola come nei tag */
+.smart-date .sd-pick { width: 1.75rem; }
+.smart-date .sd-pick .material-symbols-outlined { font-size: 1.4rem; }
+.smart-date .sd-clear .material-symbols-outlined { font-size: 1.05rem; }
 
 /* ---------- Campi ---------- */
 .pane input[type='text'],
@@ -415,7 +420,7 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 /* Campo calcolato (sola lettura): well spento con valore + icona */
 .computed-value {
   display: flex; align-items: center; justify-content: space-between;
-  min-height: var(--control-h); padding: 0 var(--field-pad-x);
+  min-height: var(--control-h); margin-top: var(--label-gap); padding: 0 var(--field-pad-x);
   background: var(--field-bg); border: 1px solid var(--border);
   border-radius: var(--r-md); color: var(--text-dim);
   font-variant-numeric: tabular-nums;
@@ -487,7 +492,7 @@ button.primary { margin-top: var(--sp-md); }
 .tag.insert-after::after { right: calc(var(--sp-xs) / -2 - 0.0625rem); }
 .tag.dragging { opacity: 0.45; }
 
-.tag-handle { display: inline-flex; align-items: center; margin-left: -0.2em; color: var(--text-dim); cursor: grab; }
+.tag-handle { display: inline-flex; align-items: center; margin-left: -0.2em; color: var(--text-dim); cursor: grab; touch-action: none; }
 .tag-handle:active { cursor: grabbing; }
 .tag-handle:hover { color: var(--accent); }
 .tag-handle .material-symbols-outlined { font-size: 1.125rem; }
@@ -559,7 +564,7 @@ button.primary { margin-top: var(--sp-md); }
   background: transparent; color: inherit; border: none;
 }
 .card-rail .card-remove:hover, .card-rail .card-handle:hover { background: transparent; color: inherit; }
-.card-handle { cursor: grab; }
+.card-handle { cursor: grab; touch-action: none; }
 .card-handle:active { cursor: grabbing; }
 .card-rail .material-symbols-outlined { font-size: 1.125rem; }
 
@@ -625,7 +630,16 @@ button.primary { margin-top: var(--sp-md); }
 .rec-tz input { max-width: 16rem; }
 
 /* ---------- Editor XHTML ---------- */
-.xhtml-control { margin: var(--label-gap) 0 var(--sp-md); }
+.xhtml-control { position: relative; margin: var(--label-gap) 0 var(--sp-md); }
+/* Pulsante "svuota" in alto a destra del campo */
+.xhtml-clear {
+  position: absolute; top: var(--sp-xs); right: var(--sp-xs); z-index: 2;
+  width: 1.5rem; height: 1.5rem; padding: 0; border: none; border-radius: var(--r-sm);
+  background: transparent; color: var(--text-dim); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.xhtml-clear:hover { color: var(--accent); }
+.xhtml-clear .material-symbols-outlined { font-size: 1.05rem; }
 .xhtml-toolbar {
   display: flex; gap: var(--sp-xs); overflow: hidden;
   max-height: 0; margin: 0; opacity: 0; transform: translateY(-0.375rem);
