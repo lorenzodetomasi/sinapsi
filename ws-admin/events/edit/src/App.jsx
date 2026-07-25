@@ -15,6 +15,7 @@ import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
 import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
+import PlaceLocationRenderer, { placeLocationTester } from './PlaceLocationRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import OptionsMenu from './OptionsMenu.jsx';
@@ -35,6 +36,7 @@ const renderers = [
   { tester: fieldRowTester, renderer: FieldRowRenderer },
   { tester: iconTextTester, renderer: IconTextRenderer },
   { tester: smartDateTester, renderer: SmartDateRenderer },
+  { tester: placeLocationTester, renderer: PlaceLocationRenderer },
 ];
 
 // Capienze derivate: totale = presenza + remoto; rimasti = totale − prenotati.

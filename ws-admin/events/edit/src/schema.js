@@ -132,10 +132,12 @@ export const schema = {
     location: {
       type: 'object',
       title: 'Luogo',
+      format: 'place', // renderer con Google Places (nome autocomplete)
       properties: {
         id: { type: 'string', title: '@id' },
         type: { type: 'string', title: '@type', default: 'Place' },
         name: { type: 'string', title: 'Nome' },
+        googlePlaceId: { type: 'string', format: 'hidden' },
       },
     },
     organizer: {
@@ -144,8 +146,9 @@ export const schema = {
       items: {
         type: 'object',
         properties: {
-          name: { type: 'string', title: 'Nome' },
+          name: { type: 'string', title: 'Nome', format: 'place' },
           id: { type: 'string', title: '@id' },
+          googlePlaceId: { type: 'string', format: 'hidden' },
         },
       },
     },
@@ -293,16 +296,7 @@ export const uischema = {
       type: 'Group',
       label: 'Dove',
       options: { icon: 'place' },
-      elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/location/properties/name'),
-            ctrl('#/properties/location/properties/type'),
-            ctrl('#/properties/location/properties/id'),
-          ],
-        },
-      ],
+      elements: [ctrl('#/properties/location', { options: { icon: 'place' } })],
     },
     {
       type: 'Group',

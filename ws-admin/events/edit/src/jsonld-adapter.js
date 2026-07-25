@@ -109,8 +109,13 @@ export function fromJsonLd(doc) {
       id: loc['@id'] ?? '',
       type: loc['@type'] ?? 'Place',
       name: loc.name ?? '',
+      googlePlaceId: loc['meetoo:googlePlaceId'] ?? '',
     },
-    organizer: (doc.organizer ?? []).map((x) => ({ id: x['@id'] ?? '', name: x.name ?? '' })),
+    organizer: (doc.organizer ?? []).map((x) => ({
+      id: x['@id'] ?? '',
+      name: x.name ?? '',
+      googlePlaceId: x['meetoo:googlePlaceId'] ?? '',
+    })),
     // subEvent è il programma per un Single, le occorrenze (link @id) per una Series
     subEvent: isSeries
       ? []
@@ -209,11 +214,17 @@ export function toJsonLd(d) {
           ...(d.location.id ? { '@id': d.location.id } : {}),
           '@type': d.location.type || 'Place',
           ...(d.location.name ? { name: d.location.name } : {}),
+          ...(d.location.googlePlaceId ? { 'meetoo:googlePlaceId': d.location.googlePlaceId } : {}),
         }
       : null;
   const organizer = (d.organizer ?? [])
     .filter((x) => x.id || x.name)
-    .map((x) => ({ ...(x.id ? { '@id': x.id } : {}), '@type': 'Organization', ...(x.name ? { name: x.name } : {}) }));
+    .map((x) => ({
+      ...(x.id ? { '@id': x.id } : {}),
+      '@type': 'Organization',
+      ...(x.name ? { name: x.name } : {}),
+      ...(x.googlePlaceId ? { 'meetoo:googlePlaceId': x.googlePlaceId } : {}),
+    }));
   const aggregateRating = d.aggregateRating?.ratingValue
     ? {
         '@type': 'AggregateRating',

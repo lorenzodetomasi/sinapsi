@@ -85,7 +85,7 @@ const MultiSelect = ({ data, handleChange, path, label, uischema, visible }) => 
         {open && filtered.length > 0 && (
           <ul className="cs-menu ms-menu" onMouseDown={(e) => e.preventDefault()}>
             {filtered.map((o) => (
-              <li key={o.const} onClick={() => add(o.const)}>
+              <li key={o.const + '::' + o.title} onClick={() => add(o.const)}>
                 {o.title}
               </li>
             ))}

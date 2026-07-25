@@ -305,6 +305,20 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 }
 .grid-spacer { min-width: 0; } /* cella vuota per allineare la griglia */
 
+/* Google Place ID mostrato sotto il luogo */
+.place-gid { display: block; margin-top: var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim); }
+
+/* Tendina di Google Places Autocomplete (agganciata al body) a tema */
+.pac-container {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-md); margin-top: 2px; box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,0.3));
+  font-family: inherit; overflow: hidden; z-index: 10000;
+}
+.pac-item { padding: var(--sp-xs) var(--sp-sm); color: var(--text-dim); border-top: 1px solid var(--border); cursor: pointer; }
+.pac-item:hover, .pac-item-selected { background: var(--field-bg); }
+.pac-item-query, .pac-matched { color: var(--text); }
+.pac-icon { filter: grayscale(1) opacity(0.6); }
+
 /* Riga di checkbox su una sola linea */
 .field-row-inline {
   display: flex; flex-wrap: wrap; align-items: center;

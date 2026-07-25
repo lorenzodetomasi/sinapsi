@@ -2,6 +2,7 @@ import { Fragment, useId } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import XhtmlEditor from './XhtmlEditor.jsx';
+import PlaceInput from './PlaceInput.jsx';
 import { usePointerReorder } from './usePointerReorder.js';
 
 // Array di oggetti resi come "card" su più righe. Ogni card ha una striscia
@@ -10,9 +11,18 @@ import { usePointerReorder } from './usePointerReorder.js';
 
 const toLocal = (v) => (v ? String(v).slice(0, 16) : '');
 
-function FieldControl({ name, schema, value, onChange }) {
+function FieldControl({ name, schema, value, onChange, onPickPlace }) {
   const label = schema.title || name;
   const listId = useId();
+  // Autocomplete Google Places: compila il nome e registra il Place ID
+  if (schema.format === 'place') {
+    return (
+      <div className="rf rf-text">
+        <label className="field-label">{label}</label>
+        <PlaceInput value={value} placeholder="Cerca…" onChange={onChange} onPick={onPickPlace} />
+      </div>
+    );
+  }
   // Select-search creabile: input + datalist (suggerimenti + valore personalizzato)
   if (schema.format === 'suggest') {
     return (
@@ -81,6 +91,7 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
     next[i][key] = val;
     update(next);
   };
+  const setItemFields = (i, patch) => update(items.map((x, j) => (j === i ? { ...x, ...patch } : x)));
   const insertAtIndex = (at) => {
     const next = [...items];
     next.splice(at, 0, {});
@@ -138,15 +149,18 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
                 </div>
 
                 <div className="card-fields">
-                  {Object.entries(props).map(([key, sub]) => (
-                    <FieldControl
-                      key={key}
-                      name={key}
-                      schema={sub}
-                      value={item?.[key]}
-                      onChange={(v) => setField(i, key, v)}
-                    />
-                  ))}
+                  {Object.entries(props)
+                    .filter(([, sub]) => sub.format !== 'hidden')
+                    .map(([key, sub]) => (
+                      <FieldControl
+                        key={key}
+                        name={key}
+                        schema={sub}
+                        value={item?.[key]}
+                        onChange={(v) => setField(i, key, v)}
+                        onPickPlace={({ placeId, name }) => setItemFields(i, { name, googlePlaceId: placeId })}
+                      />
+                    ))}
                 </div>
               </fieldset>
             </Fragment>
