@@ -295,7 +295,7 @@ if ($action === 'search') {
                 "longitude" => $lng
             ],
             "hasMap" => [
-                ["@type" => "Map", "name" => "Google Maps", "url" => "https://www.google.com/maps/search/?api=1&query=Associazione+La+Farfalla+-+Parco+Pianeta+H+Ostia+Antica+RM,+IT", "mapType" => "https://schema.org/VenueMap"],
+                ["@type" => "Map", "name" => "Google Maps", "url" => "https://www.google.com/maps/search/?api=1&query=" . $addressQueryString . "&query_place_id=" . urlencode($place['place_id']), "mapType" => "https://schema.org/VenueMap"],
                 ["@type" => "Map", "name" => "Apple Maps", "url" => "https://maps.apple.com/?q=" . $addressQueryString, "mapType" => "https://schema.org/VenueMap"],
                 ["@type" => "Map", "name" => "Bing Maps", "url" => "https://www.bing.com/maps?q=" . $addressQueryString, "mapType" => "https://schema.org/VenueMap"]
             ]
