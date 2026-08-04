@@ -15,23 +15,25 @@ export function loadGoogleMaps() {
     return Promise.reject(new Error('VITE_GOOGLE_MAPS_API_KEY mancante'));
   }
   promise = new Promise((resolve, reject) => {
-    // Con loading=async la libreria Places NON è pronta all'onload: va richiesta
-    // con importLibrary('places'), altrimenti google.maps.places è undefined e
-    // l'autocomplete non si aggancia.
+    // Caricamento CLASSICO (come place-add.php, che funziona su isotype.org):
+    // NIENTE loading=async, così con libraries=places la libreria è già pronta
+    // all'onload. Se per qualche motivo non lo fosse, fallback su importLibrary.
     const ready = async () => {
       try {
         const g = window.google;
-        if (!g?.maps) return reject(new Error('Maps non caricato'));
-        if (typeof g.maps.importLibrary === 'function') await g.maps.importLibrary('places');
-        if (!g.maps.places) return reject(new Error('Places non disponibile'));
-        resolve(g.maps);
+        if (g?.maps?.places) return resolve(g.maps);
+        if (typeof g?.maps?.importLibrary === 'function') {
+          await g.maps.importLibrary('places');
+          return resolve(g.maps);
+        }
+        reject(new Error('Places non disponibile'));
       } catch (e) {
         reject(e);
       }
     };
     if (window.google?.maps) return ready();
     const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&language=it&loading=async`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&language=it`;
     s.async = true;
     s.onload = ready;
     s.onerror = () => reject(new Error('Caricamento Google Maps fallito'));

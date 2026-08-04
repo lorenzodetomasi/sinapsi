@@ -23,8 +23,13 @@ export function usePlacesAutocomplete(inputRef, onPick) {
           }
         });
       })
-      .catch(() => {
-        /* in locale o senza chiave: resta un normale input di testo */
+      .catch((e) => {
+        // In locale/senza chiave resta un normale input di testo. Se invece
+        // siamo online ma l'aggancio fallisce, lo segnaliamo per diagnosi.
+        const host = window.location.hostname;
+        if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(host)) {
+          console.warn('[Places] autocomplete non attivo:', e?.message || e);
+        }
       });
     return () => {
       cancelled = true;
