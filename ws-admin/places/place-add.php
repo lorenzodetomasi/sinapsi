@@ -10,7 +10,10 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <title>WS CMS - Data Ingestion Places</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars($mapsJsKey, ENT_QUOTES); ?>&libraries=places"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <style>
+        .material-symbols-outlined { font-size: 18px; vertical-align: -4px; }
         body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; }
         .container { max-width: 1200px; margin: auto; }
         .header { margin-bottom: 20px; }
@@ -27,6 +30,16 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         textarea { width: 100%; height: 500px; padding: 10px; font-family: monospace; background: #2d2d2d; color: #fff; border: none; border-radius: 5px; box-sizing: border-box; resize: none; }
         label { font-weight: bold; margin-bottom: 5px; }
         #error-msg { color: red; font-weight: bold; margin-bottom: 15px; }
+        .save-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .save-bar button {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 14px; font-size: 14px; font-weight: bold; cursor: pointer;
+            border: none; border-radius: 5px; background: #e0e0e0; color: #222;
+        }
+        .save-bar button:hover { background: #d5d5d5; }
+        #btn-save { background: #2196f3; color: #fff; }
+        #btn-save:hover { background: #1976d2; }
+        #save-msg { font-weight: bold; }
     </style>
 </head>
 <body>
@@ -66,7 +79,16 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             </div>
             <div class="col">
                 <label>JSON-LD Generato (WS CMS)</label>
-                <textarea id="json-wscms" readonly></textarea>
+                <textarea id="json-wscms"></textarea>
+                <div class="save-bar">
+                    <button type="button" id="btn-download" title="Scarica index.json in locale">
+                        <span class="material-symbols-outlined">download</span> Scarica
+                    </button>
+                    <button type="button" id="btn-save" title="Salva sul server nella cartella dell'@id">
+                        <span class="material-symbols-outlined">cloud_upload</span> Salva sul web
+                    </button>
+                    <span id="save-msg"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -186,6 +208,52 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             });
         });
     }
+
+    // 4. Salvataggio: locale (download) e sul web (scrive <@id>/index.json).
+    function setSaveMsg(text, kind) {
+        const el = document.getElementById('save-msg');
+        el.innerText = text;
+        el.style.color = kind === 'ok' ? '#2e7d32' : (kind === 'err' ? '#c62828' : '#555');
+    }
+
+    function currentJsonLd() {
+        const text = document.getElementById('json-wscms').value;
+        try { return { text, obj: JSON.parse(text) }; }
+        catch (e) { return { text, obj: null }; }
+    }
+
+    document.getElementById('btn-download').addEventListener('click', function () {
+        const { text, obj } = currentJsonLd();
+        if (!text.trim()) { setSaveMsg('Niente da scaricare.', 'err'); return; }
+        if (!obj) { setSaveMsg('JSON non valido: correggi prima di scaricare.', 'err'); return; }
+        const blob = new Blob([text], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'index.json';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+        setSaveMsg('Scaricato index.json', 'ok');
+    });
+
+    document.getElementById('btn-save').addEventListener('click', function () {
+        const { text, obj } = currentJsonLd();
+        if (!obj) { setSaveMsg('JSON non valido: correggi prima di salvare.', 'err'); return; }
+        const id = (obj.mainEntity && obj.mainEntity['@id']) || obj['@id'] || '';
+        if (!id) { setSaveMsg('@id mancante nel JSON.', 'err'); return; }
+        if (!confirm('Salvare sul server in ' + id + '/index.json ?')) return;
+        setSaveMsg('Salvataggio…', '');
+        fetch('google_place-json.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text })
+        })
+        .then(res => res.json())
+        .then(res => {
+            if (res.error) setSaveMsg('Errore: ' + res.error, 'err');
+            else setSaveMsg((res.overwritten ? 'Aggiornato' : 'Salvato') + ': ' + res.path, 'ok');
+        })
+        .catch(() => setSaveMsg('Errore di connessione al server.', 'err'));
+    });
 </script>
 
 </body>

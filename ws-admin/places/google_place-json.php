@@ -143,6 +143,43 @@ if ($action === 'auth') {
     exit;
 }
 
+// 3-bis. Salvataggio sul server: scrive il JSON-LD in <@id>/index.json.
+// Operazione che MODIFICA il filesystem → solo ruoli autorizzati.
+if ($action === 'save') {
+    $authorizedRoles = ['user', 'client', 'admin'];
+    if (!in_array($userRole, $authorizedRoles)) {
+        echo json_encode(["error" => "Permessi insufficienti per salvare (Ruolo: $userRole)."]);
+        exit;
+    }
+    $jsonld = $data['jsonld'] ?? '';
+    $decoded = json_decode($jsonld, true);
+    if (!is_array($decoded)) {
+        echo json_encode(["error" => "JSON-LD non valido."]);
+        exit;
+    }
+    $entity = $decoded['mainEntity'] ?? $decoded;
+    $id = $entity['@id'] ?? '';
+    // Solo il formato atteso: niente path traversal.
+    if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
+        echo json_encode(["error" => "@id non valido o mancante: '$id'."]);
+        exit;
+    }
+    $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
+    if (!is_dir($dir) && !@mkdir($dir, 0775, true)) {
+        echo json_encode(["error" => "Impossibile creare la cartella $id."]);
+        exit;
+    }
+    $file = $dir . '/index.json';
+    $existed = is_file($file);
+    $pretty = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    if (@file_put_contents($file, $pretty) === false) {
+        echo json_encode(["error" => "Scrittura fallita: il web server ha i permessi su ws-custom?"]);
+        exit;
+    }
+    echo json_encode(["success" => true, "path" => "$id/index.json", "overwritten" => $existed]);
+    exit;
+}
+
 // 4. Risposta alla richiesta di Ricerca (Data Ingestion)
 if ($action === 'search') {
     // Sblocca l'area Whitelist solo per ruoli autorizzati
