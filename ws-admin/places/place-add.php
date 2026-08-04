@@ -155,15 +155,34 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
                 document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
 
-                // Avviso su @id: regione mancante o cartella già esistente.
+                // Stato @id: nuovo / già inserito (stesso Google ID) + aggiornamenti /
+                // collisione (Google ID diverso o assente) / regione mancante.
                 const id = data.ws_cms?.mainEntity?.['@id'] || '';
-                let warn = "";
+                const box = document.getElementById('error-msg');
+                let msg = "", color = "red";
                 if (data.id_region_missing) {
-                    warn = "⚠️ CAP/paese non rilevati: la regione nell'@id è vuota (" + id + "). Compila la regione a mano.";
-                } else if (data.id_exists) {
-                    warn = "⚠️ Esiste già un elemento con questo @id (" + id + "): cambia l'id prima di salvare.";
+                    msg = "⚠️ CAP/paese non rilevati: la regione nell'@id è vuota (" + id + "). Compila la regione a mano.";
+                    color = "#e65100";
+                } else if (!data.id_exists) {
+                    msg = ""; // nuovo, nessun problema
+                } else if (data.id_same_place) {
+                    msg = "✓ Luogo già inserito (stesso Google ID): collegato a " + id + ".";
+                    if (data.updates && data.updates.length) {
+                        msg += " Aggiornamenti da Google: " + data.updates
+                            .map(u => u.field + ': "' + u.old + '" → "' + u.new + '"').join("; ") + ".";
+                    }
+                    color = "#2e7d32";
+                } else if (data.id_parse_error) {
+                    msg = "⚠️ Esiste già (" + id + ") ma l'index.json è illeggibile: verifica a mano.";
+                    color = "#e65100";
+                } else if (!data.id_has_stored_gid) {
+                    msg = "⚠️ Esiste già (" + id + ") senza Google ID salvato: verifica se è lo stesso luogo.";
+                    color = "#e65100";
+                } else {
+                    msg = "⚠️ Esiste già un @id diverso con questo slug (Google ID diverso): cambia l'id.";
                 }
-                document.getElementById('error-msg').innerText = warn;
+                box.style.color = color;
+                box.innerText = msg;
             });
         });
     }

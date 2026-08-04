@@ -37,15 +37,40 @@ export function swapIdPrefix(id, type) {
   return m ? `${folderForType(type)}/${m[1]}` : id;
 }
 
-// Verifica sul backend se l'@id esiste già. true/false, oppure null se il
-// controllo non è disponibile (URL non configurato o errore di rete).
-export async function checkIdExists(id) {
+// Interroga il backend sull'@id. Ritorna l'oggetto { exists, google_place_id,
+// stored, parse_error } oppure null se il controllo non è disponibile.
+export async function lookupId(id) {
   if (!ID_CHECK_URL || !id) return null;
   try {
     const res = await fetch(`${ID_CHECK_URL}?id=${encodeURIComponent(id)}`);
     const data = await res.json();
-    return data && data.ok ? !!data.exists : null;
+    return data && data.ok ? data : null;
   } catch {
     return null;
   }
+}
+
+// Componenti indirizzo Google → { postalCode, country }.
+function addr(components = []) {
+  let postalCode = '';
+  let country = '';
+  for (const c of components || []) {
+    const t = c.types || [];
+    if (t.includes('postal_code')) postalCode = c.long_name || '';
+    if (t.includes('country')) country = c.short_name || '';
+  }
+  return { postalCode, country };
+}
+
+// Diff LEGGERO (solo i campi che l'editor ha da Google) tra il luogo scelto e
+// quello salvato: elenca i nomi dei campi cambiati. Per un confronto completo
+// (sito, rating, indirizzo) si usa place-add.php.
+export function lightPlaceDiff(picked, stored) {
+  if (!stored) return [];
+  const changes = [];
+  const norm = (s) => String(s ?? '').trim().toLowerCase();
+  if (norm(picked.name) !== norm(stored.name)) changes.push('nome');
+  const a = addr(picked.addressComponents);
+  if (a.postalCode && norm(a.postalCode) !== norm(stored.postalCode)) changes.push('CAP');
+  return changes;
 }

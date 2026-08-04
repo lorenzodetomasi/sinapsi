@@ -42,6 +42,26 @@ function ws_id_exists($id) {
     $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
     return is_dir($dir) || is_file($dir . '/index.json') || is_file($dir . '/index.xml');
 }
+// Legge i dati salvati di un @id. Ritorna [google_place_id|null, stored[], parseError].
+function ws_read_stored($id) {
+    $path = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id . '/index.json';
+    if (!is_file($path)) return [null, [], false];
+    $data = json_decode(@file_get_contents($path), true);
+    if (!is_array($data)) return [null, [], true]; // index.json illeggibile
+    $m = $data['mainEntity'] ?? $data;
+    $gid = $m['meetoo:google_place_id'] ?? $m['meetoo:googlePlaceId'] ?? null;
+    $addr = is_array($m['address'] ?? null) ? $m['address'] : [];
+    $stored = [
+        'name' => (string)($m['name'] ?? ''),
+        'url' => (string)($m['url'] ?? ''),
+        'streetAddress' => (string)($addr['streetAddress'] ?? ''),
+        'postalCode' => (string)($addr['postalCode'] ?? ''),
+        'addressLocality' => (string)($addr['addressLocality'] ?? ''),
+        'ratingValue' => $m['aggregateRating']['ratingValue'] ?? null,
+        'reviewCount' => $m['aggregateRating']['reviewCount'] ?? null,
+    ];
+    return [$gid, $stored, false];
+}
 
 // 1. Lettura dei dati (Supporto ibrido: POST JSON payload o GET Query String)
 $data = json_decode(file_get_contents('php://input'), true);
@@ -187,6 +207,34 @@ if ($action === 'search') {
     $newId = ($region !== '' && $slug !== '') ? "$folder/$region/$slug" : "$folder//$slug";
     $idExists = (!$regionMissing) && ws_id_exists($newId);
 
+    // Se l'@id esiste, confronta il Google ID: stesso luogo → collega + aggiornamenti;
+    // diverso/assente → collisione da risolvere cambiando l'id.
+    $idSamePlace = false; $idParseError = false; $idHasStoredGid = false; $updates = [];
+    if ($idExists) {
+        list($storedGid, $stored, $idParseError) = ws_read_stored($newId);
+        $idHasStoredGid = ($storedGid !== null && $storedGid !== '');
+        if (!$idParseError && $idHasStoredGid && $storedGid === $place['place_id']) {
+            $idSamePlace = true;
+            $freshRating = isset($place['rating']) ? (string)(float)$place['rating'] : '';
+            $freshReviews = isset($place['user_ratings_total']) ? (string)(int)$place['user_ratings_total'] : '';
+            $cmp = [
+                ['nome', (string)($place['name'] ?? ''), $stored['name']],
+                ['sito', (string)($place['website'] ?? ''), $stored['url']],
+                ['indirizzo', trim($street), $stored['streetAddress']],
+                ['CAP', $postalCode, $stored['postalCode']],
+                ['città', $city, $stored['addressLocality']],
+                ['rating', $freshRating, (string)($stored['ratingValue'] ?? '')],
+                ['recensioni', $freshReviews, (string)($stored['reviewCount'] ?? '')],
+            ];
+            foreach ($cmp as $row) {
+                $new = trim($row[1]); $old = trim($row[2]);
+                if ($new !== '' && strcasecmp($new, $old) !== 0) {
+                    $updates[] = ['field' => $row[0], 'old' => $old, 'new' => $new];
+                }
+            }
+        }
+    }
+
     $wsCmsJsonLd = [
         "@context" => "https://schema.org",
         "@type" => "ItemPage",
@@ -227,8 +275,12 @@ if ($action === 'search') {
     echo json_encode([
         "raw_google" => $place,
         "ws_cms" => $wsCmsJsonLd,
-        "id_exists" => $idExists,          // true = cartella già presente → cambia id
-        "id_region_missing" => $regionMissing, // true = CAP/paese assente → regione da compilare
+        "id_exists" => $idExists,
+        "id_same_place" => $idSamePlace,        // stesso Google ID → già inserito, collega
+        "id_has_stored_gid" => $idHasStoredGid, // false = voce legacy senza Google ID
+        "id_parse_error" => $idParseError,      // index.json esistente ma illeggibile
+        "updates" => $updates,                  // differenze Google↔salvato da integrare
+        "id_region_missing" => $regionMissing,
     ]);
     exit;
 }

@@ -2,25 +2,51 @@ import { useState } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import PlaceInput from './PlaceInput.jsx';
-import { detectPrimaryType, regionFromComponents, slugify, buildPlaceId, swapIdPrefix, checkIdExists } from './placeId.js';
+import {
+  detectPrimaryType,
+  regionFromComponents,
+  slugify,
+  buildPlaceId,
+  swapIdPrefix,
+  lookupId,
+  lightPlaceDiff,
+} from './placeId.js';
 
 // Luogo con Google Places: scegliendo un risultato compila Nome, @type primario
 // (LocalBusiness|Place), l'@id (<cartella>/<IT+CAP>/<slug>) e il Google Place ID.
-// Cambiando @type l'@id cambia prefisso; se l'@id esiste già mostra un avviso.
+// Se l'@id esiste già, confronta i Google ID: stesso luogo → si collega (e segnala
+// eventuali aggiornamenti Google); Google ID diverso → collisione (cambia id).
 const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
   if (visible === false) return null;
   const d = data || {};
   const icon = uischema?.options?.icon || 'place';
-  const [warn, setWarn] = useState('');
+  const [status, setStatus] = useState(null); // { type: 'ok' | 'warn', msg }
   const set = (patch) => handleChange(path, { ...d, ...patch });
 
-  const verify = async (id, regionMissing) => {
+  // picked = { placeId, name, addressComponents } quando arriva da Google; null se
+  // è una modifica manuale dell'@id (senza un Google ID con cui confrontare).
+  const evaluate = async (id, regionMissing, picked) => {
     if (regionMissing) {
-      setWarn('CAP/paese non rilevati: la regione nell’@id è vuota, compilala a mano.');
+      setStatus({ type: 'warn', msg: 'CAP/paese non rilevati: la regione nell’@id è vuota, compilala a mano.' });
       return;
     }
-    const exists = await checkIdExists(id);
-    setWarn(exists ? `Esiste già un elemento con questo @id (${id}): cambia l’id.` : '');
+    const info = await lookupId(id);
+    if (!info || !info.exists) {
+      setStatus(null);
+      return;
+    }
+    const stored = info.google_place_id || null;
+    if (info.parse_error || !stored) {
+      setStatus({ type: 'warn', msg: `Esiste già un @id (${id}) senza Google ID salvato: verifica se è lo stesso luogo.` });
+    } else if (picked && stored === picked.placeId) {
+      const changes = lightPlaceDiff(picked, info.stored);
+      const extra = changes.length ? ` Aggiornamenti su Google: ${changes.join(', ')} — aggiornali in place-add.` : '';
+      setStatus({ type: 'ok', msg: `Luogo già presente: collegato al suo @id.${extra}` });
+    } else if (picked) {
+      setStatus({ type: 'warn', msg: `Esiste già un @id diverso con questo slug (Google ID diverso): cambia l’id.` });
+    } else {
+      setStatus({ type: 'warn', msg: `Esiste già un elemento con questo @id (${id}): verifica se è lo stesso luogo.` });
+    }
   };
 
   const onPick = ({ placeId, name, types, addressComponents }) => {
@@ -29,13 +55,13 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
     const slug = slugify(name);
     const id = region && slug ? buildPlaceId(type, region, slug) : d.id || '';
     set({ name, type, id, googlePlaceId: placeId });
-    verify(id, !region);
+    evaluate(id, !region, { placeId, name, addressComponents });
   };
 
   const onType = (type) => {
     const id = swapIdPrefix(d.id, type);
     set({ type, id });
-    verify(id, false);
+    evaluate(id, false, d.googlePlaceId ? { placeId: d.googlePlaceId, name: d.name, addressComponents: [] } : null);
   };
 
   return (
@@ -62,12 +88,12 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
             type="text"
             value={d.id || ''}
             onChange={(e) => set({ id: e.target.value })}
-            onBlur={(e) => verify(e.target.value, false)}
+            onBlur={(e) => evaluate(e.target.value, false, null)}
           />
         </div>
       </div>
       {d.googlePlaceId ? <span className="place-gid">Google Place ID: {d.googlePlaceId}</span> : null}
-      {warn ? <span className="place-warn">⚠️ {warn}</span> : null}
+      {status ? <span className={'place-status place-' + status.type}>{status.type === 'ok' ? '✓' : '⚠️'} {status.msg}</span> : null}
     </div>
   );
 };
