@@ -16,6 +16,15 @@ if (!is_array($config) || empty($config['places_api_key'])) {
 }
 $googleApiKey = $config['places_api_key'];
 
+// GET su Google che cattura ANCHE le risposte di errore (es. 403/REQUEST_DENIED),
+// così possiamo leggere status/error_message. Con ignore_errors evitiamo anche il
+// warning PHP di file_get_contents, che conterrebbe l'URL con la key in chiaro.
+function googleGet($url) {
+    $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 10]]);
+    $body = @file_get_contents($url, false, $ctx);
+    return $body === false ? null : json_decode($body, true);
+}
+
 // 1. Lettura dei dati (Supporto ibrido: POST JSON payload o GET Query String)
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -113,18 +122,22 @@ if ($action === 'search') {
 
     // --- QUI INIZIA LA LOGICA DELL'API DI GOOGLE MAPS VISTA NEL PASSAGGIO PRECEDENTE ---
     $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=" . urlencode($searchQuery) . "&key=" . $googleApiKey;
-    $rawData = json_decode(@file_get_contents($url), true);
+    $rawData = googleGet($url);
 
-    if (!isset($rawData['status']) || $rawData['status'] !== 'OK' || empty($rawData['results'])) {
-        echo json_encode(["error" => "Luogo non trovato o errore API Maps."]);
+    if (!is_array($rawData) || ($rawData['status'] ?? '') !== 'OK' || empty($rawData['results'])) {
+        // Surfacciamo lo status reale di Google (REQUEST_DENIED, OVER_QUERY_LIMIT…)
+        // e l'eventuale error_message (che indica es. l'IP da autorizzare). Mai la key.
+        $gStatus = $rawData['status'] ?? 'NO_RESPONSE';
+        $gMsg = $rawData['error_message'] ?? '';
+        echo json_encode(["error" => "Places API (textsearch): $gStatus" . ($gMsg ? " — $gMsg" : "")]);
         exit;
     }
 
     $place = $rawData['results'][0];
-    
-    // Chiamata Place Details
+
+    // Chiamata Place Details (arricchimento, non bloccante)
     $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=address_component,website,rating,user_ratings_total&key=" . $googleApiKey;
-    $detailsData = json_decode(@file_get_contents($detailsUrl), true);
+    $detailsData = googleGet($detailsUrl);
     if (isset($detailsData['result'])) {
         $place = array_merge($place, $detailsData['result']);
     }
