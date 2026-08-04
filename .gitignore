@@ -6,3 +6,6 @@ ws-custom/
 
 # File caricati dal PoC (sandbox di upload)
 ws-admin/json-xml/uploads/
+
+# Config con le API key (non committare le chiavi in chiaro)
+ws-admin/places/config.php
