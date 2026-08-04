@@ -14,12 +14,18 @@ export function usePlacesAutocomplete(inputRef, onPick) {
       .then((maps) => {
         if (cancelled || !inputRef.current) return;
         ac = new maps.places.Autocomplete(inputRef.current, {
-          fields: ['place_id', 'name', 'types', 'formatted_address'],
+          fields: ['place_id', 'name', 'types', 'formatted_address', 'address_components'],
         });
         ac.addListener('place_changed', () => {
           const p = ac.getPlace();
           if (p && p.place_id) {
-            cb.current({ placeId: p.place_id, name: p.name || '', types: p.types || [], address: p.formatted_address || '' });
+            cb.current({
+              placeId: p.place_id,
+              name: p.name || '',
+              types: p.types || [],
+              addressComponents: p.address_components || [],
+              address: p.formatted_address || '',
+            });
           }
         });
       })

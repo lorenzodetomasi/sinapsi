@@ -25,6 +25,24 @@ function googleGet($url) {
     return $body === false ? null : json_decode($body, true);
 }
 
+// --- Generazione @type / @id dei places (stessa logica di events/edit) ---
+// Tipo primario: LocalBusiness se è un'attività (establishment), altrimenti Place.
+function ws_primary_type($types) {
+    return in_array('establishment', (array)$types, true) ? 'LocalBusiness' : 'Place';
+}
+function ws_folder($type) {
+    return $type === 'LocalBusiness' ? 'localbusinesses' : 'places';
+}
+function ws_slug($name) {
+    return strtolower(preg_replace('/[^a-z0-9]/i', '', (string)$name));
+}
+// Verifica se la cartella dell'@id esiste già in ws-custom.
+function ws_id_exists($id) {
+    if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) return false;
+    $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
+    return is_dir($dir) || is_file($dir . '/index.json') || is_file($dir . '/index.xml');
+}
+
 // 1. Lettura dei dati (Supporto ibrido: POST JSON payload o GET Query String)
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -160,13 +178,22 @@ if ($action === 'search') {
     $lng = (float) $place['geometry']['location']['lng'];
     $addressQueryString = urlencode($place['name'] . " " . $city . " " . $regionShort . ", " . $countryShort);
 
+    // @type primario (LocalBusiness|Place) + @id: <cartella>/<IT+CAP>/<slug>
+    $primaryType = ws_primary_type($place['types'] ?? []);
+    $folder = ws_folder($primaryType);
+    $region = $countryShort . $postalCode;            // es. IT00124
+    $slug = ws_slug($place['name']);
+    $regionMissing = ($countryShort === '' || $postalCode === '');
+    $newId = ($region !== '' && $slug !== '') ? "$folder/$region/$slug" : "$folder//$slug";
+    $idExists = (!$regionMissing) && ws_id_exists($newId);
+
     $wsCmsJsonLd = [
         "@context" => "https://schema.org",
         "@type" => "ItemPage",
         "dateModified" => date("c"),
         "mainEntity" => [
-            "@type" => ["LocalBusiness", "Place"],
-            "@id" => "places/" . strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $place['name'])),
+            "@type" => $primaryType,
+            "@id" => $newId,
             "meetoo:google_place_id" => $place['place_id'],
             "name" => $place['name'],
             "address" => [
@@ -197,7 +224,12 @@ if ($action === 'search') {
         ];
     }
 
-    echo json_encode(["raw_google" => $place, "ws_cms" => $wsCmsJsonLd]);
+    echo json_encode([
+        "raw_google" => $place,
+        "ws_cms" => $wsCmsJsonLd,
+        "id_exists" => $idExists,          // true = cartella già presente → cambia id
+        "id_region_missing" => $regionMissing, // true = CAP/paese assente → regione da compilare
+    ]);
     exit;
 }
 ?>

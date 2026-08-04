@@ -307,6 +307,8 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 
 /* Google Place ID mostrato sotto il luogo */
 .place-gid { display: block; margin-top: var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim); }
+/* Avviso @id (esiste già / regione mancante) */
+.place-warn { display: block; margin-top: var(--sp-xs); font-size: var(--fs-label); color: var(--warning); }
 
 /* Tendina di Google Places Autocomplete (agganciata al body) a tema */
 .pac-container {

@@ -150,11 +150,20 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             .then(data => {
                 if (data.error) {
                     document.getElementById('error-msg').innerText = data.error;
-                } else {
-                    document.getElementById('error-msg').innerText = "";
-                    document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
-                    document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
+                    return;
                 }
+                document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
+                document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
+
+                // Avviso su @id: regione mancante o cartella già esistente.
+                const id = data.ws_cms?.mainEntity?.['@id'] || '';
+                let warn = "";
+                if (data.id_region_missing) {
+                    warn = "⚠️ CAP/paese non rilevati: la regione nell'@id è vuota (" + id + "). Compila la regione a mano.";
+                } else if (data.id_exists) {
+                    warn = "⚠️ Esiste già un elemento con questo @id (" + id + "): cambia l'id prima di salvare.";
+                }
+                document.getElementById('error-msg').innerText = warn;
             });
         });
     }
