@@ -8,24 +8,38 @@ export function loadGoogleMaps() {
   if (promise) return promise;
   const host = window.location.hostname;
   if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(host)) {
-    promise = Promise.reject(new Error('Google Maps disabilitato in locale'));
-    return promise;
+    return Promise.reject(new Error('Google Maps disabilitato in locale'));
   }
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   if (!key) {
-    promise = Promise.reject(new Error('VITE_GOOGLE_MAPS_API_KEY mancante'));
-    return promise;
+    return Promise.reject(new Error('VITE_GOOGLE_MAPS_API_KEY mancante'));
   }
   promise = new Promise((resolve, reject) => {
-    if (window.google?.maps?.places) return resolve(window.google.maps);
+    // Con loading=async la libreria Places NON è pronta all'onload: va richiesta
+    // con importLibrary('places'), altrimenti google.maps.places è undefined e
+    // l'autocomplete non si aggancia.
+    const ready = async () => {
+      try {
+        const g = window.google;
+        if (!g?.maps) return reject(new Error('Maps non caricato'));
+        if (typeof g.maps.importLibrary === 'function') await g.maps.importLibrary('places');
+        if (!g.maps.places) return reject(new Error('Places non disponibile'));
+        resolve(g.maps);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    if (window.google?.maps) return ready();
     const s = document.createElement('script');
     s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&libraries=places&language=it&loading=async`;
     s.async = true;
-    s.defer = true;
-    s.onload = () =>
-      window.google?.maps?.places ? resolve(window.google.maps) : reject(new Error('Places non disponibile'));
+    s.onload = ready;
     s.onerror = () => reject(new Error('Caricamento Google Maps fallito'));
     document.head.appendChild(s);
+  });
+  // Non lasciare in cache una promise rifiutata: consente un nuovo tentativo.
+  promise.catch(() => {
+    promise = undefined;
   });
   return promise;
 }
