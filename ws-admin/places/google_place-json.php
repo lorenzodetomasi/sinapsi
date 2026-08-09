@@ -69,22 +69,71 @@ function ws_price_range($level) {
     return array_key_exists((int)$level, $bands) ? $bands[(int)$level] : '';
 }
 
-// Accessibilità dalla Places API (New): richiede "Places API (New)" abilitata
-// sulla stessa key server. Ritorna le feature attive (stile schema.org).
-function ws_accessibility($placeId, $key) {
+// Dati dalla Places API (New): accessibilità + servizi/informazioni in UNA
+// chiamata. Richiede "Places API (New)" abilitata sulla stessa key server.
+// Se non disponibile ritorna [] e i campi vengono semplicemente omessi.
+function ws_place_new($placeId, $key) {
+    $fields = implode(',', [
+        'accessibilityOptions', 'paymentOptions', 'parkingOptions',
+        'dineIn', 'takeout', 'delivery', 'curbsidePickup', 'reservable',
+        'servesBeer', 'servesWine', 'servesBreakfast', 'servesLunch', 'servesDinner',
+        'servesBrunch', 'servesVegetarianFood', 'servesCoffee', 'servesDessert', 'servesCocktails',
+        'outdoorSeating', 'liveMusic', 'menuForChildren', 'restroom',
+        'goodForChildren', 'goodForGroups', 'goodForWatchingSports', 'allowsDogs',
+    ]);
     $url = "https://places.googleapis.com/v1/places/" . rawurlencode($placeId);
     $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 10,
-        'header' => "X-Goog-Api-Key: $key\r\nX-Goog-FieldMask: accessibilityOptions\r\n"]]);
+        'header' => "X-Goog-Api-Key: $key\r\nX-Goog-FieldMask: $fields\r\n"]]);
     $body = @file_get_contents($url, false, $ctx);
     if ($body === false) return [];
     $d = json_decode($body, true);
-    $a = is_array($d) ? ($d['accessibilityOptions'] ?? []) : [];
-    $features = [];
+    return is_array($d) ? $d : [];
+}
+
+// meetoo:accessibilityFeature (voci sedia a rotelle) da accessibilityOptions.
+function ws_accessibility_from($new) {
+    $a = is_array($new['accessibilityOptions'] ?? null) ? $new['accessibilityOptions'] : [];
+    $out = [];
     foreach (['wheelchairAccessibleEntrance', 'wheelchairAccessibleRestroom',
               'wheelchairAccessibleParking', 'wheelchairAccessibleSeating'] as $k) {
-        if (!empty($a[$k])) $features[] = $k;
+        if (!empty($a[$k])) $out[] = $k;
     }
-    return $features;
+    return $out;
+}
+
+// amenityFeature (LocationFeatureSpecification[]) dai servizi/informazioni.
+// Solo quelli PRESENTI (true). Etichette IT modificabili qui.
+function ws_amenities_from($new) {
+    $labels = [
+        'dineIn' => 'Consumo sul posto', 'takeout' => 'Asporto', 'delivery' => 'Consegna a domicilio',
+        'curbsidePickup' => 'Ritiro all’esterno', 'reservable' => 'Prenotabile',
+        'servesBeer' => 'Birra', 'servesWine' => 'Vino', 'servesCocktails' => 'Cocktail',
+        'servesCoffee' => 'Caffè', 'servesDessert' => 'Dolci', 'servesVegetarianFood' => 'Opzioni vegetariane',
+        'servesBreakfast' => 'Colazione', 'servesLunch' => 'Pranzo', 'servesDinner' => 'Cena', 'servesBrunch' => 'Brunch',
+        'outdoorSeating' => 'Posti all’aperto', 'liveMusic' => 'Musica dal vivo',
+        'menuForChildren' => 'Menù per bambini', 'restroom' => 'Bagni',
+        'goodForChildren' => 'Adatto ai bambini', 'goodForGroups' => 'Adatto ai gruppi',
+        'goodForWatchingSports' => 'Per guardare lo sport', 'allowsDogs' => 'Cani ammessi',
+    ];
+    $payLabels = [
+        'acceptsCreditCards' => 'Carte di credito', 'acceptsDebitCards' => 'Carte di debito',
+        'acceptsNfc' => 'Pagamento contactless', 'acceptsCashOnly' => 'Solo contanti',
+    ];
+    $parkLabels = [
+        'freeParkingLot' => 'Parcheggio gratuito', 'paidParkingLot' => 'Parcheggio a pagamento',
+        'freeStreetParking' => 'Parcheggio libero su strada', 'paidStreetParking' => 'Parcheggio a pagamento su strada',
+        'valetParking' => 'Servizio di parcheggio', 'freeGarageParking' => 'Garage gratuito', 'paidGarageParking' => 'Garage a pagamento',
+    ];
+    $out = [];
+    $add = function ($name) use (&$out) {
+        $out[] = ['@type' => 'LocationFeatureSpecification', 'name' => $name, 'value' => true];
+    };
+    foreach ($labels as $k => $name) if (!empty($new[$k])) $add($name);
+    $pay = is_array($new['paymentOptions'] ?? null) ? $new['paymentOptions'] : [];
+    foreach ($payLabels as $k => $name) if (!empty($pay[$k])) $add($name);
+    $park = is_array($new['parkingOptions'] ?? null) ? $new['parkingOptions'] : [];
+    foreach ($parkLabels as $k => $name) if (!empty($park[$k])) $add($name);
+    return $out;
 }
 
 // --- Estrazione immagini dal sito del locale (niente foto Google) ---
@@ -371,8 +420,11 @@ if ($action === 'search') {
         }
     }
 
-    // Dati extra da Google + immagini dal sito del locale (cover/logo).
-    $accessibility = ws_accessibility($place['place_id'], $googleApiKey);
+    // Dati extra da Google (Places API New: accessibilità + servizi) + immagini
+    // dal sito del locale (cover/logo).
+    $newPlace = ws_place_new($place['place_id'], $googleApiKey);
+    $accessibility = ws_accessibility_from($newPlace);
+    $amenities = ws_amenities_from($newPlace);
     $siteImg = ws_site_images($place['website'] ?? '');
     $coverExt = $siteImg['cover'] ? ws_img_ext($siteImg['cover'], 'jpg') : '';
     $logoExt = $siteImg['logo'] ? ws_img_ext($siteImg['logo'], 'png') : '';
@@ -427,6 +479,7 @@ if ($action === 'search') {
     if ($logoExt) $wsCmsJsonLd['mainEntity']['logo'] = "media/logo.$logoExt";
     if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:business_status'] = $place['business_status'];
     if (!empty($accessibility)) $wsCmsJsonLd['mainEntity']['meetoo:accessibilityFeature'] = $accessibility;
+    if (!empty($amenities)) $wsCmsJsonLd['mainEntity']['amenityFeature'] = $amenities;
 
     echo json_encode([
         "raw_google" => $place,
