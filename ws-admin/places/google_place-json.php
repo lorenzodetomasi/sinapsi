@@ -63,6 +63,90 @@ function ws_read_stored($id) {
     return [$gid, $stored, false];
 }
 
+// Fascia di prezzo indicativa da price_level (0-4). Google NON dà importi reali.
+function ws_price_range($level) {
+    $bands = [0 => 'Gratis', 1 => '€0-15', 2 => '€15-30', 3 => '€30-60', 4 => '€60+'];
+    return array_key_exists((int)$level, $bands) ? $bands[(int)$level] : '';
+}
+
+// Accessibilità dalla Places API (New): richiede "Places API (New)" abilitata
+// sulla stessa key server. Ritorna le feature attive (stile schema.org).
+function ws_accessibility($placeId, $key) {
+    $url = "https://places.googleapis.com/v1/places/" . rawurlencode($placeId);
+    $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 10,
+        'header' => "X-Goog-Api-Key: $key\r\nX-Goog-FieldMask: accessibilityOptions\r\n"]]);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body === false) return [];
+    $d = json_decode($body, true);
+    $a = is_array($d) ? ($d['accessibilityOptions'] ?? []) : [];
+    $features = [];
+    foreach (['wheelchairAccessibleEntrance', 'wheelchairAccessibleRestroom',
+              'wheelchairAccessibleParking', 'wheelchairAccessibleSeating'] as $k) {
+        if (!empty($a[$k])) $features[] = $k;
+    }
+    return $features;
+}
+
+// --- Estrazione immagini dal sito del locale (niente foto Google) ---
+function ws_meta_content($html, $prop) {
+    $p = preg_quote($prop, '/');
+    if (preg_match('/<meta[^>]+(?:property|name)=["\']' . $p . '["\'][^>]*content=["\']([^"\']+)["\']/i', $html, $m)) return html_entity_decode($m[1], ENT_QUOTES);
+    if (preg_match('/<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name)=["\']' . $p . '["\']/i', $html, $m)) return html_entity_decode($m[1], ENT_QUOTES);
+    return '';
+}
+function ws_link_href($html, $rel) {
+    $r = preg_quote($rel, '/');
+    if (preg_match('/<link[^>]+rel=["\'][^"\']*' . $r . '[^"\']*["\'][^>]*href=["\']([^"\']+)["\']/i', $html, $m)) return html_entity_decode($m[1], ENT_QUOTES);
+    if (preg_match('/<link[^>]+href=["\']([^"\']+)["\'][^>]*rel=["\'][^"\']*' . $r . '[^"\']*["\']/i', $html, $m)) return html_entity_decode($m[1], ENT_QUOTES);
+    return '';
+}
+function ws_abs_url($u, $base) {
+    if ($u === '') return '';
+    if (preg_match('#^https?://#i', $u)) return $u;
+    $p = @parse_url($base);
+    if (!$p || empty($p['scheme']) || empty($p['host'])) return '';
+    $origin = $p['scheme'] . '://' . $p['host'] . (isset($p['port']) ? ':' . $p['port'] : '');
+    if (strpos($u, '//') === 0) return $p['scheme'] . ':' . $u;
+    if ($u[0] === '/') return $origin . $u;
+    $dir = isset($p['path']) ? preg_replace('#/[^/]*$#', '/', $p['path']) : '/';
+    return $origin . $dir . $u;
+}
+// Legge og:image (cover) e og:logo/apple-touch-icon (logo) dal sito.
+function ws_site_images($website) {
+    $out = ['cover' => '', 'logo' => ''];
+    if (!$website) return $out;
+    $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 8,
+        'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => 1, 'max_redirects' => 3]]);
+    $html = @file_get_contents($website, false, $ctx);
+    if ($html === false) return $out;
+    $html = substr($html, 0, 500000);
+    $cover = ws_meta_content($html, 'og:image');
+    $logo = ws_meta_content($html, 'og:logo');
+    if (!$logo) $logo = ws_link_href($html, 'apple-touch-icon');
+    if (!$logo) $logo = ws_link_href($html, 'icon');
+    $out['cover'] = ws_abs_url($cover, $website);
+    $out['logo'] = ws_abs_url($logo, $website);
+    return $out;
+}
+function ws_img_ext($url, $default) {
+    if (preg_match('/\.(jpe?g|png|webp|gif|svg)(?:[?#]|$)/i', $url, $m)) {
+        $e = strtolower($m[1]);
+        return $e === 'jpeg' ? 'jpg' : $e;
+    }
+    return $default;
+}
+// Scarica un'immagine e la salva su disco (con limiti). Ritorna true/false.
+function ws_download_image($url, $destPath) {
+    if (!$url) return false;
+    $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 15,
+        'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => 1, 'max_redirects' => 3]]);
+    $bin = @file_get_contents($url, false, $ctx);
+    if ($bin === false || strlen($bin) < 100 || strlen($bin) > 8 * 1024 * 1024) return false;
+    $dir = dirname($destPath);
+    if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return false;
+    return @file_put_contents($destPath, $bin) !== false;
+}
+
 // 1. Lettura dei dati (Supporto ibrido: POST JSON payload o GET Query String)
 $data = json_decode(file_get_contents('php://input'), true);
 
@@ -176,7 +260,21 @@ if ($action === 'save') {
         echo json_encode(["error" => "Scrittura fallita: il web server ha i permessi su ws-custom?"]);
         exit;
     }
-    echo json_encode(["success" => true, "path" => "$id/index.json", "overwritten" => $existed]);
+
+    // Immagini: scarica cover/logo dal sito nella cartella media/ (i path locali
+    // sono già in entity.image / entity.logo, es. "media/cover.jpg").
+    $media = is_array($data['media'] ?? null) ? $data['media'] : [];
+    $saved = [];
+    $coverPath = (string)($entity['image'] ?? '');
+    $logoPath = (string)($entity['logo'] ?? '');
+    if (!empty($media['cover_src']) && preg_match('#^media/[A-Za-z0-9._-]+$#', $coverPath)) {
+        if (ws_download_image($media['cover_src'], "$dir/$coverPath")) $saved[] = $coverPath;
+    }
+    if (!empty($media['logo_src']) && preg_match('#^media/[A-Za-z0-9._-]+$#', $logoPath)) {
+        if (ws_download_image($media['logo_src'], "$dir/$logoPath")) $saved[] = $logoPath;
+    }
+
+    echo json_encode(["success" => true, "path" => "$id/index.json", "overwritten" => $existed, "media_saved" => $saved]);
     exit;
 }
 
@@ -211,7 +309,8 @@ if ($action === 'search') {
     $place = $rawData['results'][0];
 
     // Chiamata Place Details (arricchimento, non bloccante)
-    $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=address_component,website,rating,user_ratings_total&key=" . $googleApiKey;
+    $detailsFields = "address_component,website,rating,user_ratings_total,editorial_summary,business_status,price_level,url";
+    $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=" . $detailsFields . "&key=" . $googleApiKey;
     $detailsData = googleGet($detailsUrl);
     if (isset($detailsData['result'])) {
         $place = array_merge($place, $detailsData['result']);
@@ -272,6 +371,16 @@ if ($action === 'search') {
         }
     }
 
+    // Dati extra da Google + immagini dal sito del locale (cover/logo).
+    $accessibility = ws_accessibility($place['place_id'], $googleApiKey);
+    $siteImg = ws_site_images($place['website'] ?? '');
+    $coverExt = $siteImg['cover'] ? ws_img_ext($siteImg['cover'], 'jpg') : '';
+    $logoExt = $siteImg['logo'] ? ws_img_ext($siteImg['logo'], 'png') : '';
+    // URL canonico Google Maps (se disponibile) al posto di quello costruito.
+    $gmapUrl = !empty($place['url'])
+        ? $place['url']
+        : ("https://www.google.com/maps/search/?api=1&query=" . $addressQueryString . "&query_place_id=" . urlencode($place['place_id']));
+
     $wsCmsJsonLd = [
         "@context" => "https://schema.org",
         "@type" => "ItemPage",
@@ -295,7 +404,7 @@ if ($action === 'search') {
                 "longitude" => $lng
             ],
             "hasMap" => [
-                ["@type" => "Map", "name" => "Google Maps", "url" => "https://www.google.com/maps/search/?api=1&query=" . $addressQueryString . "&query_place_id=" . urlencode($place['place_id']), "mapType" => "https://schema.org/VenueMap"],
+                ["@type" => "Map", "name" => "Google Maps", "url" => $gmapUrl, "mapType" => "https://schema.org/VenueMap"],
                 ["@type" => "Map", "name" => "Apple Maps", "url" => "https://maps.apple.com/?q=" . $addressQueryString, "mapType" => "https://schema.org/VenueMap"],
                 ["@type" => "Map", "name" => "Bing Maps", "url" => "https://www.bing.com/maps?q=" . $addressQueryString, "mapType" => "https://schema.org/VenueMap"]
             ]
@@ -308,6 +417,16 @@ if ($action === 'search') {
             "@type" => "AggregateRating", "ratingValue" => (float) $place['rating'], "reviewCount" => (int) $place['user_ratings_total']
         ];
     }
+    // Campi integrati aggiuntivi
+    if (!empty($place['editorial_summary']['overview'])) $wsCmsJsonLd['mainEntity']['description'] = $place['editorial_summary']['overview'];
+    if (isset($place['price_level'])) {
+        $pr = ws_price_range($place['price_level']);
+        if ($pr !== '') $wsCmsJsonLd['mainEntity']['priceRange'] = $pr;
+    }
+    if ($coverExt) $wsCmsJsonLd['mainEntity']['image'] = "media/cover.$coverExt";
+    if ($logoExt) $wsCmsJsonLd['mainEntity']['logo'] = "media/logo.$logoExt";
+    if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:business_status'] = $place['business_status'];
+    if (!empty($accessibility)) $wsCmsJsonLd['mainEntity']['meetoo:accessibilityFeature'] = $accessibility;
 
     echo json_encode([
         "raw_google" => $place,
@@ -318,6 +437,8 @@ if ($action === 'search') {
         "id_parse_error" => $idParseError,      // index.json esistente ma illeggibile
         "updates" => $updates,                  // differenze Google↔salvato da integrare
         "id_region_missing" => $regionMissing,
+        // Sorgenti immagini dal sito, per scaricarle in media/ al salvataggio
+        "media" => ["cover_src" => $siteImg['cover'], "logo_src" => $siteImg['logo']],
     ]);
     exit;
 }

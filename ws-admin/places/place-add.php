@@ -96,6 +96,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
 <script>
     let userJwtToken = "";
+    let lastMedia = {}; // sorgenti cover/logo dal sito, dall'ultima ricerca
 
     // 1. Risposta Google Identity
     function handleCredentialResponse(response) {
@@ -176,6 +177,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 }
                 document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
                 document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
+                lastMedia = data.media || {};
 
                 // Stato @id: nuovo / già inserito (stesso Google ID) + aggiornamenti /
                 // collisione (Google ID diverso o assente) / regione mancante.
@@ -245,12 +247,14 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         fetch('google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text })
+            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text, media: lastMedia })
         })
         .then(res => res.json())
         .then(res => {
-            if (res.error) setSaveMsg('Errore: ' + res.error, 'err');
-            else setSaveMsg((res.overwritten ? 'Aggiornato' : 'Salvato') + ': ' + res.path, 'ok');
+            if (res.error) { setSaveMsg('Errore: ' + res.error, 'err'); return; }
+            let m = (res.overwritten ? 'Aggiornato' : 'Salvato') + ': ' + res.path;
+            if (res.media_saved && res.media_saved.length) m += ' (+ ' + res.media_saved.join(', ') + ')';
+            setSaveMsg(m, 'ok');
         })
         .catch(() => setSaveMsg('Errore di connessione al server.', 'err'));
     });
