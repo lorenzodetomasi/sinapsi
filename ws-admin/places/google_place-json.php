@@ -423,6 +423,11 @@ if ($action === 'search') {
     // Dati extra da Google (Places API New: accessibilità + servizi) + immagini
     // dal sito del locale (cover/logo).
     $newPlace = ws_place_new($place['place_id'], $googleApiKey);
+    // Diagnostica: se la New API fallisce, ci dice il perché (es. API non
+    // abilitata, IP non autorizzato) invece di restare muta.
+    $newApiStatus = isset($newPlace['error'])
+        ? (($newPlace['error']['status'] ?? '') . ': ' . ($newPlace['error']['message'] ?? ''))
+        : (empty($newPlace) ? 'nessuna risposta (API non abilitata o rete?)' : 'ok');
     $accessibility = ws_accessibility_from($newPlace);
     $amenities = ws_amenities_from($newPlace);
     $siteImg = ws_site_images($place['website'] ?? '');
@@ -492,6 +497,13 @@ if ($action === 'search') {
         "id_region_missing" => $regionMissing,
         // Sorgenti immagini dal sito, per scaricarle in media/ al salvataggio
         "media" => ["cover_src" => $siteImg['cover'], "logo_src" => $siteImg['logo']],
+        // Diagnostica (visibile nel JSON di risposta, nessuna key)
+        "debug" => [
+            "website" => $place['website'] ?? '',
+            "new_api" => $newApiStatus,          // 'ok' oppure l'errore Google
+            "accessibility_count" => count($accessibility),
+            "amenity_count" => count($amenities),
+        ],
     ]);
     exit;
 }

@@ -71,6 +71,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
     <div id="whitelist-area">
         <input type="text" id="place-search" class="search-box" placeholder="Cerca il luogo da importare (es. L'Amanusa Beach Ostia)...">
+        <div id="debug-msg" style="font-size:13px;color:#555;margin:-10px 0 16px;"></div>
 
         <div class="grid">
             <div class="col">
@@ -178,6 +179,17 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
                 document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
                 lastMedia = data.media || {};
+                if (data.debug) {
+                    console.log('[debug]', data.debug, 'media:', data.media);
+                    const dbg = data.debug;
+                    document.getElementById('debug-msg').innerText =
+                        'Places API (New): ' + dbg.new_api +
+                        ' · accessibilità: ' + dbg.accessibility_count +
+                        ' · servizi: ' + dbg.amenity_count +
+                        ' · sito: ' + (dbg.website || '(nessuno)') +
+                        ' · cover: ' + (lastMedia.cover_src ? 'sì' : 'no') +
+                        ' · logo: ' + (lastMedia.logo_src ? 'sì' : 'no');
+                }
 
                 // Stato @id: nuovo / già inserito (stesso Google ID) + aggiornamenti /
                 // collisione (Google ID diverso o assente) / regione mancante.
