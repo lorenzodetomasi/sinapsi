@@ -72,6 +72,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <div id="whitelist-area">
         <input type="text" id="place-search" class="search-box" placeholder="Cerca il luogo da importare (es. L'Amanusa Beach Ostia)...">
         <div id="debug-msg" style="font-size:13px;color:#555;margin:-10px 0 16px;"></div>
+        <div id="cap-fix" style="display:none; margin:0 0 16px; padding:12px; background:#fff3e0; border-left:5px solid #ff9800;">
+            ⚠️ CAP non rilevato da Google (es. punto di confine). Impostalo per un @id valido:
+            <input type="text" id="cap-input" maxlength="5" inputmode="numeric" placeholder="es. 00122"
+                   style="padding:6px; font-size:15px; width:110px; margin-left:8px;">
+        </div>
 
         <div class="grid">
             <div class="col">
@@ -195,9 +200,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 // collisione (Google ID diverso o assente) / regione mancante.
                 const id = data.ws_cms?.mainEntity?.['@id'] || '';
                 const box = document.getElementById('error-msg');
+                document.getElementById('cap-fix').style.display = data.id_region_missing ? 'block' : 'none';
+                if (data.id_region_missing) document.getElementById('cap-input').value = '';
                 let msg = "", color = "red";
                 if (data.id_region_missing) {
-                    msg = "⚠️ CAP/paese non rilevati: la regione nell'@id è vuota (" + id + "). Compila la regione a mano.";
+                    msg = "⚠️ CAP non rilevato: imposta il CAP qui sopra per un @id valido (" + id + ").";
                     color = "#e65100";
                 } else if (!data.id_exists) {
                     msg = ""; // nuovo, nessun problema
@@ -275,6 +282,28 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         })
         .catch(() => setSaveMsg('Errore di connessione al server.', 'err'));
     });
+
+    // 5. CAP manuale: aggiorna postalCode e ricostruisce l'@id (<paese><CAP>).
+    function applyCap(cap) {
+        cap = (cap || '').trim();
+        const ta = document.getElementById('json-wscms');
+        let obj;
+        try { obj = JSON.parse(ta.value); } catch (e) { return; }
+        const ent = obj.mainEntity || obj;
+        ent.address = ent.address || {};
+        const country = ent.address.addressCountry || 'IT';
+        ent.address.postalCode = cap;
+        const parts = String(ent['@id'] || '').split('/'); // [folder, region, slug]
+        if (parts.length === 3) {
+            parts[1] = cap ? (country + cap) : '';
+            ent['@id'] = parts.join('/');
+        }
+        ta.value = JSON.stringify(obj, null, 4);
+        const box = document.getElementById('error-msg');
+        if (cap && /^\d{5}$/.test(cap)) { box.style.color = '#2e7d32'; box.innerText = '✓ CAP impostato: @id ' + ent['@id']; }
+        else { box.style.color = '#e65100'; box.innerText = '⚠️ CAP mancante o non valido (5 cifre): imposta il CAP per un @id valido.'; }
+    }
+    document.getElementById('cap-input').addEventListener('input', function () { applyCap(this.value); });
 </script>
 
 </body>

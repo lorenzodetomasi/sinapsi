@@ -490,9 +490,12 @@ if ($action === 'search') {
     // @type primario (LocalBusiness|Place) + @id: <cartella>/<IT+CAP>/<slug>
     $primaryType = ws_primary_type($place['types'] ?? []);
     $folder = ws_folder($primaryType);
-    $region = $countryShort . $postalCode;            // es. IT00124
     $slug = ws_slug($place['name']);
     $regionMissing = ($countryShort === '' || $postalCode === '');
+    // Region SOLO se abbiamo sia paese sia CAP; altrimenti resta vuota così
+    // l'@id (folder//slug) è invalido e il salvataggio lo blocca finché il CAP
+    // non viene impostato a mano.
+    $region = $regionMissing ? '' : ($countryShort . $postalCode);   // es. IT00124
     $newId = ($region !== '' && $slug !== '') ? "$folder/$region/$slug" : "$folder//$slug";
     $idExists = (!$regionMissing) && ws_id_exists($newId);
 
