@@ -160,21 +160,55 @@ function ws_abs_url($u, $base) {
     $dir = isset($p['path']) ? preg_replace('#/[^/]*$#', '/', $p['path']) : '/';
     return $origin . $dir . $u;
 }
-// Legge og:image (cover) e og:logo/apple-touch-icon (logo) dal sito.
+// Varianti dell'URL da provare: originale, https, con/senza www, apex https.
+// Serve perché Google spesso dà "http://www.dominio/" che non risponde mentre
+// "https://dominio/" sì.
+function ws_url_candidates($u) {
+    $u = trim($u);
+    $set = [];
+    $add = function ($x) use (&$set) {
+        $x = rtrim($x, '/');
+        if ($x !== '' && !in_array($x, $set, true)) $set[] = $x;
+    };
+    $add($u);
+    $add(preg_replace('#^http://#i', 'https://', $u));
+    if (preg_match('#^(https?://)www\.(.+)$#i', $u, $m)) {
+        $add($m[1] . $m[2]);
+        $add('https://' . $m[2]);
+    } elseif (preg_match('#^(https?://)(.+)$#i', $u, $m)) {
+        $add($m[1] . 'www.' . $m[2]);
+    }
+    $host = @parse_url($u, PHP_URL_HOST);
+    if ($host) $add('https://' . preg_replace('#^www\.#i', '', $host));
+    return $set;
+}
+function ws_fetch_html($url) {
+    $ctx = stream_context_create([
+        'http' => ['ignore_errors' => true, 'timeout' => 8, 'header' => "User-Agent: Mozilla/5.0\r\n",
+                   'follow_location' => 1, 'max_redirects' => 4],
+        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+    ]);
+    $h = @file_get_contents($url, false, $ctx);
+    return $h === false ? '' : substr($h, 0, 500000);
+}
+// Legge og:image (cover) e og:logo/apple-touch-icon (logo) dal sito, provando le
+// varianti dell'URL finché una risponde.
 function ws_site_images($website) {
     $out = ['cover' => '', 'logo' => ''];
     if (!$website) return $out;
-    $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 8,
-        'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => 1, 'max_redirects' => 3]]);
-    $html = @file_get_contents($website, false, $ctx);
-    if ($html === false) return $out;
-    $html = substr($html, 0, 500000);
+    $html = '';
+    $base = '';
+    foreach (ws_url_candidates($website) as $u) {
+        $html = ws_fetch_html($u);
+        if ($html !== '') { $base = $u; break; }
+    }
+    if ($html === '') return $out;
     $cover = ws_meta_content($html, 'og:image');
     $logo = ws_meta_content($html, 'og:logo');
     if (!$logo) $logo = ws_link_href($html, 'apple-touch-icon');
     if (!$logo) $logo = ws_link_href($html, 'icon');
-    $out['cover'] = ws_abs_url($cover, $website);
-    $out['logo'] = ws_abs_url($logo, $website);
+    $out['cover'] = ws_abs_url($cover, $base);
+    $out['logo'] = ws_abs_url($logo, $base);
     return $out;
 }
 function ws_img_ext($url, $default) {
