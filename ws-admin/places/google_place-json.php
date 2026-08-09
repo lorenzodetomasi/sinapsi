@@ -218,21 +218,19 @@ function ws_img_ext($url, $default) {
     }
     return $default;
 }
-// URL della Maps Static API (vista satellitare). Costruito SOLO lato server:
-// contiene la key, quindi non va mai mandato al client. Richiede "Maps Static
-// API" abilitata sulla stessa key server.
-function ws_static_map_url($lat, $lng, $key) {
-    $params = http_build_query([
-        'center'  => $lat . ',' . $lng,
-        'zoom'    => 18,          // livello di zoom (ritoccabile)
-        'size'    => '640x640',
-        'scale'   => 2,           // 1280x1280 effettivi
-        'maptype' => 'satellite',
-        'format'  => 'jpg',
-        'key'     => $key,
-    ]);
-    return "https://maps.googleapis.com/maps/api/staticmap?" . $params;
+// URL della vista satellitare (Esri World Imagery). Nessuna API key: Google non
+// serve i tipi satellite/hybrid in area SEE/EEA. Costruiamo un bbox attorno alle
+// coordinate ($half = semi-lato dell'area, in metri).
+function ws_satellite_url($lat, $lng) {
+    $half = 300; // ~300 m attorno al luogo (ritoccabile)
+    $latD = $half / 111320;
+    $lngD = $half / (111320 * cos(deg2rad((float)$lat)));
+    $bbox = ((float)$lng - $lngD) . ',' . ((float)$lat - $latD) . ',' . ((float)$lng + $lngD) . ',' . ((float)$lat + $latD);
+    return "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export"
+         . "?bbox=$bbox&bboxSR=4326&size=1280,1280&format=jpg&f=image";
 }
+// Attribuzione richiesta da Esri per World Imagery.
+const WS_SATELLITE_CREDIT = 'Esri, Maxar, Earthstar Geographics';
 
 // Riconosce un'immagine dalle magic bytes (indipendente dalla versione PHP).
 function ws_is_image_bin($bin) {
@@ -409,11 +407,11 @@ if ($action === 'save') {
     $geoLng = $entity['geo']['longitude'] ?? null;
     if ($okPath($satPath) && $geoLat !== null && $geoLng !== null) {
         $e = '';
-        $satUrl = ws_static_map_url($geoLat, $geoLng, $googleApiKey);
+        $satUrl = ws_satellite_url($geoLat, $geoLng);
         if (ws_download_image($satUrl, "$dir/$satPath", $e)) $saved[] = $satPath;
-        else { unset($entity['meetoo:satelliteView']); $failed[] = $satPath; $mediaDebug['satellite'] = $e; }
+        else { unset($entity['meetoo:satelliteView'], $entity['meetoo:satelliteCredit']); $failed[] = $satPath; $mediaDebug['satellite'] = $e; }
     } elseif ($satPath !== '') {
-        unset($entity['meetoo:satelliteView']);
+        unset($entity['meetoo:satelliteView'], $entity['meetoo:satelliteCredit']);
     }
 
     $file = $dir . '/index.json';
@@ -590,8 +588,11 @@ if ($action === 'search') {
     if ($coverExt) $wsCmsJsonLd['mainEntity']['image'] = "media/cover.$coverExt";
     if ($logoExt) $wsCmsJsonLd['mainEntity']['logo'] = "media/logo.$logoExt";
     // Vista satellitare: sempre disponibile (abbiamo lat/lng). Il file verrà
-    // scaricato al salvataggio via Maps Static API.
-    if ($lat && $lng) $wsCmsJsonLd['mainEntity']['meetoo:satelliteView'] = "media/satellite.jpg";
+    // scaricato al salvataggio da Esri World Imagery.
+    if ($lat && $lng) {
+        $wsCmsJsonLd['mainEntity']['meetoo:satelliteView'] = "media/satellite.jpg";
+        $wsCmsJsonLd['mainEntity']['meetoo:satelliteCredit'] = WS_SATELLITE_CREDIT;
+    }
     if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:business_status'] = $place['business_status'];
     if (!empty($accessibility)) $wsCmsJsonLd['mainEntity']['meetoo:accessibilityFeature'] = $accessibility;
     if (!empty($amenities)) $wsCmsJsonLd['mainEntity']['amenityFeature'] = $amenities;
