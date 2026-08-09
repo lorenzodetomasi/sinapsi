@@ -218,13 +218,46 @@ function ws_img_ext($url, $default) {
     }
     return $default;
 }
+// URL della Maps Static API (vista satellitare). Costruito SOLO lato server:
+// contiene la key, quindi non va mai mandato al client. Richiede "Maps Static
+// API" abilitata sulla stessa key server.
+function ws_static_map_url($lat, $lng, $key) {
+    $params = http_build_query([
+        'center'  => $lat . ',' . $lng,
+        'zoom'    => 18,          // livello di zoom (ritoccabile)
+        'size'    => '640x640',
+        'scale'   => 2,           // 1280x1280 effettivi
+        'maptype' => 'satellite',
+        'format'  => 'jpg',
+        'key'     => $key,
+    ]);
+    return "https://maps.googleapis.com/maps/api/staticmap?" . $params;
+}
+
+// Riconosce un'immagine dalle magic bytes (indipendente dalla versione PHP).
+function ws_is_image_bin($bin) {
+    if (strlen($bin) < 12) return false;
+    if (substr($bin, 0, 3) === "\xFF\xD8\xFF") return true;                        // JPEG
+    if (substr($bin, 0, 8) === "\x89PNG\r\n\x1a\n") return true;                   // PNG
+    if (substr($bin, 0, 6) === 'GIF87a' || substr($bin, 0, 6) === 'GIF89a') return true; // GIF
+    if (substr($bin, 0, 4) === 'RIFF' && substr($bin, 8, 4) === 'WEBP') return true;     // WEBP
+    $head = ltrim(substr($bin, 0, 300));
+    if (stripos($head, '<svg') !== false || stripos($head, '<?xml') === 0) return true;   // SVG
+    return false;
+}
+
 // Scarica un'immagine e la salva su disco (con limiti). Ritorna true/false.
 function ws_download_image($url, $destPath) {
     if (!$url) return false;
-    $ctx = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 15,
-        'header' => "User-Agent: Mozilla/5.0\r\n", 'follow_location' => 1, 'max_redirects' => 3]]);
+    $ctx = stream_context_create([
+        'http' => ['ignore_errors' => true, 'timeout' => 15, 'header' => "User-Agent: Mozilla/5.0\r\n",
+                   'follow_location' => 1, 'max_redirects' => 3],
+        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+    ]);
     $bin = @file_get_contents($url, false, $ctx);
     if ($bin === false || strlen($bin) < 100 || strlen($bin) > 8 * 1024 * 1024) return false;
+    // Dev'essere davvero un'immagine (evita di salvare pagine d'errore 403/HTML).
+    if (!ws_is_image_bin($bin)) return false;
     $dir = dirname($destPath);
     if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return false;
     return @file_put_contents($destPath, $bin) !== false;
@@ -324,7 +357,13 @@ if ($action === 'save') {
         echo json_encode(["error" => "JSON-LD non valido."]);
         exit;
     }
-    $entity = $decoded['mainEntity'] ?? $decoded;
+    // Riferimento (non copia): così togliere un'immagine non scaricata modifica
+    // davvero il JSON che scriviamo.
+    if (isset($decoded['mainEntity']) && is_array($decoded['mainEntity'])) {
+        $entity = &$decoded['mainEntity'];
+    } else {
+        $entity = &$decoded;
+    }
     $id = $entity['@id'] ?? '';
     // Solo il formato atteso: niente path traversal.
     if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
@@ -336,6 +375,36 @@ if ($action === 'save') {
         echo json_encode(["error" => "Impossibile creare la cartella $id."]);
         exit;
     }
+
+    // Immagini in media/. Le scarichiamo PRIMA di scrivere il JSON: se una non
+    // arriva, togliamo il riferimento per non lasciare immagini rotte.
+    $media = is_array($data['media'] ?? null) ? $data['media'] : [];
+    $saved = []; $failed = [];
+    $okPath = function ($p) { return $p !== '' && preg_match('#^media/[A-Za-z0-9._-]+$#', $p); };
+
+    $coverPath = (string)($entity['image'] ?? '');
+    if ($okPath($coverPath)) {
+        if (!empty($media['cover_src']) && ws_download_image($media['cover_src'], "$dir/$coverPath")) $saved[] = $coverPath;
+        else { unset($entity['image']); $failed[] = $coverPath; }
+    }
+    $logoPath = (string)($entity['logo'] ?? '');
+    if ($okPath($logoPath)) {
+        if (!empty($media['logo_src']) && ws_download_image($media['logo_src'], "$dir/$logoPath")) $saved[] = $logoPath;
+        else { unset($entity['logo']); $failed[] = $logoPath; }
+    }
+    // Satellite: URL costruito qui (key server, mai inviata al client) dalle
+    // coordinate del JSON.
+    $satPath = (string)($entity['meetoo:satelliteView'] ?? '');
+    $geoLat = $entity['geo']['latitude'] ?? null;
+    $geoLng = $entity['geo']['longitude'] ?? null;
+    if ($okPath($satPath) && $geoLat !== null && $geoLng !== null) {
+        $satUrl = ws_static_map_url($geoLat, $geoLng, $googleApiKey);
+        if (ws_download_image($satUrl, "$dir/$satPath")) $saved[] = $satPath;
+        else { unset($entity['meetoo:satelliteView']); $failed[] = $satPath; }
+    } elseif ($satPath !== '') {
+        unset($entity['meetoo:satelliteView']);
+    }
+
     $file = $dir . '/index.json';
     $existed = is_file($file);
     $pretty = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -344,20 +413,10 @@ if ($action === 'save') {
         exit;
     }
 
-    // Immagini: scarica cover/logo dal sito nella cartella media/ (i path locali
-    // sono già in entity.image / entity.logo, es. "media/cover.jpg").
-    $media = is_array($data['media'] ?? null) ? $data['media'] : [];
-    $saved = [];
-    $coverPath = (string)($entity['image'] ?? '');
-    $logoPath = (string)($entity['logo'] ?? '');
-    if (!empty($media['cover_src']) && preg_match('#^media/[A-Za-z0-9._-]+$#', $coverPath)) {
-        if (ws_download_image($media['cover_src'], "$dir/$coverPath")) $saved[] = $coverPath;
-    }
-    if (!empty($media['logo_src']) && preg_match('#^media/[A-Za-z0-9._-]+$#', $logoPath)) {
-        if (ws_download_image($media['logo_src'], "$dir/$logoPath")) $saved[] = $logoPath;
-    }
-
-    echo json_encode(["success" => true, "path" => "$id/index.json", "overwritten" => $existed, "media_saved" => $saved]);
+    echo json_encode([
+        "success" => true, "path" => "$id/index.json", "overwritten" => $existed,
+        "media_saved" => $saved, "media_failed" => $failed,
+    ]);
     exit;
 }
 
@@ -516,6 +575,9 @@ if ($action === 'search') {
     }
     if ($coverExt) $wsCmsJsonLd['mainEntity']['image'] = "media/cover.$coverExt";
     if ($logoExt) $wsCmsJsonLd['mainEntity']['logo'] = "media/logo.$logoExt";
+    // Vista satellitare: sempre disponibile (abbiamo lat/lng). Il file verrà
+    // scaricato al salvataggio via Maps Static API.
+    if ($lat && $lng) $wsCmsJsonLd['mainEntity']['meetoo:satelliteView'] = "media/satellite.jpg";
     if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:business_status'] = $place['business_status'];
     if (!empty($accessibility)) $wsCmsJsonLd['mainEntity']['meetoo:accessibilityFeature'] = $accessibility;
     if (!empty($amenities)) $wsCmsJsonLd['mainEntity']['amenityFeature'] = $amenities;

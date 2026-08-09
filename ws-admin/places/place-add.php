@@ -266,6 +266,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             if (res.error) { setSaveMsg('Errore: ' + res.error, 'err'); return; }
             let m = (res.overwritten ? 'Aggiornato' : 'Salvato') + ': ' + res.path;
             if (res.media_saved && res.media_saved.length) m += ' (+ ' + res.media_saved.join(', ') + ')';
+            if (res.media_failed && res.media_failed.length) m += ' — non salvate: ' + res.media_failed.join(', ');
             setSaveMsg(m, 'ok');
         })
         .catch(() => setSaveMsg('Errore di connessione al server.', 'err'));
