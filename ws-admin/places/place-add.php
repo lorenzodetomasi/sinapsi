@@ -267,7 +267,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             let m = (res.overwritten ? 'Aggiornato' : 'Salvato') + ': ' + res.path;
             if (res.media_saved && res.media_saved.length) m += ' (+ ' + res.media_saved.join(', ') + ')';
             if (res.media_failed && res.media_failed.length) m += ' — non salvate: ' + res.media_failed.join(', ');
-            setSaveMsg(m, 'ok');
+            if (res.media_debug) console.log('[media_debug]', res.media_debug);
+            const md = res.media_debug || {};
+            const reasons = Object.keys(md).map(k => k + ': ' + md[k]);
+            if (reasons.length) m += ' — motivo → ' + reasons.join(' · ');
+            setSaveMsg(m, res.media_failed && res.media_failed.length ? 'err' : 'ok');
         })
         .catch(() => setSaveMsg('Errore di connessione al server.', 'err'));
     });

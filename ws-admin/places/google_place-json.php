@@ -246,21 +246,29 @@ function ws_is_image_bin($bin) {
     return false;
 }
 
-// Scarica un'immagine e la salva su disco (con limiti). Ritorna true/false.
-function ws_download_image($url, $destPath) {
-    if (!$url) return false;
+// Scarica un'immagine e la salva su disco (con limiti). Ritorna true/false e,
+// via $err, il motivo del fallimento (per diagnosi).
+function ws_download_image($url, $destPath, &$err = null) {
+    $err = '';
+    if (!$url) { $err = 'url mancante'; return false; }
     $ctx = stream_context_create([
         'http' => ['ignore_errors' => true, 'timeout' => 15, 'header' => "User-Agent: Mozilla/5.0\r\n",
                    'follow_location' => 1, 'max_redirects' => 3],
         'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
     ]);
     $bin = @file_get_contents($url, false, $ctx);
-    if ($bin === false || strlen($bin) < 100 || strlen($bin) > 8 * 1024 * 1024) return false;
-    // Dev'essere davvero un'immagine (evita di salvare pagine d'errore 403/HTML).
-    if (!ws_is_image_bin($bin)) return false;
+    if ($bin === false) { $err = 'irraggiungibile'; return false; }
+    if (strlen($bin) < 100) { $err = 'risposta vuota/troppo piccola'; return false; }
+    if (strlen($bin) > 8 * 1024 * 1024) { $err = 'immagine troppo grande'; return false; }
+    if (!ws_is_image_bin($bin)) {
+        // spesso è un errore testuale di Google (API non abilitata, IP…)
+        $err = 'non è un\'immagine: ' . trim(preg_replace('/\s+/', ' ', strip_tags(substr($bin, 0, 200))));
+        return false;
+    }
     $dir = dirname($destPath);
-    if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return false;
-    return @file_put_contents($destPath, $bin) !== false;
+    if (!is_dir($dir) && !@mkdir($dir, 0775, true)) { $err = 'cartella media/ non creabile (permessi?)'; return false; }
+    if (@file_put_contents($destPath, $bin) === false) { $err = 'scrittura fallita (permessi?)'; return false; }
+    return true;
 }
 
 // 1. Lettura dei dati (Supporto ibrido: POST JSON payload o GET Query String)
@@ -379,18 +387,20 @@ if ($action === 'save') {
     // Immagini in media/. Le scarichiamo PRIMA di scrivere il JSON: se una non
     // arriva, togliamo il riferimento per non lasciare immagini rotte.
     $media = is_array($data['media'] ?? null) ? $data['media'] : [];
-    $saved = []; $failed = [];
+    $saved = []; $failed = []; $mediaDebug = [];
     $okPath = function ($p) { return $p !== '' && preg_match('#^media/[A-Za-z0-9._-]+$#', $p); };
 
     $coverPath = (string)($entity['image'] ?? '');
     if ($okPath($coverPath)) {
-        if (!empty($media['cover_src']) && ws_download_image($media['cover_src'], "$dir/$coverPath")) $saved[] = $coverPath;
-        else { unset($entity['image']); $failed[] = $coverPath; }
+        $e = '';
+        if (!empty($media['cover_src']) && ws_download_image($media['cover_src'], "$dir/$coverPath", $e)) $saved[] = $coverPath;
+        else { unset($entity['image']); $failed[] = $coverPath; $mediaDebug['cover'] = $e ?: 'nessuna sorgente'; }
     }
     $logoPath = (string)($entity['logo'] ?? '');
     if ($okPath($logoPath)) {
-        if (!empty($media['logo_src']) && ws_download_image($media['logo_src'], "$dir/$logoPath")) $saved[] = $logoPath;
-        else { unset($entity['logo']); $failed[] = $logoPath; }
+        $e = '';
+        if (!empty($media['logo_src']) && ws_download_image($media['logo_src'], "$dir/$logoPath", $e)) $saved[] = $logoPath;
+        else { unset($entity['logo']); $failed[] = $logoPath; $mediaDebug['logo'] = $e ?: 'nessuna sorgente'; }
     }
     // Satellite: URL costruito qui (key server, mai inviata al client) dalle
     // coordinate del JSON.
@@ -398,9 +408,10 @@ if ($action === 'save') {
     $geoLat = $entity['geo']['latitude'] ?? null;
     $geoLng = $entity['geo']['longitude'] ?? null;
     if ($okPath($satPath) && $geoLat !== null && $geoLng !== null) {
+        $e = '';
         $satUrl = ws_static_map_url($geoLat, $geoLng, $googleApiKey);
-        if (ws_download_image($satUrl, "$dir/$satPath")) $saved[] = $satPath;
-        else { unset($entity['meetoo:satelliteView']); $failed[] = $satPath; }
+        if (ws_download_image($satUrl, "$dir/$satPath", $e)) $saved[] = $satPath;
+        else { unset($entity['meetoo:satelliteView']); $failed[] = $satPath; $mediaDebug['satellite'] = $e; }
     } elseif ($satPath !== '') {
         unset($entity['meetoo:satelliteView']);
     }
@@ -415,7 +426,7 @@ if ($action === 'save') {
 
     echo json_encode([
         "success" => true, "path" => "$id/index.json", "overwritten" => $existed,
-        "media_saved" => $saved, "media_failed" => $failed,
+        "media_saved" => $saved, "media_failed" => $failed, "media_debug" => $mediaDebug,
     ]);
     exit;
 }
