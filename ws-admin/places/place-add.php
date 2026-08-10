@@ -40,6 +40,16 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         #btn-save { background: #2196f3; color: #fff; }
         #btn-save:hover { background: #1976d2; }
         #save-msg { font-weight: bold; }
+        #diff-panel { display:none; margin-top:20px; padding:16px; background:#fff; border:1px solid #ddd; border-radius:6px; }
+        #diff-content { max-height:340px; overflow:auto; font-family:monospace; font-size:13px; border:1px solid #eee; padding:10px; border-radius:4px; background:#fafafa; }
+        .diff-row { padding:1px 0; white-space:pre-wrap; word-break:break-word; }
+        .diff-add { color:#2e7d32; }
+        .diff-del { color:#c62828; }
+        .diff-chg { color:#e65100; }
+        .diff-btns { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
+        .diff-btns button { padding:8px 14px; font-size:14px; font-weight:bold; cursor:pointer; border:none; border-radius:5px; background:#e0e0e0; color:#222; }
+        #diff-overwrite { background:#ef6c00; color:#fff; }
+        #diff-merge { background:#2196f3; color:#fff; }
     </style>
 </head>
 <body>
@@ -95,6 +105,17 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                     </button>
                     <span id="save-msg"></span>
                 </div>
+            </div>
+        </div>
+
+        <div id="diff-panel">
+            <h3 style="margin:0 0 4px;">⚠️ Esiste già: <span id="diff-id"></span></h3>
+            <p style="margin:0 0 12px; color:#555;">Differenze tra la versione <b>salvata</b> e quella <b>nuova</b> (le date sono escluse). Scegli come procedere:</p>
+            <div id="diff-content"></div>
+            <div class="diff-btns">
+                <button type="button" id="diff-ignore">Ignora</button>
+                <button type="button" id="diff-overwrite">Sovrascrivi integralmente</button>
+                <button type="button" id="diff-merge">Integra aggiornamenti</button>
             </div>
         </div>
     </div>
@@ -184,6 +205,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
                 document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
                 lastMedia = data.media || {};
+                document.getElementById('diff-panel').style.display = 'none';
                 if (data.debug) {
                     console.log('[debug]', data.debug, 'media:', data.media);
                     const dbg = data.debug;
@@ -256,22 +278,26 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         setSaveMsg('Scaricato index.json', 'ok');
     });
 
-    document.getElementById('btn-save').addEventListener('click', function () {
+    // Salvataggio. mode: '' (prima volta) | ignore | overwrite | merge.
+    // Se l'item esiste, il server risponde needs_confirm e mostriamo il diff.
+    function doSave(mode) {
         const { text, obj } = currentJsonLd();
         if (!obj) { setSaveMsg('JSON non valido: correggi prima di salvare.', 'err'); return; }
         const id = (obj.mainEntity && obj.mainEntity['@id']) || obj['@id'] || '';
         if (!id) { setSaveMsg('@id mancante nel JSON.', 'err'); return; }
-        if (!confirm('Salvare sul server in ' + id + '/index.json ?')) return;
         setSaveMsg('Salvataggio…', '');
         fetch('google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text, media: lastMedia })
+            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text, media: lastMedia, mode: mode || '' })
         })
         .then(res => res.json())
         .then(res => {
             if (res.error) { setSaveMsg('Errore: ' + res.error, 'err'); return; }
-            let m = (res.overwritten ? 'Aggiornato' : 'Salvato') + ': ' + res.path;
+            if (res.needs_confirm) { showDiff(res.path, res.stored, obj); return; }
+            hideDiff();
+            if (res.ignored) { setSaveMsg('Ignorato: la versione salvata resta invariata.', 'ok'); return; }
+            let m = (res.overwritten ? 'Aggiornato' : 'Salvato') + ' [' + (res.mode || 'new') + ']: ' + res.path;
             if (res.media_saved && res.media_saved.length) m += ' (+ ' + res.media_saved.join(', ') + ')';
             if (res.media_failed && res.media_failed.length) m += ' — non salvate: ' + res.media_failed.join(', ');
             if (res.media_debug) console.log('[media_debug]', res.media_debug);
@@ -281,7 +307,48 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             setSaveMsg(m, res.media_failed && res.media_failed.length ? 'err' : 'ok');
         })
         .catch(() => setSaveMsg('Errore di connessione al server.', 'err'));
-    });
+    }
+    document.getElementById('btn-save').addEventListener('click', function () { doSave(''); });
+    document.getElementById('diff-ignore').addEventListener('click', function () { doSave('ignore'); });
+    document.getElementById('diff-overwrite').addEventListener('click', function () { doSave('overwrite'); });
+    document.getElementById('diff-merge').addEventListener('click', function () { doSave('merge'); });
+
+    function hideDiff() { document.getElementById('diff-panel').style.display = 'none'; }
+    function showDiff(path, stored, next) {
+        document.getElementById('diff-id').innerText = path;
+        document.getElementById('diff-content').innerHTML = renderDiff(stored, next);
+        document.getElementById('diff-panel').style.display = 'block';
+        setSaveMsg('Esiste già: scegli come procedere (vedi diff sotto).', '');
+        document.getElementById('diff-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+    // Diff a livello di campo tra due JSON (percorsi puntati). Le date sono escluse.
+    function flattenJson(obj, prefix, out) {
+        out = out || {};
+        if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+            Object.keys(obj).forEach(k => flattenJson(obj[k], prefix ? prefix + '.' + k : k, out));
+        } else if (Array.isArray(obj)) {
+            out[prefix] = JSON.stringify(obj);
+        } else {
+            out[prefix] = obj;
+        }
+        return out;
+    }
+    function renderDiff(stored, next) {
+        const skip = /(^|\.)date(Created|Modified)$/;
+        const a = flattenJson(stored || {}), b = flattenJson(next || {});
+        const keys = Array.from(new Set(Object.keys(a).concat(Object.keys(b)))).sort();
+        const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+        const rows = [];
+        keys.forEach(k => {
+            if (skip.test(k)) return;
+            const va = a[k], vb = b[k];
+            if (JSON.stringify(va) === JSON.stringify(vb)) return;
+            if (va === undefined) rows.push('<div class="diff-row diff-add">+ ' + esc(k) + ': ' + esc(vb) + '</div>');
+            else if (vb === undefined) rows.push('<div class="diff-row diff-del">− ' + esc(k) + ': ' + esc(va) + '</div>');
+            else rows.push('<div class="diff-row diff-chg">~ ' + esc(k) + ': ' + esc(va) + ' → ' + esc(vb) + '</div>');
+        });
+        return rows.length ? rows.join('') : '<div style="color:#2e7d32;">Nessuna differenza sostanziale (a parte le date).</div>';
+    }
 
     // 5. CAP manuale: aggiorna postalCode e ricostruisce l'@id (<paese><CAP>).
     function applyCap(cap) {

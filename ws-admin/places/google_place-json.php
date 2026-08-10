@@ -63,6 +63,19 @@ function ws_read_stored($id) {
     return [$gid, $stored, false];
 }
 
+// Merge profondo: i valori di $over vincono su $base; le chiavi presenti solo in
+// $base vengono conservate. Le liste (array numerici) vengono sostituite intere.
+function ws_deep_merge($base, $over) {
+    if (!is_array($base) || !is_array($over)) return $over;
+    $isList = ($over === [] ) || array_keys($over) === range(0, count($over) - 1);
+    if ($isList) return $over;
+    $out = $base;
+    foreach ($over as $k => $v) {
+        $out[$k] = array_key_exists($k, $base) ? ws_deep_merge($base[$k], $v) : $v;
+    }
+    return $out;
+}
+
 // Fascia di prezzo indicativa da price_level (0-4). Google NON dà importi reali.
 function ws_price_range($level) {
     $bands = [0 => 'Gratis', 1 => '€0-15', 2 => '€15-30', 3 => '€30-60', 4 => '€60+'];
@@ -358,64 +371,92 @@ if ($action === 'save') {
         exit;
     }
     $jsonld = $data['jsonld'] ?? '';
+    $mode = $data['mode'] ?? ''; // '' | ignore | overwrite | merge
     $decoded = json_decode($jsonld, true);
     if (!is_array($decoded)) {
         echo json_encode(["error" => "JSON-LD non valido."]);
         exit;
     }
-    // Riferimento (non copia): così togliere un'immagine non scaricata modifica
-    // davvero il JSON che scriviamo.
-    if (isset($decoded['mainEntity']) && is_array($decoded['mainEntity'])) {
-        $entity = &$decoded['mainEntity'];
-    } else {
-        $entity = &$decoded;
-    }
-    $id = $entity['@id'] ?? '';
+    $newEntity = $decoded['mainEntity'] ?? $decoded;
+    $id = $newEntity['@id'] ?? '';
     // Solo il formato atteso: niente path traversal.
     if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
         echo json_encode(["error" => "@id non valido o mancante: '$id'."]);
         exit;
     }
     $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
+    $file = $dir . '/index.json';
+    $existed = is_file($file);
+    $storedFull = $existed ? json_decode(@file_get_contents($file), true) : null;
+
+    // Se esiste già e non è stata scelta un'azione, NON scriviamo: torniamo lo
+    // stored così il client mostra il diff e propone ignora/sovrascrivi/integra.
+    if ($existed && $mode === '') {
+        echo json_encode(["needs_confirm" => true, "path" => "$id/index.json", "stored" => $storedFull]);
+        exit;
+    }
+    if ($existed && $mode === 'ignore') {
+        echo json_encode(["success" => true, "ignored" => true, "path" => "$id/index.json"]);
+        exit;
+    }
+
     if (!is_dir($dir) && !@mkdir($dir, 0775, true)) {
         echo json_encode(["error" => "Impossibile creare la cartella $id."]);
         exit;
     }
 
-    // Immagini in media/. Le scarichiamo PRIMA di scrivere il JSON: se una non
-    // arriva, togliamo il riferimento per non lasciare immagini rotte.
+    // JSON finale: 'merge' integra il nuovo sullo stored (nuovo vince); altrimenti
+    // (overwrite o item nuovo) è il nuovo così com'è.
+    if ($existed && $mode === 'merge' && is_array($storedFull)) {
+        $decoded = ws_deep_merge($storedFull, $decoded);
+    }
+
+    // Date: dateCreated una volta sola (preservata se esiste), dateModified sempre.
+    $now = date('c');
+    $decoded['dateCreated'] = (is_array($storedFull) && !empty($storedFull['dateCreated'])) ? $storedFull['dateCreated'] : $now;
+    $decoded['dateModified'] = $now;
+
+    // Riferimento (non copia) all'entità del JSON finale.
+    if (isset($decoded['mainEntity']) && is_array($decoded['mainEntity'])) {
+        $entity = &$decoded['mainEntity'];
+    } else {
+        $entity = &$decoded;
+    }
+
+    // Immagini in media/. Scaricate PRIMA di scrivere il JSON. Regola: se il
+    // download fallisce (o non c'è sorgente) MA il file esiste già su disco (es.
+    // salvataggio ripetuto/merge), il riferimento si conserva; altrimenti si
+    // toglie per non lasciare immagini rotte. $extraKeys = chiavi da togliere
+    // insieme (es. il credit della satellite).
     $media = is_array($data['media'] ?? null) ? $data['media'] : [];
     $saved = []; $failed = []; $mediaDebug = [];
     $okPath = function ($p) { return $p !== '' && preg_match('#^media/[A-Za-z0-9._-]+$#', $p); };
+    $handleMedia = function ($pathKey, $srcUrl, $extraKeys = []) use (&$entity, $dir, $okPath, &$saved, &$failed, &$mediaDebug) {
+        $path = (string)($entity[$pathKey] ?? '');
+        if (!$okPath($path)) return;
+        $dest = "$dir/$path";
+        $drop = function () use (&$entity, $pathKey, $extraKeys) {
+            unset($entity[$pathKey]);
+            foreach ($extraKeys as $k) unset($entity[$k]);
+        };
+        if ($srcUrl) {
+            $e = '';
+            if (ws_download_image($srcUrl, $dest, $e)) { $saved[] = $path; return; }
+            if (!is_file($dest)) { $drop(); $failed[] = $path; $mediaDebug[$pathKey] = $e; return; }
+            $mediaDebug[$pathKey] = 'download fallito, mantenuto file esistente: ' . $e;
+            return;
+        }
+        if (!is_file($dest)) $drop(); // nessuna sorgente e file assente → via il ref
+    };
 
-    $coverPath = (string)($entity['image'] ?? '');
-    if ($okPath($coverPath)) {
-        $e = '';
-        if (!empty($media['cover_src']) && ws_download_image($media['cover_src'], "$dir/$coverPath", $e)) $saved[] = $coverPath;
-        else { unset($entity['image']); $failed[] = $coverPath; $mediaDebug['cover'] = $e ?: 'nessuna sorgente'; }
-    }
-    $logoPath = (string)($entity['logo'] ?? '');
-    if ($okPath($logoPath)) {
-        $e = '';
-        if (!empty($media['logo_src']) && ws_download_image($media['logo_src'], "$dir/$logoPath", $e)) $saved[] = $logoPath;
-        else { unset($entity['logo']); $failed[] = $logoPath; $mediaDebug['logo'] = $e ?: 'nessuna sorgente'; }
-    }
-    // Satellite: URL costruito qui (key server, mai inviata al client) dalle
-    // coordinate del JSON.
-    $satPath = (string)($entity['meetoo:satelliteView'] ?? '');
+    $handleMedia('image', $media['cover_src'] ?? '');
+    $handleMedia('logo', $media['logo_src'] ?? '');
+    // Satellite: URL costruito qui (Esri, nessuna key) dalle coordinate del JSON.
     $geoLat = $entity['geo']['latitude'] ?? null;
     $geoLng = $entity['geo']['longitude'] ?? null;
-    if ($okPath($satPath) && $geoLat !== null && $geoLng !== null) {
-        $e = '';
-        $satUrl = ws_satellite_url($geoLat, $geoLng);
-        if (ws_download_image($satUrl, "$dir/$satPath", $e)) $saved[] = $satPath;
-        else { unset($entity['meetoo:satelliteView'], $entity['meetoo:satelliteCredit']); $failed[] = $satPath; $mediaDebug['satellite'] = $e; }
-    } elseif ($satPath !== '') {
-        unset($entity['meetoo:satelliteView'], $entity['meetoo:satelliteCredit']);
-    }
+    $satUrl = ($geoLat !== null && $geoLng !== null) ? ws_satellite_url($geoLat, $geoLng) : '';
+    $handleMedia('meetoo:satelliteView', $satUrl, ['meetoo:satelliteCredit']);
 
-    $file = $dir . '/index.json';
-    $existed = is_file($file);
     $pretty = json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     if (@file_put_contents($file, $pretty) === false) {
         echo json_encode(["error" => "Scrittura fallita: il web server ha i permessi su ws-custom?"]);
@@ -423,7 +464,7 @@ if ($action === 'save') {
     }
 
     echo json_encode([
-        "success" => true, "path" => "$id/index.json", "overwritten" => $existed,
+        "success" => true, "path" => "$id/index.json", "overwritten" => $existed, "mode" => ($mode ?: 'new'),
         "media_saved" => $saved, "media_failed" => $failed, "media_debug" => $mediaDebug,
     ]);
     exit;
