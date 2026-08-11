@@ -42,7 +42,8 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         #save-msg { font-weight: bold; }
         #diff-panel { display:none; margin-top:20px; padding:16px; background:#fff; border:1px solid #ddd; border-radius:6px; }
         #diff-content { max-height:340px; overflow:auto; font-family:monospace; font-size:13px; border:1px solid #eee; padding:10px; border-radius:4px; background:#fafafa; }
-        .diff-row { padding:1px 0; white-space:pre-wrap; word-break:break-word; }
+        .diff-row { display:block; padding:2px 0; white-space:pre-wrap; word-break:break-word; cursor:pointer; }
+        .diff-row input { vertical-align:middle; margin-right:4px; }
         .diff-add { color:#2e7d32; }
         .diff-del { color:#c62828; }
         .diff-chg { color:#e65100; }
@@ -110,7 +111,8 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
         <div id="diff-panel">
             <h3 style="margin:0 0 4px;">⚠️ Esiste già: <span id="diff-id"></span></h3>
-            <p style="margin:0 0 12px; color:#555;">Differenze tra la versione <b>salvata</b> e quella <b>nuova</b> (le date sono escluse). Scegli come procedere:</p>
+            <p style="margin:0 0 8px; color:#555;">Differenze tra la versione <b>salvata</b> e quella <b>nuova</b> (date escluse). Spunta le modifiche da integrare, poi scegli l'azione. Le spunte valgono solo per <b>Integra aggiornamenti</b>.</p>
+            <div style="margin:0 0 6px; font-size:13px;">Seleziona: <a href="#" id="diff-all">tutte</a> · <a href="#" id="diff-none">nessuna</a></div>
             <div id="diff-content"></div>
             <div class="diff-btns">
                 <button type="button" id="diff-ignore">Ignora</button>
@@ -280,7 +282,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
     // Salvataggio. mode: '' (prima volta) | ignore | overwrite | merge.
     // Se l'item esiste, il server risponde needs_confirm e mostriamo il diff.
-    function doSave(mode) {
+    function doSave(mode, paths) {
         const { text, obj } = currentJsonLd();
         if (!obj) { setSaveMsg('JSON non valido: correggi prima di salvare.', 'err'); return; }
         const id = (obj.mainEntity && obj.mainEntity['@id']) || obj['@id'] || '';
@@ -289,7 +291,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         fetch('google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text, media: lastMedia, mode: mode || '' })
+            body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text, media: lastMedia, mode: mode || '', paths: paths || [] })
         })
         .then(res => res.json())
         .then(res => {
@@ -311,7 +313,20 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     document.getElementById('btn-save').addEventListener('click', function () { doSave(''); });
     document.getElementById('diff-ignore').addEventListener('click', function () { doSave('ignore'); });
     document.getElementById('diff-overwrite').addEventListener('click', function () { doSave('overwrite'); });
-    document.getElementById('diff-merge').addEventListener('click', function () { doSave('merge'); });
+    document.getElementById('diff-merge').addEventListener('click', function () {
+        const cbs = document.querySelectorAll('#diff-content .diff-cb');
+        const paths = Array.from(cbs).filter(c => c.checked).map(c => c.getAttribute('data-path'));
+        if (cbs.length && !paths.length) { setSaveMsg('Nessuna modifica selezionata da integrare.', 'err'); return; }
+        doSave('merge', paths);
+    });
+    document.getElementById('diff-all').addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('#diff-content .diff-cb').forEach(c => c.checked = true);
+    });
+    document.getElementById('diff-none').addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelectorAll('#diff-content .diff-cb').forEach(c => c.checked = false);
+    });
 
     function hideDiff() { document.getElementById('diff-panel').style.display = 'none'; }
     function showDiff(path, stored, next) {
@@ -343,9 +358,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             if (skip.test(k)) return;
             const va = a[k], vb = b[k];
             if (JSON.stringify(va) === JSON.stringify(vb)) return;
-            if (va === undefined) rows.push('<div class="diff-row diff-add">+ ' + esc(k) + ': ' + esc(vb) + '</div>');
-            else if (vb === undefined) rows.push('<div class="diff-row diff-del">− ' + esc(k) + ': ' + esc(va) + '</div>');
-            else rows.push('<div class="diff-row diff-chg">~ ' + esc(k) + ': ' + esc(va) + ' → ' + esc(vb) + '</div>');
+            let cls, body;
+            if (va === undefined) { cls = 'diff-add'; body = '+ ' + esc(k) + ': ' + esc(vb); }
+            else if (vb === undefined) { cls = 'diff-del'; body = '− ' + esc(k) + ': ' + esc(va); }
+            else { cls = 'diff-chg'; body = '~ ' + esc(k) + ': ' + esc(va) + ' → ' + esc(vb); }
+            rows.push('<label class="diff-row ' + cls + '"><input type="checkbox" class="diff-cb" data-path="' + esc(k) + '" checked> ' + body + '</label>');
         });
         return rows.length ? rows.join('') : '<div style="color:#2e7d32;">Nessuna differenza sostanziale (a parte le date).</div>';
     }

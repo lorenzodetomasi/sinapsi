@@ -63,6 +63,44 @@ function ws_read_stored($id) {
     return [$gid, $stored, false];
 }
 
+// --- Merge SELETTIVO per-percorso (dot-path), per i checkbox del diff ---
+function ws_path_get($arr, $segs) {
+    foreach ($segs as $s) {
+        if (is_array($arr) && array_key_exists($s, $arr)) $arr = $arr[$s];
+        else return [false, null];
+    }
+    return [true, $arr];
+}
+function ws_path_set(&$arr, $segs, $val) {
+    $ref = &$arr;
+    $n = count($segs);
+    foreach ($segs as $i => $s) {
+        if ($i === $n - 1) { $ref[$s] = $val; return; }
+        if (!isset($ref[$s]) || !is_array($ref[$s])) $ref[$s] = [];
+        $ref = &$ref[$s];
+    }
+}
+function ws_path_unset(&$arr, $segs) {
+    $ref = &$arr;
+    $n = count($segs);
+    foreach ($segs as $i => $s) {
+        if ($i === $n - 1) { unset($ref[$s]); return; }
+        if (!isset($ref[$s]) || !is_array($ref[$s])) return;
+        $ref = &$ref[$s];
+    }
+}
+// Applica SOLO i percorsi scelti dal nuovo sullo stored: presente nel nuovo → lo
+// imposta; assente nel nuovo → lo rimuove (era una cancellazione accettata).
+function ws_apply_paths($stored, $new, $paths) {
+    foreach ($paths as $p) {
+        $segs = explode('.', (string)$p);
+        list($found, $val) = ws_path_get($new, $segs);
+        if ($found) ws_path_set($stored, $segs, $val);
+        else ws_path_unset($stored, $segs);
+    }
+    return $stored;
+}
+
 // Merge profondo: i valori di $over vincono su $base; le chiavi presenti solo in
 // $base vengono conservate. Le liste (array numerici) vengono sostituite intere.
 function ws_deep_merge($base, $over) {
@@ -372,6 +410,7 @@ if ($action === 'save') {
     }
     $jsonld = $data['jsonld'] ?? '';
     $mode = $data['mode'] ?? ''; // '' | ignore | overwrite | merge
+    $paths = is_array($data['paths'] ?? null) ? $data['paths'] : []; // merge selettivo
     $decoded = json_decode($jsonld, true);
     if (!is_array($decoded)) {
         echo json_encode(["error" => "JSON-LD non valido."]);
@@ -405,10 +444,11 @@ if ($action === 'save') {
         exit;
     }
 
-    // JSON finale: 'merge' integra il nuovo sullo stored (nuovo vince); altrimenti
-    // (overwrite o item nuovo) è il nuovo così com'è.
+    // JSON finale: 'merge' integra il nuovo sullo stored. Con $paths (checkbox del
+    // diff) integra SOLO i percorsi scelti; senza, l'intero nuovo (deep merge).
+    // 'overwrite'/item nuovo → il nuovo così com'è.
     if ($existed && $mode === 'merge' && is_array($storedFull)) {
-        $decoded = ws_deep_merge($storedFull, $decoded);
+        $decoded = !empty($paths) ? ws_apply_paths($storedFull, $decoded, $paths) : ws_deep_merge($storedFull, $decoded);
     }
 
     // Date: dateCreated una volta sola (preservata se esiste), dateModified sempre.
@@ -421,6 +461,15 @@ if ($action === 'save') {
         $entity = &$decoded['mainEntity'];
     } else {
         $entity = &$decoded;
+    }
+
+    // Creatore: link al Google UID (users/<uid>). Impostato alla creazione e
+    // preservato dallo stored ai salvataggi successivi.
+    $storedEntity = is_array($storedFull) ? ($storedFull['mainEntity'] ?? $storedFull) : [];
+    if (!empty($storedEntity['meetoo:createdBy'])) {
+        $entity['meetoo:createdBy'] = $storedEntity['meetoo:createdBy'];
+    } elseif (!$existed) {
+        $entity['meetoo:createdBy'] = "users/$userUid";
     }
 
     // Immagini in media/. Scaricate PRIMA di scrivere il JSON. Regola: se il
