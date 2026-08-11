@@ -1,6 +1,6 @@
 <?php
-// Chiave Maps JS da config.php (gitignored). Vedi config.sample.php.
-$config = @include __DIR__ . '/config.php';
+// Chiave Maps JS da config.php (gitignored, nella cartella places/). Vedi config.sample.php.
+$config = @include __DIR__ . '/../config.php';
 $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 ?>
 <!DOCTYPE html>
@@ -81,14 +81,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <div id="error-msg"></div>
 
     <div id="whitelist-area">
-        <input type="text" id="place-search" class="search-box" placeholder="Cerca il luogo da importare (es. L'Amanusa Beach Ostia)...">
-        <div id="open-existing" style="font-size:13px; color:#555; margin:-6px 0 16px;">
-            …oppure apri un JSON esistente da modificare:
-            <input type="text" id="open-input" list="editable-datalist" placeholder="cerca tra quelli autorizzati…" style="padding:6px; width:360px; margin:0 6px;">
-            <datalist id="editable-datalist"></datalist>
-            <button type="button" id="open-apply" style="padding:6px 10px; cursor:pointer;">Apri</button>
-            <span id="open-msg" style="margin-left:8px;"></span>
+        <div id="admin-tools" style="display:none; margin:0 0 12px;">
+            <button type="button" id="rebuild-index" style="padding:6px 10px; cursor:pointer;">🔄 Rigenera indice</button>
+            <span id="rebuild-msg" style="margin-left:8px; font-size:13px;"></span>
         </div>
+        <input type="text" id="place-search" class="search-box" placeholder="Cerca il luogo (nuovo o esistente) — stesso Google Place ID = apre quello già salvato…">
         <div id="debug-msg" style="font-size:13px;color:#555;margin:-10px 0 16px;"></div>
         <div id="cap-fix" style="display:none; margin:0 0 16px; padding:12px; background:#fff3e0; border-left:5px solid #ff9800;">
             ⚠️ CAP non rilevato da Google (es. punto di confine). Impostalo per un @id valido:
@@ -146,7 +143,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         document.getElementById('login-buttons').style.display = 'none';
         
         // Invio Token al backend per verifica ruolo
-        fetch('google_place-json.php', {
+        fetch('../google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'auth', credential: userJwtToken })
@@ -186,7 +183,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             document.getElementById('whitelist-area').style.display = 'block';
             initAutocomplete(); // Inizializza Google Maps Autocomplete
             loadUsersDatalist(); // Popola la ricerca contributor per nome/pseudonimo
-            loadEditableDatalist(); // Popola l'elenco dei JSON apribili dall'utente
+            if (role === 'super-admin') document.getElementById('admin-tools').style.display = 'block';
         } else {
             // Se è solo 'verified-visitor', mostriamo un messaggio di divieto
             document.getElementById('error-msg').innerText = "Non sei presente in users.xml. Non hai accesso al tool di importazione.";
@@ -204,7 +201,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
             document.getElementById('error-msg').innerText = "Acquisizione dati in corso...";
             
-            fetch('google_place-json.php', {
+            fetch('../google_place-json.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -320,7 +317,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         const id = (obj.mainEntity && obj.mainEntity['@id']) || obj['@id'] || '';
         if (!id) { setSaveMsg('@id mancante nel JSON.', 'err'); return; }
         setSaveMsg('Salvataggio…', '');
-        fetch('google_place-json.php', {
+        fetch('../google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'save', credential: userJwtToken, jsonld: text, media: lastMedia, mode: mode || '', paths: paths || [] })
@@ -424,7 +421,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     // 6bis. Popola la datalist per cercare i contributor per nome/pseudonimo.
     // Ogni option ha value "Nome · Pseudonimo (UID)"; l'UID viene poi estratto.
     function loadUsersDatalist() {
-        fetch('google_place-json.php', {
+        fetch('../google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'users', credential: userJwtToken })
@@ -444,56 +441,29 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         .catch(function () { /* datalist opzionale: si può sempre digitare l'UID */ });
     }
 
-    // 6ter. Popola l'elenco dei JSON che l'utente può aprire/editare (autorizzati;
-    // tutti per super-admin). Ogni option: "Nome — <@id>", con l'@id in coda.
-    function loadEditableDatalist() {
-        fetch('google_place-json.php', {
+    // 6ter. Rigenera l'indice di deduplica dal browser (solo super-admin).
+    document.getElementById('rebuild-index').addEventListener('click', function () {
+        const m = document.getElementById('rebuild-msg');
+        m.style.color = '#555'; m.innerText = 'Rigenerazione…';
+        fetch('../google_place-json.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'editable', credential: userJwtToken })
+            body: JSON.stringify({ action: 'rebuild_index', credential: userJwtToken })
         })
         .then(function (r) { return r.json(); })
         .then(function (d) {
-            const dl = document.getElementById('editable-datalist');
-            if (!dl || !Array.isArray(d.items)) return;
-            dl.innerHTML = '';
-            d.items.forEach(function (it) {
-                const type = Array.isArray(it['@type']) ? it['@type'].join('/') : (it['@type'] || '');
-                const opt = document.createElement('option');
-                opt.value = (it.name || it['@id']) + ' — ' + it['@id'];
-                opt.label = type;
-                dl.appendChild(opt);
-            });
+            if (d.error) { m.style.color = '#c62828'; m.innerText = d.error; return; }
+            let t = '✓ Indice rigenerato: ' + d.count + ' voci.';
+            if (d.conflicts && d.conflicts.length) {
+                m.style.color = '#e65100';
+                t += ' ⚠️ ' + d.conflicts.length + ' conflitti (stesso place_id, @id diversi): '
+                    + d.conflicts.map(function (c) { return c.ids.join(' ↔ '); }).join('; ');
+            } else {
+                m.style.color = '#2e7d32';
+            }
+            m.innerText = t;
         })
-        .catch(function () { /* elenco opzionale: si può incollare l'@id a mano */ });
-    }
-
-    // Apri un JSON esistente nell'editor. Accetta "Nome — <@id>" dalla datalist o
-    // un @id incollato. Il server verifica di nuovo i permessi prima di restituirlo.
-    document.getElementById('open-apply').addEventListener('click', function () {
-        const msg = document.getElementById('open-msg');
-        const v = (document.getElementById('open-input').value || '').trim();
-        if (!v) { msg.style.color = '#c62828'; msg.innerText = 'Scegli un elemento.'; return; }
-        const id = v.includes(' — ') ? v.split(' — ').pop().trim() : v;
-        if (!/^(places|organizations)\//.test(id)) { msg.style.color = '#c62828'; msg.innerText = '@id non valido.'; return; }
-        msg.style.color = '#555'; msg.innerText = 'Apertura…';
-        fetch('google_place-json.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'load', credential: userJwtToken, id: id })
-        })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-            if (d.error) { msg.style.color = '#c62828'; msg.innerText = d.error; return; }
-            document.getElementById('json-wscms').value = JSON.stringify(d.json, null, 4);
-            document.getElementById('json-google').value = '';
-            lastMedia = {};
-            document.getElementById('diff-panel').style.display = 'none';
-            document.getElementById('cap-fix').style.display = 'none';
-            document.getElementById('error-msg').innerText = '';
-            msg.style.color = '#2e7d32'; msg.innerText = 'Aperto ' + d.id + '. Modifica e Salva sul web.';
-        })
-        .catch(function () { msg.style.color = '#c62828'; msg.innerText = 'Errore di rete.'; });
+        .catch(function () { m.style.color = '#c62828'; m.innerText = 'Errore di rete.'; });
     });
 
     // 6. Contributor: imposta contributor (Person link users/<uid>) nel JSON. Il

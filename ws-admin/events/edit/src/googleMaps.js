@@ -15,7 +15,7 @@ export function loadGoogleMaps() {
     return Promise.reject(new Error('VITE_GOOGLE_MAPS_API_KEY mancante'));
   }
   promise = new Promise((resolve, reject) => {
-    // Caricamento CLASSICO (come place-add.php, che funziona su isotype.org):
+    // Caricamento CLASSICO (come places/edit/index.php, che funziona su isotype.org):
     // NIENTE loading=async, così con libraries=places la libreria è già pronta
     // all'onload. Se per qualche motivo non lo fosse, fallback su importLibrary.
     const ready = async () => {

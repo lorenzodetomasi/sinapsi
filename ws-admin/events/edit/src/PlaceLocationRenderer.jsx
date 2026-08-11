@@ -40,7 +40,7 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
       setStatus({ type: 'warn', msg: `Esiste già un @id (${id}) senza Google ID salvato: verifica se è lo stesso luogo.` });
     } else if (picked && stored === picked.placeId) {
       const changes = lightPlaceDiff(picked, info.stored);
-      const extra = changes.length ? ` Aggiornamenti su Google: ${changes.join(', ')} — aggiornali in place-add.` : '';
+      const extra = changes.length ? ` Aggiornamenti su Google: ${changes.join(', ')} — aggiornali in places/edit.` : '';
       setStatus({ type: 'ok', msg: `Luogo già presente: collegato al suo @id.${extra}` });
     } else if (picked) {
       setStatus({ type: 'warn', msg: `Esiste già un @id diverso con questo slug (Google ID diverso): cambia l’id.` });

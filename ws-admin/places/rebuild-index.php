@@ -11,13 +11,9 @@ if (PHP_SAPI !== 'cli') {
 require __DIR__ . '/index-lib.php';
 
 list($idx, $conflicts) = ws_index_rebuild();
+ws_index_save($idx);
 
-$path = ws_index_path();
-$dir = dirname($path);
-if (!is_dir($dir)) mkdir($dir, 0775, true);
-file_put_contents($path, json_encode($idx, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-
-echo "Indice ricostruito: " . count($idx) . " voci → $path\n";
+echo "Indice ricostruito: " . count($idx) . " voci → " . ws_index_path() . "\n";
 if ($conflicts) {
     echo "\n⚠ Conflitti (stesso google_place_id su @id diversi — possibili duplicati):\n";
     foreach ($conflicts as $gid => $ids) {

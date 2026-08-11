@@ -2,7 +2,7 @@
 // Verifica se un @id di place/localbusiness esiste già in ws-custom e, se sì,
 // restituisce il Google Place ID salvato e alcuni campi confrontabili, così il
 // chiamante può capire se è lo STESSO luogo (→ collega) o una collisione di slug.
-// Usato da events/edit (client) e da place-add.php. GET ?id=<prefix>/<region>/<slug>
+// Usato da events/edit (client) e da places/edit/index.php. GET ?id=<prefix>/<region>/<slug>
 header('Content-Type: application/json');
 
 $id = trim($_GET['id'] ?? '');

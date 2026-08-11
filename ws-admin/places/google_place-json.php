@@ -530,6 +530,31 @@ if ($action === 'load') {
     exit;
 }
 
+// 3-sexies. Rigenera l'indice di deduplica dal browser (senza SSH). Operazione
+// di manutenzione riservata ai super-admin.
+if ($action === 'rebuild_index') {
+    if ($userRole !== 'super-admin') {
+        echo json_encode(["error" => "Solo i super-admin possono rigenerare l'indice (Ruolo: $userRole)."]);
+        exit;
+    }
+    list($idx, $conflicts) = ws_index_rebuild();
+    if (!ws_index_save($idx)) {
+        echo json_encode(["error" => "Scrittura dell'indice fallita: il web server ha i permessi su ws-custom/_index?"]);
+        exit;
+    }
+    // I conflitti (stesso place_id su @id diversi) vanno segnalati: sono duplicati.
+    $conflictList = [];
+    foreach ($conflicts as $gid => $ids) {
+        $conflictList[] = ['google_place_id' => $gid, 'ids' => array_values(array_unique($ids))];
+    }
+    echo json_encode([
+        'success' => true,
+        'count' => count($idx),
+        'conflicts' => $conflictList,
+    ]);
+    exit;
+}
+
 // 3-bis. Salvataggio sul server: scrive il JSON-LD in <@id>/index.json.
 // Operazione che MODIFICA il filesystem → solo ruoli autorizzati.
 if ($action === 'save') {

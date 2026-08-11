@@ -66,7 +66,7 @@ function addr(components = []) {
 
 // Diff LEGGERO (solo i campi che l'editor ha da Google) tra il luogo scelto e
 // quello salvato: elenca i nomi dei campi cambiati. Per un confronto completo
-// (sito, rating, indirizzo) si usa place-add.php.
+// (sito, rating, indirizzo) si usa places/edit/index.php.
 export function lightPlaceDiff(picked, stored) {
   if (!stored) return [];
   const changes = [];

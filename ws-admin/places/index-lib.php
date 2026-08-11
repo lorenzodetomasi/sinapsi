@@ -61,6 +61,16 @@ function ws_index_upsert($placeId, $id, $name, $type) {
     return $ok;
 }
 
+// Scrive l'indice completo su disco (crea la cartella se serve). Ritorna bool.
+function ws_index_save($idx) {
+    $dir = dirname(ws_index_path());
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    return @file_put_contents(
+        ws_index_path(),
+        json_encode($idx, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    ) !== false;
+}
+
 // Ricostruisce l'indice da zero scandendo i JSON. Ritorna [indice, conflitti].
 // Un conflitto = stesso place_id su @id diversi (segnala possibili duplicati).
 function ws_index_rebuild() {
