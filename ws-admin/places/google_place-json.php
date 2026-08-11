@@ -919,6 +919,11 @@ if ($action === 'search') {
             "new_api" => $newApiStatus,          // 'ok' oppure l'errore Google
             "accessibility_count" => count($accessibility),
             "amenity_count" => count($amenities),
+            // Dedup: place_id cercato, stato dell'indice e se ha agganciato.
+            "place_id" => $place['place_id'] ?? '',
+            "index_exists" => is_file(ws_index_path()),
+            "index_count" => count(ws_index_load()),
+            "index_hit" => $dupEntry ? ($dupEntry['@id'] ?? '') : '',
         ],
     ]);
     exit;

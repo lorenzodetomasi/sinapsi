@@ -223,13 +223,18 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 if (data.debug) {
                     console.log('[debug]', data.debug, 'media:', data.media);
                     const dbg = data.debug;
+                    const idxInfo = dbg.index_exists
+                        ? ('indice ' + dbg.index_count + ' voci, ' + (dbg.index_hit ? ('aggancio → ' + dbg.index_hit) : 'nessun aggancio'))
+                        : '⚠️ INDICE ASSENTE (usa «Rigenera indice»)';
                     document.getElementById('debug-msg').innerText =
                         'Places API (New): ' + dbg.new_api +
                         ' · accessibilità: ' + dbg.accessibility_count +
                         ' · servizi: ' + dbg.amenity_count +
                         ' · sito: ' + (dbg.website || '(nessuno)') +
                         ' · cover: ' + (lastMedia.cover_src ? 'sì' : 'no') +
-                        ' · logo: ' + (lastMedia.logo_src ? 'sì' : 'no');
+                        ' · logo: ' + (lastMedia.logo_src ? 'sì' : 'no') +
+                        ' · place_id: ' + (dbg.place_id || '?') +
+                        ' · ' + idxInfo;
                 }
 
                 // Stato @id: nuovo / già inserito (stesso Google ID) + aggiornamenti /
