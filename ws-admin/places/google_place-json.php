@@ -530,11 +530,11 @@ if ($action === 'load') {
     exit;
 }
 
-// 3-sexies. Rigenera l'indice di deduplica dal browser (senza SSH). Manutenzione
-// sicura e idempotente → consentita ad admin e super-admin.
+// 3-sexies. Rigenera l'indice di deduplica dal browser (senza SSH). Operazione
+// di manutenzione riservata ai super-admin.
 if ($action === 'rebuild_index') {
-    if (!in_array($userRole, ['admin', 'super-admin'], true)) {
-        echo json_encode(["error" => "Solo admin/super-admin possono rigenerare l'indice (Ruolo: $userRole)."]);
+    if ($userRole !== 'super-admin') {
+        echo json_encode(["error" => "Solo i super-admin possono rigenerare l'indice (Ruolo: $userRole)."]);
         exit;
     }
     list($idx, $conflicts) = ws_index_rebuild();
