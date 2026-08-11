@@ -108,7 +108,8 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 </div>
                 <div style="margin-top:8px; font-size:13px; color:#555;">
                     Contributor autorizzati a modificare (Google UID, virgola-separati):
-                    <input type="text" id="editors-input" placeholder="es. 100449…, 112233…" style="padding:6px; width:280px; margin:0 6px;">
+                    <input type="text" id="editors-input" list="users-datalist" placeholder="cerca per nome, pseudonimo o UID…" style="padding:6px; width:320px; margin:0 6px;">
+                    <datalist id="users-datalist"></datalist>
                     <button type="button" id="editors-apply" style="padding:6px 10px; cursor:pointer;">Imposta contributor</button>
                 </div>
             </div>
@@ -173,10 +174,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         document.getElementById('user-locale-display').innerText = userData.locale;
         document.getElementById('user-role-display').innerText = role;
 
-        // [3] user, client, admin: Sblocca Whitelist Area
-        if (['user', 'client', 'admin'].includes(role)) {
+        // [3] user, client, admin, super-admin: Sblocca Whitelist Area
+        if (['user', 'client', 'admin', 'super-admin'].includes(role)) {
             document.getElementById('whitelist-area').style.display = 'block';
             initAutocomplete(); // Inizializza Google Maps Autocomplete
+            loadUsersDatalist(); // Popola la ricerca contributor per nome/pseudonimo
         } else {
             // Se è solo 'verified-visitor', mostriamo un messaggio di divieto
             document.getElementById('error-msg').innerText = "Non sei presente in users.xml. Non hai accesso al tool di importazione.";
@@ -394,12 +396,41 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     }
     document.getElementById('cap-input').addEventListener('input', function () { applyCap(this.value); });
 
-    // 6. Editors: imposta meetoo:editors (link users/<uid>) nel JSON. Il gate del
-    // server consente la modifica solo a creatore/editors/admin.
+    // 6bis. Popola la datalist per cercare i contributor per nome/pseudonimo.
+    // Ogni option ha value "Nome · Pseudonimo (UID)"; l'UID viene poi estratto.
+    function loadUsersDatalist() {
+        fetch('google_place-json.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'users', credential: userJwtToken })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            const dl = document.getElementById('users-datalist');
+            if (!dl || !Array.isArray(d.users)) return;
+            dl.innerHTML = '';
+            d.users.forEach(function (u) {
+                const label = [u.name, u.pseudonym].filter(Boolean).join(' · ') || u.uid;
+                const opt = document.createElement('option');
+                opt.value = label + ' (' + u.uid + ')';
+                dl.appendChild(opt);
+            });
+        })
+        .catch(function () { /* datalist opzionale: si può sempre digitare l'UID */ });
+    }
+
+    // 6. Contributor: imposta contributor (Person link users/<uid>) nel JSON. Il
+    // gate del server consente la modifica solo a creator/contributor/super-admin.
+    // Accetta "Nome (UID)" dalla datalist, "users/<uid>" o l'UID nudo.
     document.getElementById('editors-apply').addEventListener('click', function () {
         const raw = document.getElementById('editors-input').value || '';
-        const list = raw.split(',').map(s => s.trim()).filter(Boolean)
-            .map(s => s.startsWith('users/') ? s : 'users/' + s.replace(/^users\//, ''));
+        const list = [];
+        raw.split(',').forEach(function (tok) {
+            tok = tok.trim();
+            if (!tok) return;
+            const m = tok.match(/\((\d{6,})\)\s*$/) || tok.match(/(\d{6,})\s*$/);
+            if (m) list.push('users/' + m[1]);
+        });
         const ta = document.getElementById('json-wscms');
         let obj;
         try { obj = JSON.parse(ta.value); } catch (e) { setSaveMsg('JSON non valido: correggi prima.', 'err'); return; }

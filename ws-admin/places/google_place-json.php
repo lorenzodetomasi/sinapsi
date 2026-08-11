@@ -416,10 +416,47 @@ if ($action === 'auth') {
     exit;
 }
 
+// 3-ter. Elenco utenti per l'autocomplete dei contributor (ricerca per nome /
+// pseudonimo). Espone i nomi → solo ruoli autorizzati, come save/search.
+if ($action === 'users') {
+    $authorizedRoles = ['user', 'client', 'admin', 'super-admin'];
+    if (!in_array($userRole, $authorizedRoles, true)) {
+        echo json_encode(["error" => "Permessi insufficienti (Ruolo: $userRole).", 'users' => []]);
+        exit;
+    }
+    $usersDir = '../../ws-custom/contents/meetoo/it_IT/users';
+    $personsDir = '../../ws-custom/contents/meetoo/it_IT/persons';
+    $out = [];
+    if (is_dir($usersDir)) {
+        foreach (scandir($usersDir) as $entry) {
+            if (!preg_match('/^\d{6,}$/', $entry)) continue; // solo cartelle-UID numeriche
+            $name = '';
+            $pseudonym = '';
+            $pf = "$personsDir/$entry/index.xml";
+            if (is_file($pf)) {
+                $pdom = new DOMDocument();
+                $pdom->preserveWhiteSpace = false;
+                libxml_use_internal_errors(true);
+                if ($pdom->load($pf, LIBXML_NONET)) {
+                    $px = simplexml_import_dom($pdom);
+                    if ($px) {
+                        $name = trim((string)$px->name);
+                        if (isset($px->alternateName)) $pseudonym = trim((string)$px->alternateName);
+                    }
+                }
+                libxml_clear_errors();
+            }
+            $out[] = ['uid' => $entry, 'name' => $name, 'pseudonym' => $pseudonym];
+        }
+    }
+    echo json_encode(['users' => $out]);
+    exit;
+}
+
 // 3-bis. Salvataggio sul server: scrive il JSON-LD in <@id>/index.json.
 // Operazione che MODIFICA il filesystem → solo ruoli autorizzati.
 if ($action === 'save') {
-    $authorizedRoles = ['user', 'client', 'admin'];
+    $authorizedRoles = ['user', 'client', 'admin', 'super-admin'];
     if (!in_array($userRole, $authorizedRoles)) {
         echo json_encode(["error" => "Permessi insufficienti per salvare (Ruolo: $userRole)."]);
         exit;
@@ -452,7 +489,8 @@ if ($action === 'save') {
         $creatorId = ws_ref_id($se['creator'] ?? null);
         $contributors = ws_ref_ids($se['contributor'] ?? null);
         $meRef = "users/$userUid";
-        if ($creatorId !== '' && $userRole !== 'admin' && $creatorId !== $meRef && !in_array($meRef, $contributors, true)) {
+        $isAdmin = in_array($userRole, ['admin', 'super-admin'], true); // super-admin = modifica tutto Meetoo
+        if ($creatorId !== '' && !$isAdmin && $creatorId !== $meRef && !in_array($meRef, $contributors, true)) {
             echo json_encode(["error" => "Non sei autorizzato a modificare questo elemento (creator: $creatorId). Chiedi di essere aggiunto ai contributor."]);
             exit;
         }
@@ -558,7 +596,7 @@ if ($action === 'save') {
 // 4. Risposta alla richiesta di Ricerca (Data Ingestion)
 if ($action === 'search') {
     // Sblocca l'area Whitelist solo per ruoli autorizzati
-    $authorizedRoles = ['user', 'client', 'admin'];
+    $authorizedRoles = ['user', 'client', 'admin', 'super-admin'];
     if (!in_array($userRole, $authorizedRoles)) {
         echo json_encode(["error" => "Accesso negato. Permessi insufficienti (Ruolo: $userRole)."]);
         exit;
