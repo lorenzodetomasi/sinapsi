@@ -83,6 +83,24 @@ function ws_ref_ids($x) {
     foreach ($list as $r) { $id = ws_ref_id($r); if ($id !== '') $out[] = $id; }
     return $out;
 }
+// Chi può modificare un'entità: super-admin/admin sempre; altrimenti creator o
+// contributor. Un item legacy senza creator è aperto (coerente col gate del save).
+function ws_can_edit($entity, $userUid, $userRole) {
+    if (in_array($userRole, ['admin', 'super-admin'], true)) return true;
+    $creatorId = ws_ref_id($entity['creator'] ?? null);
+    if ($creatorId === '') return true;
+    $me = "users/$userUid";
+    return $creatorId === $me || in_array($me, ws_ref_ids($entity['contributor'] ?? null), true);
+}
+// @id → percorso sicuro sotto it_IT (solo places/organizations, niente traversal).
+function ws_id_to_path($id) {
+    if (!is_string($id) || $id === '') return null;
+    $parts = explode('/', $id);
+    if (count($parts) < 2) return null;
+    if (!in_array($parts[0], ['places', 'organizations'], true)) return null;
+    foreach ($parts as $p) { if (!preg_match('#^[A-Za-z0-9._-]+$#', $p) || $p === '.' || $p === '..') return null; }
+    return WS_MEETOO_ROOT . '/' . implode('/', $parts);
+}
 
 // --- Merge SELETTIVO per-percorso (dot-path), per i checkbox del diff ---
 function ws_path_get($arr, $segs) {
@@ -455,6 +473,60 @@ if ($action === 'users') {
         }
     }
     echo json_encode(['users' => $out]);
+    exit;
+}
+
+// 3-quater. Elenco dei JSON che l'utente può MODIFICARE (per aprirli e editarli):
+// tutti per admin/super-admin, altrimenti solo dove è creator o contributor (e i
+// legacy senza creator). Scansione una tantum di places/ e organizations/.
+if ($action === 'editable') {
+    $authorizedRoles = ['user', 'client', 'admin', 'super-admin'];
+    if (!in_array($userRole, $authorizedRoles, true)) {
+        echo json_encode(["error" => "Permessi insufficienti (Ruolo: $userRole).", 'items' => []]);
+        exit;
+    }
+    $items = [];
+    foreach (WS_INDEX_SCAN_DIRS as $sub) {
+        $base = WS_MEETOO_ROOT . '/' . $sub;
+        if (!is_dir($base)) continue;
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            if ($file->getFilename() !== 'index.json') continue;
+            $j = json_decode((string)file_get_contents($file->getPathname()), true);
+            if (!is_array($j)) continue;
+            $e = $j['mainEntity'] ?? $j;
+            $eid = $e['@id'] ?? '';
+            // Solo @id apribili (places/organizations): esclude gli eventi annidati,
+            // così ogni voce elencata è caricabile da action=load.
+            if ($eid === '' || ws_id_to_path($eid) === null || !ws_can_edit($e, $userUid, $userRole)) continue;
+            $items[] = ['@id' => $eid, 'name' => $e['name'] ?? '', '@type' => $e['@type'] ?? ''];
+        }
+    }
+    usort($items, function ($a, $b) { return strcasecmp($a['name'], $b['name']); });
+    echo json_encode(['items' => $items]);
+    exit;
+}
+
+// 3-quinquies. Contenuto di un @id da editare. Autorizzazione come sopra.
+if ($action === 'load') {
+    $authorizedRoles = ['user', 'client', 'admin', 'super-admin'];
+    if (!in_array($userRole, $authorizedRoles, true)) {
+        echo json_encode(["error" => "Permessi insufficienti (Ruolo: $userRole)."]);
+        exit;
+    }
+    $loadId = $data['id'] ?? $_GET['id'] ?? '';
+    $path = ws_id_to_path($loadId);
+    if ($path === null) { echo json_encode(["error" => "@id non valido: '$loadId'."]); exit; }
+    $file = $path . '/index.json';
+    if (!is_file($file)) { echo json_encode(["error" => "Nessun JSON per '$loadId'."]); exit; }
+    $j = json_decode((string)file_get_contents($file), true);
+    if (!is_array($j)) { echo json_encode(["error" => "index.json illeggibile per '$loadId'."]); exit; }
+    $e = $j['mainEntity'] ?? $j;
+    if (!ws_can_edit($e, $userUid, $userRole)) {
+        echo json_encode(["error" => "Non sei autorizzato a modificare '$loadId'."]);
+        exit;
+    }
+    echo json_encode(['id' => $loadId, 'json' => $j]);
     exit;
 }
 
