@@ -242,7 +242,16 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 document.getElementById('cap-fix').style.display = data.id_region_missing ? 'block' : 'none';
                 if (data.id_region_missing) document.getElementById('cap-input').value = '';
                 let msg = "", color = "red";
-                if (data.id_region_missing) {
+                if (data.id_adopted) {
+                    // Stesso Google Place ID già salvato: usato l'@id esistente.
+                    msg = "✓ Stesso luogo già salvato: uso l'@id esistente " + id
+                        + ". Salva per vedere il diff e scegliere cosa integrare (i campi corretti a mano restano se non li spunti).";
+                    color = "#2e7d32";
+                    if (data.updates && data.updates.length) {
+                        msg += " Differenze da Google: " + data.updates
+                            .map(u => u.field + ': "' + u.old + '" → "' + u.new + '"').join("; ") + ".";
+                    }
+                } else if (data.id_region_missing) {
                     msg = "⚠️ CAP non rilevato: imposta il CAP qui sopra per un @id valido (" + id + ").";
                     color = "#e65100";
                 } else if (!data.id_exists) {

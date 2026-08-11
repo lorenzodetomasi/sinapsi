@@ -558,6 +558,22 @@ if ($action === 'save') {
     $existed = is_file($file);
     $storedFull = $existed ? json_decode(@file_get_contents($file), true) : null;
 
+    // Guardia anti-duplicato: se questo google_place_id è già indicizzato sotto un
+    // @id DIVERSO e qui si creerebbe una cartella NUOVA, blocca. Va modificato
+    // l'esistente (la ricerca adotta già l'@id: questo è il backstop lato server).
+    if (!$existed) {
+        $savePlaceId = ws_index_place_id($newEntity);
+        $dupSave = $savePlaceId !== '' ? ws_index_lookup($savePlaceId) : null;
+        if ($dupSave && ($dupSave['@id'] ?? '') !== $id) {
+            echo json_encode([
+                "error" => "Questo Google Place ID è già salvato come " . $dupSave['@id']
+                    . " (" . ($dupSave['name'] ?? '') . "). Riapri e modifica quello invece di creare un duplicato.",
+                "dup_id" => $dupSave['@id'],
+            ]);
+            exit;
+        }
+    }
+
     // Autorizzazione per-elemento (solo su item ESISTENTI con un proprietario):
     // può modificare chi è admin, il creatore o è negli editors. Gli item legacy
     // senza createdBy restano modificabili dai ruoli già autorizzati (sopra).
@@ -742,11 +758,21 @@ if ($action === 'search') {
     // non viene impostato a mano.
     $region = $regionMissing ? '' : ($countryShort . $postalCode);   // es. IT00124
     $newId = ($region !== '' && $slug !== '') ? "$folder/$region/$slug" : "$folder//$slug";
-    $idExists = (!$regionMissing) && ws_id_exists($newId);
 
-    // Deduplica: questo google_place_id è già indicizzato con un @id DIVERSO?
-    // (caso che il check per percorso non prende: stesso luogo, slug diverso.)
+    // Deduplica: se questo google_place_id è GIÀ indicizzato, ADOTTA l'@id esistente
+    // invece di generarne uno nuovo dal nome corrente. Google può restituire un nome
+    // diverso per lo stesso luogo (es. "Spiaggia libera Bianca-L'Amanusa" vs il
+    // salvato "L'Amanusa Beach"): senza questo, lo slug diverso creava un @id nuovo
+    // e un duplicato. Adottando l'@id parte il normale flusso di modifica/diff.
     $dupEntry = ws_index_lookup($place['place_id'] ?? '');
+    $idAdopted = false;
+    if ($dupEntry && !empty($dupEntry['@id']) && $dupEntry['@id'] !== $newId) {
+        $newId = $dupEntry['@id'];
+        $regionMissing = false;   // l'@id adottato è già valido
+        $idAdopted = true;
+    }
+    $idExists = (!$regionMissing) && ws_id_exists($newId);
+    // Resta informativo solo nei rari casi non adottati (indice disallineato).
     $idDup = ($dupEntry && ($dupEntry['@id'] ?? '') !== $newId) ? $dupEntry : null;
 
     // Se l'@id esiste, confronta il Google ID: stesso luogo → collega + aggiornamenti;
@@ -859,6 +885,7 @@ if ($action === 'search') {
         "updates" => $updates,                  // differenze Google↔salvato da integrare
         "id_region_missing" => $regionMissing,
         "id_dup" => $idDup,                     // luogo già presente con altro @id (o null)
+        "id_adopted" => $idAdopted,             // true = @id preso dall'indice (stesso place_id)
         // Sorgenti immagini dal sito, per scaricarle in media/ al salvataggio
         "media" => ["cover_src" => $siteImg['cover'], "logo_src" => $siteImg['logo']],
         // Diagnostica (visibile nel JSON di risposta, nessuna key)
