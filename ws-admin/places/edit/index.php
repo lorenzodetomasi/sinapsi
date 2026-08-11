@@ -183,7 +183,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             document.getElementById('whitelist-area').style.display = 'block';
             initAutocomplete(); // Inizializza Google Maps Autocomplete
             loadUsersDatalist(); // Popola la ricerca contributor per nome/pseudonimo
-            if (role === 'super-admin') document.getElementById('admin-tools').style.display = 'block';
+            if (role === 'admin' || role === 'super-admin') document.getElementById('admin-tools').style.display = 'block';
         } else {
             // Se è solo 'verified-visitor', mostriamo un messaggio di divieto
             document.getElementById('error-msg').innerText = "Non sei presente in users.xml. Non hai accesso al tool di importazione.";
