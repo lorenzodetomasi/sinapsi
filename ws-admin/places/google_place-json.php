@@ -63,6 +63,22 @@ function ws_read_stored($id) {
     return [$gid, $stored, false];
 }
 
+// --- Persone (creator/author/contributor) come riferimenti schema.org ---
+function ws_person_ref($uid) { return ['@type' => 'Person', '@id' => "users/$uid"]; }
+// Estrae "users/<uid>" da un riferimento (oggetto {@id} o stringa).
+function ws_ref_id($x) {
+    if (is_array($x)) return (string)($x['@id'] ?? '');
+    return is_string($x) ? $x : '';
+}
+// Normalizza contributor (singolo o lista) in array di "users/<uid>".
+function ws_ref_ids($x) {
+    if (!is_array($x)) return [];
+    $list = (isset($x['@id']) || isset($x['@type'])) ? [$x] : $x; // oggetto singolo → lista
+    $out = [];
+    foreach ($list as $r) { $id = ws_ref_id($r); if ($id !== '') $out[] = $id; }
+    return $out;
+}
+
 // --- Merge SELETTIVO per-percorso (dot-path), per i checkbox del diff ---
 function ws_path_get($arr, $segs) {
     foreach ($segs as $s) {
@@ -433,11 +449,11 @@ if ($action === 'save') {
     // senza createdBy restano modificabili dai ruoli già autorizzati (sopra).
     if ($existed && is_array($storedFull)) {
         $se = $storedFull['mainEntity'] ?? $storedFull;
-        $creator = (string)($se['meetoo:createdBy'] ?? '');
-        $editors = is_array($se['meetoo:editors'] ?? null) ? $se['meetoo:editors'] : [];
+        $creatorId = ws_ref_id($se['creator'] ?? null);
+        $contributors = ws_ref_ids($se['contributor'] ?? null);
         $meRef = "users/$userUid";
-        if ($creator !== '' && $userRole !== 'admin' && $creator !== $meRef && !in_array($meRef, $editors, true)) {
-            echo json_encode(["error" => "Non sei autorizzato a modificare questo elemento (creatore: $creator). Chiedi di essere aggiunto agli editors."]);
+        if ($creatorId !== '' && $userRole !== 'admin' && $creatorId !== $meRef && !in_array($meRef, $contributors, true)) {
+            echo json_encode(["error" => "Non sei autorizzato a modificare questo elemento (creator: $creatorId). Chiedi di essere aggiunto ai contributor."]);
             exit;
         }
     }
@@ -477,18 +493,19 @@ if ($action === 'save') {
         $entity = &$decoded;
     }
 
-    // Creatore: link al Google UID (users/<uid>). Impostato alla creazione e
-    // preservato dallo stored ai salvataggi successivi.
+    // Persone (schema.org): creator = proprietario (immutabile), author = ultimo
+    // editor (aggiornato a ogni salvataggio), contributor = editors autorizzati.
     $storedEntity = is_array($storedFull) ? ($storedFull['mainEntity'] ?? $storedFull) : [];
-    if (!empty($storedEntity['meetoo:createdBy'])) {
-        $entity['meetoo:createdBy'] = $storedEntity['meetoo:createdBy']; // creatore immutabile
+    if (!empty($storedEntity['creator'])) {
+        $entity['creator'] = $storedEntity['creator']; // creatore immutabile
     } elseif (!$existed) {
-        $entity['meetoo:createdBy'] = "users/$userUid";
+        $entity['creator'] = ws_person_ref($userUid);
     }
-    // Editors: preserva la lista salvata se il JSON inviato non la specifica
-    // (così non si azzera per sbaglio); se la specifica, vince (creatore/admin).
-    if (empty($entity['meetoo:editors']) && !empty($storedEntity['meetoo:editors'])) {
-        $entity['meetoo:editors'] = $storedEntity['meetoo:editors'];
+    $entity['author'] = ws_person_ref($userUid); // chi ha salvato quest'ultima volta
+    // Contributor: preserva la lista salvata se il JSON inviato non la specifica
+    // (così non si azzera per sbaglio); se la specifica, vince (creator/admin).
+    if (empty($entity['contributor']) && !empty($storedEntity['contributor'])) {
+        $entity['contributor'] = $storedEntity['contributor'];
     }
 
     // Immagini in media/. Scaricate PRIMA di scrivere il JSON. Regola: se il

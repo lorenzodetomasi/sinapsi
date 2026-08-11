@@ -107,9 +107,9 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                     <span id="save-msg"></span>
                 </div>
                 <div style="margin-top:8px; font-size:13px; color:#555;">
-                    Autorizza a modificare (Google UID, virgola-separati):
+                    Contributor autorizzati a modificare (Google UID, virgola-separati):
                     <input type="text" id="editors-input" placeholder="es. 100449…, 112233…" style="padding:6px; width:280px; margin:0 6px;">
-                    <button type="button" id="editors-apply" style="padding:6px 10px; cursor:pointer;">Imposta editors</button>
+                    <button type="button" id="editors-apply" style="padding:6px 10px; cursor:pointer;">Imposta contributor</button>
                 </div>
             </div>
         </div>
@@ -354,7 +354,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         return out;
     }
     function renderDiff(stored, next) {
-        const skip = /(^|\.)date(Created|Modified)$/;
+        const skip = /(^|\.)(dateCreated|dateModified|creator|author|contributor)(\.|$)/;
         const a = flattenJson(stored || {}), b = flattenJson(next || {});
         const keys = Array.from(new Set(Object.keys(a).concat(Object.keys(b)))).sort();
         const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
@@ -404,9 +404,10 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         let obj;
         try { obj = JSON.parse(ta.value); } catch (e) { setSaveMsg('JSON non valido: correggi prima.', 'err'); return; }
         const ent = obj.mainEntity || obj;
-        if (list.length) ent['meetoo:editors'] = list; else delete ent['meetoo:editors'];
+        if (list.length) ent['contributor'] = list.map(function (id) { return { '@type': 'Person', '@id': id }; });
+        else delete ent['contributor'];
         ta.value = JSON.stringify(obj, null, 4);
-        setSaveMsg('Editors impostati: ' + (list.join(', ') || '(nessuno)') + '. Salva per applicare.', 'ok');
+        setSaveMsg('Contributor impostati: ' + (list.join(', ') || '(nessuno)') + '. Salva per applicare.', 'ok');
     });
 </script>
 
