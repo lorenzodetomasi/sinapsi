@@ -428,6 +428,20 @@ if ($action === 'save') {
     $existed = is_file($file);
     $storedFull = $existed ? json_decode(@file_get_contents($file), true) : null;
 
+    // Autorizzazione per-elemento (solo su item ESISTENTI con un proprietario):
+    // può modificare chi è admin, il creatore o è negli editors. Gli item legacy
+    // senza createdBy restano modificabili dai ruoli già autorizzati (sopra).
+    if ($existed && is_array($storedFull)) {
+        $se = $storedFull['mainEntity'] ?? $storedFull;
+        $creator = (string)($se['meetoo:createdBy'] ?? '');
+        $editors = is_array($se['meetoo:editors'] ?? null) ? $se['meetoo:editors'] : [];
+        $meRef = "users/$userUid";
+        if ($creator !== '' && $userRole !== 'admin' && $creator !== $meRef && !in_array($meRef, $editors, true)) {
+            echo json_encode(["error" => "Non sei autorizzato a modificare questo elemento (creatore: $creator). Chiedi di essere aggiunto agli editors."]);
+            exit;
+        }
+    }
+
     // Se esiste già e non è stata scelta un'azione, NON scriviamo: torniamo lo
     // stored così il client mostra il diff e propone ignora/sovrascrivi/integra.
     if ($existed && $mode === '') {
@@ -467,9 +481,14 @@ if ($action === 'save') {
     // preservato dallo stored ai salvataggi successivi.
     $storedEntity = is_array($storedFull) ? ($storedFull['mainEntity'] ?? $storedFull) : [];
     if (!empty($storedEntity['meetoo:createdBy'])) {
-        $entity['meetoo:createdBy'] = $storedEntity['meetoo:createdBy'];
+        $entity['meetoo:createdBy'] = $storedEntity['meetoo:createdBy']; // creatore immutabile
     } elseif (!$existed) {
         $entity['meetoo:createdBy'] = "users/$userUid";
+    }
+    // Editors: preserva la lista salvata se il JSON inviato non la specifica
+    // (così non si azzera per sbaglio); se la specifica, vince (creatore/admin).
+    if (empty($entity['meetoo:editors']) && !empty($storedEntity['meetoo:editors'])) {
+        $entity['meetoo:editors'] = $storedEntity['meetoo:editors'];
     }
 
     // Immagini in media/. Scaricate PRIMA di scrivere il JSON. Regola: se il

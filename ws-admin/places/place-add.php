@@ -106,6 +106,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                     </button>
                     <span id="save-msg"></span>
                 </div>
+                <div style="margin-top:8px; font-size:13px; color:#555;">
+                    Autorizza a modificare (Google UID, virgola-separati):
+                    <input type="text" id="editors-input" placeholder="es. 100449…, 112233…" style="padding:6px; width:280px; margin:0 6px;">
+                    <button type="button" id="editors-apply" style="padding:6px 10px; cursor:pointer;">Imposta editors</button>
+                </div>
             </div>
         </div>
 
@@ -388,6 +393,21 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         else { box.style.color = '#e65100'; box.innerText = '⚠️ CAP mancante o non valido (5 cifre): imposta il CAP per un @id valido.'; }
     }
     document.getElementById('cap-input').addEventListener('input', function () { applyCap(this.value); });
+
+    // 6. Editors: imposta meetoo:editors (link users/<uid>) nel JSON. Il gate del
+    // server consente la modifica solo a creatore/editors/admin.
+    document.getElementById('editors-apply').addEventListener('click', function () {
+        const raw = document.getElementById('editors-input').value || '';
+        const list = raw.split(',').map(s => s.trim()).filter(Boolean)
+            .map(s => s.startsWith('users/') ? s : 'users/' + s.replace(/^users\//, ''));
+        const ta = document.getElementById('json-wscms');
+        let obj;
+        try { obj = JSON.parse(ta.value); } catch (e) { setSaveMsg('JSON non valido: correggi prima.', 'err'); return; }
+        const ent = obj.mainEntity || obj;
+        if (list.length) ent['meetoo:editors'] = list; else delete ent['meetoo:editors'];
+        ta.value = JSON.stringify(obj, null, 4);
+        setSaveMsg('Editors impostati: ' + (list.join(', ') || '(nessuno)') + '. Salva per applicare.', 'ok');
+    });
 </script>
 
 </body>
