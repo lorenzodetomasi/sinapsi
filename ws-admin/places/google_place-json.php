@@ -16,6 +16,9 @@ if (!is_array($config) || empty($config['places_api_key'])) {
 }
 $googleApiKey = $config['places_api_key'];
 
+// Indice di deduplica google_place_id → @id (globale, ricostruibile).
+require __DIR__ . '/index-lib.php';
+
 // GET su Google che cattura ANCHE le risposte di errore (es. 403/REQUEST_DENIED),
 // così possiamo leggere status/error_message. Con ignore_errors evitiamo anche il
 // warning PHP di file_get_contents, che conterrebbe l'URL con la key in chiaro.
@@ -30,15 +33,17 @@ function googleGet($url) {
 function ws_primary_type($types) {
     return in_array('establishment', (array)$types, true) ? 'LocalBusiness' : 'Place';
 }
+// Cartella unica: LocalBusiness È un Place (schema.org), quindi entrambi stanno
+// sotto places/. Il tipo preciso resta nel @type del JSON, non nel percorso.
 function ws_folder($type) {
-    return $type === 'LocalBusiness' ? 'localbusinesses' : 'places';
+    return 'places';
 }
 function ws_slug($name) {
     return strtolower(preg_replace('/[^a-z0-9]/i', '', (string)$name));
 }
 // Verifica se la cartella dell'@id esiste già in ws-custom.
 function ws_id_exists($id) {
-    if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) return false;
+    if (!preg_match('#^places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) return false;
     $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
     return is_dir($dir) || is_file($dir . '/index.json') || is_file($dir . '/index.xml');
 }
@@ -472,7 +477,7 @@ if ($action === 'save') {
     $newEntity = $decoded['mainEntity'] ?? $decoded;
     $id = $newEntity['@id'] ?? '';
     // Solo il formato atteso: niente path traversal.
-    if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
+    if (!preg_match('#^places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
         echo json_encode(["error" => "@id non valido o mancante: '$id'."]);
         exit;
     }
@@ -586,9 +591,15 @@ if ($action === 'save') {
         exit;
     }
 
+    // Aggiorna l'indice di deduplica (se l'entità ha un google_place_id).
+    $savedPlaceId = ws_index_place_id($entity);
+    $indexUpdated = $savedPlaceId !== ''
+        && ws_index_upsert($savedPlaceId, $id, $entity['name'] ?? '', $entity['@type'] ?? '');
+
     echo json_encode([
         "success" => true, "path" => "$id/index.json", "overwritten" => $existed, "mode" => ($mode ?: 'new'),
         "media_saved" => $saved, "media_failed" => $failed, "media_debug" => $mediaDebug,
+        "index_updated" => $indexUpdated,
     ]);
     exit;
 }
@@ -660,6 +671,11 @@ if ($action === 'search') {
     $region = $regionMissing ? '' : ($countryShort . $postalCode);   // es. IT00124
     $newId = ($region !== '' && $slug !== '') ? "$folder/$region/$slug" : "$folder//$slug";
     $idExists = (!$regionMissing) && ws_id_exists($newId);
+
+    // Deduplica: questo google_place_id è già indicizzato con un @id DIVERSO?
+    // (caso che il check per percorso non prende: stesso luogo, slug diverso.)
+    $dupEntry = ws_index_lookup($place['place_id'] ?? '');
+    $idDup = ($dupEntry && ($dupEntry['@id'] ?? '') !== $newId) ? $dupEntry : null;
 
     // Se l'@id esiste, confronta il Google ID: stesso luogo → collega + aggiornamenti;
     // diverso/assente → collisione da risolvere cambiando l'id.
@@ -770,6 +786,7 @@ if ($action === 'search') {
         "id_parse_error" => $idParseError,      // index.json esistente ma illeggibile
         "updates" => $updates,                  // differenze Google↔salvato da integrare
         "id_region_missing" => $regionMissing,
+        "id_dup" => $idDup,                     // luogo già presente con altro @id (o null)
         // Sorgenti immagini dal sito, per scaricarle in media/ al salvataggio
         "media" => ["cover_src" => $siteImg['cover'], "logo_src" => $siteImg['logo']],
         // Diagnostica (visibile nel JSON di risposta, nessuna key)

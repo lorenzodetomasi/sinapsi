@@ -255,6 +255,14 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 } else {
                     msg = "⚠️ Esiste già un @id diverso con questo slug (Google ID diverso): cambia l'id.";
                 }
+                // Deduplica via indice: stesso Google Place ID già salvato altrove.
+                if (data.id_dup && data.id_dup['@id']) {
+                    msg = "⚠️ Questo luogo è già salvato come " + data.id_dup['@id']
+                        + (data.id_dup.name ? " (" + data.id_dup.name + ")" : "")
+                        + ". Stesso Google Place ID: modifica quello esistente invece di creare un duplicato."
+                        + (msg ? " — " + msg : "");
+                    color = "#e65100";
+                }
                 box.style.color = color;
                 box.innerText = msg;
             });

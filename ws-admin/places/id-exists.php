@@ -8,7 +8,7 @@ header('Content-Type: application/json');
 $id = trim($_GET['id'] ?? '');
 
 // Sanitizzazione severa: SOLO il formato atteso, niente "../" o path arbitrari.
-if (!preg_match('#^(places|localbusinesses)/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
+if (!preg_match('#^places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
     echo json_encode(['ok' => false, 'error' => 'id non valido']);
     exit;
 }

@@ -6,8 +6,10 @@ export function detectPrimaryType(types = []) {
   return (types || []).includes('establishment') ? 'LocalBusiness' : 'Place';
 }
 
-export function folderForType(type) {
-  return type === 'LocalBusiness' ? 'localbusinesses' : 'places';
+// Cartella unica: LocalBusiness È un Place (schema.org), quindi entrambi stanno
+// sotto places/. Il tipo preciso resta nel @type, non nel percorso.
+export function folderForType(_type) {
+  return 'places';
 }
 
 export function slugify(name) {
