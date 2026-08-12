@@ -580,6 +580,52 @@ if ($action === 'rebuild_index') {
     exit;
 }
 
+// 3-octies. Arricchisce con geo/indirizzo (da Google Places, per nome) gli item
+// di un @id privi di tali campi. NON scrive: ritorna il JSON arricchito per la
+// revisione. Chiamate billable + lettura file → admin/super-admin.
+if ($action === 'enrich') {
+    if (!in_array($userRole, ['admin', 'super-admin'], true)) {
+        echo json_encode(["error" => "Solo admin/super-admin possono arricchire (Ruolo: $userRole)."]);
+        exit;
+    }
+    $loadId = $data['id'] ?? $_GET['id'] ?? 'places/lido-di-ostia/lungomare';
+    $path = ws_id_to_path($loadId);
+    if ($path === null) { echo json_encode(["error" => "@id non valido: '$loadId'."]); exit; }
+    $file = $path . '/index.json';
+    if (!is_file($file)) { echo json_encode(["error" => "Nessun index.json per '$loadId'."]); exit; }
+    $j = json_decode((string)file_get_contents($file), true);
+    if (!is_array($j)) { echo json_encode(["error" => "index.json illeggibile per '$loadId'."]); exit; }
+
+    $maxCalls = 50; // tetto alle chiamate Google (billable) per singola richiesta
+    $tried = 0; $enriched = 0; $capped = false;
+    if (isset($j['mainEntity']) && is_array($j['mainEntity'])) { $me = &$j['mainEntity']; } else { $me = &$j; }
+    if (isset($me['itemListElement']) && is_array($me['itemListElement'])) {
+        foreach ($me['itemListElement'] as &$el) {
+            if (!isset($el['item']) || !is_array($el['item'])) continue;
+            $it = &$el['item'];
+            if (isset($it['geo']) && isset($it['address'])) continue;
+            if ($tried >= $maxCalls) { $capped = true; break; }
+            $tried++;
+            if (enrichPlaceWithGoogleAPI($it['name'] ?? '', $it, $googleApiKey)) $enriched++;
+            unset($it);
+        }
+        unset($el);
+    } else {
+        // Singolo place: la mainEntity È l'item.
+        if (!(isset($me['geo']) && isset($me['address']))) {
+            $tried++;
+            if (enrichPlaceWithGoogleAPI($me['name'] ?? '', $me, $googleApiKey)) $enriched++;
+        }
+    }
+    unset($me);
+    echo json_encode([
+        'success' => true, 'id' => $loadId,
+        'tried' => $tried, 'enriched' => $enriched, 'capped' => $capped,
+        'json' => $j, // arricchito, NON scritto: rivedi e salva tu
+    ]);
+    exit;
+}
+
 // 3-bis. Salvataggio sul server: scrive il JSON-LD in <@id>/index.json.
 // Operazione che MODIFICA il filesystem → solo ruoli autorizzati.
 if ($action === 'save') {
