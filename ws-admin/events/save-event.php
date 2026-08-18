@@ -11,6 +11,7 @@ require __DIR__ . '/../json-xml/functions.php';
 require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/events-index.php';
 require __DIR__ . '/../lib/events-migrate.php';
+require __DIR__ . '/../lib/events-normalize.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -56,6 +57,33 @@ if ($action === 'rebuild-index') {
         'normalized' => ['files' => $mig['changedFiles'], 'changes' => $mig['changes'], 'warns' => $mig['warns']],
         'index'      => $r,
         'by'         => $user['email'],
+    ]);
+    exit;
+}
+
+// Normalizzazione strutturale dei contenuti (una-tantum): rimuove serie annidate,
+// completa le occorrenze mancanti, rideriva subEvent. Solo admin/super-admin. Poi rebuild.
+if ($action === 'normalize-content') {
+    if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
+        http_response_code(403);
+        echo json_encode(['error' => "Solo admin o super-admin possono normalizzare i contenuti (ruolo: {$user['role']})."]);
+        exit;
+    }
+    $contentBase = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
+    $norm = event_normalize($contentBase, true);
+    event_migrate_refs($contentBase, true);
+    $idx = event_index_rebuild($contentBase);
+    echo json_encode([
+        'success'   => true,
+        'action'    => 'normalize-content',
+        'normalize' => [
+            'removedSeries'         => $norm['removedSeries'],
+            'completedOccurrences'  => $norm['completedOccurrences'],
+            'repairedSuperEvent'    => $norm['repairedSuperEvent'],
+            'seriesSubEventUpdated' => $norm['seriesSubEventUpdated'],
+        ],
+        'index' => $idx,
+        'by'    => $user['email'],
     ]);
     exit;
 }
