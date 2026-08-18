@@ -174,6 +174,8 @@ export const schema = {
         },
       },
     },
+    // Serie contenitrice di quest'occorrenza (riferimento events/{slug} alla EventSeries).
+    superEvent: { type: 'string', title: 'Serie contenitrice (superEvent)' },
     // Occorrenze di una serie: riferimenti @id (+ nome) agli eventi figli.
     occurrences: {
       type: 'array',
@@ -390,6 +392,8 @@ export const uischema = {
       ],
     },
     ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
+    // Occorrenza → serie contenitrice (riferimento events/{slug}); solo per gli eventi non-serie.
+    ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
     // Single → programma interno; Series → occorrenze (link @id)
     ctrl('#/properties/subEvent', {
       label: 'Programma dell’evento',
