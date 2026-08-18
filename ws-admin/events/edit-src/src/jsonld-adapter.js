@@ -6,6 +6,13 @@ const CONTEXT = ['https://schema.org', { meetoo: 'https://meetoo.eu#' }];
 
 const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 
+// Riferimento a un evento in forma canonica `events/{slug}` (lo slug nudo è la forma
+// self-@id, NON un riferimento). Se già qualificato (contiene "/") resta invariato.
+const toEventRef = (id) => {
+  const s = String(id ?? '').trim();
+  return !s || s.includes('/') ? s : 'events/' + s;
+};
+
 // Tipi schema.org di RADICE derivati da meetoo:@type (non editabili tra i tag):
 // meetoo:EventSingle -> Event, meetoo:EventSeries -> EventSeries.
 const BASE_TYPES = ['Event', 'EventSeries'];
@@ -126,6 +133,9 @@ export function fromJsonLd(doc) {
           endDate: s.endDate ?? '',
         })),
     occurrences: isSeries ? subEventArr.map((s) => ({ id: s['@id'] ?? '', name: s.name ?? '' })) : [],
+    // Riferimento alla serie contenitrice (occorrenza → serie). Non ha un campo UI dedicato,
+    // ma va preservato nel round-trip per non perdere l'appartenenza alla collection al salvataggio.
+    superEvent: typeof doc.superEvent === 'string' ? doc.superEvent : (doc.superEvent?.['@id'] ?? ''),
     eventSchedule: fromSchedule(doc.eventSchedule),
     aggregateRating: {
       ratingValue: rating.ratingValue ?? '',
@@ -182,7 +192,7 @@ export function toJsonLd(d) {
     }));
   const occurrences = (d.occurrences ?? [])
     .filter((o) => o.id || o.name)
-    .map((o) => ({ ...(o.id ? { '@id': o.id } : {}), '@type': 'Event', ...(o.name ? { name: o.name } : {}) }));
+    .map((o) => ({ ...(o.id ? { '@id': toEventRef(o.id) } : {}), '@type': 'Event', ...(o.name ? { name: o.name } : {}) }));
   const subEvent = isSeries ? occurrences : program;
   const schedule = isSeries ? toSchedule(d.eventSchedule) : undefined;
 
@@ -259,6 +269,7 @@ export function toJsonLd(d) {
     ...(organizer.length ? { organizer } : {}),
     ...(schedule ? { eventSchedule: schedule } : {}),
     ...(subEvent.length ? { subEvent } : {}),
+    ...(d.superEvent ? { superEvent: toEventRef(d.superEvent) } : {}),
     ...(d.eventStatus ? { eventStatus: d.eventStatus } : {}),
     ...(aggregateRating ? { aggregateRating } : {}),
     // Flag pubblico: emessi solo se attivi (accompagnati solo se adatto ai bambini)

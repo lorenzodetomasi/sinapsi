@@ -167,9 +167,23 @@ function WsxToJson(string $xmlString): string {
         foreach ($element->childNodes as $child) {
             if (!($child instanceof DOMElement)) continue;
 
-            if ($child->namespaceURI === $xiNs && $child->localName === 'include') {
+            // Riconosce <xi:include> anche quando l'XML è malformato e il prefisso "xi"
+            // NON è legato al namespace XInclude (prefix/nsURI assenti): senza questo,
+            // l'include finiva nel ramo generico e diventava la chiave-placeholder
+            // "xi:include": "" nel JSON.
+            $isXInclude = ($child->namespaceURI === $xiNs && $child->localName === 'include')
+                || $child->nodeName === 'xi:include'
+                || ($child->localName === 'include' && $child->prefix === 'xi');
+            if ($isXInclude) {
+                // Solo gli include verso un'ALTRA entità (…/index.xml) sono RIFERIMENTI → {@id}.
+                // Gli include locali (es. rsvp.xml, reviews.xml) o con href vuoto si IGNORANO
+                // (niente placeholder), senza abortire il parsing degli altri figli.
                 $href = $child->getAttribute('href');
-                return ['@id' => str_replace(['../', '/index.xml'], '', $href)];
+                if (substr($href, -10) === '/index.xml') {
+                    $refId = str_replace(['../', '/index.xml'], '', $href);
+                    if ($refId !== '') return ['@id' => $refId];
+                }
+                continue;
             }
 
             $cleanName = ($child->prefix) ? $child->prefix . ':' . $child->localName : $child->localName;

@@ -120,14 +120,20 @@ file). Per non andare in deriva:
 **Riferimenti fra entità = `{collection}/{slug}`** (es.
 `"superEvent": "events/clubdellibro-ostia-reading_party"`, `"location": "places/IT00122-…"`).
 Lo **slug nudo** è la forma *self-@id*, **non** un riferimento. L'indice normalizza comunque
-all'ultimo segmento, ma la forma canonica da salvare è `events/{slug}`.
+all'ultimo segmento, ma la forma canonica da salvare è `events/{slug}`. L'editor emette già
+questo formato (adapter `toEventRef`); lo script `ws-admin/events/migrate-refs.php` (dry-run
+di default, `--apply` per scrivere) normalizza i contenuti esistenti: `@id` = slug cartella,
+`superEvent`/`subEvent` → `events/{slug}`.
 
 **Organizer come default di serie (ereditarietà).** Un'occorrenza (con `superEvent`) senza
 `organizer` proprio **eredita** quelli della serie — coerente con «default di serie con
 override» — così resta attribuita anche se il suo `organizer` è vuoto o **non risolto** (es.
 `xi:include` non espanso nel JSON). Se ha un `organizer` proprio, quello **sostituisce**
 (non si somma). *Nota:* il JSON canonico non dovrebbe contenere `xi:include` non risolti; i
-riferimenti a organizer vanno salvati come `"organizations/{slug}"` o `{"@id":"…"}`.
+riferimenti a organizer vanno salvati come `"organizations/{slug}"` o `{"@id":"…"}`. Il
+convertitore `WsxToJson` è comunque **tollerante**: riconosce gli `xi:include` anche col
+prefisso non legato e con href verso `…/index.xml` li risolve in `{@id}`; gli include locali
+(rsvp/reviews) o vuoti li ignora — non emette più il placeholder `"xi:include": ""`.
 
 **Membership autorevole = `superEvent`.** L'appartenenza di un evento a una collection si
 ricava dalle occorrenze (`superEvent`); il `subEvent` della serie è **derivabile** dall'indice
