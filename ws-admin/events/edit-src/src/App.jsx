@@ -240,6 +240,7 @@ export default function App() {
   // (diff selettivo): se l'evento esiste ed è cambiato, apre il pannello scelte;
   // altrimenti salva direttamente. Il salvataggio vero avviene in doSaveWeb.
   const [savingWeb, setSavingWeb] = useState(false);
+  const [rebuilding, setRebuilding] = useState(false);
   const [diff, setDiff] = useState(null); // { changes, rel } | null
   const [changedPaths, setChangedPaths] = useState(() => new Set()); // per i marcatori inline
 
@@ -299,6 +300,33 @@ export default function App() {
       showFlash('Endpoint di salvataggio web non raggiungibile: ' + (e?.message || e), 'err');
     } finally {
       setSavingWeb(false);
+    }
+  }
+
+  // Rebuild dell'indice eventi (admin/super-admin): rilancia la scansione dei contenuti.
+  async function rebuildIndex() {
+    if (rebuilding) return;
+    if (!authToken) { showFlash('Accedi con Google per ricostruire l\'indice', 'err'); return; }
+    setRebuilding(true);
+    try {
+      const body = new URLSearchParams({ action: 'rebuild-index', credential: authToken });
+      const res = await fetch(SAVE_EVENT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      const out = await res.json();
+      if (res.status === 401) { onLogout(); showFlash('Sessione scaduta: accedi di nuovo con Google', 'err'); return; }
+      if (out.success) {
+        const i = out.index || {};
+        showFlash(`Indice ricostruito: ${i.indexed ?? 0} eventi · ${i.series ?? 0} collection · ${i.organizers ?? 0} organizzatori`, 'ok');
+      } else {
+        showFlash(`Rebuild indice fallito: ${out.error || res.status}`, 'err');
+      }
+    } catch (e) {
+      showFlash('Endpoint di rebuild non raggiungibile: ' + (e?.message || e), 'err');
+    } finally {
+      setRebuilding(false);
     }
   }
 
@@ -460,6 +488,17 @@ export default function App() {
           >
             <span className="material-symbols-outlined">cloud_upload</span> {savingWeb ? 'Salvo…' : 'Salva sul web'}
           </button>
+          {['admin', 'super-admin'].includes(authUser?.role) && (
+            <button
+              type="button"
+              className="btn-ghost"
+              onClick={rebuildIndex}
+              disabled={rebuilding}
+              title="Ricostruisce l'indice eventi (events/_index) dai contenuti sul server"
+            >
+              <span className="material-symbols-outlined">manage_history</span> {rebuilding ? 'Ricostruisco…' : 'Rebuild index'}
+            </button>
+          )}
           <Auth user={authUser} onLogin={onLogin} onLogout={onLogout} />
           <OptionsMenu
             theme={theme}

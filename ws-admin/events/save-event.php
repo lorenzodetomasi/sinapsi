@@ -37,6 +37,18 @@ if ($action === 'auth') {
     exit;
 }
 
+// Ricostruzione dell'indice eventi (solo admin/super-admin), invocabile dall'editor.
+if ($action === 'rebuild-index') {
+    if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
+        http_response_code(403);
+        echo json_encode(['error' => "Solo admin o super-admin possono ricostruire l'indice (ruolo: {$user['role']})."]);
+        exit;
+    }
+    $r = event_index_rebuild(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT');
+    echo json_encode(['success' => true, 'action' => 'rebuild-index', 'index' => $r, 'by' => $user['email']]);
+    exit;
+}
+
 // --- Salvataggio: ruolo autorizzato ---
 if (!in_array($user['role'], ['user', 'client', 'admin', 'super-admin'], true)) {
     http_response_code(403);

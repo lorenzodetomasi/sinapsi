@@ -11,6 +11,12 @@ if (!function_exists('event_index_item')) {
         $cap = '';
         if (preg_match('/^\d{8}T\d{4}-([A-Za-z0-9]+)/', basename($relPath), $m)) $cap = $m[1];
 
+        // Natura: 'series' = collection (EventSeries), altrimenti 'single'.
+        $typeArr = isset($doc['@type']) ? (is_array($doc['@type']) ? $doc['@type'] : [$doc['@type']]) : [];
+        $kind = in_array('EventSeries', $typeArr, true) ? 'series' : 'single';
+        // Collection di appartenenza: riferimento @id/path della serie contenitrice (superEvent).
+        $collection = function_exists('ws_ref_id') ? ws_ref_id($doc['superEvent'] ?? null) : '';
+
         // organizer: name del primo se presente (inline), altrimenti l'@id di riferimento
         $orgName = '';
         $orgId = '';
@@ -35,6 +41,8 @@ if (!function_exists('event_index_item')) {
 
         return [
             'path'         => $relPath,
+            'kind'         => $kind,
+            'collection'   => $collection,
             'name'         => (string)($doc['name'] ?? ''),
             'startDate'    => (string)($doc['startDate'] ?? ''),
             'endDate'      => (string)($doc['endDate'] ?? ''),
@@ -79,6 +87,41 @@ if (!function_exists('event_index_upsert_file')) {
         usort($list, fn($a, $b) => strcmp((string)($a['startDate'] ?? ''), (string)($b['startDate'] ?? '')));
         $json = json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         return $json !== false && @file_put_contents($file, $json) !== false;
+    }
+}
+
+// Ricostruzione COMPLETA dell'indice da tutti gli eventi su disco (serie + occorrenze
+// annidate). Azzera l'indice esistente e re-indicizza. $base = .../contents/meetoo/it_IT.
+// Ritorna ['indexed'=>int, 'skipped'=>int, 'organizers'=>int, 'series'=>int].
+if (!function_exists('event_index_rebuild')) {
+    function event_index_rebuild(string $base): array {
+        $eventsDir = rtrim($base, '/') . '/events';
+        $idxDir = "$eventsDir/_index";
+        if (!is_dir($eventsDir)) return ['indexed' => 0, 'skipped' => 0, 'organizers' => 0, 'series' => 0, 'error' => 'events dir mancante'];
+
+        // Azzera per una ricostruzione pulita (rimuove voci obsolete).
+        foreach (glob("$idxDir/by-organizer/*.json") ?: [] as $f) @unlink($f);
+        @unlink("$idxDir/events.json");
+
+        $files = [];
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($eventsDir, FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $f) {
+            if ($f->getFilename() === 'index.json' && strpos($f->getPathname(), '/_index/') === false) $files[] = $f->getPathname();
+        }
+        sort($files);
+
+        $indexed = 0; $skipped = 0; $series = 0; $orgs = [];
+        foreach ($files as $file) {
+            $doc = json_decode((string)@file_get_contents($file), true);
+            if (!is_array($doc)) { $skipped++; continue; }
+            $rel = trim(str_replace(rtrim($base, '/'), '', dirname($file)), '/');
+            $res = event_index_update($base, $rel, $doc);
+            foreach (array_keys($res['organizers']) as $k) $orgs[$k] = true;
+            $typeArr = isset($doc['@type']) ? (is_array($doc['@type']) ? $doc['@type'] : [$doc['@type']]) : [];
+            if (in_array('EventSeries', $typeArr, true)) $series++;
+            $indexed++;
+        }
+        return ['indexed' => $indexed, 'skipped' => $skipped, 'organizers' => count($orgs), 'series' => $series];
     }
 }
 
