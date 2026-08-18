@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "vite build && rsync -avz --delete ../edit/ \"${DEPLOY_DEST:?imposta DEPLOY_DEST=utente@host:/percorso/ws-admin/events/edit/}\""
   },
   "dependencies": {
     "@jsonforms/core": "^3.8.0",

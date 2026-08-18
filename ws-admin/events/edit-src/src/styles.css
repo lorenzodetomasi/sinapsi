@@ -150,6 +150,127 @@ body {
 .btn-save:disabled { background: var(--surface-2); color: var(--text-dim); cursor: not-allowed; }
 .btn-save .material-symbols-outlined { font-size: 1.125rem; }
 
+/* Bottoni "ghost" (Carica, Apri…): contorno, senza riempimento */
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: var(--sp-xs);
+  background: transparent; color: var(--text); cursor: pointer;
+  border: 1px solid var(--border); border-radius: var(--r-pill);
+  padding: var(--sp-xs) var(--sp-md); font-size: var(--fs-label); font-weight: 600;
+}
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn-ghost .material-symbols-outlined { font-size: 1.125rem; }
+
+/* Login Google (appbar) */
+.auth-btn { display: inline-flex; align-items: center; }
+.auth-user { display: inline-flex; align-items: center; gap: var(--sp-xs); color: var(--text-dim); font-size: var(--fs-label); }
+.auth-user .material-symbols-outlined { font-size: 1.25rem; }
+.auth-email { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.auth-role { padding: 1px 7px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--border); font-size: 0.72rem; }
+.auth-user .icon-btn { border: none; background: transparent; color: var(--text-dim); cursor: pointer; padding: var(--sp-xs); border-radius: var(--r-sm); }
+.auth-user .icon-btn:hover { color: var(--accent); }
+
+/* Messaggio transitorio (esito carica/salva) */
+.flash {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 50; max-width: 90vw; padding: 10px 16px; border-radius: 10px;
+  font-size: var(--fs-label); color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+}
+.flash-ok { background: #1f7a4d; }
+.flash-err { background: #a3242b; }
+
+/* Modale "Apri evento dal web" */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  padding: var(--sp-md); background: rgba(0,0,0,.5);
+}
+.modal-box {
+  width: min(560px, 100%); max-height: 82vh; display: flex; flex-direction: column;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-md, 12px); box-shadow: 0 16px 48px rgba(0,0,0,.45);
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-md) var(--sp-sm); border-bottom: 1px solid var(--border);
+}
+.modal-head h3 { margin: 0; font-size: 1.05rem; }
+.modal-head .icon-btn { border: none; background: transparent; color: var(--text-dim); cursor: pointer; padding: var(--sp-xs); border-radius: var(--r-sm); }
+.modal-head .icon-btn:hover { color: var(--accent); }
+.modal-body { padding: var(--sp-md); overflow-y: auto; display: flex; flex-direction: column; gap: var(--sp-sm); }
+.modal-label { font-size: var(--fs-label); color: var(--text-dim); }
+.modal-row { display: flex; gap: var(--sp-sm); }
+.modal-input {
+  flex: 1 1 auto; min-width: 0; font: inherit; color: var(--text);
+  background: var(--field, var(--surface-2)); border: 1px solid var(--border); border-radius: var(--r-sm);
+  padding: var(--sp-xs) var(--sp-sm);
+}
+.modal-input:focus { outline: none; border-color: var(--accent); }
+.modal-sep { text-align: center; font-size: var(--fs-label); color: var(--text-dim); margin: var(--sp-xs) 0; position: relative; }
+.modal-list { display: flex; flex-direction: column; gap: 2px; max-height: 42vh; overflow-y: auto; }
+.modal-note { font-size: var(--fs-label); color: var(--text-dim); padding: var(--sp-sm); line-height: 1.4; }
+.modal-item {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  background: transparent; border: 1px solid transparent; border-radius: var(--r-sm);
+  padding: var(--sp-xs) var(--sp-sm); cursor: pointer; color: var(--text);
+}
+.modal-item:hover { background: var(--surface-2); border-color: var(--border); }
+.modal-item-name { font-weight: 600; }
+.modal-item-meta { font-size: var(--fs-label); color: var(--text-dim); }
+
+/* Pannello diff (salvato ↔ form) */
+.diff-box { width: min(780px, 100%); }
+.modal-foot {
+  display: flex; justify-content: flex-end; gap: var(--sp-sm);
+  padding: var(--sp-sm) var(--sp-md); border-top: 1px solid var(--border);
+}
+.diff-sub { margin: 0; font-size: var(--fs-label); color: var(--text-dim); }
+.diff-sub code { background: var(--surface-2); padding: 1px 6px; border-radius: var(--r-sm); }
+.k-mod { color: var(--accent); }
+.k-add { color: var(--success); }
+.k-del { color: var(--danger); }
+.diff-bulk { display: flex; gap: var(--sp-sm); }
+.diff-list { display: flex; flex-direction: column; gap: var(--sp-sm); max-height: 52vh; overflow-y: auto; }
+.diff-row {
+  border: 1px solid var(--border); border-left: 3px solid var(--border);
+  border-radius: var(--r-sm); padding: var(--sp-sm); background: var(--surface-2);
+}
+.diff-row.diff-mod { border-left-color: var(--accent); }
+.diff-row.diff-add { border-left-color: var(--success); }
+.diff-row.diff-del { border-left-color: var(--danger); }
+.diff-row.keep-theirs { opacity: .72; }
+.diff-row-head { display: flex; align-items: center; gap: var(--sp-sm); margin-bottom: var(--sp-xs); }
+.diff-kind { display: inline-flex; align-items: center; gap: 3px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }
+.diff-kind .material-symbols-outlined { font-size: 1rem; }
+.diff-kind.k-mod { color: var(--accent); }
+.diff-kind.k-add { color: var(--success); }
+.diff-kind.k-del { color: var(--danger); }
+.diff-path { font-weight: 600; font-size: var(--fs-label); }
+.diff-values { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-xs); }
+.diff-val {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding: var(--sp-xs) var(--sp-sm); border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); font-size: var(--fs-label);
+}
+.diff-val.chosen { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.diff-val-tag { font-size: 0.68rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: .04em; }
+.diff-val-txt { overflow-wrap: anywhere; white-space: pre-wrap; }
+.diff-web .diff-val-txt { color: var(--text-dim); }
+.diff-choice { display: flex; gap: var(--sp-md); margin-top: var(--sp-xs); }
+.diff-choice label { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-label); color: var(--text-dim); cursor: pointer; }
+.diff-choice label.on { color: var(--text); font-weight: 600; }
+
+/* Marcatore inline sui campi del form diversi dal web (best-effort) */
+.control.jsf-changed {
+  position: relative; border-left: 3px solid var(--accent);
+  margin-left: -3px; padding-left: 9px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border-radius: var(--r-sm);
+}
+.control.jsf-changed::after {
+  content: 'web ≠'; position: absolute; top: 4px; right: 6px;
+  font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+  color: var(--accent); opacity: .8; pointer-events: none;
+}
+
 /* "Opzioni" nell'header: solo glyph, senza cerchio/sfondo (come le icone datetime) */
 .appbar-actions .options .icon-btn {
   width: auto; height: auto; border: none; border-radius: var(--r-sm);

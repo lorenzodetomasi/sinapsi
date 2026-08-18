@@ -1,5 +1,4 @@
 node_modules/
-dist/
 *.log
 
 # Chiavi/segreti locali (es. VITE_GOOGLE_MAPS_API_KEY) — mai committare

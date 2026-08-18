@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 // Menu "Opzioni": tema chiaro/scuro e densità dell'interfaccia.
 // Si chiude con click esterno o Esc.
-export default function OptionsMenu({ theme, onTheme, density, onDensity }) {
+export default function OptionsMenu({ theme, onTheme, density, onDensity, canForgetDir, onForgetDir }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -57,6 +57,18 @@ export default function OptionsMenu({ theme, onTheme, density, onDensity }) {
               <Choice value="compact" current={density} onPick={onDensity} icon="density_small" label="Compatta" />
             </div>
           </div>
+
+          {canForgetDir && (
+            <div className="options-section">
+              <div className="options-title">Salvataggio su PC</div>
+              <div className="options-choice">
+                <button type="button" onClick={() => { onForgetDir?.(); setOpen(false); }} title="Ripristina la scelta della cartella base al prossimo salvataggio">
+                  <span className="material-symbols-outlined">folder_off</span>
+                  Cambia cartella
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

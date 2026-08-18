@@ -76,8 +76,17 @@ const SOCIAL_SUGGEST = [
   'Telegram', 'WhatsApp', 'Threads', 'Pinterest', 'Blog', 'Sito web',
 ];
 // Fasce d'età suggerite (il campo accetta anche valori personalizzati).
-const AGE_RANGES = ['All Ages', '0-3', '3-6', '6-12', '12-18', '18+', '18-30', '30-60', '60+'];
-
+const AGE_RANGES = [
+  'All Ages', 
+  '0-3', 
+  '3-6', 
+  '6-12', 
+  '12-18', 
+  '18+', 
+  '18-30', 
+  '30-60', 
+  '60+'
+];
 export const schema = {
   type: 'object',
   properties: {

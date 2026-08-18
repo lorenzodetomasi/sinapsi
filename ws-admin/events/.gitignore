@@ -1,0 +1,4 @@
+# Output della build dell'editor: rigenerato da edit-src con `npm run build`
+# (Vite, outDir=../edit). È un artefatto servito sul server, non un sorgente → non
+# versionato. Il deploy (`npm run deploy`) carica questi file nella cartella del server.
+/edit/
