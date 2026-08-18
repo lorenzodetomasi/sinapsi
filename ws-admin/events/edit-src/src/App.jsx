@@ -319,7 +319,9 @@ export default function App() {
       if (res.status === 401) { onLogout(); showFlash('Sessione scaduta: accedi di nuovo con Google', 'err'); return; }
       if (out.success) {
         const i = out.index || {};
-        showFlash(`Indice ricostruito: ${i.indexed ?? 0} eventi · ${i.series ?? 0} collection · ${i.organizers ?? 0} organizzatori`, 'ok');
+        const n = out.normalized || {};
+        const norm = n.files ? ` · ${n.files} file normalizzati` : '';
+        showFlash(`Indice ricostruito: ${i.indexed ?? 0} eventi · ${i.series ?? 0} collection · ${i.organizers ?? 0} organizzatori${norm}`, 'ok');
       } else {
         showFlash(`Rebuild indice fallito: ${out.error || res.status}`, 'err');
       }

@@ -10,6 +10,7 @@
 require __DIR__ . '/../json-xml/functions.php';
 require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/events-index.php';
+require __DIR__ . '/../lib/events-migrate.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -44,8 +45,18 @@ if ($action === 'rebuild-index') {
         echo json_encode(['error' => "Solo admin o super-admin possono ricostruire l'indice (ruolo: {$user['role']})."]);
         exit;
     }
-    $r = event_index_rebuild(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT');
-    echo json_encode(['success' => true, 'action' => 'rebuild-index', 'index' => $r, 'by' => $user['email']]);
+    $contentBase = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
+    // Normalizza i riferimenti PRIMA di indicizzare (idempotente: tocca solo i file che
+    // cambiano, quindi "solo quando necessario"), poi ricostruisce l'indice.
+    $mig = event_migrate_refs($contentBase, true);
+    $r   = event_index_rebuild($contentBase);
+    echo json_encode([
+        'success'    => true,
+        'action'     => 'rebuild-index',
+        'normalized' => ['files' => $mig['changedFiles'], 'changes' => $mig['changes'], 'warns' => $mig['warns']],
+        'index'      => $r,
+        'by'         => $user['email'],
+    ]);
     exit;
 }
 
