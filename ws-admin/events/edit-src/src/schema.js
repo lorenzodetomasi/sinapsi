@@ -269,13 +269,13 @@ export const uischema = {
           type: 'HorizontalLayout',
           elements: [
             ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
+            // Serie contenitrice accanto al tipo, solo per gli eventi non-serie (Evento singolo)
+            ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
             ctrl('#/properties/id')
           ],
         },
         ctrl('#/properties/url', { options: { icon: 'link' } }),
         ctrl('#/properties/sameAs', { options: { icon: 'link_2', variant: 'row' } }),
-        // Occorrenza → serie contenitrice (riferimento events/{slug}); solo per gli eventi non-serie.
-        ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
       ]
     },
     {
