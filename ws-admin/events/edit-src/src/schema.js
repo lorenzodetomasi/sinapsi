@@ -274,6 +274,8 @@ export const uischema = {
         },
         ctrl('#/properties/url', { options: { icon: 'link' } }),
         ctrl('#/properties/sameAs', { options: { icon: 'link_2', variant: 'row' } }),
+        // Occorrenza → serie contenitrice (riferimento events/{slug}); solo per gli eventi non-serie.
+        ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
       ]
     },
     {
@@ -392,8 +394,6 @@ export const uischema = {
       ],
     },
     ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
-    // Occorrenza → serie contenitrice (riferimento events/{slug}); solo per gli eventi non-serie.
-    ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
     // Single → programma interno; Series → occorrenze (link @id)
     ctrl('#/properties/subEvent', {
       label: 'Programma dell’evento',
