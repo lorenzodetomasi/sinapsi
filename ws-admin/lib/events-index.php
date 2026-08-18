@@ -158,15 +158,43 @@ if (!function_exists('event_index_rebuild')) {
         }
         sort($files);
 
-        $indexed = 0; $skipped = 0; $series = 0; $orgs = [];
+        $isSeriesDoc = function (array $doc): bool {
+            $t = isset($doc['@type']) ? (is_array($doc['@type']) ? $doc['@type'] : [$doc['@type']]) : [];
+            return in_array('EventSeries', $t, true);
+        };
+
+        // Passata 1: carica i doc validi e mappa gli organizer delle SERIE (per l'ereditarietà).
+        // La chiave normalizza i riferimenti (slug nudo o events/{slug}) all'ultimo segmento.
+        $docs = []; $seriesOrgs = []; $skipped = 0;
         foreach ($files as $file) {
             $doc = json_decode((string)@file_get_contents($file), true);
             if (!is_array($doc)) { $skipped++; continue; }
             $rel = trim(str_replace(rtrim($base, '/'), '', dirname($file)), '/');
-            $res = event_index_update($base, $rel, $doc);
+            $docs[] = [$rel, $doc];
+            if ($isSeriesDoc($doc)) {
+                $ids = function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : [];
+                $seriesOrgs[event_index_key((string)($doc['@id'] ?? basename($rel)))] = $ids;
+            }
+        }
+
+        // Passata 2: indicizza. Un'occorrenza (superEvent) senza organizer proprio valido
+        // eredita gli organizer della sua serie → resta attribuita anche se il suo organizer
+        // è vuoto/rotto (es. XInclude non risolto). Coerente con "default di serie con override".
+        $indexed = 0; $series = 0; $orgs = [];
+        foreach ($docs as $pair) {
+            [$rel, $doc] = $pair;
+            $override = null;
+            if (!$isSeriesDoc($doc)) {
+                $superRef = function_exists('ws_ref_id') ? ws_ref_id($doc['superEvent'] ?? null) : '';
+                if ($superRef !== '') {
+                    $ownIds = function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : [];
+                    if (!$ownIds) $override = $seriesOrgs[event_index_key($superRef)] ?? [];
+                }
+            } else {
+                $series++;
+            }
+            $res = event_index_update($base, $rel, $doc, $override);
             foreach (array_keys($res['organizers']) as $k) $orgs[$k] = true;
-            $typeArr = isset($doc['@type']) ? (is_array($doc['@type']) ? $doc['@type'] : [$doc['@type']]) : [];
-            if (in_array('EventSeries', $typeArr, true)) $series++;
             $indexed++;
         }
         return ['indexed' => $indexed, 'skipped' => $skipped, 'organizers' => count($orgs), 'series' => $series];
@@ -176,13 +204,17 @@ if (!function_exists('event_index_rebuild')) {
 // Aggiorna l'indice globale e quelli per-organizer. $base = .../contents/meetoo/it_IT.
 // Ritorna ['global'=>bool, 'organizers'=>[key=>bool]] per la diagnostica.
 if (!function_exists('event_index_update')) {
-    function event_index_update(string $base, string $relPath, array $doc): array {
+    // $orgIdsOverride: se non-null, usa questi @id di organizzatore invece di estrarli dal
+    // doc (serve all'ereditarietà: un'occorrenza senza organizer proprio eredita quelli della serie).
+    function event_index_update(string $base, string $relPath, array $doc, ?array $orgIdsOverride = null): array {
         $item = event_index_item($doc, $relPath);
         $idxDir = rtrim($base, '/') . '/events/_index';
         // Ogni indice è splittato prossimi/archivio da event_index_place().
         $res = ['global' => event_index_place("$idxDir/events.json", $item), 'organizers' => [], 'collection' => null];
 
-        $orgIds = function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : [];
+        $orgIds = $orgIdsOverride !== null
+            ? $orgIdsOverride
+            : (function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : []);
         if (!$orgIds && $item['organizer'] !== '') $orgIds = [$item['organizer']]; // organizer inline senza @id
         foreach (array_unique($orgIds) as $oid) {
             $key = event_index_key($oid);

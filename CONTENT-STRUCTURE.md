@@ -104,6 +104,35 @@ events/_index/
 - Voce compatta per evento: `path, kind (series|single), collection, name, startDate,
   endDate, organizer, location, cap, status, image, dateModified`.
 
+**Sincronizzazione.** L'indice è una **proiezione** dei JSON su disco (la verità sono i
+file). Per non andare in deriva:
+
+- **Rebuild completo a ogni salvataggio** (`save-event.php`) e con il bottone *Rebuild index*
+  o `rebuild-index.php` (CLI): nessun aggiornamento incrementale parziale.
+- **Rebuild schedulato (cron)** per le modifiche fatte **fuori dall'editor** (file a mano,
+  git/deploy) e per ri-splittare passato/futuro con l'avanzare del tempo. Esempio (adegua i
+  percorsi al server):
+
+  ```cron
+  0 3 * * *  /usr/bin/php /var/www/isotype.org/sinapsi/ws-admin/events/rebuild-index.php >/dev/null 2>&1
+  ```
+
+**Riferimenti fra entità = `{collection}/{slug}`** (es.
+`"superEvent": "events/clubdellibro-ostia-reading_party"`, `"location": "places/IT00122-…"`).
+Lo **slug nudo** è la forma *self-@id*, **non** un riferimento. L'indice normalizza comunque
+all'ultimo segmento, ma la forma canonica da salvare è `events/{slug}`.
+
+**Organizer come default di serie (ereditarietà).** Un'occorrenza (con `superEvent`) senza
+`organizer` proprio **eredita** quelli della serie — coerente con «default di serie con
+override» — così resta attribuita anche se il suo `organizer` è vuoto o **non risolto** (es.
+`xi:include` non espanso nel JSON). Se ha un `organizer` proprio, quello **sostituisce**
+(non si somma). *Nota:* il JSON canonico non dovrebbe contenere `xi:include` non risolti; i
+riferimenti a organizer vanno salvati come `"organizations/{slug}"` o `{"@id":"…"}`.
+
+**Membership autorevole = `superEvent`.** L'appartenenza di un evento a una collection si
+ricava dalle occorrenze (`superEvent`); il `subEvent` della serie è **derivabile** dall'indice
+e non va mantenuto a mano (se presente, è un elenco denormalizzato).
+
 ## image / logo
 
 - Path **relativo** alla cartella dell'entità, che punta a `media-sources/{file}`

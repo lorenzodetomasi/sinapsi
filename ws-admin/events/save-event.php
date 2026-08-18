@@ -138,9 +138,12 @@ if (!$jsonOk || !$xmlOk) {
     exit;
 }
 
-// 6) aggiorna gli indici (globale events/_index/events.json + per-organizer).
-// Best-effort: un errore d'indice NON invalida il salvataggio già andato a buon fine.
-$index = event_index_update($base, $relPath, $doc);
+// 6) rigenera l'indice COMPLETO dai contenuti (prossimi/archivio, per-organizer,
+// per-collection, con ereditarietà organizer dalla serie). Un rebuild pieno evita la
+// deriva incrementale (membership/organizer stantii, ribucketing per data). L'@id/percorso
+// appena scritto è già su disco, quindi rientra nella scansione. Best-effort: un errore
+// d'indice NON invalida il salvataggio già andato a buon fine.
+$index = event_index_rebuild($base);
 
 echo json_encode([
     'success'       => true,
