@@ -175,7 +175,7 @@ export const schema = {
       },
     },
     // Serie contenitrice di quest'occorrenza (riferimento events/{slug} alla EventSeries).
-    superEvent: { type: 'string', title: 'Serie contenitrice (superEvent)' },
+    superEvent: { type: 'string', title: 'Appartiene a una Collezione (facoltativo)' },
     // Occorrenze di una serie: riferimenti @id (+ nome) agli eventi figli.
     occurrences: {
       type: 'array',
