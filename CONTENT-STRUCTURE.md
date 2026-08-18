@@ -51,6 +51,59 @@ L'`@id` dell'evento **coincide con lo slug della cartella** (descrittivo incluso
 es. `20260723T1830-IT00122-reading_party`. Le cartelle esistenti prive del descrittivo
 vanno rinominate per allinearsi all'`@id`.
 
+## Archiviazione e indice eventi
+
+**Principio: separare *storage* da *archiviazione*.**
+
+- **Storage** (dove vive il JSON) è **stabile**: schema c, `@id = percorso`, **nessuno
+  spostamento**. Spostare un evento ne cambia l'`@id` e rompe i riferimenti
+  (`superEvent`/`subEvent`, `organizer`, link condivisi, indice).
+- **Archiviazione** ("passato vs prossimo") è una **vista per data**, derivata confrontando
+  `endDate` (o `startDate`) con *adesso*. Lo slug canonico
+  `{AAAAMMGG}T{hhmm}-{cap}-{descrittivo}` contiene la data → è auto-archiviante.
+
+**Dove stanno gli eventi — tutti sotto `events/`:**
+
+| Cosa | Percorso | Slug |
+|---|---|---|
+| Evento singolo | `events/{slug}/` | date-encoded `{AAAAMMGG}T{hhmm}-{cap}-{descrittivo}` |
+| Collection (`EventSeries`) | `events/{serieSlug}/` | **descrittivo** (es. `reading-party`): una serie copre un arco di tempo |
+| Occorrenza (in programma) | `events/{serieSlug}/{occSlug}/` | date-encoded |
+| Occorrenza (passata, *opzionale*) | `events/{serieSlug}/archive/{occSlug}/` | invariato |
+
+- Le collection stanno in `events/`, **non** sotto `organizations/`: `organizer` è un
+  **riferimento** (multiplo), non un contenitore. `organizations/{org}/` contiene **solo
+  l'anagrafica** dell'Organization; i suoi eventi/collezioni sono collegati via `organizer`
+  + indice per-organizer.
+- **Non** usare `organizations/{org}/archive/` (rompe il modello multi-organizer e la
+  convenzione dei riferimenti) né `events/archive/` globale (perde il raggruppamento per
+  serie e crea collisioni di slug).
+- Lo spostamento fisico in `events/{serie}/archive/{occ}/` è **solo un'ottimizzazione** per
+  serie con moltissime occorrenze; se usato, tieni il **riferimento logico**
+  `events/{serie}/{occSlug}` (senza `archive/`) così i riferimenti restano stabili. Slug
+  invariato: cambia solo la cartella genitore.
+
+**Indice** (`events/_index/`, rigenerato a ogni salvataggio e da `rebuild-index.php` / dal
+bottone *Rebuild index* dell'editor, admin). È splittato **prossimi/archivio** per non far
+scaricare tutto l'archivio a chi mostra solo i prossimi:
+
+```
+events/_index/
+  events.json / events.archive.json               # globale (serie+singoli prossimi / singoli passati)
+  by-organizer/{key}.json / {key}.archive.json    # per organizzatore
+  by-collection/{key}.json / {key}.archive.json   # per collection (occorrenze)
+```
+
+- **Bucket**: una **serie** sta sempre nel file principale; un **singolo** va in
+  `.archive.json` se `endDate` (o `startDate`) è passata. `{key}` = ultimo segmento
+  sanitizzato del riferimento (organizer @id / collection path).
+- Le pagine (`organizer.html`, `collection.html`) caricano il file principale subito e
+  l'archivio **solo su richiesta** ("Mostra archivio passato"); ri-splittano comunque per
+  data ciò che caricano, quindi il taglio al confine è solo cosmetico e si riallinea al
+  prossimo rebuild.
+- Voce compatta per evento: `path, kind (series|single), collection, name, startDate,
+  endDate, organizer, location, cap, status, image, dateModified`.
+
 ## image / logo
 
 - Path **relativo** alla cartella dell'entità, che punta a `media-sources/{file}`

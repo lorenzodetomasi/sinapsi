@@ -1,7 +1,15 @@
 <?php
 // Manutenzione dell'indice eventi, aggiornato a ogni salvataggio web.
-//   • Globale:       events/_index/events.json            (elenco compatto di tutti gli eventi, per il picker "Apri")
-//   • Per-organizer: events/_index/by-organizer/<key>.json (per le pagine-organizer: Prossimi eventi / Archivio)
+// Split PROSSIMI/ARCHIVIO per non far scaricare tutto l'archivio a chi mostra i prossimi:
+//   • Globale:       events/_index/events.json            (serie + singoli PROSSIMI)
+//                    events/_index/events.archive.json    (singoli PASSATI)
+//   • Per-organizer: events/_index/by-organizer/<key>.json         (serie + singoli prossimi dell'org)
+//                    events/_index/by-organizer/<key>.archive.json (singoli passati dell'org)
+//   • Per-collection: events/_index/by-collection/<key>.json         (occorrenze prossime della serie)
+//                     events/_index/by-collection/<key>.archive.json (occorrenze passate della serie)
+// Regola bucket: una SERIE sta sempre nel file principale; un SINGOLO va in .archive.json se
+// endDate (o startDate) è < adesso. Il taglio è al momento del rebuild/salvataggio: le pagine
+// ri-splittano comunque per data ciò che caricano, quindi il drift al confine è solo cosmetico.
 // Voce compatta per evento; ordinamento per startDate. Best-effort: gli errori NON bloccano il salvataggio.
 
 // Voce compatta dell'indice a partire dal documento evento e dal percorso (schema c).
@@ -90,6 +98,43 @@ if (!function_exists('event_index_upsert_file')) {
     }
 }
 
+// La voce è "archiviata"? Le serie MAI (stanno sempre nel file principale); un singolo
+// è passato se la sua fine (o inizio) è precedente ad adesso.
+if (!function_exists('event_is_archived')) {
+    function event_is_archived(array $item): bool {
+        if (($item['kind'] ?? '') === 'series') return false;
+        $d = ($item['endDate'] ?? '') !== '' ? $item['endDate'] : ($item['startDate'] ?? '');
+        $t = $d !== '' ? strtotime($d) : false;
+        return $t !== false && $t < time();
+    }
+}
+
+// Rimuove la voce con quel path da un file-indice; se resta vuoto elimina il file.
+if (!function_exists('event_index_remove_from_file')) {
+    function event_index_remove_from_file(string $file, string $path): void {
+        if (!is_file($file)) return;
+        $j = json_decode((string)@file_get_contents($file), true);
+        $list = is_array($j) ? ((isset($j['events']) && is_array($j['events'])) ? $j['events'] : $j) : [];
+        $list = array_values(array_filter(is_array($list) ? $list : [], fn($e) => is_array($e) && ($e['path'] ?? null) !== $path));
+        if ($list) @file_put_contents($file, json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        else @unlink($file);
+    }
+}
+
+// Colloca la voce nel bucket giusto: prossimi = <base>.json, passati = <base>.archive.json.
+// Rimuove sempre dall'altro bucket (per gestire ri-salvataggi e cambi di data).
+if (!function_exists('event_index_place')) {
+    function event_index_place(string $baseFile, array $item): bool {
+        $archiveFile = preg_replace('/\.json$/', '.archive.json', $baseFile);
+        if (event_is_archived($item)) {
+            event_index_remove_from_file($baseFile, $item['path']);
+            return event_index_upsert_file($archiveFile, $item);
+        }
+        event_index_remove_from_file($archiveFile, $item['path']);
+        return event_index_upsert_file($baseFile, $item);
+    }
+}
+
 // Ricostruzione COMPLETA dell'indice da tutti gli eventi su disco (serie + occorrenze
 // annidate). Azzera l'indice esistente e re-indicizza. $base = .../contents/meetoo/it_IT.
 // Ritorna ['indexed'=>int, 'skipped'=>int, 'organizers'=>int, 'series'=>int].
@@ -99,9 +144,12 @@ if (!function_exists('event_index_rebuild')) {
         $idxDir = "$eventsDir/_index";
         if (!is_dir($eventsDir)) return ['indexed' => 0, 'skipped' => 0, 'organizers' => 0, 'series' => 0, 'error' => 'events dir mancante'];
 
-        // Azzera per una ricostruzione pulita (rimuove voci obsolete).
+        // Azzera per una ricostruzione pulita (rimuove voci obsolete). glob *.json prende
+        // sia i file "prossimi" sia gli ".archive.json".
         foreach (glob("$idxDir/by-organizer/*.json") ?: [] as $f) @unlink($f);
+        foreach (glob("$idxDir/by-collection/*.json") ?: [] as $f) @unlink($f);
         @unlink("$idxDir/events.json");
+        @unlink("$idxDir/events.archive.json");
 
         $files = [];
         $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($eventsDir, FilesystemIterator::SKIP_DOTS));
@@ -131,13 +179,20 @@ if (!function_exists('event_index_update')) {
     function event_index_update(string $base, string $relPath, array $doc): array {
         $item = event_index_item($doc, $relPath);
         $idxDir = rtrim($base, '/') . '/events/_index';
-        $res = ['global' => event_index_upsert_file("$idxDir/events.json", $item), 'organizers' => []];
+        // Ogni indice è splittato prossimi/archivio da event_index_place().
+        $res = ['global' => event_index_place("$idxDir/events.json", $item), 'organizers' => [], 'collection' => null];
 
         $orgIds = function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : [];
         if (!$orgIds && $item['organizer'] !== '') $orgIds = [$item['organizer']]; // organizer inline senza @id
         foreach (array_unique($orgIds) as $oid) {
             $key = event_index_key($oid);
-            $res['organizers'][$key] = event_index_upsert_file("$idxDir/by-organizer/$key.json", $item);
+            $res['organizers'][$key] = event_index_place("$idxDir/by-organizer/$key.json", $item);
+        }
+
+        // Indice per-collection: solo le occorrenze (singoli con superEvent).
+        if ($item['kind'] !== 'series' && $item['collection'] !== '') {
+            $ck = event_index_key($item['collection']);
+            $res['collection'] = event_index_place("$idxDir/by-collection/$ck.json", $item);
         }
         return $res;
     }
