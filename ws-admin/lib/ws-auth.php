@@ -45,6 +45,8 @@ if (!function_exists('ws_authenticate')) {
             'uid' => $uid,
             'email' => $info['email'] ?? '',
             'email_verified' => $emailVerified,
+            'name' => $info['name'] ?? '',
+            'picture' => $info['picture'] ?? '',
             'role' => $role,
             'locale' => $info['locale'] ?? 'it',
         ];

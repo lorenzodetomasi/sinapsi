@@ -16,11 +16,16 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 
 | Gruppo | Da (SRC) | A (ROOT sul server) |
 |---|---|---|
-| **Backend – lib** | `ws-admin/lib/{ws-auth,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
-| **Backend – events** | `ws-admin/events/{save-event,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
+| **Backend – lib** | `ws-admin/lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
+| **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
-| **Temi** | `ws-custom/themes/meetoo/{organizer,collection,event}.html` | `ws-custom/themes/meetoo/` |
+| **Temi** | `ws-custom/themes/meetoo/{organizer,collection,event}.html` + **`session.js`** | `ws-custom/themes/meetoo/` |
+
+**Registrazione agli eventi (RSVP)**: `rsvp.php` (login Google + capienze del fieldset "Pubblico"),
+profilo utente in `users/{uid}/index.json` (creato al primo accesso), registrazioni in
+`events/{slug}/rsvp.json`, header di sessione `session.js` incluso in tutte le pagine tema.
+Serve che il web-server possa **scrivere** in `ws-custom/contents/…/users/` e nelle cartelle evento.
 
 La dist è mirror della cartella servita: caricala intera (gli asset hanno hash nel nome, i
 vecchi vanno rimossi → usa `--delete`).
