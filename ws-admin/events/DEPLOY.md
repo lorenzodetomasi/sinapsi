@@ -1,0 +1,74 @@
+# Deploy — Editor eventi, backend e pagine tema
+
+Runbook per portare in produzione (isotype.org/**sinapsi**/) l'editor eventi, il backend PHP
+e le pagine tema. `ROOT` = radice `sinapsi/` sul server; `SRC` = questa working copy.
+
+> I contenuti (`ws-custom/contents/…`) NON si toccano qui: sono dati, gestiti a parte.
+> Le pagine tema (`ws-custom/themes/…`) NON sono versionate → vanno caricate a mano.
+
+## 1) Build dell'editor
+
+```bash
+cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servita)
+```
+
+## 2) Cosa caricare, e dove
+
+| Gruppo | Da (SRC) | A (ROOT sul server) |
+|---|---|---|
+| **Backend – lib** | `ws-admin/lib/{ws-auth,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
+| **Backend – events** | `ws-admin/events/{save-event,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
+| **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
+| **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
+| **Temi** | `ws-custom/themes/meetoo/{organizer,collection,event}.html` | `ws-custom/themes/meetoo/` |
+
+La dist è mirror della cartella servita: caricala intera (gli asset hanno hash nel nome, i
+vecchi vanno rimossi → usa `--delete`).
+
+### Esempio rsync (adatta host/percorsi)
+
+```bash
+# Editor dist (oppure: DEPLOY_DEST=… npm run deploy, che fa build + rsync)
+rsync -avz --delete ws-admin/events/edit/  USER@HOST:ROOT/ws-admin/events/edit/
+# Backend PHP
+rsync -avz ws-admin/lib/ws-auth.php ws-admin/lib/events-index.php ws-admin/lib/events-migrate.php \
+          ws-admin/lib/events-normalize.php ws-admin/lib/events-check.php  USER@HOST:ROOT/ws-admin/lib/
+rsync -avz ws-admin/events/save-event.php ws-admin/events/rebuild-index.php ws-admin/events/migrate-refs.php \
+          ws-admin/events/normalize-content.php ws-admin/events/check-refs.php  USER@HOST:ROOT/ws-admin/events/
+rsync -avz ws-admin/json-xml/functions.php  USER@HOST:ROOT/ws-admin/json-xml/
+# Temi (non versionati)
+rsync -avz ws-custom/themes/meetoo/organizer.html ws-custom/themes/meetoo/collection.html \
+          ws-custom/themes/meetoo/event.html  USER@HOST:ROOT/ws-custom/themes/meetoo/
+```
+
+## 3) Una-tantum sul server (dopo il primo deploy di questo ciclo)
+
+Dall'editor come **admin/super-admin** (bottoni in appbar), oppure da shell:
+
+```bash
+php ws-admin/events/normalize-content.php --apply   # ripara superEvent, completa occorrenze, rimuove serie annidate
+php ws-admin/events/rebuild-index.php                # rigenera events/_index (split prossimi/archivio, by-organizer, by-collection)
+php ws-admin/events/check-refs.php                   # elenca i riferimenti rotti (refusi @id, cartelle mancanti)
+```
+
+> Nell'editor: **Normalizza** = normalize+rebuild+check; **Rebuild index** = migrate+rebuild+check.
+> Entrambi mostrano "⚠ N riferimenti rotti" se presenti.
+
+## 4) Da sistemare nei dati (segnalati dal check)
+
+- **Club del libro Junior**: organizer con refuso `organizations/clubdel**i**bro-ostia` → correggi in
+  `organizations/clubdel**li**bro-ostia` (ri-seleziona l'organizzatore nell'editor). Poi Rebuild.
+  Il check segnala anche un `subEvent` con slug malformato (`…T11730…`) e una place inesistente.
+- In generale: ogni voce di `check-refs` = un `@id` che punta a una cartella senza `index.json`.
+
+## 5) Cron consigliato (facoltativo)
+
+```cron
+0 3 * * *  /usr/bin/php ROOT/ws-admin/events/rebuild-index.php >/dev/null 2>&1
+```
+
+## Note
+
+- `save-event.php` richiede login Google + ruolo `user/client/admin/super-admin` (verifica `users.xml`).
+- La dist porta i valori di produzione (`SAVE_EVENT_URL=../save-event.php`, `CONTENT_BASE=/sinapsi/…`).
+- Le pagine tema sono robuste all'indice mancante (mostrano un messaggio con "Rebuild index").
