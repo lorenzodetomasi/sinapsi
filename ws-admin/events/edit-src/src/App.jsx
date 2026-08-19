@@ -322,7 +322,10 @@ export default function App() {
         const i = out.index || {};
         const n = out.normalized || {};
         const norm = n.files ? ` · ${n.files} file normalizzati` : '';
-        showFlash(`Indice ricostruito: ${i.indexed ?? 0} eventi · ${i.series ?? 0} collection · ${i.organizers ?? 0} organizzatori${norm}`, 'ok');
+        const broken = out.brokenRefs || [];
+        if (broken.length) console.warn('Riferimenti rotti:', broken);
+        const warn = broken.length ? ` · ⚠ ${broken.length} riferimenti rotti (${broken.slice(0, 2).map((b) => b.ref).join(', ')}${broken.length > 2 ? '…' : ''})` : '';
+        showFlash(`Indice ricostruito: ${i.indexed ?? 0} eventi · ${i.series ?? 0} collection · ${i.organizers ?? 0} organizzatori${norm}${warn}`, broken.length ? 'err' : 'ok');
       } else {
         showFlash(`Rebuild indice fallito: ${out.error || res.status}`, 'err');
       }
@@ -351,7 +354,10 @@ export default function App() {
       if (res.status === 401) { onLogout(); showFlash('Sessione scaduta: accedi di nuovo con Google', 'err'); return; }
       if (out.success) {
         const n = out.normalize || {};
-        showFlash(`Contenuti normalizzati: ${(n.removedSeries || []).length} serie annidate rimosse · ${(n.completedOccurrences || []).length} occorrenze completate · ${(n.repairedSuperEvent || []).length} superEvent riparati · ${(n.seriesSubEventUpdated || []).length} serie aggiornate`, 'ok');
+        const broken = out.brokenRefs || [];
+        if (broken.length) console.warn('Riferimenti rotti:', broken);
+        const warn = broken.length ? ` · ⚠ ${broken.length} riferimenti rotti (${broken.slice(0, 2).map((b) => b.ref).join(', ')}${broken.length > 2 ? '…' : ''})` : '';
+        showFlash(`Contenuti normalizzati: ${(n.removedSeries || []).length} serie annidate rimosse · ${(n.completedOccurrences || []).length} occorrenze completate · ${(n.repairedSuperEvent || []).length} superEvent riparati · ${(n.seriesSubEventUpdated || []).length} serie aggiornate${warn}`, broken.length ? 'err' : 'ok');
       } else {
         showFlash(`Normalizzazione fallita: ${out.error || res.status}`, 'err');
       }

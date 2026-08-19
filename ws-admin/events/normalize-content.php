@@ -7,6 +7,8 @@
 
 if (PHP_SAPI !== 'cli') { http_response_code(403); exit("Solo da riga di comando.\n"); }
 require __DIR__ . '/../lib/events-normalize.php';
+require __DIR__ . '/../lib/ws-auth.php';
+require __DIR__ . '/../lib/events-check.php';
 
 $apply = in_array('--apply', $argv, true);
 $base  = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
@@ -22,6 +24,12 @@ foreach ($r['repairedSuperEvent'] as $p) echo "  ~ $p\n";
 echo "subEvent di serie riderivati: " . count($r['seriesSubEventUpdated']) . "\n";
 foreach ($r['seriesSubEventUpdated'] as $u) echo "  ~ {$u['series']}  ({$u['count']} occorrenze)\n";
 if ($r['warns']) { echo "Avvisi:\n"; foreach ($r['warns'] as $w) echo "  ! $w\n"; }
+
+$broken = event_check_refs($base);
+if ($broken) {
+    echo "\n⚠ " . count($broken) . " riferimenti rotti (cartelle inesistenti — spesso refusi nell'@id):\n";
+    foreach ($broken as $b) echo "  - {$b['from']}  [{$b['field']}] → {$b['ref']}\n";
+}
 
 echo "\n" . ($apply ? 'APPLICATO.' : 'DRY-RUN (nessuna scrittura).') . "\n";
 if ($apply) echo "Ora ricostruisci l'indice: php ws-admin/events/rebuild-index.php\n";

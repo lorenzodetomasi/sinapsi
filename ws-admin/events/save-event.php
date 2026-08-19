@@ -12,6 +12,7 @@ require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/events-index.php';
 require __DIR__ . '/../lib/events-migrate.php';
 require __DIR__ . '/../lib/events-normalize.php';
+require __DIR__ . '/../lib/events-check.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -56,6 +57,7 @@ if ($action === 'rebuild-index') {
         'action'     => 'rebuild-index',
         'normalized' => ['files' => $mig['changedFiles'], 'changes' => $mig['changes'], 'warns' => $mig['warns']],
         'index'      => $r,
+        'brokenRefs' => event_check_refs($contentBase),
         'by'         => $user['email'],
     ]);
     exit;
@@ -82,8 +84,9 @@ if ($action === 'normalize-content') {
             'repairedSuperEvent'    => $norm['repairedSuperEvent'],
             'seriesSubEventUpdated' => $norm['seriesSubEventUpdated'],
         ],
-        'index' => $idx,
-        'by'    => $user['email'],
+        'index'      => $idx,
+        'brokenRefs' => event_check_refs($contentBase),
+        'by'         => $user['email'],
     ]);
     exit;
 }

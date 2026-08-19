@@ -8,6 +8,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(403); exit("Solo da riga di comando
 
 require __DIR__ . '/../lib/ws-auth.php';       // per ws_ref_ids()
 require __DIR__ . '/../lib/events-index.php';
+require __DIR__ . '/../lib/events-check.php';
 
 $base = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
 if (!is_dir("$base/events")) { fwrite(STDERR, "Cartella eventi non trovata: $base/events\n"); exit(1); }
@@ -15,3 +16,9 @@ if (!is_dir("$base/events")) { fwrite(STDERR, "Cartella eventi non trovata: $bas
 $r = event_index_rebuild($base);
 echo "Indicizzati {$r['indexed']} eventi" . ($r['skipped'] ? " ({$r['skipped']} saltati)" : '') .
      " · {$r['series']} collection · {$r['organizers']} organizzatori → $base/events/_index/\n";
+
+$broken = event_check_refs($base);
+if ($broken) {
+    echo "\n⚠ " . count($broken) . " riferimenti rotti (puntano a cartelle inesistenti — spesso refusi nell'@id):\n";
+    foreach ($broken as $b) echo "  - {$b['from']}  [{$b['field']}] → {$b['ref']}\n";
+}
