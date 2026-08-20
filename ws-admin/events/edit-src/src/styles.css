@@ -127,18 +127,19 @@ body {
    scrollano internamente (il form scorre, il validatore resta fermo). */
 .app { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 
-/* ---------- Header applicazione: brand + azioni ---------- */
+/* ---------- Riga 2: toolbar delle azioni sugli eventi ----------
+   La riga 1 è l'header Meetoo condiviso (logo + Impostazioni + login). Questa
+   toolbar è la "seconda riga": stessa larghezza centrata dell'header, senza brand. */
 .appbar {
-  display: flex; align-items: center; gap: var(--sp-md);
-  padding: var(--sp-md) var(--sp-xl);
+  display: flex; align-items: center; justify-content: center; gap: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-xl);
   border-bottom: 1px solid var(--border);
   background: var(--bg);
 }
-.appbar .brand {
-  font-weight: 700; font-size: 1.125rem; letter-spacing: 0.01em;
-  color: var(--text);
+.appbar-actions {
+  display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-sm);
+  width: 100%; max-width: 1000px;
 }
-.appbar-actions { display: flex; align-items: center; gap: var(--sp-sm); margin-left: auto; }
 
 /* "Salva": attivo solo a validazione perfetta */
 .btn-save {

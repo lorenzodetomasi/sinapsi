@@ -24,8 +24,27 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 
 **BookCrossing / collezioni di luoghi**: `placecollection.html?id=places/{slug}` mostra una
 collezione di places (`@type` con `meetoo:PlaceCollection`, membri in `containsPlace`); contenuto
-di esempio in `ws-custom/contents/…/places/bookcrossing/index.json` (deploy coi contenuti).
-Linkata dalla home tra le "Iniziative letterarie".
+in `ws-custom/contents/…/places/lido-di-ostia/bookcrossing/index.json` (deploy coi contenuti;
+@id `places/lido-di-ostia/bookcrossing`). Linkata dalla home tra le "Iniziative letterarie".
+
+**Editor eventi — header a 2 righe (niente triplice)**: l'editor ora usa l'header condiviso per la
+**riga 1** (logo + Impostazioni + **login** via `window.meetooSession`) e la propria toolbar azioni
+come **riga 2** (`.appbar-row2`; niente brand "Meetoo", niente breadcrumb). `main.jsx` inietta
+`header.js` con `MEETOO_HEADER = {}` (login attivo; una sola init GIS — quella dell'header, dato che
+l'index.html dell'editor carica già GSI). `Auth.jsx` **rimosso**: l'auth per il salvataggio viene
+dalla sessione dell'header. `header.js` ora **nasconde la riga 2 (breadcrumb) quando è vuota**. Il
+tema dell'editor è sincronizzato con l'header (`color-scheme`/`meetoo:theme`). → **ricostruire la
+dist** e **ridistribuire `header.js`**.
+
+**Riferimenti eventi corretti (contenuti locali; la PRODUZIONE ha gli stessi refusi → vanno
+deployati i contenuti corretti)**: nelle `location`/`subEvent` di vari eventi:
+`places/IT00122-spiaggialamanusa`→`places/IT00122/lamanusa`;
+`places/IT00121/sognalibristorieegiochipersguardicuriosi`→`places/IT00121/sognalibri`;
+`places/IT00122/lapiccolaoasidistellapolare`→`places/IT00122/lapiccolaoasi-stellapolare`;
+`places/lido-di-ostia`→`places/lido-di-ostia/lungomare`; subEvent serie reading_party
+`…20260825T2130…`→`…20260825T1845…`. Scaricata da prod l'occorrenza mancante
+`events/20260716T11730-IT00122-clubdellibro-ostia-junior/`. Dopo il deploy dei contenuti: `check-refs`
+deve dare "nessun riferimento rotto".
 
 **places/edit — luoghi salvati senza crediti Google**: la pagina ora ha una **ricerca
 locale** dei luoghi già salvati (`action=editable` → datalist; `action=load` apre `{@id}/index.json`)

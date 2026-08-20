@@ -20,7 +20,6 @@ import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import OptionsMenu from './OptionsMenu.jsx';
 import OpenEventModal from './OpenEventModal.jsx';
-import Auth from './Auth.jsx';
 import DiffModal from './DiffModal.jsx';
 import { diffForm, mergeChoices, pathToClass } from './diff.js';
 import { API_BASE, CONTENT_BASE, SAVE_EVENT_URL } from './config.js';
@@ -79,13 +78,20 @@ export default function App() {
   const [openWeb, setOpenWeb] = useState(false);
   const [flash, setFlash] = useState(null);
   // Auth Google (per il salvataggio sul web): token (credential) + utente {email, role}.
+  // Login/logout avvengono nella RIGA 1 dell'header condiviso (header.js →
+  // window.meetooSession); qui ci limitiamo a leggere token+utente dalla sessione.
   const [authToken, setAuthToken] = useState('');
   const [authUser, setAuthUser] = useState(null);
-  const onLogin = useCallback((token, user) => { setAuthToken(token); setAuthUser(user); }, []);
-  const onLogout = useCallback(() => {
-    setAuthToken(''); setAuthUser(null);
-    window.google?.accounts?.id?.disableAutoSelect?.();
+  useEffect(() => {
+    let stop = false;
+    (function attach() {
+      const S = window.meetooSession;
+      if (!S) { if (!stop) setTimeout(attach, 150); return; } // attende header.js
+      S.subscribe((user, token) => { setAuthToken(token || ''); setAuthUser(user || null); });
+    })();
+    return () => { stop = true; };
   }, []);
+  const onLogout = useCallback(() => { window.meetooSession?.logout?.(); }, []);
   const flashTimer = useRef(0);
   function showFlash(msg, kind = 'ok') {
     setFlash({ msg, kind });
@@ -95,8 +101,9 @@ export default function App() {
 
   // Tema: alla prima apertura segue il sistema, poi vale la scelta memorizzata.
   const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved;
+    // Rispetta anche una scelta fatta nell'header condiviso (meetoo:theme).
+    const saved = localStorage.getItem('theme') || localStorage.getItem('meetoo:theme');
+    if (saved === 'light' || saved === 'dark') return saved;
     return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
   const [density, setDensity] = useState(() => localStorage.getItem('density') || 'comfortable');
@@ -132,6 +139,10 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('theme', theme);
+    // Sincronizza l'header condiviso (header.js usa color-scheme + meetoo:theme):
+    // così la riga 1 (logo/login) segue il tema chiaro/scuro dell'editor.
+    document.documentElement.style.colorScheme = theme;
+    try { localStorage.setItem('meetoo:theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
   useEffect(() => {
     document.documentElement.dataset.density = density;
@@ -489,8 +500,7 @@ export default function App() {
 
   return (
     <div className={'app tab-' + tab}>
-      <header className="appbar">
-        <div className="brand">Meetoo</div>
+      <header className="appbar appbar-row2">
         <div className="appbar-actions">
           <button type="button" className="btn-ghost" onClick={newEvent} title="Nuovo evento: svuota il form (configurazione base)">
             <span className="material-symbols-outlined">note_add</span> Nuovo
@@ -548,7 +558,6 @@ export default function App() {
               </button>
             </>
           )}
-          <Auth user={authUser} onLogin={onLogin} onLogout={onLogout} />
           <OptionsMenu
             theme={theme}
             onTheme={setTheme}
