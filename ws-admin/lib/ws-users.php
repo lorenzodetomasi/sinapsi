@@ -28,12 +28,30 @@ if (!function_exists('ws_user_upsert')) {
         if (!empty($auth['name']))    $doc['name']  = (string)$auth['name'];
         if (!empty($auth['email']))   $doc['email'] = (string)$auth['email'];
         if (!empty($auth['picture'])) $doc['image'] = (string)$auth['picture'];
+        if (!isset($doc['meetoo:preferences']) || !is_array($doc['meetoo:preferences'])) $doc['meetoo:preferences'] = [];
         if (!isset($doc['dateCreated'])) $doc['dateCreated'] = $now;
         $doc['dateModified'] = $now;
 
         @mkdir($dir, 0775, true);
         @file_put_contents($file, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         return $doc;
+    }
+}
+
+if (!function_exists('ws_user_set_prefs')) {
+    // Aggiorna (merge) le preferenze meetoo dell'utente. Ritorna le preferenze aggiornate.
+    function ws_user_set_prefs(string $base, string $uid, array $prefs): array {
+        $doc = ws_user_get($base, $uid);
+        if (!is_array($doc)) $doc = ['@context' => 'https://schema.org', '@type' => 'Person', '@id' => "users/$uid", 'identifier' => $uid, 'dateCreated' => date('c')];
+        $cur = (isset($doc['meetoo:preferences']) && is_array($doc['meetoo:preferences'])) ? $doc['meetoo:preferences'] : [];
+        // whitelist dei campi ammessi
+        foreach (['language', 'notifications'] as $k) if (array_key_exists($k, $prefs)) $cur[$k] = $prefs[$k];
+        $doc['meetoo:preferences'] = $cur;
+        $doc['dateModified'] = date('c');
+        $dir = rtrim($base, '/') . '/users/' . $uid;
+        @mkdir($dir, 0775, true);
+        @file_put_contents("$dir/index.json", json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        return $cur;
     }
 }
 

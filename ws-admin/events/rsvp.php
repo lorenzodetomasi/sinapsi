@@ -30,7 +30,18 @@ $user = $credential !== '' ? ws_authenticate($credential) : null;
 if ($action === 'me') {
     if (!$user) fail(401, 'Login Google fallito o scaduto.');
     $p = ws_user_upsert($base, $user);
-    echo json_encode(['uid' => $user['uid'], 'name' => $user['name'] ?: $user['email'], 'email' => $user['email'], 'picture' => $user['picture'], 'role' => $user['role']]);
+    echo json_encode(['uid' => $user['uid'], 'name' => $user['name'] ?: $user['email'], 'email' => $user['email'], 'picture' => $user['picture'], 'role' => $user['role'], 'prefs' => $p['meetoo:preferences'] ?? []]);
+    exit;
+}
+
+// Preferenze utente (lingua, notifiche): salva e ritorna quelle aggiornate.
+if ($action === 'prefs') {
+    if (!$user) fail(401, 'Accedi con Google per salvare le preferenze.');
+    $in = [];
+    if (isset($_POST['language']))      $in['language'] = preg_replace('/[^a-zA-Z_-]/', '', (string)$_POST['language']);
+    if (isset($_POST['notifications'])) $in['notifications'] = ((string)$_POST['notifications'] === '1');
+    $prefs = ws_user_set_prefs($base, $user['uid'], $in);
+    echo json_encode(['success' => true, 'prefs' => $prefs]);
     exit;
 }
 

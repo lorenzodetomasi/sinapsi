@@ -20,12 +20,17 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
-| **Temi** | `ws-custom/themes/meetoo/{organizer,collection,event}.html` + **`session.js`** | `ws-custom/themes/meetoo/` |
+| **Temi** | `ws-custom/themes/meetoo/{organizer,collection,event}.html` + **`header.js`** | `ws-custom/themes/meetoo/` |
 
-**Registrazione agli eventi (RSVP)**: `rsvp.php` (login Google + capienze del fieldset "Pubblico"),
-profilo utente in `users/{uid}/index.json` (creato al primo accesso), registrazioni in
-`events/{slug}/rsvp.json`, header di sessione `session.js` incluso in tutte le pagine tema.
-Serve che il web-server possa **scrivere** in `ws-custom/contents/…/users/` e nelle cartelle evento.
+> **`session.js` è stato sostituito da `header.js`** (header Meetoo condiviso a 2 righe + sessione +
+> Impostazioni con preferenze utente): rimuovi il vecchio `session.js` dal server se presente.
+
+**Registrazione agli eventi (RSVP)**: `rsvp.php` (login Google + capienze del fieldset "Pubblico" +
+azioni `me`/`prefs`/register/participants/notify), profilo utente in `users/{uid}/index.json`
+(creato al primo accesso, con `meetoo:preferences`), registrazioni in `events/{slug}/rsvp.json`.
+**Header condiviso** `header.js` incluso in tutte le pagine tema (logo, Impostazioni con tema +
+lingua/notifiche, login, breadcrumb). Serve che il web-server possa **scrivere** in
+`ws-custom/contents/…/users/` e nelle cartelle evento.
 
 La dist è mirror della cartella servita: caricala intera (gli asset hanno hash nel nome, i
 vecchi vanno rimossi → usa `--delete`).
