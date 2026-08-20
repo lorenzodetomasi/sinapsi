@@ -546,5 +546,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             URL.revokeObjectURL(a.href);
         }
     </script>
+<script>window.MEETOO_HEADER = { noAuth: true };</script>
+<script src="../../ws-custom/themes/meetoo/header.js"></script>
 </body>
 </html>

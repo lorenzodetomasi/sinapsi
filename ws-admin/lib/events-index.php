@@ -55,6 +55,7 @@ if (!function_exists('event_index_item')) {
             'startDate'    => (string)($doc['startDate'] ?? ''),
             'endDate'      => (string)($doc['endDate'] ?? ''),
             'organizer'    => $orgName !== '' ? $orgName : $orgId,
+            'organizerKey' => $orgId !== '' ? event_index_key($orgId) : '',
             'location'     => (string)($doc['location']['name'] ?? ''),
             'cap'          => $cap,
             'status'       => (string)($doc['eventStatus'] ?? ''),

@@ -20,7 +20,14 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
-| **Temi** | `ws-custom/themes/meetoo/{organizer,collection,event}.html` + **`header.js`** | `ws-custom/themes/meetoo/` |
+| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event}.html` + **`header.js`** | `ws-custom/themes/meetoo/` |
+
+**Header Meetoo condiviso** (`header.js`, incluso da tutte le pagine): 2 righe (logo + hamburger +
+Impostazioni + login; breadcrumb), modale Impostazioni (tema + preferenze utente), menu hamburger.
+**Home** `index.html` (hub Lido di Ostia: Esplora, Prossimi eventi, Iniziative letterarie, Gruppi,
+Il Lungomare). Anche le pagine **admin** lo includono in modalità `noAuth` (solo chrome, niente
+login/GIS): `ws-admin/places/edit/index.php`, `ws-admin/json-xml/index.php` (già committati) e
+l'**editor React** (iniettato da `main.jsx` → rientra nella **dist**, ricostruiscila).
 
 > **`session.js` è stato sostituito da `header.js`** (header Meetoo condiviso a 2 righe + sessione +
 > Impostazioni con preferenze utente): rimuovi il vecchio `session.js` dal server se presente.

@@ -494,5 +494,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     });
 </script>
 
+<script>window.MEETOO_HEADER = { noAuth: true };</script>
+<script src="../../../ws-custom/themes/meetoo/header.js"></script>
 </body>
 </html>
