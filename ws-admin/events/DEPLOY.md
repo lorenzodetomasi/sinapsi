@@ -27,6 +27,13 @@ collezione di places (`@type` con `meetoo:PlaceCollection`, membri in `containsP
 di esempio in `ws-custom/contents/…/places/bookcrossing/index.json` (deploy coi contenuti).
 Linkata dalla home tra le "Iniziative letterarie".
 
+**Gruppi (home)**: la sezione Gruppi legge `_index/gruppi.json`, generato da
+`ws-admin/places/rebuild-index.php` (funzioni `ws_gruppi_*` in `index-lib.php`). Include **tutte le
+`organizations/`** + i **`places/` LocalBusiness marcati `"meetoo:isGroup": true`** (esperienze
+collettive/gratuite: Sognalibri, Feltrinelli, La Farfalla, Biblioteca Elsa Morante). Le org linkano
+a `organizer.html?org={key}`, i business al loro `url`/mappa. Rilancia `rebuild-index.php` dopo aver
+marcato altri place. (Nota dati: corretto un JSON invalido in `organizations/sahajayoga-ostia`.)
+
 **Header Meetoo condiviso** (`header.js`, incluso da tutte le pagine): 2 righe (logo + hamburger +
 Impostazioni + login; breadcrumb), modale Impostazioni (tema + preferenze utente), menu hamburger.
 **Home** `index.html` (hub Lido di Ostia: Esplora, Prossimi eventi, Iniziative letterarie, Gruppi,

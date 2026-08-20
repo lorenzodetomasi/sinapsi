@@ -71,6 +71,71 @@ function ws_index_save($idx) {
     ) !== false;
 }
 
+// ── Indice "Gruppi" ────────────────────────────────────────────────────────
+// Elenco delle entità-gruppo per la home: TUTTE le organizations + i LocalBusiness
+// (places) che si sono marcati `meetoo:isGroup` perché offrono esperienze
+// collettive/gratuite (es. La Farfalla, Sognalibri, Feltrinelli). Derivato e
+// interamente ricostruibile, come google-places.json.
+function ws_gruppi_path() {
+    return WS_MEETOO_ROOT . '/_index/gruppi.json';
+}
+
+// Estrae un URL "mappa" da hasMap/geo, altrimenti '' (link cliente-side lo integra).
+function ws_gruppi_map_url($e) {
+    $hm = $e['hasMap'] ?? null;
+    if (is_string($hm) && $hm !== '') return $hm;
+    if (is_array($hm) && !empty($hm['url'])) return $hm['url'];
+    $geo = $e['geo'] ?? null;
+    if (is_array($geo) && isset($geo['latitude'], $geo['longitude'])) {
+        return 'https://www.google.com/maps/search/?api=1&query=' . $geo['latitude'] . ',' . $geo['longitude'];
+    }
+    return '';
+}
+
+// Ricostruisce l'elenco gruppi. Ritorna un array di voci ordinate per nome.
+function ws_gruppi_rebuild() {
+    $out = [];
+    foreach (WS_INDEX_SCAN_DIRS as $sub) {
+        $base = WS_MEETOO_ROOT . '/' . $sub;
+        if (!is_dir($base)) continue;
+        $isOrgDir = ($sub === 'organizations');
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            if ($file->getFilename() !== 'index.json') continue;
+            $j = json_decode((string)file_get_contents($file->getPathname()), true);
+            if (!is_array($j)) continue;
+            $e = $j['mainEntity'] ?? $j;
+            // Regola d'inclusione: tutte le organizations, i places solo se marcati.
+            if (!$isOrgDir && empty($e['meetoo:isGroup'])) continue;
+            $id = $e['@id'] ?? '';
+            if ($id === '') continue;
+            $type = $e['@type'] ?? ($isOrgDir ? 'Organization' : 'LocalBusiness');
+            $out[] = [
+                '@id'   => $id,
+                'name'  => $e['name'] ?? basename($id),
+                '@type' => is_array($type) ? ($type[0] ?? 'Organization') : $type,
+                'kind'  => $isOrgDir ? 'org' : 'business',
+                'key'   => basename($id),
+                'url'   => is_string($e['url'] ?? null) ? $e['url'] : '',
+                'map'   => ws_gruppi_map_url($e),
+                'description' => is_string($e['description'] ?? null) ? $e['description'] : '',
+            ];
+        }
+    }
+    usort($out, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+    return $out;
+}
+
+// Scrive gruppi.json (crea la cartella se serve). Ritorna bool.
+function ws_gruppi_save($list) {
+    $dir = dirname(ws_gruppi_path());
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    return @file_put_contents(
+        ws_gruppi_path(),
+        json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    ) !== false;
+}
+
 // Ricostruisce l'indice da zero scandendo i JSON. Ritorna [indice, conflitti].
 // Un conflitto = stesso place_id su @id diversi (segnala possibili duplicati).
 function ws_index_rebuild() {
