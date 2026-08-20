@@ -20,7 +20,12 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
-| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event}.html` + **`header.js`** | `ws-custom/themes/meetoo/` |
+| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection}.html` + **`header.js`** | `ws-custom/themes/meetoo/` |
+
+**BookCrossing / collezioni di luoghi**: `placecollection.html?id=places/{slug}` mostra una
+collezione di places (`@type` con `meetoo:PlaceCollection`, membri in `containsPlace`); contenuto
+di esempio in `ws-custom/contents/…/places/bookcrossing/index.json` (deploy coi contenuti).
+Linkata dalla home tra le "Iniziative letterarie".
 
 **Header Meetoo condiviso** (`header.js`, incluso da tutte le pagine): 2 righe (logo + hamburger +
 Impostazioni + login; breadcrumb), modale Impostazioni (tema + preferenze utente), menu hamburger.
