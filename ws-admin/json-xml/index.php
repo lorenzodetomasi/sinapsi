@@ -48,17 +48,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <meta charset="UTF-8">
     <title>WS CMS - Convertitore strutturale e Validatore Server-Side</title>
     <style>
-        :root { 
-            --bg: #1e1e2e; 
-            --surface: #313244; 
-            --text: #cdd6f4; 
-            --accent: #89b4fa;
-            --danger: #f38ba8;
-            --warning: #f9e2af;
-            --success: #a6e3a1;
-            --editor-bg: #11111b;
-            --gutter-bg: #181825;
-            --gutter-text: #6c7086;
+        :root {
+            color-scheme: light dark;
+            --bg: light-dark(#f6f7f9, #1e1e2e);
+            --surface: light-dark(#ffffff, #313244);
+            --surface-2: light-dark(#eef0f3, #181825);
+            --text: light-dark(#1d1b20, #cdd6f4);
+            --hint: light-dark(#5f5c66, #a6adc8);
+            --line: light-dark(#e0e0e6, #45475a);
+            --accent: light-dark(#2e3192, #89b4fa);
+            --on-accent: light-dark(#ffffff, #11111b);
+            --danger: light-dark(#c1272d, #f38ba8);
+            --warning: light-dark(#8a6100, #f9e2af);
+            --success: light-dark(#146c2e, #a6e3a1);
+            --editor-bg: light-dark(#f4f5f8, #11111b);
+            --gutter-bg: light-dark(#e8eaf0, #181825);
+            --gutter-text: light-dark(#8a8a99, #6c7086);
         }
         
         body { 
@@ -77,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             content: "Rilascia il file qui per importarlo";
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(30, 30, 46, 0.95);
+            background: light-dark(rgba(246, 247, 249, 0.96), rgba(30, 30, 46, 0.95));
             color: var(--accent);
             display: flex;
             align-items: center;
@@ -89,16 +94,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             pointer-events: none;
         }
         
-        header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px; 
+        .app-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 12px;
         }
-        
-        button { 
-            background: var(--accent); 
-            color: #111; 
+        .app-topbar h2 { margin: 0; font-size: 1.25rem; }
+
+        button {
+            background: var(--accent);
+            color: var(--on-accent);
             border: none; 
             padding: 10px 16px; 
             border-radius: 6px; 
@@ -127,20 +134,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
         
         .pane-header { 
-            background: #181825; 
+            background: var(--surface-2);
             padding: 10px; 
             font-weight: bold; 
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 1px solid #45475a; 
+            border-bottom: 1px solid var(--line); 
             position: relative;
         }
         
         select {
             background: var(--surface);
             color: var(--text);
-            border: 1px solid #45475a;
+            border: 1px solid var(--line);
             padding: 5px 10px;
             border-radius: 4px;
             font-weight: bold;
@@ -198,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
 
         .debug-panel {
-            background: rgba(243, 139, 168, 0.1);
+            background: color-mix(in srgb, var(--danger) 12%, transparent);
             border-top: 1px solid var(--danger);
             color: var(--danger);
             padding: 15px;
@@ -225,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             gap: 10px;
             padding: 10px;
             background: #181825;
-            border-top: 1px solid #45475a;
+            border-top: 1px solid var(--line);
             justify-content: center;
         }
         
@@ -235,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 </head>
 <body>
 
-    <header>
+    <header class="app-topbar">
         <h2>WS CMS - Parser & Validatore</h2>
         <button onclick="document.getElementById('file-input').click()">
             <span class="material-symbols-outlined">upload_file</span> Carica File

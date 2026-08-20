@@ -12,45 +12,71 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars($mapsJsKey, ENT_QUOTES); ?>&libraries=places"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        .material-symbols-outlined { font-size: 18px; vertical-align: -4px; }
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f9; }
-        .container { max-width: 1200px; margin: auto; }
-        .header { margin-bottom: 20px; }
-        
-        /* Gestione Visibilità Stati */
-        #banner-unverified, #google-user, #whitelist-area { display: none; }
-        
-        /* Stili Elementi */
-        #banner-unverified { background: #ffeb3b; padding: 15px; border-left: 5px solid #ff9800; font-weight: bold; margin-bottom: 20px; }
-        #google-user { background: #e3f2fd; padding: 15px; border-left: 5px solid #2196f3; margin-bottom: 20px; }
-        .search-box { width: 100%; padding: 15px; font-size: 18px; margin-bottom: 20px; box-sizing: border-box; }
-        .grid { display: flex; gap: 20px; }
-        .col { flex: 1; display: flex; flex-direction: column; }
-        textarea { width: 100%; height: 500px; padding: 10px; font-family: monospace; background: #2d2d2d; color: #fff; border: none; border-radius: 5px; box-sizing: border-box; resize: none; }
-        label { font-weight: bold; margin-bottom: 5px; }
-        #error-msg { color: red; font-weight: bold; margin-bottom: 15px; }
-        .save-bar { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
-        .save-bar button {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 8px 14px; font-size: 14px; font-weight: bold; cursor: pointer;
-            border: none; border-radius: 5px; background: #e0e0e0; color: #222;
+        :root {
+            color-scheme: light dark;
+            --bg: light-dark(#f6f7f9, #141218);
+            --surface: light-dark(#ffffff, #1e1f20);
+            --surface-2: light-dark(#eef0f3, #2a282f);
+            --text: light-dark(#1d1b20, #e6e0e9);
+            --hint: light-dark(#5f5c66, #b9b3c4);
+            --line: light-dark(#e0e0e6, #48454e);
+            --accent: light-dark(#2e3192, #adc6ff);
+            --on-accent: light-dark(#ffffff, #0b1020);
+            --red: light-dark(#c1272d, #ff8a80);
+            --warn-bg: light-dark(#fff4e5, #3a2f1c);
+            --warn-fg: light-dark(#8a5300, #ffcf8a);
+            --editor-bg: light-dark(#f4f5f8, #11111b);
+            --radius: 14px;
         }
-        .save-bar button:hover { background: #d5d5d5; }
-        #btn-save { background: #2196f3; color: #fff; }
-        #btn-save:hover { background: #1976d2; }
-        #save-msg { font-weight: bold; }
-        #diff-panel { display:none; margin-top:20px; padding:16px; background:#fff; border:1px solid #ddd; border-radius:6px; }
-        #diff-content { max-height:340px; overflow:auto; font-family:monospace; font-size:13px; border:1px solid #eee; padding:10px; border-radius:4px; background:#fafafa; }
-        .diff-row { display:block; padding:2px 0; white-space:pre-wrap; word-break:break-word; cursor:pointer; }
-        .diff-row input { vertical-align:middle; margin-right:4px; }
-        .diff-add { color:#2e7d32; }
-        .diff-del { color:#c62828; }
-        .diff-chg { color:#e65100; }
-        .diff-btns { margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; }
-        .diff-btns button { padding:8px 14px; font-size:14px; font-weight:bold; cursor:pointer; border:none; border-radius:5px; background:#e0e0e0; color:#222; }
-        #diff-overwrite { background:#ef6c00; color:#fff; }
-        #diff-merge { background:#2196f3; color:#fff; }
+        * { box-sizing: border-box; }
+        .material-symbols-outlined { font-size: 18px; vertical-align: -4px; }
+        body { font-family: 'Roboto', system-ui, sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+        .container { max-width: 1100px; margin: auto; padding: 20px 20px 60px; }
+        .header { margin-bottom: 20px; }
+        .header h2 { font-family: 'Roboto Slab', Georgia, serif; color: var(--red); margin: 0 0 12px; }
+
+        #banner-unverified, #google-user, #whitelist-area { display: none; }
+        #banner-unverified { background: var(--warn-bg); color: var(--warn-fg); padding: 15px; border-left: 5px solid var(--warn-fg); border-radius: var(--radius); font-weight: 600; margin-bottom: 20px; }
+        #google-user { background: var(--surface); border: 1px solid var(--line); padding: 15px; border-radius: var(--radius); margin-bottom: 20px; }
+        #google-user code { background: var(--surface-2) !important; color: var(--red) !important; }
+
+        .search-box { width: 100%; padding: 14px 16px; font-size: 1rem; margin-bottom: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+        .search-box:focus { outline: none; border-color: var(--accent); }
+        #debug-msg, #save-msg { color: var(--hint); }
+
+        .grid { display: flex; gap: 20px; flex-wrap: wrap; }
+        .col { flex: 1 1 340px; display: flex; flex-direction: column; min-width: 0; }
+        label { font-weight: 600; margin-bottom: 6px; color: var(--hint); }
+        textarea { width: 100%; height: 480px; padding: 12px; font-family: 'Source Code Pro', monospace; font-size: 13px; line-height: 1.5; background: var(--editor-bg); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); resize: vertical; }
+        textarea:focus { outline: none; border-color: var(--accent); }
+        input[type=text], select { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; }
+        input[type=text]:focus, select:focus { outline: none; border-color: var(--accent); }
+
+        #error-msg { color: var(--red); font-weight: 700; margin-bottom: 15px; }
+        #cap-fix { background: var(--warn-bg) !important; color: var(--warn-fg); border-left: 5px solid var(--warn-fg) !important; border-radius: var(--radius); }
+
+        .save-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        button { font-family: inherit; }
+        .save-bar button, .diff-btns button, #admin-tools button, #editors-apply {
+            display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 14px; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text);
+        }
+        .save-bar button:hover, .diff-btns button:hover, #admin-tools button:hover, #editors-apply:hover { border-color: var(--accent); }
+        #btn-save, #diff-merge { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+        #diff-overwrite { background: var(--red); color: #fff; border-color: transparent; }
+        #save-msg { font-weight: 600; }
+
+        #diff-panel { display: none; margin-top: 20px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+        #diff-panel h3 { margin: 0 0 4px; } #diff-panel p, #diff-panel a { color: var(--hint); }
+        #diff-content { max-height: 340px; overflow: auto; font-family: 'Source Code Pro', monospace; font-size: 13px; border: 1px solid var(--line); padding: 10px; border-radius: 8px; background: var(--surface-2); }
+        .diff-row { display: block; padding: 2px 0; white-space: pre-wrap; word-break: break-word; cursor: pointer; }
+        .diff-row input { vertical-align: middle; margin-right: 4px; }
+        .diff-add { color: light-dark(#2e7d32, #a6e3a1); }
+        .diff-del { color: var(--red); }
+        .diff-chg { color: light-dark(#e65100, #ffcf8a); }
+        .diff-btns { margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
     </style>
 </head>
 <body>
