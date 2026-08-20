@@ -111,8 +111,24 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             <button type="button" id="rebuild-index" style="padding:6px 10px; cursor:pointer;">🔄 Rigenera indice</button>
             <span id="rebuild-msg" style="margin-left:8px; font-size:13px;"></span>
         </div>
-        <input type="text" id="place-search" class="search-box" placeholder="Cerca il luogo (nuovo o esistente) — stesso Google Place ID = apre quello già salvato…">
-        <div id="debug-msg" style="font-size:13px;color:#555;margin:-10px 0 16px;"></div>
+        <div id="saved-area">
+            <label style="display:block; margin-bottom:6px;">Luoghi già salvati
+                <span style="font-weight:400; color:var(--hint);">— ricerca locale, nessun credito Google</span>
+            </label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px;">
+                <input type="text" id="saved-search" list="places-datalist" placeholder="Cerca un luogo salvato per nome…" style="flex:1 1 320px;">
+                <datalist id="places-datalist"></datalist>
+                <button type="button" id="saved-open"><span class="material-symbols-outlined">folder_open</span> Apri salvato</button>
+                <button type="button" id="btn-refresh-google" style="display:none;"><span class="material-symbols-outlined">refresh</span> Aggiorna da Google Maps</button>
+            </div>
+            <div id="saved-msg" style="font-size:13px; color:var(--hint);"></div>
+        </div>
+
+        <label style="display:block; margin:18px 0 6px;">Nuovo luogo da Google Maps
+            <span style="font-weight:400; color:var(--hint);">— usa crediti API</span>
+        </label>
+        <input type="text" id="place-search" class="search-box" placeholder="Cerca un NUOVO luogo su Google Maps…">
+        <div id="debug-msg" style="font-size:13px;color:var(--hint);margin:-10px 0 16px;"></div>
         <div id="cap-fix" style="display:none; margin:0 0 16px; padding:12px; background:#fff3e0; border-left:5px solid #ff9800;">
             ⚠️ CAP non rilevato da Google (es. punto di confine). Impostalo per un @id valido:
             <input type="text" id="cap-input" maxlength="5" inputmode="numeric" placeholder="es. 00122"
@@ -207,8 +223,12 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         // [3] user, client, admin, super-admin: Sblocca Whitelist Area
         if (['user', 'client', 'admin', 'super-admin'].includes(role)) {
             document.getElementById('whitelist-area').style.display = 'block';
-            initAutocomplete(); // Inizializza Google Maps Autocomplete
+            // Prima le funzioni SENZA crediti Google (devono funzionare anche se la
+            // chiave Maps manca): elenco salvati + contributor. L'autocomplete Google
+            // è isolato in try/catch così un errore Maps non blocca la ricerca locale.
+            loadSavedList();     // Elenco luoghi già salvati (ricerca locale, no crediti Google)
             loadUsersDatalist(); // Popola la ricerca contributor per nome/pseudonimo
+            try { initAutocomplete(); } catch (e) { console.warn('Google Maps non disponibile:', e); }
             if (role === 'super-admin') document.getElementById('admin-tools').style.display = 'block';
         } else {
             // Se è solo 'verified-visitor', mostriamo un messaggio di divieto
@@ -218,6 +238,10 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
     // 3. Autocomplete e Chiamata API Search
     function initAutocomplete() {
+        if (!(window.google && google.maps && google.maps.places)) {
+            console.warn('Google Maps JS non caricato: ricerca NUOVI luoghi disabilitata (la ricerca locale resta attiva).');
+            return;
+        }
         const input = document.getElementById('place-search');
         const autocomplete = new google.maps.places.Autocomplete(input);
 
@@ -237,13 +261,24 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 })
             })
             .then(res => res.json())
-            .then(data => {
+            .then(data => applySearchResult(data));
+        });
+    }
+
+    // Applica una risposta di 'search' (Google) all'editor. Con opts.mergeInto il
+    // JSON fresco di Google viene FUSO sopra il salvato passato (i campi custom —
+    // meetoo:isGroup, creator, contributor… — non presenti in Google restano); così
+    // "Aggiorna da Google Maps" non azzera il lavoro fatto a mano, e il diff al
+    // salvataggio mostra solo le vere differenze.
+    function applySearchResult(data, opts) {
+                opts = opts || {};
                 if (data.error) {
                     document.getElementById('error-msg').innerText = data.error;
                     return;
                 }
+                const finalObj = opts.mergeInto ? deepMerge(opts.mergeInto, data.ws_cms) : data.ws_cms;
                 document.getElementById('json-google').value = JSON.stringify(data.raw_google, null, 4);
-                document.getElementById('json-wscms').value = JSON.stringify(data.ws_cms, null, 4);
+                document.getElementById('json-wscms').value = JSON.stringify(finalObj, null, 4);
                 lastMedia = data.media || {};
                 document.getElementById('diff-panel').style.display = 'none';
                 if (data.debug) {
@@ -310,8 +345,6 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 }
                 box.style.color = color;
                 box.innerText = msg;
-            });
-        });
     }
 
     // 4. Salvataggio: locale (download) e sul web (scrive <@id>/index.json).
@@ -517,6 +550,116 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         else delete ent['contributor'];
         ta.value = JSON.stringify(obj, null, 4);
         setSaveMsg('Contributor impostati: ' + (list.join(', ') || '(nessuno)') + '. Salva per applicare.', 'ok');
+    });
+
+    // 7. Luoghi già salvati: ricerca LOCALE (nessun credito Google) + apertura +
+    //    aggiornamento on-demand da Google Maps sul google_place_id salvato.
+    let savedItems = [];      // {@id, name, @type} da action=editable (solo places/)
+    let loadedId = '';        // @id del luogo attualmente caricato dal salvato
+    let loadedPlaceId = '';   // google_place_id salvato (per "Aggiorna da Google Maps")
+    let loadedObj = null;     // JSON salvato caricato (base del merge in aggiornamento)
+
+    // Merge profondo: i valori di $over vincono; le chiavi solo in $base restano; le
+    // liste vengono sostituite intere. Speculare a ws_deep_merge lato server.
+    function deepMerge(base, over) {
+        if (over === null || typeof over !== 'object' || Array.isArray(over)) return over;
+        if (base === null || typeof base !== 'object' || Array.isArray(base)) return over;
+        const out = Object.assign({}, base);
+        Object.keys(over).forEach(function (k) { out[k] = (k in base) ? deepMerge(base[k], over[k]) : over[k]; });
+        return out;
+    }
+    function savedMsg(text, kind) {
+        const el = document.getElementById('saved-msg');
+        el.innerText = text;
+        el.style.color = kind === 'ok' ? '#2e7d32' : (kind === 'err' ? '#c62828' : 'var(--hint)');
+    }
+
+    // Elenco dei luoghi editabili (action=editable): nessun credito Google. Tiene
+    // solo places/ (il tool salva sotto places/); popola la datalist per nome.
+    function loadSavedList() {
+        fetch('../google_place-json.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'editable', credential: userJwtToken })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            const dl = document.getElementById('places-datalist');
+            if (d.error) { savedMsg(d.error, 'err'); return; }
+            savedItems = (Array.isArray(d.items) ? d.items : []).filter(function (i) { return /^places\//.test(i['@id'] || ''); });
+            if (dl) {
+                dl.innerHTML = '';
+                savedItems.forEach(function (i) {
+                    const opt = document.createElement('option');
+                    opt.value = (i.name || i['@id']) + ' — ' + i['@id']; // @id nel value = risoluzione univoca
+                    dl.appendChild(opt);
+                });
+            }
+            savedMsg(savedItems.length + ' luoghi salvati. Cerca per nome e «Apri salvato» (nessun credito Google).');
+        })
+        .catch(function () { savedMsg('Impossibile caricare l\'elenco dei luoghi salvati.', 'err'); });
+    }
+    // Dal valore scelto ("Nome — places/…") ricava l'@id; fallback: nome esatto.
+    function resolveSavedId(value) {
+        value = (value || '').trim();
+        if (!value) return '';
+        const m = value.match(/—\s*(places\/[^\s]+)\s*$/);
+        if (m) return m[1];
+        const byName = savedItems.find(function (i) { return (i.name || '').toLowerCase() === value.toLowerCase(); });
+        return byName ? byName['@id'] : '';
+    }
+    // Apre un luogo salvato (action=load): riempie l'editor SENZA toccare Google.
+    function openSaved() {
+        const id = resolveSavedId(document.getElementById('saved-search').value);
+        if (!id) { savedMsg('Scegli un luogo dall\'elenco (o scrivi il nome esatto).', 'err'); return; }
+        savedMsg('Apertura…');
+        fetch('../google_place-json.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'load', credential: userJwtToken, id: id })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.error) { savedMsg(d.error, 'err'); return; }
+            loadedObj = d.json;
+            loadedId = d.id || id;
+            const ent = (d.json && (d.json.mainEntity || d.json)) || {};
+            loadedPlaceId = ent['meetoo:google_place_id'] || ent['meetoo:googlePlaceId'] || '';
+            document.getElementById('json-wscms').value = JSON.stringify(d.json, null, 4);
+            document.getElementById('json-google').value = '';
+            lastMedia = {};
+            document.getElementById('diff-panel').style.display = 'none';
+            document.getElementById('error-msg').innerText = '';
+            document.getElementById('btn-refresh-google').style.display = loadedPlaceId ? 'inline-flex' : 'none';
+            savedMsg('✓ Caricato: ' + loadedId + (loadedPlaceId
+                ? '. Modifica e Salva, oppure «Aggiorna da Google Maps».'
+                : ' (nessun Google Place ID salvato: per aggiornarlo cercalo su Google per nome).'), 'ok');
+        })
+        .catch(function () { savedMsg('Errore di rete nell\'apertura.', 'err'); });
+    }
+    // Aggiorna il luogo caricato con i dati freschi di Google (Details sul place_id
+    // salvato): fonde Google SOPRA il salvato (campi custom preservati); poi Salva
+    // mostra il diff col salvato per integrare selettivamente.
+    function refreshFromGoogle() {
+        if (!loadedPlaceId) { savedMsg('Nessun Google Place ID salvato per questo luogo.', 'err'); return; }
+        savedMsg('Aggiornamento da Google Maps…');
+        const base = currentJsonLd().obj || loadedObj;
+        fetch('../google_place-json.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'search', credential: userJwtToken, place_id: loadedPlaceId })
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+            if (d.error) { savedMsg(d.error, 'err'); return; }
+            applySearchResult(d, { mergeInto: base });
+            const n = (d.updates && d.updates.length) ? d.updates.length : 0;
+            savedMsg('✓ Dati Google aggiornati nell\'editor' + (n ? ' (' + n + ' differenze)' : '')
+                + '. Salva per rivedere il diff col salvato e integrare selettivamente.', 'ok');
+        })
+        .catch(function () { savedMsg('Errore di rete nell\'aggiornamento.', 'err'); });
+    }
+    document.getElementById('saved-open').addEventListener('click', openSaved);
+    document.getElementById('btn-refresh-google').addEventListener('click', refreshFromGoogle);
+    document.getElementById('saved-search').addEventListener('change', function () {
+        if (resolveSavedId(this.value)) openSaved(); // scelta dalla datalist → apri
     });
 </script>
 

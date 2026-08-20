@@ -767,32 +767,52 @@ if ($action === 'search') {
     }
 
     $searchQuery = $data['query'] ?? '';
-    if (empty($searchQuery)) {
-         echo json_encode(["error" => "Query di ricerca vuota."]);
-         exit;
-    }
+    // "Aggiorna da Google Maps" su un luogo GIÀ salvato passa il google_place_id:
+    // in quel caso saltiamo la Text Search (una chiamata in meno) e andiamo dritti
+    // ai Details sul place_id salvato → nessun rischio di agganciare un luogo diverso.
+    $forcePlaceId = trim((string)($data['place_id'] ?? ''));
 
-    // --- QUI INIZIA LA LOGICA DELL'API DI GOOGLE MAPS VISTA NEL PASSAGGIO PRECEDENTE ---
-    $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=" . urlencode($searchQuery) . "&key=" . $googleApiKey;
-    $rawData = googleGet($url);
+    if ($forcePlaceId !== '') {
+        $detailsFields = "name,geometry,type,address_component,website,rating,user_ratings_total,editorial_summary,business_status,price_level,url";
+        $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . urlencode($forcePlaceId) . "&fields=" . $detailsFields . "&key=" . $googleApiKey;
+        $detailsData = googleGet($detailsUrl);
+        if (!is_array($detailsData) || ($detailsData['status'] ?? '') !== 'OK' || empty($detailsData['result'])) {
+            $gStatus = $detailsData['status'] ?? 'NO_RESPONSE';
+            $gMsg = $detailsData['error_message'] ?? '';
+            echo json_encode(["error" => "Places API (details): $gStatus" . ($gMsg ? " — $gMsg" : "")]);
+            exit;
+        }
+        $place = $detailsData['result'];
+        $place['place_id'] = $forcePlaceId;   // il Details con fieldmask ristretto può ometterlo
+        if (!isset($place['types'])) $place['types'] = [];
+    } else {
+        if (empty($searchQuery)) {
+             echo json_encode(["error" => "Query di ricerca vuota."]);
+             exit;
+        }
 
-    if (!is_array($rawData) || ($rawData['status'] ?? '') !== 'OK' || empty($rawData['results'])) {
-        // Surfacciamo lo status reale di Google (REQUEST_DENIED, OVER_QUERY_LIMIT…)
-        // e l'eventuale error_message (che indica es. l'IP da autorizzare). Mai la key.
-        $gStatus = $rawData['status'] ?? 'NO_RESPONSE';
-        $gMsg = $rawData['error_message'] ?? '';
-        echo json_encode(["error" => "Places API (textsearch): $gStatus" . ($gMsg ? " — $gMsg" : "")]);
-        exit;
-    }
+        // --- LOGICA DELL'API DI GOOGLE MAPS (Text Search per NUOVI luoghi) ---
+        $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=" . urlencode($searchQuery) . "&key=" . $googleApiKey;
+        $rawData = googleGet($url);
 
-    $place = $rawData['results'][0];
+        if (!is_array($rawData) || ($rawData['status'] ?? '') !== 'OK' || empty($rawData['results'])) {
+            // Surfacciamo lo status reale di Google (REQUEST_DENIED, OVER_QUERY_LIMIT…)
+            // e l'eventuale error_message (che indica es. l'IP da autorizzare). Mai la key.
+            $gStatus = $rawData['status'] ?? 'NO_RESPONSE';
+            $gMsg = $rawData['error_message'] ?? '';
+            echo json_encode(["error" => "Places API (textsearch): $gStatus" . ($gMsg ? " — $gMsg" : "")]);
+            exit;
+        }
 
-    // Chiamata Place Details (arricchimento, non bloccante)
-    $detailsFields = "address_component,website,rating,user_ratings_total,editorial_summary,business_status,price_level,url";
-    $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=" . $detailsFields . "&key=" . $googleApiKey;
-    $detailsData = googleGet($detailsUrl);
-    if (isset($detailsData['result'])) {
-        $place = array_merge($place, $detailsData['result']);
+        $place = $rawData['results'][0];
+
+        // Chiamata Place Details (arricchimento, non bloccante)
+        $detailsFields = "address_component,website,rating,user_ratings_total,editorial_summary,business_status,price_level,url";
+        $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=" . $detailsFields . "&key=" . $googleApiKey;
+        $detailsData = googleGet($detailsUrl);
+        if (isset($detailsData['result'])) {
+            $place = array_merge($place, $detailsData['result']);
+        }
     }
 
     // (Ometto la parte centrale di estrazione variabili Address per brevità, è identica alla precedente iterazione)
@@ -936,7 +956,7 @@ if ($action === 'search') {
         $wsCmsJsonLd['mainEntity']['meetoo:satelliteView'] = "media/satellite.jpg";
         $wsCmsJsonLd['mainEntity']['meetoo:satelliteCredit'] = WS_SATELLITE_CREDIT;
     }
-    if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:business_status'] = $place['business_status'];
+    if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:legalStatus'] = $place['business_status'];
     if (!empty($accessibility)) $wsCmsJsonLd['mainEntity']['meetoo:accessibilityFeature'] = $accessibility;
     if (!empty($amenities)) $wsCmsJsonLd['mainEntity']['amenityFeature'] = $amenities;
 

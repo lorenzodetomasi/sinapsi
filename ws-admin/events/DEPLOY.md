@@ -27,6 +27,15 @@ collezione di places (`@type` con `meetoo:PlaceCollection`, membri in `containsP
 di esempio in `ws-custom/contents/…/places/bookcrossing/index.json` (deploy coi contenuti).
 Linkata dalla home tra le "Iniziative letterarie".
 
+**places/edit — luoghi salvati senza crediti Google**: la pagina ora ha una **ricerca
+locale** dei luoghi già salvati (`action=editable` → datalist; `action=load` apre `{@id}/index.json`)
+che NON usa la Google Maps API. Un bottone **«Aggiorna da Google Maps»** rinfresca il luogo caricato
+via **`action=search` con `place_id`** (Details diretto sul `google_place_id` salvato — un nuovo ramo
+in `google_place-json.php`): i dati Google vengono **fusi** sopra il salvato (campi custom come
+`meetoo:isGroup`/creator preservati) e al Salva compare il diff esistente. L'Autocomplete Google
+resta solo per i luoghi NUOVI ed è isolato in try/catch (se la chiave Maps manca, la ricerca locale
+funziona lo stesso). File: `ws-admin/places/edit/index.php`, `ws-admin/places/google_place-json.php`.
+
 **Gruppi (home)**: la sezione Gruppi legge `_index/gruppi.json`, generato da
 `ws-admin/places/rebuild-index.php` (funzioni `ws_gruppi_*` in `index-lib.php`). Include **tutte le
 `organizations/`** + i **`places/` LocalBusiness marcati `"meetoo:isGroup": true`** (esperienze
