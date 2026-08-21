@@ -22,6 +22,20 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
 | **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** | `ws-custom/themes/meetoo/` |
 
+**Card condivise — `cards.js` (nuovo file da caricare)**: i template delle card stanno in un posto
+solo, come gli stili. `Meetoo.eventCard(ev,{base,organizer})`, `Meetoo.tileCard({href,icon,title,meta,
+external,accent})`, `Meetoo.placeCard(place)` + `Meetoo.cardUtils` (esc/icon/metaItem/statusBadge/
+placeLabel). Va incluso **prima** dello script di pagina; `header.js` ora **fonde** `window.Meetoo`
+invece di riassegnarlo, così l'ordine degli script non conta. Le card evento mostrano
+**"{place.name}, {place.address.addressLocality}"** (il CAP non si mostra più: resta nell'indice).
+
+**`_index/events.json`: il luogo è un oggetto** — la voce ha `place: {id, name, address:
+{addressLocality}}` **al posto di** `location` (stringa). Poiché nell'evento la location è solo un
+riferimento `{@id,name}`, `event_index_place_ref()` risolve il file del luogo per prendere la
+località e il **nome canonico** (una lettura per luogo, memorizzata); se il riferimento è rotto
+ripiega sui dati inline, e se non c'è luogo il campo è `null`. → **Le pagine tema e l'indice vanno
+deployati INSIEME**: le pagine vecchie leggono `location` e resterebbero senza luogo.
+
 **Stili condivisi (nuovi file — vanno caricati, altrimenti le pagine restano senza CSS)**:
 - **`meetoo-tokens.css`** = SOLO i design token (palette light-dark, tipografia, misure).
 - **`meetoo.css`** = importa i token + base, componenti comuni (`.wrap .sec-head .card* .badge

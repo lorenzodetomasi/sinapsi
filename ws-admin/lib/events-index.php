@@ -12,9 +12,48 @@
 // ri-splittano comunque per data ciò che caricano, quindi il drift al confine è solo cosmetico.
 // Voce compatta per evento; ordinamento per startDate. Best-effort: gli errori NON bloccano il salvataggio.
 
+// Luogo dell'evento per l'indice: {id, name, address:{addressLocality}}.
+// Nell'evento la location è solo un RIFERIMENTO ({@id, name}), quindi la località
+// va letta nel file del luogo; da lì prendiamo anche il nome CANONICO, così un
+// luogo si chiama allo stesso modo ovunque e rinominarlo si propaga al rebuild.
+// Se il riferimento è rotto (o manca $base) si ripiega su ciò che ha l'evento.
+if (!function_exists('event_index_place_ref')) {
+    function event_index_place_ref($location, string $base = ''): ?array {
+        if (is_string($location)) $location = ['@id' => $location];
+        if (!is_array($location)) return null;
+        // Riferimento singolo o lista: prendiamo il primo utile.
+        if (!isset($location['@id']) && !isset($location['name']) && isset($location[0])) $location = $location[0];
+        if (!is_array($location)) return null;
+
+        $id = (string)($location['@id'] ?? '');
+        $out = ['id' => $id, 'name' => (string)($location['name'] ?? '')];
+        $locality = (string)($location['address']['addressLocality'] ?? '');
+
+        // Risoluzione del luogo (una lettura per file, memorizzata: gli eventi
+        // condividono gli stessi luoghi e il rebuild ne indicizza molti).
+        static $cache = [];
+        if ($base !== '' && $id !== '' && preg_match('#^[A-Za-z0-9._/-]+$#', $id) && strpos($id, '..') === false) {
+            if (!array_key_exists($id, $cache)) {
+                $f = rtrim($base, '/') . '/' . $id . '/index.json';
+                $j = is_file($f) ? json_decode((string)file_get_contents($f), true) : null;
+                $cache[$id] = is_array($j) ? ($j['mainEntity'] ?? $j) : null;
+            }
+            $p = $cache[$id];
+            if (is_array($p)) {
+                if (($p['name'] ?? '') !== '') $out['name'] = (string)$p['name'];   // nome canonico
+                if ($locality === '') $locality = (string)($p['address']['addressLocality'] ?? '');
+            }
+        }
+        if ($locality !== '') $out['address'] = ['addressLocality' => $locality];
+        return ($out['name'] === '' && $out['id'] === '') ? null : $out;
+    }
+}
+
 // Voce compatta dell'indice a partire dal documento evento e dal percorso (schema c).
+// $base (.../contents/meetoo/it_IT) serve a risolvere il luogo: se omesso, la voce
+// place riporta solo ciò che è scritto nell'evento.
 if (!function_exists('event_index_item')) {
-    function event_index_item(array $doc, string $relPath): array {
+    function event_index_item(array $doc, string $relPath, string $base = ''): array {
         // cap dal nome cartella: <AAAAMMGGThhmm>-<cap>[-slug]
         $cap = '';
         if (preg_match('/^\d{8}T\d{4}-([A-Za-z0-9]+)/', basename($relPath), $m)) $cap = $m[1];
@@ -56,7 +95,9 @@ if (!function_exists('event_index_item')) {
             'endDate'      => (string)($doc['endDate'] ?? ''),
             'organizer'    => $orgName !== '' ? $orgName : $orgId,
             'organizerKey' => $orgId !== '' ? event_index_key($orgId) : '',
-            'location'     => (string)($doc['location']['name'] ?? ''),
+            // Luogo: {id, name, address:{addressLocality}} — le card mostrano
+            // "{place.name}, {place.address.addressLocality}".
+            'place'        => event_index_place_ref($doc['location'] ?? null, $base),
             'cap'          => $cap,
             'status'       => (string)($doc['eventStatus'] ?? ''),
             'image'        => $img,
@@ -208,7 +249,7 @@ if (!function_exists('event_index_update')) {
     // $orgIdsOverride: se non-null, usa questi @id di organizzatore invece di estrarli dal
     // doc (serve all'ereditarietà: un'occorrenza senza organizer proprio eredita quelli della serie).
     function event_index_update(string $base, string $relPath, array $doc, ?array $orgIdsOverride = null): array {
-        $item = event_index_item($doc, $relPath);
+        $item = event_index_item($doc, $relPath, $base);
         $idxDir = rtrim($base, '/') . '/events/_index';
         // Ogni indice è splittato prossimi/archivio da event_index_place().
         $res = ['global' => event_index_place("$idxDir/events.json", $item), 'organizers' => [], 'collection' => null];
