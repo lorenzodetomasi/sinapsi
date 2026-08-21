@@ -7,6 +7,11 @@
 //
 // action=auth → solo login/verifica ruolo (usata dal frontend). Altrimenti salva.
 
+// Questo endpoint risponde SOLO JSON: un warning o un errore PHP stampato a video
+// finirebbe in testa al corpo e il client vedrebbe "Unexpected token '<'" invece
+// dell'errore vero. Gli errori si riportano dentro il JSON, non a schermo.
+ini_set('display_errors', '0');
+
 require __DIR__ . '/../json-xml/functions.php';
 require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/events-index.php';
@@ -186,7 +191,16 @@ if (!$jsonOk || !$xmlOk) {
 // rendevano necessario il rebuild pieno. Il rebuild resta a disposizione in
 // «Gestione eventi» per rimettere tutto in riga dopo modifiche fuori dall'editor.
 // Best-effort: un errore d'indice NON invalida il salvataggio già andato a buon fine.
-$index = event_index_sync($base, $relPath, $doc['mainEntity'] ?? $doc);
+// L'evento è GIÀ scritto: qualunque problema qui non deve far credere che il
+// salvataggio sia fallito, e non deve rompere la risposta JSON. Se la libreria sul
+// server è più vecchia dell'endpoint (deploy parziale) si ripiega sul rebuild.
+try {
+    $index = function_exists('event_index_sync')
+        ? event_index_sync($base, $relPath, $doc['mainEntity'] ?? $doc)
+        : ['mode' => 'rebuild (lib non aggiornata)'] + event_index_rebuild($base);
+} catch (\Throwable $e) {
+    $index = ['error' => 'evento salvato, ma indice non aggiornato: ' . $e->getMessage()];
+}
 
 echo json_encode([
     'success'       => true,

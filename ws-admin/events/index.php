@@ -13,6 +13,10 @@
  *   action=check-refs  → riferimenti rotti, per segnalarli sulle card
  */
 
+// La pagina fa anche da endpoint JSON: gli errori PHP non devono finire nel corpo
+// della risposta (il client vedrebbe "Unexpected token" invece del vero errore).
+ini_set('display_errors', '0');
+
 require_once __DIR__ . '/../lib/ws-auth.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -53,7 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // toglierlo di mezzo). Eliminare PER SEMPRE: solo admin/super-admin.
     if (in_array($action, ['trash', 'trash-list', 'trash-restore', 'trash-delete', 'trash-empty'], true)) {
         if (!$canEdit) { http_response_code(403); echo json_encode(['error' => 'Permessi insufficienti.']); exit; }
-        require_once __DIR__ . '/../lib/events-trash.php';
+        $lib = __DIR__ . '/../lib/events-trash.php';
+        if (!is_file($lib)) { http_response_code(500); echo json_encode(['error' => 'Cestino non disponibile: manca lib/events-trash.php sul server (deploy incompleto).']); exit; }
+        require_once $lib;
         $isAdmin = in_array($user['role'], ['admin', 'super-admin'], true);
 
         if ($action === 'trash-list') { echo json_encode(['items' => ws_trash_load($base)]); exit; }

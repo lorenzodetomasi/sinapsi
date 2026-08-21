@@ -6,6 +6,15 @@ e le pagine tema. `ROOT` = radice `sinapsi/` sul server; `SRC` = questa working 
 > I contenuti (`ws-custom/contents/…`) NON si toccano qui: sono dati, gestiti a parte.
 > Le pagine tema (`ws-custom/themes/…`) NON sono versionate → vanno caricate a mano.
 
+## ⚠ Ordine di deploy: PRIMA le librerie, POI gli endpoint
+
+`ws-admin/lib/*.php` va caricato **prima** (o insieme) a `ws-admin/events/*.php`: un endpoint
+nuovo che chiama una funzione di una libreria vecchia muore con un fatale PHP, e il client riceve
+HTML al posto del JSON ("Unexpected token '<'"). È successo con `event_index_sync`.
+Gli endpoint ora si difendono (`display_errors` spento, fallback al rebuild, guardia sui require),
+ma la cura è caricare le librerie insieme al resto:
+`lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check,events-trash}.php`.
+
 ## 1) Build dell'editor
 
 ```bash
