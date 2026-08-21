@@ -13,26 +13,12 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Stili condivisi Meetoo: token, base e header (unica fonte di verità). -->
+    <link rel="stylesheet" href="../../../ws-custom/themes/meetoo/meetoo.css">
     <style>
-        :root {
-            color-scheme: light dark;
-            --bg: light-dark(#f6f7f9, #141218);
-            --surface: light-dark(#ffffff, #1e1f20);
-            --surface-2: light-dark(#eef0f3, #2a282f);
-            --text: light-dark(#1d1b20, #e6e0e9);
-            --hint: light-dark(#5f5c66, #b9b3c4);
-            --line: light-dark(#e0e0e6, #48454e);
-            --accent: light-dark(#2e3192, #adc6ff);
-            --on-accent: light-dark(#ffffff, #0b1020);
-            --red: light-dark(#c1272d, #ff8a80);
-            --warn-bg: light-dark(#fff4e5, #3a2f1c);
-            --warn-fg: light-dark(#8a5300, #ffcf8a);
-            --editor-bg: light-dark(#f4f5f8, #11111b);
-            --radius: 14px;
-        }
-        * { box-sizing: border-box; }
+        /* Solo ciò che è proprio di questa pagina: i token stanno in meetoo.css. */
+        :root { --red: var(--color1); }
         .material-symbols-outlined { font-size: 18px; vertical-align: -4px; }
-        body { font-family: 'Roboto', system-ui, sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text); }
         .container { max-width: 1100px; margin: auto; padding: 20px 20px 60px; }
         .header { margin-bottom: 20px; }
         .header h2 { font-family: 'Roboto Slab', Georgia, serif; color: var(--red); margin: 0 0 12px; }

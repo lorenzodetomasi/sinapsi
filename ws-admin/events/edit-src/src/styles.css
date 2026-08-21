@@ -138,7 +138,7 @@ body {
 }
 .appbar-actions {
   display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-sm);
-  width: 100%; max-width: 1000px;
+  width: 100%; max-width: 960px;  /* = --mt-w dell header condiviso */
 }
 
 /* "Salva": attivo solo a validazione perfetta */
@@ -163,15 +163,6 @@ body {
 }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 .btn-ghost .material-symbols-outlined { font-size: 1.125rem; }
-
-/* Login Google (appbar) */
-.auth-btn { display: inline-flex; align-items: center; }
-.auth-user { display: inline-flex; align-items: center; gap: var(--sp-xs); color: var(--text-dim); font-size: var(--fs-label); }
-.auth-user .material-symbols-outlined { font-size: 1.25rem; }
-.auth-email { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.auth-role { padding: 1px 7px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--border); font-size: 0.72rem; }
-.auth-user .icon-btn { border: none; background: transparent; color: var(--text-dim); cursor: pointer; padding: var(--sp-xs); border-radius: var(--r-sm); }
-.auth-user .icon-btn:hover { color: var(--accent); }
 
 /* Messaggio transitorio (esito carica/salva) */
 .flash {
@@ -275,31 +266,20 @@ body {
   color: var(--accent); opacity: .8; pointer-events: none;
 }
 
-/* "Opzioni" nell'header: solo glyph, senza cerchio/sfondo (come le icone datetime) */
-.appbar-actions .options .icon-btn {
-  width: auto; height: auto; border: none; border-radius: var(--r-sm);
-  padding: var(--sp-xs); background: transparent; color: var(--text-dim);
-}
-.appbar-actions .options .icon-btn:hover { background: transparent; color: var(--accent); }
-
-/* ---------- Barra superiore: icone + tab ---------- */
-.topbar {
-  display: flex; align-items: flex-end; gap: var(--sp-md);
-  padding: 0 var(--sp-xl);
-}
-.options-menu { left: auto; right: 0; }
-
-.tabs { display: none; }
+/* ---------- Tab Form / Validazione (in fondo alla riga 2, a destra) ----------
+   Servono quando i due pannelli non stanno affiancati: sotto la soglia del
+   layout a colonne si vede un pannello per volta e i tab lo scelgono. */
+.tabs { display: none; margin-left: auto; gap: var(--sp-xs); }
 .tabs button {
   display: inline-flex; align-items: center; gap: var(--sp-xs);
   background: transparent; color: var(--text-dim);
-  border: none; border-radius: var(--r-md) var(--r-md) 0 0;
-  padding: var(--sp-sm) var(--sp-lg);
+  border: 1px solid transparent; border-radius: var(--r-pill);
+  padding: var(--sp-xs) var(--sp-md);
   font-size: var(--fs-label); font-weight: 600; cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .tabs button:hover { color: var(--accent); background: var(--surface-2); }
-.tabs button.active { background: var(--surface); color: var(--text); }
+.tabs button.active { background: var(--surface-2); color: var(--text); border-color: var(--border); }
 .tabs .material-symbols-outlined { font-size: 1.125rem; }
 
 .layout {
@@ -333,7 +313,6 @@ body {
   .app { height: auto; overflow: visible; }
   /* Header fisso in cima su mobile */
   .appbar { position: sticky; top: 0; z-index: 20; padding-left: var(--sp-md); padding-right: var(--sp-md); }
-  .topbar { padding: var(--sp-md) 0 0; }
   .layout { grid-template-columns: 1fr; padding: 0; gap: 0; }
   .col-divider { display: none; }
   .tabs { display: flex; gap: var(--sp-xs); padding: 0 var(--sp-md); }
@@ -591,31 +570,6 @@ button.primary { margin-top: var(--sp-md); }
   padding: 0; border-radius: 50%;
 }
 .icon-btn .material-symbols-outlined { font-size: 1.125rem; }
-
-/* ---------- Menu Opzioni ---------- */
-.options { position: relative; }
-.options-menu {
-  position: absolute; z-index: 40; top: calc(100% + var(--sp-xs)); left: 0;
-  min-width: 14rem; padding: var(--sp-sm);
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--r-md); box-shadow: var(--shadow);
-}
-.options-section + .options-section { margin-top: var(--sp-sm); padding-top: var(--sp-sm); border-top: 1px solid var(--border); }
-.options-title {
-  font-size: var(--fs-sm); font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.04em; color: var(--text-dim);
-  padding: var(--sp-xs) var(--sp-sm);
-}
-.options-choice { display: flex; gap: var(--sp-xs); }
-.options-choice button {
-  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-xs);
-  background: transparent; color: var(--text); border: 1px solid var(--border);
-  padding: var(--sp-xs) var(--sp-sm); border-radius: var(--r-sm); font-weight: 500;
-}
-.options-choice button[aria-pressed='true'] {
-  background: var(--accent); color: var(--on-accent); border-color: var(--accent);
-}
-.options-choice .material-symbols-outlined { font-size: 1.125rem; }
 
 /* ---------- Tag ---------- */
 .tag-array .tags { display: flex; flex-wrap: wrap; gap: var(--sp-xs); align-items: center; margin-top: var(--label-gap); }

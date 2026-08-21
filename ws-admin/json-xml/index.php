@@ -47,27 +47,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 <head>
     <meta charset="UTF-8">
     <title>WS CMS - Convertitore strutturale e Validatore Server-Side</title>
+    <!-- Stili condivisi Meetoo: token, base e header (unica fonte di verità). -->
+    <link rel="stylesheet" href="../../ws-custom/themes/meetoo/meetoo.css">
     <style>
+        /* Solo i token propri di questa pagina: gli altri (bg/surface/text/accent…)
+           arrivano da meetoo.css, così l'admin usa la stessa palette del sito. */
         :root {
-            color-scheme: light dark;
-            --bg: light-dark(#f6f7f9, #1e1e2e);
-            --surface: light-dark(#ffffff, #313244);
-            --surface-2: light-dark(#eef0f3, #181825);
-            --text: light-dark(#1d1b20, #cdd6f4);
-            --hint: light-dark(#5f5c66, #a6adc8);
-            --line: light-dark(#e0e0e6, #45475a);
-            --accent: light-dark(#2e3192, #89b4fa);
-            --on-accent: light-dark(#ffffff, #11111b);
-            --danger: light-dark(#c1272d, #f38ba8);
-            --warning: light-dark(#8a6100, #f9e2af);
-            --success: light-dark(#146c2e, #a6e3a1);
-            --editor-bg: light-dark(#f4f5f8, #11111b);
-            --gutter-bg: light-dark(#e8eaf0, #181825);
-            --gutter-text: light-dark(#8a8a99, #6c7086);
+            --danger: var(--danger-fg);
+            --warning: var(--warn-fg);
+            --success: var(--ok-fg);
+            --gutter-bg: var(--surface-2);
+            --gutter-text: var(--hint);
         }
-        
-        body { 
-            font-family: system-ui, sans-serif; 
+
+        body {
+            font-family: var(--font2);
             background: var(--bg); 
             color: var(--text); 
             margin: 0; 
@@ -220,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         .debug-panel h4 span { display: inline-flex; gap: 8px; }
         .debug-panel button.btn-validate {
             background: var(--danger);
-            color: #111;
+            color: var(--on-accent);
             padding: 5px 10px;
             font-size: 12px;
             border-radius: 4px;
@@ -231,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             display: flex;
             gap: 10px;
             padding: 10px;
-            background: #181825;
+            background: var(--surface-2);
             border-top: 1px solid var(--line);
             justify-content: center;
         }

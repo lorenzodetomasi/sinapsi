@@ -18,7 +18,7 @@ import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
 import PlaceLocationRenderer, { placeLocationTester } from './PlaceLocationRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
-import OptionsMenu from './OptionsMenu.jsx';
+import PageSettings from './PageSettings.jsx';
 import OpenEventModal from './OpenEventModal.jsx';
 import DiffModal from './DiffModal.jsx';
 import { diffForm, mergeChoices, pathToClass } from './diff.js';
@@ -100,12 +100,18 @@ export default function App() {
   }
 
   // Tema: alla prima apertura segue il sistema, poi vale la scelta memorizzata.
+  // Il tema è governato da "Aspetto" nelle Impostazioni dell'header (auto/chiaro/
+  // scuro): qui ne seguiamo il valore RISOLTO per gli stili dell'editor.
   const [theme, setTheme] = useState(() => {
-    // Rispetta anche una scelta fatta nell'header condiviso (meetoo:theme).
-    const saved = localStorage.getItem('theme') || localStorage.getItem('meetoo:theme');
+    const saved = localStorage.getItem('meetoo:theme') || localStorage.getItem('theme');
     if (saved === 'light' || saved === 'dark') return saved;
     return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   });
+  useEffect(() => {
+    const onTheme = (e) => setTheme(e.detail?.resolved === 'light' ? 'light' : 'dark');
+    document.addEventListener('meetoo:theme', onTheme);
+    return () => document.removeEventListener('meetoo:theme', onTheme);
+  }, []);
   const [density, setDensity] = useState(() => localStorage.getItem('density') || 'comfortable');
 
   // Larghezza della colonna Form (%): 50/50 di default, regolabile col divisore.
@@ -137,12 +143,9 @@ export default function App() {
   }
 
   useEffect(() => {
+    // Solo gli stili dell'editor: color-scheme e la preferenza (auto/chiaro/scuro)
+    // restano dell'header, che è l'unico posto dove si sceglie il tema.
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem('theme', theme);
-    // Sincronizza l'header condiviso (header.js usa color-scheme + meetoo:theme):
-    // così la riga 1 (logo/login) segue il tema chiaro/scuro dell'editor.
-    document.documentElement.style.colorScheme = theme;
-    try { localStorage.setItem('meetoo:theme', theme); } catch { /* storage non disponibile */ }
   }, [theme]);
   useEffect(() => {
     document.documentElement.dataset.density = density;
@@ -558,16 +561,26 @@ export default function App() {
               </button>
             </>
           )}
-          <OptionsMenu
-            theme={theme}
-            onTheme={setTheme}
-            density={density}
-            onDensity={setDensity}
-            canForgetDir={supportsFs()}
-            onForgetDir={forgetBaseDir}
-          />
+          {/* Tab: a destra della riga 2 (visibili quando le due colonne non stanno affiancate) */}
+          <div className="tabs">
+            <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
+              <span className="material-symbols-outlined">edit_document</span> Form
+            </button>
+            <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
+              <span className="material-symbols-outlined">fact_check</span> Validazione
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* Impostazioni proprie dell'editor: montate nella modale Impostazioni
+          dell'header (riga 1), sotto Aspetto e Preferenze. */}
+      <PageSettings
+        density={density}
+        onDensity={setDensity}
+        canForgetDir={supportsFs()}
+        onForgetDir={forgetBaseDir}
+      />
 
       {flash && <div className={'flash flash-' + flash.kind} role="status">{flash.msg}</div>}
 
@@ -582,16 +595,6 @@ export default function App() {
         onCancel={() => { if (!savingWeb) { setDiff(null); setChangedPaths(new Set()); } }}
       />
 
-      <div className="topbar">
-        <div className="tabs">
-          <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
-            <span className="material-symbols-outlined">edit_document</span> Form
-          </button>
-          <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
-            <span className="material-symbols-outlined">fact_check</span> Validazione
-          </button>
-        </div>
-      </div>
 
       <div className="layout" ref={layoutRef} style={{ '--split': split + '%' }}>
         <section className="pane pane-form" onBlur={syncKeywords} onClick={openDatePicker}>

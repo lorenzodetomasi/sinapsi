@@ -20,7 +20,18 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
-| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection}.html` + **`header.js`** | `ws-custom/themes/meetoo/` |
+| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** | `ws-custom/themes/meetoo/` |
+
+**Stili condivisi (nuovi file — vanno caricati, altrimenti le pagine restano senza CSS)**:
+- **`meetoo-tokens.css`** = SOLO i design token (palette light-dark, tipografia, misure).
+- **`meetoo.css`** = importa i token + base, componenti comuni (`.wrap .sec-head .card* .badge
+  .state .empty`) e l'header `.mt-*`. Gli stili dell'header NON sono più dentro `header.js`.
+Ogni pagina (tema **e** admin) lo linka; `header.js` lo inietta comunque se manca. Le pagine
+tengono solo le proprie specificità: i token si cambiano in un posto solo. `waterfront.html` linka
+**solo i token** (ha classi omonime — `.card`, `.badge`, `.crumb` — con altro significato: i
+componenti condivisi la romperebbero) e il suo header è ora ristretto a `--mt-w` (960px) come le
+altre pagine. Le pagine admin (`json-xml`, `places/edit`) hanno perso i token duplicati: `json-xml`
+usava una palette scura diversa, ora è quella del sito.
 
 **BookCrossing / collezioni di luoghi**: `placecollection.html?id=places/{slug}` mostra una
 collezione di places (`@type` con `meetoo:PlaceCollection`, membri in `containsPlace`); contenuto
@@ -29,7 +40,12 @@ in `ws-custom/contents/…/places/lido-di-ostia/bookcrossing/index.json` (deploy
 
 **Editor eventi — header a 2 righe (niente triplice)**: l'editor ora usa l'header condiviso per la
 **riga 1** (logo + Impostazioni + **login** via `window.meetooSession`) e la propria toolbar azioni
-come **riga 2** (`.appbar-row2`; niente brand "Meetoo", niente breadcrumb). `main.jsx` inietta
+come **riga 2** (`.appbar-row2`; niente brand "Meetoo", niente breadcrumb). I tab **Form /
+Validazione** stanno in fondo alla riga 2, **a destra**. Il menu "Opzioni" (icona `tune`) è stato
+**eliminato**: Densità e "Cambia cartella" vivono ora nella modale **Impostazioni** dell'header,
+sotto Aspetto/Preferenze (`PageSettings.jsx` → portal in `#mt-page-settings`, slot esposto da
+`Meetoo.settingsSlot()`); `OptionsMenu.jsx` rimosso. Il **tema** si sceglie solo in "Aspetto":
+header.js emette l'evento `meetoo:theme` e l'editor lo segue. `main.jsx` inietta
 `header.js` con `MEETOO_HEADER = {}` (login attivo; una sola init GIS — quella dell'header, dato che
 l'index.html dell'editor carica già GSI). `Auth.jsx` **rimosso**: l'auth per il salvataggio viene
 dalla sessione dell'header. `header.js` ora **nasconde la riga 2 (breadcrumb) quando è vuota**. Il
