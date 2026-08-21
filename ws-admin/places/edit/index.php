@@ -24,39 +24,39 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         .header h2 { font-family: 'Roboto Slab', Georgia, serif; color: var(--red); margin: 0 0 12px; }
 
         #banner-unverified, #google-user, #whitelist-area { display: none; }
-        #banner-unverified { background: var(--warn-bg); color: var(--warn-fg); padding: 15px; border-left: 5px solid var(--warn-fg); border-radius: var(--radius); font-weight: 600; margin-bottom: 20px; }
-        #google-user { background: var(--color-background-section1); border: 1px solid var(--line); padding: 15px; border-radius: var(--radius); margin-bottom: 20px; }
-        #google-user code { background: var(--surface-2) !important; color: var(--red) !important; }
+        #banner-unverified { background: var(--color-background-warning); color: var(--color-warning); padding: 15px; border-left: 5px solid var(--color-warning); border-radius: var(--border-radius); font-weight: 600; margin-bottom: 20px; }
+        #google-user { background: var(--color-background-section1); border: 1px solid var(--color-line); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px; }
+        #google-user code { background: var(--color-background-section2) !important; color: var(--red) !important; }
 
-        .search-box { width: 100%; padding: 14px 16px; font-size: 1rem; margin-bottom: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--color-background-section1); color: var(--text); }
-        .search-box:focus { outline: none; border-color: var(--accent); }
-        #debug-msg, #save-msg { color: var(--hint); }
+        .search-box { width: 100%; padding: 14px 16px; font-size: 1rem; margin-bottom: 16px; border: 1px solid var(--color-line); border-radius: var(--border-radius); background: var(--color-background-section1); color: var(--color-text); }
+        .search-box:focus { outline: none; border-color: var(--color-link); }
+        #debug-msg, #save-msg { color: var(--color-hint); }
 
         .grid { display: flex; gap: 20px; flex-wrap: wrap; }
         .col { flex: 1 1 340px; display: flex; flex-direction: column; min-width: 0; }
-        label { font-weight: 600; margin-bottom: 6px; color: var(--hint); }
-        textarea { width: 100%; height: 480px; padding: 12px; font-family: 'Source Code Pro', monospace; font-size: 13px; line-height: 1.5; background: var(--color-background-section1); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); resize: vertical; }
-        textarea:focus { outline: none; border-color: var(--accent); }
-        input[type=text], select { background: var(--color-background-section1); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; }
-        input[type=text]:focus, select:focus { outline: none; border-color: var(--accent); }
+        label { font-weight: 600; margin-bottom: 6px; color: var(--color-hint); }
+        textarea { width: 100%; height: 480px; padding: 12px; font-family: 'Source Code Pro', monospace; font-size: 13px; line-height: 1.5; background: var(--color-background-section1); color: var(--color-text); border: 1px solid var(--color-line); border-radius: var(--border-radius); resize: vertical; }
+        textarea:focus { outline: none; border-color: var(--color-link); }
+        input[type=text], select { background: var(--color-background-section1); color: var(--color-text); border: 1px solid var(--color-line); border-radius: 10px; padding: 6px 10px; font: inherit; }
+        input[type=text]:focus, select:focus { outline: none; border-color: var(--color-link); }
 
         #error-msg { color: var(--red); font-weight: 700; margin-bottom: 15px; }
-        #cap-fix { background: var(--warn-bg) !important; color: var(--warn-fg); border-left: 5px solid var(--warn-fg) !important; border-radius: var(--radius); }
+        #cap-fix { background: var(--color-background-warning) !important; color: var(--color-warning); border-left: 5px solid var(--color-warning) !important; border-radius: var(--border-radius); }
 
         .save-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
         button { font-family: inherit; }
         .save-bar button, .diff-btns button, #admin-tools button, #editors-apply {
             display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 14px; font-weight: 600;
-            cursor: pointer; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); color: var(--text);
+            cursor: pointer; border: 1px solid var(--color-line); border-radius: 999px; background: var(--color-background-section2); color: var(--color-text);
         }
-        .save-bar button:hover, .diff-btns button:hover, #admin-tools button:hover, #editors-apply:hover { border-color: var(--accent); }
-        #btn-save, #diff-merge { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+        .save-bar button:hover, .diff-btns button:hover, #admin-tools button:hover, #editors-apply:hover { border-color: var(--color-link); }
+        #btn-save, #diff-merge { background: var(--color-link); color: var(--color-text-neg); border-color: transparent; }
         #diff-overwrite { background: var(--red); color: #fff; border-color: transparent; }
         #save-msg { font-weight: 600; }
 
-        #diff-panel { display: none; margin-top: 20px; padding: 16px; background: var(--color-background-section1); border: 1px solid var(--line); border-radius: var(--radius); }
-        #diff-panel h3 { margin: 0 0 4px; } #diff-panel p, #diff-panel a { color: var(--hint); }
-        #diff-content { max-height: 340px; overflow: auto; font-family: 'Source Code Pro', monospace; font-size: 13px; border: 1px solid var(--line); padding: 10px; border-radius: 8px; background: var(--surface-2); }
+        #diff-panel { display: none; margin-top: 20px; padding: 16px; background: var(--color-background-section1); border: 1px solid var(--color-line); border-radius: var(--border-radius); }
+        #diff-panel h3 { margin: 0 0 4px; } #diff-panel p, #diff-panel a { color: var(--color-hint); }
+        #diff-content { max-height: 340px; overflow: auto; font-family: 'Source Code Pro', monospace; font-size: 13px; border: 1px solid var(--color-line); padding: 10px; border-radius: 8px; background: var(--color-background-section2); }
         .diff-row { display: block; padding: 2px 0; white-space: pre-wrap; word-break: break-word; cursor: pointer; }
         .diff-row input { vertical-align: middle; margin-right: 4px; }
         .diff-add { color: light-dark(#2e7d32, #a6e3a1); }
@@ -99,7 +99,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         </div>
         <div id="saved-area">
             <label style="display:block; margin-bottom:6px;">Luoghi già salvati
-                <span style="font-weight:400; color:var(--hint);">— ricerca locale, nessun credito Google</span>
+                <span style="font-weight:400; color:var(--color-hint);">— ricerca locale, nessun credito Google</span>
             </label>
             <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px;">
                 <input type="text" id="saved-search" list="places-datalist" placeholder="Cerca un luogo salvato per nome…" style="flex:1 1 320px;">
@@ -107,22 +107,22 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 <button type="button" id="saved-open"><span class="material-symbols-outlined">folder_open</span> Apri salvato</button>
                 <button type="button" id="btn-refresh-google" style="display:none;"><span class="material-symbols-outlined">refresh</span> Aggiorna da Google Maps</button>
             </div>
-            <div id="saved-msg" style="font-size:13px; color:var(--hint);"></div>
+            <div id="saved-msg" style="font-size:13px; color:var(--color-hint);"></div>
         </div>
 
         <label style="display:block; margin:18px 0 6px;">Nuovo da Google Maps
-            <span style="font-weight:400; color:var(--hint);">— usa crediti API</span>
+            <span style="font-weight:400; color:var(--color-hint);">— usa crediti API</span>
         </label>
         <!-- Stessa ricerca, due destinazioni: un LUOGO/attività va in places/<IT+CAP>/<slug>,
              un'ORGANIZZAZIONE in organizations/<slug>. Il selettore riscrive @id e @type. -->
         <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
-            <span style="color:var(--hint);">Salva come:</span>
+            <span style="color:var(--color-hint);">Salva come:</span>
             <label><input type="radio" name="kind" value="place" checked> Luogo o attività</label>
             <label><input type="radio" name="kind" value="organization"> Organizzazione</label>
-            <span id="kind-msg" style="font-size:13px; color:var(--hint);"></span>
+            <span id="kind-msg" style="font-size:13px; color:var(--color-hint);"></span>
         </div>
         <input type="text" id="place-search" class="search-box" placeholder="Cerca un NUOVO luogo su Google Maps…">
-        <div id="debug-msg" style="font-size:13px;color:var(--hint);margin:-10px 0 16px;"></div>
+        <div id="debug-msg" style="font-size:13px;color:var(--color-hint);margin:-10px 0 16px;"></div>
         <div id="cap-fix" style="display:none; margin:0 0 16px; padding:12px; background:#fff3e0; border-left:5px solid #ff9800;">
             ⚠️ CAP non rilevato da Google (es. punto di confine). Impostalo per un @id valido:
             <input type="text" id="cap-input" maxlength="5" inputmode="numeric" placeholder="es. 00122"
@@ -581,7 +581,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         }
         ta.value = JSON.stringify(obj, null, 4);
         msg.textContent = '@id → ' + ent['@id'];
-        msg.style.color = /\/\//.test(ent['@id']) ? 'var(--warn-fg)' : 'var(--hint)';
+        msg.style.color = /\/\//.test(ent['@id']) ? 'var(--color-warning)' : 'var(--color-hint)';
     }
     document.querySelectorAll('input[name="kind"]').forEach((r) => r.addEventListener('change', applyKind));
     // Arrivando da «Nuova organizzazione» (hub admin) la scheda parte già impostata.
@@ -609,7 +609,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     function savedMsg(text, kind) {
         const el = document.getElementById('saved-msg');
         el.innerText = text;
-        el.style.color = kind === 'ok' ? '#2e7d32' : (kind === 'err' ? '#c62828' : 'var(--hint)');
+        el.style.color = kind === 'ok' ? '#2e7d32' : (kind === 'err' ? '#c62828' : 'var(--color-hint)');
     }
 
     // Elenco dei luoghi editabili (action=editable): nessun credito Google. Tiene

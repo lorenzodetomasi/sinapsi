@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <style>
     /* Solo le specificità di questa pagina: il resto è in meetoo.css. */
     #gate { text-align: center; padding: 48px 16px; color: var(--color-hint); }
-    #gate .material-symbols-outlined { font-size: 2.5rem; color: var(--accent); }
+    #gate .material-symbols-outlined { font-size: 2.5rem; color: var(--color-link); }
     #app { display: none; }
     #app.on { display: block; }
     .card.soon { opacity: .6; }

@@ -150,27 +150,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .toolbar input[type="search"] { flex: 1 1 240px; min-width: 0; }
     .toolbar input, .toolbar select {
       background: var(--color-background-section1); color: var(--color-text);
-      border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; font: inherit;
+      border: 1px solid var(--color-line); border-radius: 999px; padding: 8px 14px; font: inherit;
     }
-    .toolbar input:focus, .toolbar select:focus { outline: none; border-color: var(--accent); }
+    .toolbar input:focus, .toolbar select:focus { outline: none; border-color: var(--color-link); }
     .filter-note { color: var(--color-hint); font-size: .85rem; }
     .sec-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
     .btn-more {
       display: inline-flex; align-items: center; gap: 6px; margin: 14px auto 0;
-      padding: 8px 18px; border: 1px solid var(--line); border-radius: 999px;
+      padding: 8px 18px; border: 1px solid var(--color-line); border-radius: 999px;
       background: transparent; color: var(--color-link); font: inherit; font-weight: 600; cursor: pointer;
     }
-    .btn-more:hover { border-color: var(--accent); }
-    .btn-more.danger { color: var(--danger-fg); }
-    .btn-more.danger:hover { border-color: var(--danger-fg); }
+    .btn-more:hover { border-color: var(--color-link); }
+    .btn-more.danger { color: var(--color-danger); }
+    .btn-more.danger:hover { border-color: var(--color-danger); }
     .admin-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0; }
     .admin-bar .btn-more { margin: 0; }
     .admin-bar .count { min-width: 1.6em; }
     #sec-trash .card { opacity: .9; }
     .sentinel { height: 1px; }
-    .badge.broken { background: var(--warn-bg); color: var(--warn-fg); }
+    .badge.broken { background: var(--color-background-warning); color: var(--color-warning); }
     #gate { text-align: center; padding: 48px 16px; color: var(--color-hint); }
-    #gate .material-symbols-outlined { font-size: 2.5rem; color: var(--accent); }
+    #gate .material-symbols-outlined { font-size: 2.5rem; color: var(--color-link); }
     #app { display: none; }
     #app.on { display: block; }
   </style>
@@ -425,7 +425,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const adminMsg = (text, err) => {
       const el = document.getElementById('admin-msg');
       el.textContent = text || '';
-      el.style.color = err ? 'var(--danger-fg)' : 'var(--color-hint)';
+      el.style.color = err ? 'var(--color-danger)' : 'var(--color-hint)';
     };
 
     function loadTrash() {

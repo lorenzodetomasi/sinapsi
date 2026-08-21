@@ -94,6 +94,17 @@ vanno **sotto**, a tutta larghezza, due per riga: accanto al testo quattro pulsa
 capo riducevano il titolo a una colonna larga un carattere. Un conteggio vuoto non si mostra
 (`.count:empty`): l'archivio non annuncia un numero prima di essere caricato.
 
+**Token rinominati: allineare TUTTE le pagine** — nel refactor il vecchio blocco di token è stato
+commentato e i nomi sono cambiati (`--accent`→`--color-link`, `--on-accent`→`--color-text-neg`,
+`--line`→`--color-line`, `--hint`→`--color-hint`, `--text`→`--color-text`, `--surface(-2)`→
+`--color-background-section1|2`, `--danger-*`→`--color-danger|--color-background-danger`,
+`--warn-*`→`--color-warning|--color-background-warning`, `--font1|2`→`--font-family1|2`,
+`--radius`→`--border-radius`, `--past|sea|sand|green`→`--color-past|sea|sand|park`). Un `var()` che
+punta a un token inesistente NON eredita nulla: la proprietà diventa `unset` — così il pulsante
+«Modifica» aveva sfondo trasparente e testo chiaro, cioè invisibile in tema chiaro. Rimappati **149
+riferimenti** in 10 pagine (temi + admin) e aggiunti `--color-line` e `--color-success`, che
+mancavano. Controllo rapido, da rifare dopo ogni rinomina: nessun `var(--x)` deve restare vuoto.
+
 **@id degli eventi = `events/{slug}`** (era lo slug nudo): stessa forma dei riferimenti,
 dell'attributo `id` dell'XML e delle altre collezioni — JSON e XML dello stesso evento prima si
 contraddicevano. La regola sta in `lib/events-migrate.php`, quindi **il prossimo «Rigenera indice»

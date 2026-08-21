@@ -53,17 +53,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         /* Solo i token propri di questa pagina: gli altri (bg/surface/text/accent…)
            arrivano da meetoo.css, così l'admin usa la stessa palette del sito. */
         :root {
-            --danger: var(--danger-fg);
-            --warning: var(--warn-fg);
-            --success: var(--ok-fg);
-            --gutter-bg: var(--surface-2);
-            --gutter-text: var(--hint);
+            --danger: var(--color-danger);
+            --warning: var(--color-warning);
+            --success: var(--color-success);
+            --gutter-bg: var(--color-background-section2);
+            --gutter-text: var(--color-hint);
         }
 
         body {
-            font-family: var(--font2);
-            background: var(--bg); 
-            color: var(--text); 
+            font-family: var(--font-family2);
+            background: var(--color-background-main); 
+            color: var(--color-text); 
             margin: 0; 
             padding: 20px; 
             display: flex; 
@@ -77,14 +77,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background: light-dark(rgba(246, 247, 249, 0.96), rgba(30, 30, 46, 0.95));
-            color: var(--accent);
+            color: var(--color-link);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
             font-weight: bold;
             z-index: 9999;
-            border: 4px dashed var(--accent);
+            border: 4px dashed var(--color-link);
             pointer-events: none;
         }
         
@@ -98,8 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         .app-topbar h2 { margin: 0; font-size: 1.25rem; }
 
         button {
-            background: var(--accent);
-            color: var(--on-accent);
+            background: var(--color-link);
+            color: var(--color-text-neg);
             border: none; 
             padding: 10px 16px; 
             border-radius: 6px; 
@@ -122,26 +122,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             flex: 1; 
             display: flex; 
             flex-direction: column; 
-            background: var(--surface); 
+            background: var(--color-background-section1); 
             border-radius: 8px; 
             overflow: hidden; 
         }
         
         .pane-header { 
-            background: var(--surface-2);
+            background: var(--color-background-section2);
             padding: 10px; 
             font-weight: bold; 
             display: flex;
             justify-content: center;
             align-items: center;
-            border-bottom: 1px solid var(--line); 
+            border-bottom: 1px solid var(--color-line); 
             position: relative;
         }
         
         select {
-            background: var(--surface);
-            color: var(--text);
-            border: 1px solid var(--line);
+            background: var(--color-background-section1);
+            color: var(--color-text);
+            border: 1px solid var(--color-line);
             padding: 5px 10px;
             border-radius: 4px;
             font-weight: bold;
@@ -157,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             display: flex; 
             flex: 1; 
             overflow: hidden; 
-            background: var(--editor-bg);
+            background: var(--color-background-section3);
             position: relative;
         }
         
@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         textarea { 
             flex: 1; 
             background: transparent; 
-            color: var(--text); 
+            color: var(--color-text); 
             padding-left: 15px;
             padding-right: 15px;
             border: none; 
@@ -214,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         .debug-panel h4 span { display: inline-flex; gap: 8px; }
         .debug-panel button.btn-validate {
             background: var(--danger);
-            color: var(--on-accent);
+            color: var(--color-text-neg);
             padding: 5px 10px;
             font-size: 12px;
             border-radius: 4px;
@@ -225,8 +225,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             display: flex;
             gap: 10px;
             padding: 10px;
-            background: var(--surface-2);
-            border-top: 1px solid var(--line);
+            background: var(--color-background-section2);
+            border-top: 1px solid var(--color-line);
             justify-content: center;
         }
         
