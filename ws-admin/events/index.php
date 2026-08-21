@@ -313,6 +313,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       icon: 'collections_bookmark',
       title: ev.name || ev.path,
       meta: (ev.organizer || 'Collezione di eventi'),
+      metaIcon: ev.organizer ? Meetoo.orgIcon(ev.organizerType, ev.organizer) : '',
       badge: brokenBadge(ev.path),
       actions: actions(ev),
     });

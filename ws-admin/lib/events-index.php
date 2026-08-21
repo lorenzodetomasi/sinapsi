@@ -49,6 +49,30 @@ if (!function_exists('event_index_place_ref')) {
     }
 }
 
+// @type dell'organizzatore, letto dal suo documento: serve alle card per dare
+// l'icona giusta (un'associazione non è un negozio). Nell'evento l'organizer è un
+// riferimento {@id, name} e il tipo non c'è. Una lettura per organizzatore,
+// memorizzata; se il riferimento è rotto si ripiega su ciò che dice l'evento.
+if (!function_exists('event_index_org_type')) {
+    function event_index_org_type(string $orgId, $inline = null, string $base = ''): string {
+        $fallback = '';
+        if (is_array($inline)) {
+            $t = $inline['@type'] ?? '';
+            $fallback = is_array($t) ? (string)($t[0] ?? '') : (string)$t;
+        }
+        static $cache = [];
+        if ($base === '' || $orgId === '' || !preg_match('#^[A-Za-z0-9._/-]+$#', $orgId) || strpos($orgId, '..') !== false) return $fallback;
+        if (!array_key_exists($orgId, $cache)) {
+            $f = rtrim($base, '/') . '/' . $orgId . '/index.json';
+            $j = is_file($f) ? json_decode((string)file_get_contents($f), true) : null;
+            $e = is_array($j) ? ($j['mainEntity'] ?? $j) : null;
+            $t = is_array($e) ? ($e['@type'] ?? '') : '';
+            $cache[$orgId] = is_array($t) ? (string)($t[0] ?? '') : (string)$t;
+        }
+        return $cache[$orgId] !== '' ? $cache[$orgId] : $fallback;
+    }
+}
+
 // I riferimenti ({@id} di organizer/superEvent) si leggono con ws_ref_id/ws_ref_ids:
 // senza, l'indice si costruisce lo stesso ma DEGRADATO (niente by-collection, chiavi
 // organizzatore prese dal nome invece che dallo slug). Meglio dipenderci apertamente
@@ -73,10 +97,11 @@ if (!function_exists('event_index_item')) {
         // organizer: name del primo se presente (inline), altrimenti l'@id di riferimento
         $orgName = '';
         $orgId = '';
+        $orgInline = null;
         $o = $doc['organizer'] ?? null;
         if (is_array($o)) {
             $first = array_key_exists(0, $o) ? $o[0] : $o;
-            if (is_array($first)) { $orgName = (string)($first['name'] ?? ''); $orgId = (string)($first['@id'] ?? ''); }
+            if (is_array($first)) { $orgName = (string)($first['name'] ?? ''); $orgId = (string)($first['@id'] ?? ''); $orgInline = $first; }
         } elseif (is_string($o)) {
             $orgId = $o;
         }
@@ -100,7 +125,9 @@ if (!function_exists('event_index_item')) {
             'startDate'    => (string)($doc['startDate'] ?? ''),
             'endDate'      => (string)($doc['endDate'] ?? ''),
             'organizer'    => $orgName !== '' ? $orgName : $orgId,
-            'organizerKey' => $orgId !== '' ? event_index_key($orgId) : '',
+            'organizerKey'  => $orgId !== '' ? event_index_key($orgId) : '',
+            // Tipo dell'organizzatore (Organization, NGO, LocalBusiness…): decide l'icona.
+            'organizerType' => event_index_org_type($orgId, $orgInline, $base),
             // Luogo: {id, name, address:{addressLocality}} — le card mostrano
             // "{place.name}, {place.address.addressLocality}".
             'place'        => event_index_place_ref($doc['location'] ?? null, $base),
