@@ -155,8 +155,10 @@ export default function App() {
   // Deep-link: all'avvio, se l'URL porta ?id=… (o ?event=…), apre quell'evento dal web.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
+    const from = q.get('from');            // ?from=… → duplica (nuovo evento da un altro)
     const id = q.get('id') || q.get('event');
-    if (id) loadFromWeb(id);
+    if (from) loadFromWeb(from, true);
+    else if (id) loadFromWeb(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -440,17 +442,31 @@ export default function App() {
     if (!/\.json(\?|$)/i.test(url)) url = url.replace(/\/$/, '') + '/index.json';
     return url;
   }
-  async function loadFromWeb(input) {
+  // asCopy: apre l'evento come BASE per uno nuovo (duplica). Toglie ciò che
+  // identifica l'originale — @id (lo si rigenera salvando), date di sistema e
+  // l'appartenenza alle occorrenze — così un salvataggio non sovrascrive la fonte.
+  async function loadFromWeb(input, asCopy = false) {
     const url = resolveEventUrl(input);
     if (!url) return;
     try {
       const res = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const parsed = await res.json();
-      const doc = parsed && typeof parsed === 'object' && parsed.mainEntity && typeof parsed.mainEntity === 'object'
+      let doc = parsed && typeof parsed === 'object' && parsed.mainEntity && typeof parsed.mainEntity === 'object'
         ? parsed.mainEntity : parsed;
+      if (asCopy) {
+        doc = { ...doc };
+        delete doc['@id']; delete doc.dateCreated; delete doc.dateModified;
+        delete doc.creator; delete doc.author; delete doc.contributor;
+        delete doc.subEvent;   // le occorrenze restano dell'originale
+      }
       setData(deriveCapacities(fromJsonLd(doc)));
       setOpenWeb(false);
+      if (asCopy) {
+        try { history.replaceState(null, '', window.location.pathname); } catch { /* ignora */ }
+        showFlash('Copia di «' + input + '»: cambia data e titolo, poi salva (verrà creato un nuovo evento)', 'ok');
+        return;
+      }
       // Rende l'apertura condivisibile/ricaricabile: mette l'id nell'URL (?id=…).
       try {
         const q = new URLSearchParams(window.location.search);

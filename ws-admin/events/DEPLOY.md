@@ -18,9 +18,22 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 |---|---|---|
 | **Backend – lib** | `ws-admin/lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
+| **Gestione eventi** | `ws-admin/events/index.php` (nuova pagina) | `ws-admin/events/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
 | **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** | `ws-custom/themes/meetoo/` |
+
+**Pagina «Gestione eventi»** `ws-admin/events/index.php`: elenco redazionale di tutti gli eventi —
+**Collezioni** (le serie, senza data), **Prossimi** (dal più vicino) e **Archivio** (dal più recente,
+scaricato solo cliccando «Carica eventi passati»); **10 per volta**, altri mentre si scorre
+(IntersectionObserver sugli indici statici già in memoria: nessuna paginazione lato server). Ogni card:
+**Visualizza** (pagina pubblica), **Modifica** (`edit/?id=`), **Duplica** (`edit/?from=`), più ricerca,
+filtri per organizzatore/collezione, data di ultima modifica e avviso **riferimenti rotti**. Il file è
+anche il proprio endpoint POST (`action=auth`, `action=check-refs`): **login obbligatorio** — l'elenco
+compare solo con un ruolo abilitato (user/client/admin/super-admin), altrimenti resta il messaggio di
+accesso. FAB `#add-event-fab` (stile `.fab` di waterfront, ora in meetoo.css) → nuovo evento.
+**Duplica** richiede la dist ricostruita: `App.jsx` gestisce `?from=` aprendo l'evento come copia
+(toglie `@id`, date di sistema, creator/author/contributor e `subEvent`, così il salvataggio ne crea uno nuovo).
 
 **Card condivise — `cards.js` (nuovo file da caricare)**: i template delle card stanno in un posto
 solo, come gli stili. `Meetoo.eventCard(ev,{base,organizer})`, `Meetoo.tileCard({href,icon,title,meta,
