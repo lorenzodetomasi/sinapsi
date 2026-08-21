@@ -253,10 +253,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     (function crumb() {
       if (!window.Meetoo) { setTimeout(crumb, 100); return; }
-      Meetoo.setBreadcrumb(
-        [{ label: 'Lido di Ostia', href: THEME + 'index.html' }, { label: 'Gestione eventi', current: true }],
-        [{ label: 'Admin' }]
-      );
+      // "Gestione" risale all'hub, "Eventi" è dove sei.
+      Meetoo.setBreadcrumb([
+        { label: 'Gestione', href: SITE_ROOT + 'ws-admin/index.php', title: 'Amministrazione' },
+        { label: 'Eventi', current: true },
+      ]);
     })();
 
     /* ---------- Dati ---------- */

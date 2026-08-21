@@ -651,5 +651,16 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
 <script>window.MEETOO_HEADER = { noAuth: true };</script>
 <script src="../../../ws-custom/themes/meetoo/header.js"></script>
+<script>
+// Breadcrumb dell admin: "Gestione" risale all hub, la voce corrente dice dove sei.
+(function crumb() {
+  if (!window.Meetoo) { setTimeout(crumb, 100); return; }
+  var root = location.pathname.replace(/\/ws-admin\/.*/, "/");
+  Meetoo.setBreadcrumb([
+    { label: "Gestione", href: root + "ws-admin/index.php", title: "Amministrazione" },
+    { label: "Luoghi", current: true },
+  ]);
+})();
+</script>
 </body>
 </html>

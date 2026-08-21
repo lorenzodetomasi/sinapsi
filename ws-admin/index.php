@@ -90,10 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     (function crumb() {
       if (!window.Meetoo) { setTimeout(crumb, 100); return; }
-      Meetoo.setBreadcrumb(
-        [{ label: 'Lido di Ostia', href: THEME + 'index.html' }, { label: 'Amministrazione', current: true }],
-        [{ label: 'Admin' }]
-      );
+      // Nell'admin il breadcrumb dice dove sei DENTRO la gestione: "Gestione" è la
+      // radice (questa pagina), il sito si raggiunge dal logo.
+      Meetoo.setBreadcrumb([{ label: 'Gestione', current: true }]);
     })();
 
     const api = (action) => {
