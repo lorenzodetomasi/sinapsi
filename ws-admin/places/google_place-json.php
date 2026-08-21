@@ -37,7 +37,7 @@ function ws_slug($name) {
 }
 // Verifica se la cartella dell'@id esiste già in ws-custom.
 function ws_id_exists($id) {
-    if (!preg_match('#^places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) return false;
+    if (!preg_match('#^(places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+|organizations/[A-Za-z0-9._-]+)$#', $id)) return false;
     $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
     return is_dir($dir) || is_file($dir . '/index.json') || is_file($dir . '/index.xml');
 }
@@ -614,7 +614,7 @@ if ($action === 'save') {
     $newEntity = $decoded['mainEntity'] ?? $decoded;
     $id = $newEntity['@id'] ?? '';
     // Solo il formato atteso: niente path traversal.
-    if (!preg_match('#^places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$#', $id)) {
+    if (!preg_match('#^(places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+|organizations/[A-Za-z0-9._-]+)$#', $id)) {
         echo json_encode(["error" => "@id non valido o mancante: '$id'."]);
         exit;
     }

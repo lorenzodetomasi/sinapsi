@@ -33,8 +33,8 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
 | **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** | `ws-custom/themes/meetoo/` |
 
-**Hub «Amministrazione»** `ws-admin/index.php`: collegamenti agli strumenti (gestione eventi, nuovo
-evento, luoghi/organizzazioni, convertitore); visibile solo da autenticati con ruolo redazionale.
+**Hub «Amministrazione»** `ws-admin/index.php`: sezioni Eventi · **Luoghi e attività** · **Organizzazioni**
+(ognuna con la sua card «Nuovo…») · Utenti · Strumenti; visibile solo da autenticati con ruolo redazionale.
 La voce **Amministrazione** compare nel menu hamburger di TUTTE le pagine, ma solo per
 **admin/super-admin** (`header.js`, `renderNav`). La card «Utenti e ruoli» è segnata *in arrivo*:
 non esiste ancora uno strumento, i ruoli si cambiano a mano in `users/users.xml`.
@@ -79,6 +79,13 @@ includeva da solo.
 
 **Nuovo indice `by-cap/<CAP>.json`** (+ `.archive.json`): il CAP è già nel nome della cartella evento,
 quindi indicizzarlo è gratis. È la base per le viste per zona (vedi «Territorio» in fondo).
+
+**Luoghi e organizzazioni nello stesso strumento**: `places/edit` ha un selettore **«Salva come»**
+(Luogo o attività / Organizzazione) che riscrive `@id` e `@type` — `places/<IT+CAP>/<slug>` con
+`Place|LocalBusiness`, oppure `organizations/<slug>` con `Organization`; `?as=organization` lo
+preimposta (ci arriva la card «Nuova organizzazione»). `google_place-json.php` ora **accetta anche
+`organizations/<slug>`** in salvataggio: prima rifiutava tutto ciò che non fosse `places/…`, quindi
+un'organizzazione si poteva aprire ma non salvare.
 
 **Card condivise — `cards.js` (nuovo file da caricare)**: i template delle card stanno in un posto
 solo, come gli stili. `Meetoo.eventCard(ev,{base,organizer})`, `Meetoo.tileCard({href,icon,title,meta,

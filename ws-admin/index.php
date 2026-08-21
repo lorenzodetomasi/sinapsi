@@ -62,8 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </section>
 
       <section>
-        <h2 class="sec-head"><span class="material-symbols-outlined">place</span>Luoghi e organizzazioni</h2>
+        <h2 class="sec-head"><span class="material-symbols-outlined">place</span>Luoghi e attività</h2>
         <div class="cards" id="sec-luoghi"></div>
+      </section>
+
+      <section>
+        <h2 class="sec-head"><span class="material-symbols-outlined">groups</span>Organizzazioni</h2>
+        <div class="cards" id="sec-organizzazioni"></div>
       </section>
 
       <section>
@@ -110,9 +115,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { href: ADMIN + 'events/index.php', icon: 'event_note', title: 'Gestione eventi', meta: 'Elenco, ricerca, cestino, indice' },
         { href: ADMIN + 'events/edit/', icon: 'note_add', title: 'Nuovo evento', meta: 'Editor JSON-LD (form)' },
       ],
+      // Luoghi e organizzazioni usano lo STESSO strumento: cambia solo dove
+      // finiscono (places/<IT+CAP>/<slug> o organizations/<slug>), scelto lì col
+      // selettore «Salva come» — che ?as=organization preimposta.
       'sec-luoghi': [
-        { href: ADMIN + 'places/edit/', icon: 'add_location', title: 'Luoghi e attività', meta: 'Cerca fra i salvati o importa da Google Maps' },
-        { href: ADMIN + 'places/edit/', icon: 'groups', title: 'Organizzazioni', meta: 'Stesso strumento: «Apri salvato» per organizations/…' },
+        { href: ADMIN + 'places/edit/', icon: 'place', title: 'Luoghi e attività', meta: 'Apri e aggiorna i luoghi salvati' },
+        { href: ADMIN + 'places/edit/', icon: 'add_location', title: 'Nuovo luogo o attività', meta: 'Importa da Google Maps' },
+      ],
+      'sec-organizzazioni': [
+        { href: ADMIN + 'places/edit/', icon: 'groups', title: 'Organizzazioni', meta: 'Apri e aggiorna le organizzazioni salvate' },
+        { href: ADMIN + 'places/edit/?as=organization', icon: 'group_add', title: 'Nuova organizzazione', meta: 'Importa da Google Maps come organizations/…' },
       ],
       'sec-utenti': [
         { href: '#', icon: 'manage_accounts', title: 'Utenti e ruoli', meta: 'In arrivo — oggi i ruoli si cambiano in users/users.xml', soon: true },

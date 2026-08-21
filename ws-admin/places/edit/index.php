@@ -110,9 +110,17 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             <div id="saved-msg" style="font-size:13px; color:var(--hint);"></div>
         </div>
 
-        <label style="display:block; margin:18px 0 6px;">Nuovo luogo da Google Maps
+        <label style="display:block; margin:18px 0 6px;">Nuovo da Google Maps
             <span style="font-weight:400; color:var(--hint);">— usa crediti API</span>
         </label>
+        <!-- Stessa ricerca, due destinazioni: un LUOGO/attività va in places/<IT+CAP>/<slug>,
+             un'ORGANIZZAZIONE in organizations/<slug>. Il selettore riscrive @id e @type. -->
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+            <span style="color:var(--hint);">Salva come:</span>
+            <label><input type="radio" name="kind" value="place" checked> Luogo o attività</label>
+            <label><input type="radio" name="kind" value="organization"> Organizzazione</label>
+            <span id="kind-msg" style="font-size:13px; color:var(--hint);"></span>
+        </div>
         <input type="text" id="place-search" class="search-box" placeholder="Cerca un NUOVO luogo su Google Maps…">
         <div id="debug-msg" style="font-size:13px;color:var(--hint);margin:-10px 0 16px;"></div>
         <div id="cap-fix" style="display:none; margin:0 0 16px; padding:12px; background:#fff3e0; border-left:5px solid #ff9800;">
@@ -331,6 +339,8 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 }
                 box.style.color = color;
                 box.innerText = msg;
+                // Se la scheda è impostata su "Organizzazione", adegua @id/@type al volo.
+                if (currentKind() === 'organization') applyKind();
     }
 
     // 4. Salvataggio: locale (download) e sul web (scrive <@id>/index.json).
@@ -538,6 +548,48 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         setSaveMsg('Contributor impostati: ' + (list.join(', ') || '(nessuno)') + '. Salva per applicare.', 'ok');
     });
 
+    // 6-quater. Luogo o organizzazione: stessa scheda, destinazione diversa.
+    //   luogo        → places/<IT+CAP>/<slug>, @type Place|LocalBusiness (da Google)
+    //   organizzazione → organizations/<slug>, @type Organization
+    // Riscrive @id e @type nel JSON già caricato: il resto dei dati (indirizzo,
+    // contatti, sito, immagini) vale per entrambi.
+    function currentKind() {
+        const r = document.querySelector('input[name="kind"]:checked');
+        return r ? r.value : 'place';
+    }
+    function applyKind() {
+        const kind = currentKind();
+        const ta = document.getElementById('json-wscms');
+        const msg = document.getElementById('kind-msg');
+        if (!ta.value.trim()) { msg.textContent = kind === 'organization' ? 'La prossima ricerca creerà un\'organizzazione.' : ''; return; }
+        let obj;
+        try { obj = JSON.parse(ta.value); } catch (e) { msg.textContent = 'JSON non valido: correggi prima.'; return; }
+        const ent = obj.mainEntity || obj;
+        const parts = String(ent['@id'] || '').split('/');
+        const slug = parts[parts.length - 1] || '';
+        if (!slug) { msg.textContent = 'Manca l\'@id: fai prima una ricerca.'; return; }
+
+        if (kind === 'organization') {
+            ent['@id'] = 'organizations/' + slug;
+            ent['@type'] = 'Organization';
+        } else {
+            // Torna a luogo: serve la regione (IT+CAP) dall'indirizzo.
+            const a = ent.address || {};
+            const region = (a.addressCountry || 'IT') + (a.postalCode || '');
+            ent['@id'] = 'places/' + region + '/' + slug;
+            if (ent['@type'] === 'Organization') ent['@type'] = 'LocalBusiness';
+        }
+        ta.value = JSON.stringify(obj, null, 4);
+        msg.textContent = '@id → ' + ent['@id'];
+        msg.style.color = /\/\//.test(ent['@id']) ? 'var(--warn-fg)' : 'var(--hint)';
+    }
+    document.querySelectorAll('input[name="kind"]').forEach((r) => r.addEventListener('change', applyKind));
+    // Arrivando da «Nuova organizzazione» (hub admin) la scheda parte già impostata.
+    if (new URLSearchParams(location.search).get('as') === 'organization') {
+        const r = document.querySelector('input[name="kind"][value="organization"]');
+        if (r) { r.checked = true; applyKind(); }
+    }
+
     // 7. Luoghi già salvati: ricerca LOCALE (nessun credito Google) + apertura +
     //    aggiornamento on-demand da Google Maps sul google_place_id salvato.
     let savedItems = [];      // {@id, name, @type} da action=editable (solo places/)
@@ -615,6 +667,10 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             document.getElementById('diff-panel').style.display = 'none';
             document.getElementById('error-msg').innerText = '';
             document.getElementById('btn-refresh-google').style.display = loadedPlaceId ? 'inline-flex' : 'none';
+            // Il selettore riflette ciò che si è aperto (luogo o organizzazione).
+            const kindNow = /^organizations\//.test(loadedId) ? 'organization' : 'place';
+            const rad = document.querySelector('input[name="kind"][value="' + kindNow + '"]');
+            if (rad) rad.checked = true;
             savedMsg('✓ Caricato: ' + loadedId + (loadedPlaceId
                 ? '. Modifica e Salva, oppure «Aggiorna da Google Maps».'
                 : ' (nessun Google Place ID salvato: per aggiornarlo cercalo su Google per nome).'), 'ok');

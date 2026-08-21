@@ -68,6 +68,12 @@ async function api(action, fields = {}) {
   return res.json();
 }
 
+// Radice di ws-admin, per i collegamenti dell area di amministrazione (in
+// sviluppo il percorso non contiene ws-admin: si ripiega su ../).
+const ADMIN_ROOT = /\/ws-admin\//.test(window.location.pathname)
+  ? window.location.pathname.replace(/\/ws-admin\/.*/, '/ws-admin/')
+  : '../';
+
 export default function App() {
   const [data, setData] = useState(() => deriveCapacities(fromJsonLd(blankJsonLd)));
   const [tab, setTab] = useState('form');
@@ -455,6 +461,15 @@ export default function App() {
     <div className={'app tab-' + tab}>
       <header className="appbar appbar-row2">
         <div className="appbar-actions">
+          {/* Breadcrumb: da qui si torna all'elenco. Sta nella riga delle azioni e
+              non nell'header condiviso, altrimenti le righe tornerebbero tre. */}
+          <nav className="crumbs">
+            <a href={ADMIN_ROOT + 'index.php'} title="Amministrazione">Gestione</a>
+            <span className="sep">|</span>
+            <a href={ADMIN_ROOT + 'events/index.php'} title="Elenco degli eventi">Eventi</a>
+            <span className="sep">|</span>
+            <span className="cur">Editor</span>
+          </nav>
           <button type="button" className="btn-ghost" onClick={newEvent} title="Nuovo evento: svuota il form (configurazione base)">
             <span className="material-symbols-outlined">note_add</span> Nuovo
           </button>

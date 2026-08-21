@@ -141,6 +141,17 @@ body {
   width: 100%; max-width: 960px;  /* = --mt-w dell header condiviso */
 }
 
+/* Breadcrumb nella riga delle azioni: stesso aspetto di quello dell header
+   condiviso, ma qui convive con i pulsanti (l editor non ha una riga 2 libera). */
+.crumbs {
+  display: inline-flex; align-items: baseline; gap: var(--sp-sm);
+  margin-right: var(--sp-sm); font-size: var(--fs-label); white-space: nowrap;
+}
+.crumbs a { color: var(--accent); text-decoration: none; }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs .sep { color: var(--text-dim); opacity: .6; }
+.crumbs .cur { color: var(--text); font-weight: 600; }
+
 /* "Salva": attivo solo a validazione perfetta */
 .btn-save {
   display: inline-flex; align-items: center; gap: var(--sp-xs);
