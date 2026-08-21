@@ -256,8 +256,6 @@ export default function App() {
   // (diff selettivo): se l'evento esiste ed è cambiato, apre il pannello scelte;
   // altrimenti salva direttamente. Il salvataggio vero avviene in doSaveWeb.
   const [savingWeb, setSavingWeb] = useState(false);
-  const [rebuilding, setRebuilding] = useState(false);
-  const [normalizing, setNormalizing] = useState(false);
   const [diff, setDiff] = useState(null); // { changes, rel } | null
   const [changedPaths, setChangedPaths] = useState(() => new Set()); // per i marcatori inline
 
@@ -317,70 +315,6 @@ export default function App() {
       showFlash('Endpoint di salvataggio web non raggiungibile: ' + (e?.message || e), 'err');
     } finally {
       setSavingWeb(false);
-    }
-  }
-
-  // Rebuild dell'indice eventi (admin/super-admin): rilancia la scansione dei contenuti.
-  async function rebuildIndex() {
-    if (rebuilding) return;
-    if (!authToken) { showFlash('Accedi con Google per ricostruire l\'indice', 'err'); return; }
-    setRebuilding(true);
-    try {
-      const body = new URLSearchParams({ action: 'rebuild-index', credential: authToken });
-      const res = await fetch(SAVE_EVENT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
-      });
-      const out = await res.json();
-      if (res.status === 401) { onLogout(); showFlash('Sessione scaduta: accedi di nuovo con Google', 'err'); return; }
-      if (out.success) {
-        const i = out.index || {};
-        const n = out.normalized || {};
-        const norm = n.files ? ` · ${n.files} file normalizzati` : '';
-        const broken = out.brokenRefs || [];
-        if (broken.length) console.warn('Riferimenti rotti:', broken);
-        const warn = broken.length ? ` · ⚠ ${broken.length} riferimenti rotti (${broken.slice(0, 2).map((b) => b.ref).join(', ')}${broken.length > 2 ? '…' : ''})` : '';
-        showFlash(`Indice ricostruito: ${i.indexed ?? 0} eventi · ${i.series ?? 0} collection · ${i.organizers ?? 0} organizzatori${norm}${warn}`, broken.length ? 'err' : 'ok');
-      } else {
-        showFlash(`Rebuild indice fallito: ${out.error || res.status}`, 'err');
-      }
-    } catch (e) {
-      showFlash('Endpoint di rebuild non raggiungibile: ' + (e?.message || e), 'err');
-    } finally {
-      setRebuilding(false);
-    }
-  }
-
-  // Normalizzazione strutturale dei contenuti (admin/super-admin, una-tantum): rimuove le
-  // serie annidate mal posizionate, completa le occorrenze mancanti, rideriva i subEvent.
-  async function normalizeContent() {
-    if (normalizing) return;
-    if (!authToken) { showFlash('Accedi con Google per normalizzare i contenuti', 'err'); return; }
-    if (!window.confirm('Normalizzare i contenuti?\n\n• rimuove le serie annidate mal posizionate\n• completa le occorrenze dichiarate ma senza file (dati placeholder da rifinire)\n• rideriva i subEvent dai membri reali\n\nOperazione una-tantum, poi ricostruisce l’indice.')) return;
-    setNormalizing(true);
-    try {
-      const body = new URLSearchParams({ action: 'normalize-content', credential: authToken });
-      const res = await fetch(SAVE_EVENT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
-      });
-      const out = await res.json();
-      if (res.status === 401) { onLogout(); showFlash('Sessione scaduta: accedi di nuovo con Google', 'err'); return; }
-      if (out.success) {
-        const n = out.normalize || {};
-        const broken = out.brokenRefs || [];
-        if (broken.length) console.warn('Riferimenti rotti:', broken);
-        const warn = broken.length ? ` · ⚠ ${broken.length} riferimenti rotti (${broken.slice(0, 2).map((b) => b.ref).join(', ')}${broken.length > 2 ? '…' : ''})` : '';
-        showFlash(`Contenuti normalizzati: ${(n.removedSeries || []).length} serie annidate rimosse · ${(n.completedOccurrences || []).length} occorrenze completate · ${(n.repairedSuperEvent || []).length} superEvent riparati · ${(n.seriesSubEventUpdated || []).length} serie aggiornate${warn}`, broken.length ? 'err' : 'ok');
-      } else {
-        showFlash(`Normalizzazione fallita: ${out.error || res.status}`, 'err');
-      }
-    } catch (e) {
-      showFlash('Endpoint di normalizzazione non raggiungibile: ' + (e?.message || e), 'err');
-    } finally {
-      setNormalizing(false);
     }
   }
 
@@ -555,28 +489,8 @@ export default function App() {
           >
             <span className="material-symbols-outlined">cloud_upload</span> {savingWeb ? 'Salvo…' : 'Salva sul web'}
           </button>
-          {['admin', 'super-admin'].includes(authUser?.role) && (
-            <>
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={rebuildIndex}
-                disabled={rebuilding}
-                title="Ricostruisce l'indice eventi (events/_index) dai contenuti sul server"
-              >
-                <span className="material-symbols-outlined">manage_history</span> {rebuilding ? 'Ricostruisco…' : 'Rebuild index'}
-              </button>
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={normalizeContent}
-                disabled={normalizing}
-                title="Normalizza i contenuti: rimuove serie annidate, completa occorrenze mancanti, rideriva subEvent (una-tantum)"
-              >
-                <span className="material-symbols-outlined">healing</span> {normalizing ? 'Normalizzo…' : 'Normalizza'}
-              </button>
-            </>
-          )}
+          {/* La manutenzione (Rigenera indice, Normalizza) sta in Gestione eventi:
+              qui si scrive un evento, non si amministrano gli indici. */}
           {/* Tab: a destra della riga 2 (visibili quando le due colonne non stanno affiancate) */}
           <div className="tabs">
             <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>

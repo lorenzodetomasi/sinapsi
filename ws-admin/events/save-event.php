@@ -180,12 +180,13 @@ if (!$jsonOk || !$xmlOk) {
     exit;
 }
 
-// 6) rigenera l'indice COMPLETO dai contenuti (prossimi/archivio, per-organizer,
-// per-collection, con ereditarietà organizer dalla serie). Un rebuild pieno evita la
-// deriva incrementale (membership/organizer stantii, ribucketing per data). L'@id/percorso
-// appena scritto è già su disco, quindi rientra nella scansione. Best-effort: un errore
-// d'indice NON invalida il salvataggio già andato a buon fine.
-$index = event_index_rebuild($base);
+// 6) aggiorna l'indice SOLO per l'evento salvato (prossimi/archivio, per-organizer,
+// per-collection, per-CAP), ripulendo i raggruppamenti che non lo riguardano più e
+// riattribuendo le occorrenze se si è salvata una serie: sono le tre derive che
+// rendevano necessario il rebuild pieno. Il rebuild resta a disposizione in
+// «Gestione eventi» per rimettere tutto in riga dopo modifiche fuori dall'editor.
+// Best-effort: un errore d'indice NON invalida il salvataggio già andato a buon fine.
+$index = event_index_sync($base, $relPath, $doc['mainEntity'] ?? $doc);
 
 echo json_encode([
     'success'       => true,

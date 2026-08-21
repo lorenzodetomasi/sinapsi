@@ -49,6 +49,12 @@ if (!function_exists('event_index_place_ref')) {
     }
 }
 
+// I riferimenti ({@id} di organizer/superEvent) si leggono con ws_ref_id/ws_ref_ids:
+// senza, l'indice si costruisce lo stesso ma DEGRADATO (niente by-collection, chiavi
+// organizzatore prese dal nome invece che dallo slug). Meglio dipenderci apertamente
+// che affidarsi a chi ci include.
+require_once __DIR__ . '/ws-auth.php';
+
 // Voce compatta dell'indice a partire dal documento evento e dal percorso (schema c).
 // $base (.../contents/meetoo/it_IT) serve a risolvere il luogo: se omesso, la voce
 // place riporta solo ciò che è scritto nell'evento.
@@ -190,6 +196,7 @@ if (!function_exists('event_index_rebuild')) {
         // sia i file "prossimi" sia gli ".archive.json".
         foreach (glob("$idxDir/by-organizer/*.json") ?: [] as $f) @unlink($f);
         foreach (glob("$idxDir/by-collection/*.json") ?: [] as $f) @unlink($f);
+        foreach (glob("$idxDir/by-cap/*.json") ?: [] as $f) @unlink($f);
         @unlink("$idxDir/events.json");
         @unlink("$idxDir/events.archive.json");
 
@@ -227,7 +234,7 @@ if (!function_exists('event_index_rebuild')) {
             [$rel, $doc] = $pair;
             $override = null;
             if (!$isSeriesDoc($doc)) {
-                $superRef = function_exists('ws_ref_id') ? ws_ref_id($doc['superEvent'] ?? null) : '';
+                $superRef = ws_ref_id($doc['superEvent'] ?? null);
                 if ($superRef !== '') {
                     $ownIds = function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : [];
                     if (!$ownIds) $override = $seriesOrgs[event_index_key($superRef)] ?? [];
@@ -268,6 +275,111 @@ if (!function_exists('event_index_update')) {
             $ck = event_index_key($item['collection']);
             $res['collection'] = event_index_place("$idxDir/by-collection/$ck.json", $item);
         }
+
+        // Indice per-CAP: il CAP è già nel nome della cartella evento
+        // (<AAAAMMGGThhmm>-<CAP>[-slug]), quindi è gratis tenerlo indicizzato. Serve
+        // alle viste per zona: un CAP è la più piccola area con un confine certo, e
+        // le aree più grandi (quartiere, municipio, comune) sono somme di CAP.
+        if (!empty($item['cap'])) {
+            $res['cap'] = event_index_place("$idxDir/by-cap/" . event_index_key($item['cap']) . '.json', $item);
+        }
         return $res;
+    }
+}
+
+// Aggiornamento INCREMENTALE dell'indice per un solo evento (usato al salvataggio).
+// Fa le stesse scritture del rebuild ma toccando solo i file interessati; in più
+// RIPULISCE le voci rimaste negli altri raggruppamenti (se cambi organizzatore,
+// collezione o CAP, la voce vecchia va tolta da lì, cosa che l'update da solo non fa).
+// Salvare una SERIE tocca anche le sue occorrenze (ne ereditano gli organizzatori):
+// in quel caso si reindicizzano solo quelle, non tutto l'archivio.
+if (!function_exists('event_index_sync')) {
+    function event_index_sync(string $base, string $relPath, array $doc): array {
+        $idxDir = rtrim($base, '/') . '/events/_index';
+        $rel = trim($relPath, '/');
+
+        $isSeries = function (array $d): bool {
+            $t = isset($d['@type']) ? (is_array($d['@type']) ? $d['@type'] : [$d['@type']]) : [];
+            return in_array('EventSeries', $t, true);
+        };
+        // Legge un evento dal disco (per la serie di appartenenza e per le occorrenze).
+        $read = function (string $r) use ($base): ?array {
+            $f = rtrim($base, '/') . '/' . trim($r, '/') . '/index.json';
+            if (!is_file($f)) return null;
+            $j = json_decode((string)@file_get_contents($f), true);
+            return is_array($j) ? ($j['mainEntity'] ?? $j) : null;
+        };
+
+        // Un'occorrenza senza organizer proprio eredita quelli della serie: stessa
+        // regola del rebuild, qui risolta leggendo solo il documento della serie.
+        $override = null;
+        if (!$isSeries($doc)) {
+            $superRef = ws_ref_id($doc['superEvent'] ?? null);
+            if ($superRef !== '') {
+                $own = ws_ref_ids($doc['organizer'] ?? null);
+                if (!$own) {
+                    $sdoc = $read(strpos($superRef, '/') === false ? "events/$superRef" : $superRef);
+                    $override = $sdoc ? ws_ref_ids($sdoc['organizer'] ?? null) : [];
+                }
+            }
+        }
+
+        // Indicizza un evento e lo TOGLIE dai raggruppamenti che non lo riguardano
+        // più (organizzatore/collezione/CAP cambiati): è la differenza fra un update
+        // e un rebuild. Vale per ogni evento toccato, non solo per quello salvato.
+        $applyOne = function (string $r, array $d, ?array $ovr) use ($base, $idxDir, &$pruned) {
+            $res = event_index_update($base, $r, $d, $ovr);
+            $item = event_index_item($d, $r, $base);
+            $keep = ['by-organizer' => [], 'by-collection' => [], 'by-cap' => []];
+            $orgIds = $ovr !== null ? $ovr : ws_ref_ids($d['organizer'] ?? null);
+            if (!$orgIds && $item['organizer'] !== '') $orgIds = [$item['organizer']];
+            foreach (array_unique($orgIds) as $oid) $keep['by-organizer'][] = event_index_key($oid) . '.json';
+            if ($item['kind'] !== 'series' && $item['collection'] !== '') $keep['by-collection'][] = event_index_key($item['collection']) . '.json';
+            if (!empty($item['cap'])) $keep['by-cap'][] = event_index_key($item['cap']) . '.json';
+
+            foreach ($keep as $sub => $keepFiles) {
+                foreach (glob("$idxDir/$sub/*.json") ?: [] as $f) {
+                    // Il file "prossimi" e il suo archivio sono la stessa appartenenza.
+                    $baseName = preg_replace('/\.archive\.json$/', '.json', basename($f));
+                    if (in_array($baseName, $keepFiles, true)) continue;
+                    // Confronto sul contenuto: filesize() legge la cache di stat e qui
+                    // mentirebbe (il file è appena stato riscritto).
+                    $before = (string)@file_get_contents($f);
+                    event_index_remove_from_file($f, $r);
+                    if ($before !== (string)@file_get_contents($f)) $pruned++;
+                }
+            }
+            return $res;
+        };
+
+        $pruned = 0;
+        $res = $applyOne($rel, $doc, $override);
+
+        // Salvando una serie cambiano gli organizzatori ereditati dalle occorrenze:
+        // si reindicizzano solo quelle (dal suo indice per-collection e dai subEvent).
+        $touched = 1;
+        if ($isSeries($doc)) {
+            $ck = event_index_key((string)($doc['@id'] ?? basename($rel)));
+            $members = [];
+            foreach (["$idxDir/by-collection/$ck.json", "$idxDir/by-collection/$ck.archive.json"] as $f) {
+                $j = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+                foreach (is_array($j) ? $j : [] as $e) if (!empty($e['path'])) $members[$e['path']] = true;
+            }
+            foreach ((array)($doc['subEvent'] ?? []) as $sub) {
+                $id = is_array($sub) ? (string)($sub['@id'] ?? '') : (string)$sub;
+                if ($id !== '') $members[strpos($id, '/') === false ? "events/$id" : $id] = true;
+            }
+            $seriesOrgs = ws_ref_ids($doc['organizer'] ?? null);
+            foreach (array_keys($members) as $m) {
+                $mdoc = $read($m);
+                if (!$mdoc) continue;
+                $own = ws_ref_ids($mdoc['organizer'] ?? null);
+                $applyOne(trim($m, '/'), $mdoc, $own ? null : $seriesOrgs);
+                $touched++;
+            }
+        }
+
+        return ['mode' => 'incremental', 'indexed' => $touched, 'pruned' => $pruned,
+                'series' => $isSeries($doc) ? 1 : 0, 'organizers' => count($res['organizers'])];
     }
 }

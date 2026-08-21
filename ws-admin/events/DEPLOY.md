@@ -58,6 +58,19 @@ accesso. FAB `#add-event-fab` (stile `.fab` di waterfront, ora in meetoo.css) �
 **Duplica** richiede la dist ricostruita: `App.jsx` gestisce `?from=` aprendo l'evento come copia
 (toglie `@id`, date di sistema, creator/author/contributor e `subEvent`, così il salvataggio ne crea uno nuovo).
 
+**Indice incrementale al salvataggio** (`event_index_sync` in `lib/events-index.php`): `save-event.php`
+non rifà più tutto l'indice a ogni salvataggio, aggiorna solo l'evento salvato e **ripulisce** i
+raggruppamenti che non lo riguardano più (organizzatore/collezione/CAP cambiati); salvando una SERIE
+reindicizza anche le sue occorrenze (ne ereditano gli organizzatori). Verificato: su 7 scenari critici
+produce un indice IDENTICO al rebuild completo. Costo con 500 eventi: **544 ms → 5 ms** per salvataggio.
+Il rebuild completo resta in «Gestione eventi» per rimettere in riga modifiche fatte fuori dall'editor.
+`lib/events-index.php` ora **richiede da sé `ws-auth.php`**: senza `ws_ref_id/ws_ref_ids` l'indice si
+costruiva DEGRADATO (niente `by-collection`, chiavi organizzatore prese dal nome) — succedeva a chi lo
+includeva da solo.
+
+**Nuovo indice `by-cap/<CAP>.json`** (+ `.archive.json`): il CAP è già nel nome della cartella evento,
+quindi indicizzarlo è gratis. È la base per le viste per zona (vedi «Territorio» in fondo).
+
 **Card condivise — `cards.js` (nuovo file da caricare)**: i template delle card stanno in un posto
 solo, come gli stili. `Meetoo.eventCard(ev,{base,organizer})`, `Meetoo.tileCard({href,icon,title,meta,
 external,accent})`, `Meetoo.placeCard(place)` + `Meetoo.cardUtils` (esc/icon/metaItem/statusBadge/
