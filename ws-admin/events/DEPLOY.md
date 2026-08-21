@@ -87,6 +87,13 @@ preimposta (ci arriva la card «Nuova organizzazione»). `google_place-json.php`
 `organizations/<slug>`** in salvataggio: prima rifiutava tutto ciò che non fosse `places/…`, quindi
 un'organizzazione si poteva aprire ma non salvare.
 
+**Card con azioni (pagine di gestione), responsive** — regole in `meetoo.css`:
+≥768px il contenuto tiene **due terzi** e le azioni **un terzo**, in griglia 2×2 (Visualizza Modifica /
+Duplica Cestina) con larghezza FISSA, così restano incolonnate fra card diverse. <768px le azioni
+vanno **sotto**, a tutta larghezza, due per riga: accanto al testo quattro pulsanti che non vanno a
+capo riducevano il titolo a una colonna larga un carattere. Un conteggio vuoto non si mostra
+(`.count:empty`): l'archivio non annuncia un numero prima di essere caricato.
+
 **Card condivise — `cards.js` (nuovo file da caricare)**: i template delle card stanno in un posto
 solo, come gli stili. `Meetoo.eventCard(ev,{base,organizer})`, `Meetoo.tileCard({href,icon,title,meta,
 external,accent})`, `Meetoo.placeCard(place)` + `Meetoo.cardUtils` (esc/icon/metaItem/statusBadge/
