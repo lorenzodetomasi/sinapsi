@@ -25,19 +25,19 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 
         #banner-unverified, #google-user, #whitelist-area { display: none; }
         #banner-unverified { background: var(--warn-bg); color: var(--warn-fg); padding: 15px; border-left: 5px solid var(--warn-fg); border-radius: var(--radius); font-weight: 600; margin-bottom: 20px; }
-        #google-user { background: var(--surface); border: 1px solid var(--line); padding: 15px; border-radius: var(--radius); margin-bottom: 20px; }
+        #google-user { background: var(--color-background-section1); border: 1px solid var(--line); padding: 15px; border-radius: var(--radius); margin-bottom: 20px; }
         #google-user code { background: var(--surface-2) !important; color: var(--red) !important; }
 
-        .search-box { width: 100%; padding: 14px 16px; font-size: 1rem; margin-bottom: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+        .search-box { width: 100%; padding: 14px 16px; font-size: 1rem; margin-bottom: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--color-background-section1); color: var(--text); }
         .search-box:focus { outline: none; border-color: var(--accent); }
         #debug-msg, #save-msg { color: var(--hint); }
 
         .grid { display: flex; gap: 20px; flex-wrap: wrap; }
         .col { flex: 1 1 340px; display: flex; flex-direction: column; min-width: 0; }
         label { font-weight: 600; margin-bottom: 6px; color: var(--hint); }
-        textarea { width: 100%; height: 480px; padding: 12px; font-family: 'Source Code Pro', monospace; font-size: 13px; line-height: 1.5; background: var(--editor-bg); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); resize: vertical; }
+        textarea { width: 100%; height: 480px; padding: 12px; font-family: 'Source Code Pro', monospace; font-size: 13px; line-height: 1.5; background: var(--color-background-section1); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); resize: vertical; }
         textarea:focus { outline: none; border-color: var(--accent); }
-        input[type=text], select { background: var(--surface); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; }
+        input[type=text], select { background: var(--color-background-section1); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font: inherit; }
         input[type=text]:focus, select:focus { outline: none; border-color: var(--accent); }
 
         #error-msg { color: var(--red); font-weight: 700; margin-bottom: 15px; }
@@ -54,7 +54,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         #diff-overwrite { background: var(--red); color: #fff; border-color: transparent; }
         #save-msg { font-weight: 600; }
 
-        #diff-panel { display: none; margin-top: 20px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+        #diff-panel { display: none; margin-top: 20px; padding: 16px; background: var(--color-background-section1); border: 1px solid var(--line); border-radius: var(--radius); }
         #diff-panel h3 { margin: 0 0 4px; } #diff-panel p, #diff-panel a { color: var(--hint); }
         #diff-content { max-height: 340px; overflow: auto; font-family: 'Source Code Pro', monospace; font-size: 13px; border: 1px solid var(--line); padding: 10px; border-radius: 8px; background: var(--surface-2); }
         .diff-row { display: block; padding: 2px 0; white-space: pre-wrap; word-break: break-word; cursor: pointer; }
