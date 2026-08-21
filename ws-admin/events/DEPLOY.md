@@ -19,9 +19,29 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Backend – lib** | `ws-admin/lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Gestione eventi** | `ws-admin/events/index.php` (nuova pagina) | `ws-admin/events/` |
+| **Amministrazione** | `ws-admin/index.php` (hub) + `ws-admin/lib/events-trash.php` | `ws-admin/` e `ws-admin/lib/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
 | **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** | `ws-custom/themes/meetoo/` |
+
+**Hub «Amministrazione»** `ws-admin/index.php`: collegamenti agli strumenti (gestione eventi, nuovo
+evento, luoghi/organizzazioni, convertitore); visibile solo da autenticati con ruolo redazionale.
+La voce **Amministrazione** compare nel menu hamburger di TUTTE le pagine, ma solo per
+**admin/super-admin** (`header.js`, `renderNav`). La card «Utenti e ruoli» è segnata *in arrivo*:
+non esiste ancora uno strumento, i ruoli si cambiano a mano in `users/users.xml`.
+
+**Cestino eventi** (`ws-admin/lib/events-trash.php` + azioni in `events/index.php`): «Cestina»
+**sposta** la cartella da `events/<slug>` a **`_trash/events/<slug>`** — niente viene riscritto, i
+media restano — e rigenera gli indici, così l'evento sparisce da liste e pagine pubbliche ma è
+ripristinabile. Il manifest `_trash/events.json` ricorda percorso originale, data e autore.
+Ripristino: rimette la cartella al suo posto (si ferma se il percorso è di nuovo occupato).
+Permessi: cestinare/ripristinare come modificare (user/client/admin/super-admin); **eliminare
+definitivamente e svuotare il cestino solo admin/super-admin**, con conferma esplicita; la
+cancellazione ricorsiva è confinata a `_trash` (guardia su realpath).
+⚠ `_trash/` sta dentro i contenuti serviti: un evento cestinato **non è più indicizzato ma resta
+raggiungibile via URL diretto** finché non si svuota il cestino. Se serve che sparisca subito dal
+web, va spostata la cartella `_trash` fuori dai contenuti pubblicati.
+Il pulsante **Rigenera indice** (admin) fa normalize+rebuild+check e mostra i riferimenti rotti.
 
 **Pagina «Gestione eventi»** `ws-admin/events/index.php`: elenco redazionale di tutti gli eventi —
 **Collezioni** (le serie, senza data), **Prossimi** (dal più vicino) e **Archivio** (dal più recente,

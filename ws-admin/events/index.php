@@ -35,14 +35,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    $base = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
+
     if ($action === 'check-refs') {
         if (!$canEdit) { http_response_code(403); echo json_encode(['error' => 'Permessi insufficienti.']); exit; }
         require_once __DIR__ . '/../lib/events-check.php';
-        $broken = event_check_refs(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT');
+        $broken = event_check_refs($base);
         // Raggruppati per evento: la card mostra solo il proprio avviso.
         $byEvent = [];
         foreach ($broken as $b) $byEvent[$b['from']][] = ['field' => $b['field'], 'ref' => $b['ref']];
         echo json_encode(['broken' => $byEvent, 'total' => count($broken)]);
+        exit;
+    }
+
+    // --- Cestino ---------------------------------------------------------
+    // Cestinare/ripristinare: come modificare un evento (chi può editare, può
+    // toglierlo di mezzo). Eliminare PER SEMPRE: solo admin/super-admin.
+    if (in_array($action, ['trash', 'trash-list', 'trash-restore', 'trash-delete', 'trash-empty'], true)) {
+        if (!$canEdit) { http_response_code(403); echo json_encode(['error' => 'Permessi insufficienti.']); exit; }
+        require_once __DIR__ . '/../lib/events-trash.php';
+        $isAdmin = in_array($user['role'], ['admin', 'super-admin'], true);
+
+        if ($action === 'trash-list') { echo json_encode(['items' => ws_trash_load($base)]); exit; }
+
+        if ($action === 'trash') {
+            $res = ws_trash_move($base, (string)($_POST['path'] ?? ''), $user);
+            if (!$res['ok']) { http_response_code(400); echo json_encode(['error' => $res['error']]); exit; }
+            // L'evento è uscito da events/: gli indici vanno rifatti, altrimenti
+            // resterebbe nelle liste (e nelle pagine pubbliche).
+            require_once __DIR__ . '/../lib/events-index.php';
+            $rebuilt = event_index_rebuild($base);
+            echo json_encode(['success' => true, 'entry' => $res['entry'], 'index' => $rebuilt]);
+            exit;
+        }
+
+        if ($action === 'trash-restore') {
+            $res = ws_trash_restore($base, (string)($_POST['id'] ?? ''));
+            if (!$res['ok']) { http_response_code(400); echo json_encode(['error' => $res['error']]); exit; }
+            require_once __DIR__ . '/../lib/events-index.php';
+            $rebuilt = event_index_rebuild($base);
+            echo json_encode(['success' => true, 'entry' => $res['entry'], 'index' => $rebuilt]);
+            exit;
+        }
+
+        // Da qui in poi si cancella davvero: niente ripristino possibile.
+        if (!$isAdmin) { http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono eliminare definitivamente.']); exit; }
+
+        if ($action === 'trash-delete') {
+            $res = ws_trash_delete($base, (string)($_POST['id'] ?? ''));
+            if (!$res['ok']) { http_response_code(400); echo json_encode(['error' => $res['error']]); exit; }
+            echo json_encode(['success' => true]);
+            exit;
+        }
+
+        if ($action === 'trash-empty') {
+            $res = ws_trash_empty($base);
+            echo json_encode(['success' => $res['ok'], 'deleted' => $res['deleted'], 'failed' => $res['failed']]);
+            exit;
+        }
+    }
+
+    // Rigenerazione dell'indice eventi (normalizza + reindicizza + controlla i
+    // riferimenti). Operazione di manutenzione: solo admin/super-admin.
+    if ($action === 'rebuild-index') {
+        if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
+            http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono rigenerare l\'indice.']); exit;
+        }
+        require_once __DIR__ . '/../lib/events-index.php';
+        require_once __DIR__ . '/../lib/events-check.php';
+        $res = event_index_rebuild($base);
+        echo json_encode(['success' => true, 'index' => $res, 'brokenRefs' => count(event_check_refs($base))]);
         exit;
     }
 
@@ -78,6 +140,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       background: transparent; color: var(--color-link); font: inherit; font-weight: 600; cursor: pointer;
     }
     .btn-more:hover { border-color: var(--accent); }
+    .btn-more.danger { color: var(--danger-fg); }
+    .btn-more.danger:hover { border-color: var(--danger-fg); }
+    .admin-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 10px 0 0; }
+    .admin-bar .btn-more { margin: 0; }
+    .admin-bar .count { min-width: 1.6em; }
+    #sec-trash .card { opacity: .9; }
     .sentinel { height: 1px; }
     .badge.broken { background: var(--warn-bg); color: var(--warn-fg); }
     #gate { text-align: center; padding: 48px 16px; color: var(--color-hint); }
@@ -100,6 +168,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <select id="f-coll" aria-label="Filtra per collezione"><option value="">Tutte le collezioni</option></select>
       </div>
       <div class="filter-note" id="filter-note"></div>
+
+      <div class="admin-bar" id="admin-bar" hidden>
+        <button type="button" class="btn-more" id="btn-rebuild">
+          <span class="material-symbols-outlined">manage_history</span> Rigenera indice
+        </button>
+        <button type="button" class="btn-more" id="btn-trash">
+          <span class="material-symbols-outlined">delete</span> Cestino <span class="count" id="trash-count">0</span>
+        </button>
+        <span class="filter-note" id="admin-msg"></span>
+      </div>
+
+      <section id="sec-trash" hidden>
+        <h2 class="sec-head"><span class="material-symbols-outlined">delete</span>Cestino <span class="count" id="tr-count"></span>
+          <button type="button" class="btn-more danger" id="btn-empty" style="margin-left:auto">
+            <span class="material-symbols-outlined">delete_forever</span> Svuota il cestino
+          </button>
+        </h2>
+        <div class="cards" id="tr-list"></div>
+      </section>
 
       <section class="collections" id="sec-collections">
         <h2 class="sec-head"><span class="material-symbols-outlined">collections_bookmark</span>Collezioni <span class="count" id="coll-count"></span></h2>
@@ -142,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     const state = {
       series: [], upcoming: [], archive: [],
-      shown: { up: 0, ar: 0 }, archiveOpen: false, broken: {},
+      shown: { up: 0, ar: 0 }, archiveOpen: false, broken: {}, trash: [],
     };
 
     (function crumb() {
@@ -183,10 +270,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       return d && !isNaN(d) ? d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
     };
     // Azioni redazionali: la card è la stessa del sito, con la coda diversa.
+    // "Cestina" non è un link ma un'azione: data-trash la intercetta più sotto.
     const actions = (ev) => [
       { href: THEME + 'event.html?id=' + encodeURIComponent(ev.path), icon: 'visibility', label: 'Visualizza', title: 'Apri la pagina pubblica', external: true },
       { href: EDIT + '?id=' + encodeURIComponent(ev.path), icon: 'edit', label: 'Modifica', title: 'Apri nell\'editor', primary: true },
       { href: EDIT + '?from=' + encodeURIComponent(ev.path), icon: 'content_copy', label: 'Duplica', title: 'Nuovo evento a partire da questo' },
+      { href: '#trash-' + encodeURIComponent(ev.path), icon: 'delete', label: 'Cestina', title: 'Sposta nel cestino (ripristinabile)' },
     ];
     const eventCard = (ev) => Meetoo.eventCard(ev, {
       actions: actions(ev),
@@ -298,7 +387,128 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         state.broken = r.body.broken;
         resetLists();
       });
+
+      loadTrash();
     }
+
+    /* ---------- Cestino ----------
+     * Cestinare sposta la cartella fuori da events/ (ripristinabile); svuotare
+     * cancella per davvero, quindi lo può fare solo un admin e con conferma. */
+    const adminMsg = (text, err) => {
+      const el = document.getElementById('admin-msg');
+      el.textContent = text || '';
+      el.style.color = err ? 'var(--danger-fg)' : 'var(--color-hint)';
+    };
+
+    function loadTrash() {
+      document.getElementById('admin-bar').hidden = false;
+      return api('trash-list').then((r) => {
+        state.trash = (r.status === 200 && Array.isArray(r.body.items)) ? r.body.items : [];
+        document.getElementById('trash-count').textContent = state.trash.length;
+        renderTrash();
+      });
+    }
+
+    function renderTrash() {
+      const box = document.getElementById('tr-list');
+      document.getElementById('tr-count').textContent = state.trash.length;
+      document.getElementById('btn-empty').hidden = !state.trash.length;
+      if (!state.trash.length) { box.innerHTML = '<div class="empty">Il cestino è vuoto.</div>'; return; }
+      box.innerHTML = state.trash.map((t) => Meetoo.eventCard(
+        { path: t.path, name: t.name, startDate: t.startDate },
+        {
+          viewUrl: '#',
+          organizer: false,
+          extraMeta: [{ icon: 'delete', text: 'cestinato ' + fmtDate(t.trashedAt) + (t.trashedByName ? ' da ' + t.trashedByName : '') }],
+          actions: [
+            { href: '#restore-' + encodeURIComponent(t.id), icon: 'restore_from_trash', label: 'Ripristina', title: 'Rimetti l\'evento al suo posto', primary: true },
+            { href: '#delete-' + encodeURIComponent(t.id), icon: 'delete_forever', label: 'Elimina', title: 'Elimina definitivamente (non recuperabile)' },
+          ],
+        }
+      )).join('');
+    }
+
+    // Ricarica gli indici dopo un'operazione che li cambia (cestina/ripristina).
+    function reloadIndexes() {
+      return getJson(CONTENT_BASE + 'events/_index/events.json').then((list) => {
+        const all = Array.isArray(list) ? list : [];
+        state.series = all.filter((e) => e.kind === 'series').sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        state.upcoming = all.filter((e) => e.kind !== 'series').sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        resetLists();
+      }).catch(() => {});
+    }
+
+    // Un solo gestore per tutte le azioni delle card (delega sul contenitore).
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest && e.target.closest('a.card-act');
+      if (!a) return;
+      const href = a.getAttribute('href') || '';
+      const m = href.match(/^#(trash|restore|delete)-(.+)$/);
+      if (!m) return;                       // Visualizza/Modifica/Duplica: link veri
+      e.preventDefault();
+      const what = m[1], id = decodeURIComponent(m[2]);
+
+      if (what === 'trash') {
+        if (!confirm('Spostare «' + id + '» nel cestino?\nPotrai ripristinarlo dal cestino.')) return;
+        adminMsg('Sposto nel cestino…');
+        api('trash', { path: id }).then((r) => {
+          if (r.status !== 200) { adminMsg(r.body.error || 'Operazione fallita.', true); return; }
+          adminMsg('Spostato nel cestino. Indice aggiornato.');
+          loadTrash(); reloadIndexes();
+        });
+        return;
+      }
+      if (what === 'restore') {
+        adminMsg('Ripristino…');
+        api('trash-restore', { id }).then((r) => {
+          if (r.status !== 200) { adminMsg(r.body.error || 'Ripristino fallito.', true); return; }
+          adminMsg('Ripristinato in ' + (r.body.entry && r.body.entry.path) + '.');
+          loadTrash(); reloadIndexes();
+        });
+        return;
+      }
+      // Eliminazione definitiva: doppia conferma, non si torna indietro.
+      if (!confirm('Eliminare DEFINITIVAMENTE «' + id + '»?\nLa cartella e i suoi file verranno cancellati: l\'operazione non è reversibile.')) return;
+      adminMsg('Elimino…');
+      api('trash-delete', { id }).then((r) => {
+        if (r.status !== 200) { adminMsg(r.body.error || 'Eliminazione fallita.', true); return; }
+        adminMsg('Eliminato definitivamente.');
+        loadTrash();
+      });
+    });
+
+    document.getElementById('btn-trash').addEventListener('click', () => {
+      const sec = document.getElementById('sec-trash');
+      sec.hidden = !sec.hidden;
+      if (!sec.hidden) { renderTrash(); sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+
+    document.getElementById('btn-empty').addEventListener('click', () => {
+      if (!state.trash.length) return;
+      if (!confirm('Svuotare il cestino?\n' + state.trash.length + ' event' + (state.trash.length === 1 ? 'o verrà eliminato' : 'i verranno eliminati') +
+                   ' definitivamente, con i loro file. L\'operazione non è reversibile.')) return;
+      adminMsg('Svuoto il cestino…');
+      api('trash-empty').then((r) => {
+        if (r.status !== 200) { adminMsg(r.body.error || 'Operazione fallita.', true); return; }
+        adminMsg('Cestino svuotato: ' + r.body.deleted + ' eliminati' +
+          (r.body.failed && r.body.failed.length ? ' · non eliminati: ' + r.body.failed.join(', ') : '') + '.');
+        loadTrash();
+      });
+    });
+
+    document.getElementById('btn-rebuild').addEventListener('click', function () {
+      this.disabled = true;
+      adminMsg('Rigenero l\'indice…');
+      api('rebuild-index').then((r) => {
+        this.disabled = false;
+        if (r.status !== 200) { adminMsg(r.body.error || 'Rigenerazione fallita.', true); return; }
+        const i = r.body.index || {};
+        adminMsg('Indice rigenerato: ' + (i.indexed || 0) + ' eventi · ' + (i.series || 0) + ' collezioni · ' +
+          (i.organizers || 0) + ' organizzatori' + (r.body.brokenRefs ? ' · ⚠ ' + r.body.brokenRefs + ' riferimenti rotti' : ''),
+          !!r.body.brokenRefs);
+        reloadIndexes();
+      });
+    });
 
     /* ---------- Login: l'elenco si vede solo da autenticati ---------- */
     (function auth() {
