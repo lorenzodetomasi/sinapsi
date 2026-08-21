@@ -29,6 +29,11 @@ placeLabel). Va incluso **prima** dello script di pagina; `header.js` ora **fond
 invece di riassegnarlo, così l'ordine degli script non conta. Le card evento mostrano
 **"{place.name}, {place.address.addressLocality}"** (il CAP non si mostra più: resta nell'indice).
 
+Regola unica del luogo (indice e pagine dicono la stessa cosa): si mostra **sempre** il `name` del
+luogo — un eventuale `alternateName` è un'alternativa, non un sostituto — **sempre** la località, mai
+il CAP. Nella pagina evento il riferimento non ha la località, quindi `Meetoo.resolvePlace()`
+(cards.js) legge il file del luogo e completa la riga.
+
 **`_index/events.json`: il luogo è un oggetto** — la voce ha `place: {id, name, address:
 {addressLocality}}` **al posto di** `location` (stringa). Poiché nell'evento la location è solo un
 riferimento `{@id,name}`, `event_index_place_ref()` risolve il file del luogo per prendere la
