@@ -41,7 +41,10 @@ cancellazione ricorsiva è confinata a `_trash` (guardia su realpath).
 ⚠ `_trash/` sta dentro i contenuti serviti: un evento cestinato **non è più indicizzato ma resta
 raggiungibile via URL diretto** finché non si svuota il cestino. Se serve che sparisca subito dal
 web, va spostata la cartella `_trash` fuori dai contenuti pubblicati.
-Il pulsante **Rigenera indice** (admin) fa normalize+rebuild+check e mostra i riferimenti rotti.
+Manutenzione (admin) nella barra della pagina: **Rigenera indice** = migrate+rebuild+check (come
+`save-event.php action=rebuild-index`); **Normalizza** = in più ripara la struttura (serie annidate,
+occorrenze dichiarate ma assenti, subEvent↔superEvent) e dice cosa ha riparato — oggi sui contenuti
+reali è un no-op, serve da rete di sicurezza.
 
 **Pagina «Gestione eventi»** `ws-admin/events/index.php`: elenco redazionale di tutti gli eventi —
 **Collezioni** (le serie, senza data), **Prossimi** (dal più vicino) e **Archivio** (dal più recente,
