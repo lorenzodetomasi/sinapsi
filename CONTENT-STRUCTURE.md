@@ -38,8 +38,10 @@ tra eventi con stessa data/luogo.
 
 ## Convenzione @id e riferimenti (NORMALIZZATA)
 
-- **self-@id** di un'entità = **slug nudo** (es. Place → `IT00122-spiaggialamanusa`,
-  Organization → `clubdellibro-ostia`).
+- **self-@id** di un'entità = **`{collection}/{slug}`**, cioè il suo percorso dalla radice
+  del locale (es. `places/IT00122/lamanusa`, `organizations/clubdellibro-ostia`,
+  `events/20260825T1845-IT00122-reading-party`). **Un'entità ha un nome solo**: lo stesso
+  con cui la nominano i riferimenti e l'attributo `id` dell'XML.
 - **riferimento** da un'entità a un'altra = **`{collection}/{slug}`**, relativo alla
   radice del *locale* (es. `places/IT00122-spiaggialamanusa`,
   `organizations/clubdellibro-ostia`).
@@ -47,8 +49,8 @@ tra eventi con stessa data/luogo.
   `href="../../{collection}/{slug}/index.xml"` (l'entità di partenza è due livelli sotto:
   `events/{slug}/`). *(Adeguare il convertitore: oggi usa `../{@id}`.)*
 
-L'`@id` dell'evento **coincide con lo slug della cartella** (descrittivo incluso),
-es. `20260723T1830-IT00122-reading_party`. Le cartelle esistenti prive del descrittivo
+L'`@id` dell'evento è **`events/` + il percorso della cartella** (descrittivo incluso),
+es. `events/20260723T1830-IT00122-reading_party`. Le cartelle esistenti prive del descrittivo
 vanno rinominate per allinearsi all'`@id`.
 
 ## Archiviazione e indice eventi
@@ -119,10 +121,11 @@ file). Per non andare in deriva:
 
 **Riferimenti fra entità = `{collection}/{slug}`** (es.
 `"superEvent": "events/clubdellibro-ostia-reading_party"`, `"location": "places/IT00122-…"`).
-Lo **slug nudo** è la forma *self-@id*, **non** un riferimento. L'indice normalizza comunque
-all'ultimo segmento, ma la forma canonica da salvare è `events/{slug}`. L'editor emette già
+Riferimento e self-@id hanno la **stessa forma**: `events/{slug}`. Lo slug nudo resta accettato
+in LETTURA (contenuti vecchi o scritti a mano: l'indice normalizza all'ultimo segmento), ma non
+si scrive più; `check-refs` lo segnala e «Normalizza» lo ripara. L'editor emette già
 questo formato (adapter `toEventRef`); lo script `ws-admin/events/migrate-refs.php` (dry-run
-di default, `--apply` per scrivere) normalizza i contenuti esistenti: `@id` = slug cartella,
+di default, `--apply` per scrivere) normalizza i contenuti esistenti: `@id` = `events/{percorso}`,
 `superEvent`/`subEvent` → `events/{slug}`.
 
 **Organizer come default di serie (ereditarietà).** Un'occorrenza (con `superEvent`) senza
@@ -251,7 +254,7 @@ events/{serieSlug}/{occorrenzaSlug}/    ← occorrenza in programma
 events/{serieSlug}/archive/{occorrenzaSlug}/  ← occorrenza passata
 ```
 
-- `@id` di un'occorrenza (self) = slug nudo (`{occorrenzaSlug}`); **riferimento** dalla
+- `@id` di un'occorrenza (self) = `events/{occorrenzaSlug}`; **riferimento** dalla
   serie o verso la serie = path relativo alla radice del locale
   (`events/{serieSlug}/{occorrenzaSlug}`, `events/{serieSlug}`), coerente con la regola
   generale degli `@id`.

@@ -94,6 +94,15 @@ vanno **sotto**, a tutta larghezza, due per riga: accanto al testo quattro pulsa
 capo riducevano il titolo a una colonna larga un carattere. Un conteggio vuoto non si mostra
 (`.count:empty`): l'archivio non annuncia un numero prima di essere caricato.
 
+**@id degli eventi = `events/{slug}`** (era lo slug nudo): stessa forma dei riferimenti,
+dell'attributo `id` dell'XML e delle altre collezioni — JSON e XML dello stesso evento prima si
+contraddicevano. La regola sta in `lib/events-migrate.php`, quindi **il prossimo «Rigenera indice»
+(o «Normalizza») ripara i contenuti da solo, anche in produzione**: nessun deploy di contenuti.
+`lib/events-check.php` segnala come problema un `@id` che non corrisponde alla cartella, e il badge
+sulla card ora dice «N problemi» (non solo riferimenti rotti). Le letture restano tolleranti alla
+forma nuda (l'indice normalizza all'ultimo segmento); l'editor non cambia — `eventRelPath` e
+`toEventRef` prefissano solo quando il prefisso manca.
+
 **Icona di chi organizza** — `Meetoo.orgIcon(type, name)` in `cards.js`, regola UNICA per card
 evento, collezioni e Gruppi della home: comanda il **@type** (LocalBusiness → `storefront`, con
 `local_library`/`menu_book` se il nome dice biblioteca o libreria; NGO → `volunteer_activism`;

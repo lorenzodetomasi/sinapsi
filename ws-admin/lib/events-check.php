@@ -24,6 +24,15 @@ if (!function_exists('event_check_refs')) {
             if (!is_array($doc)) continue;
             $rel = 'events/' . trim(str_replace($eventsDir, '', dirname($f->getPathname())), '/');
 
+            // self-@id: deve essere il percorso dell'evento (events/{slug}), come per
+            // places/… e organizations/… Uno slug nudo o un @id che non corrisponde alla
+            // cartella rende l'evento irrintracciabile dai suoi stessi riferimenti:
+            // si segnala qui e lo ripara «Normalizza» (o «Rigenera indice»).
+            $selfId = (string)($doc['@id'] ?? '');
+            if ($selfId !== $rel) {
+                $broken[] = ['from' => $rel, 'field' => '@id', 'ref' => $selfId !== '' ? $selfId : '(assente)'];
+            }
+
             // Riferimenti a entità di altre collezioni (organizations/… places/…): forma {collection}/{slug}.
             foreach (['organizer', 'location', 'performer'] as $field) {
                 foreach (ws_ref_ids($doc[$field] ?? null) as $ref) {

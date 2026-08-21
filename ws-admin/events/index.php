@@ -283,13 +283,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
 
     /* ---------- Card ---------- */
-    // Avviso sui riferimenti rotti dell'evento (organizer/luogo/collezione mancanti).
+    // Avviso sui problemi dell'evento: riferimenti rotti (organizer/luogo/collezione
+    // mancanti) e @id non canonico. Li ripara «Normalizza» / «Rigenera indice».
     function brokenBadge(path) {
       const b = state.broken[path];
       if (!b || !b.length) return '';
       const what = b.map((x) => x.field + ' → ' + x.ref).join('; ');
       return '<span class="badge broken" title="' + esc(what) + '">' +
-        '<span class="material-symbols-outlined">link_off</span>' + b.length + ' rif. rotti</span>';
+        '<span class="material-symbols-outlined">link_off</span>' + b.length + (b.length === 1 ? ' problema' : ' problemi') + '</span>';
     }
     const fmtDate = (s) => {
       const d = s ? new Date(s) : null;

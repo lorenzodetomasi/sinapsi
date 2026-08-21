@@ -1,6 +1,8 @@
 <?php
 // Normalizzazione dei riferimenti eventi verso le convenzioni (CONTENT-STRUCTURE.md):
-//   • @id = slug della cartella (self-@id "nudo")
+//   • @id = events/{slug} — il percorso dalla radice dei contenuti, come per
+//     places/…, organizations/…, users/… Un'entità ha UN nome solo: lo stesso con
+//     cui la nominano i riferimenti e l'attributo id dell'XML.
 //   • superEvent = events/{slug}
 //   • subEvent[].@id (riferimenti) = events/{slug}
 // Idempotente: scrive SOLO i file che cambiano (quindi "solo quando necessario").
@@ -39,8 +41,11 @@ if (!function_exists('event_migrate_refs')) {
             $slug = basename($rel);
             $local = [];
 
-            // 1) @id = slug cartella
-            if (($doc['@id'] ?? null) !== $slug) { $local[] = "@id: '" . ($doc['@id'] ?? '') . "' → '$slug'"; $doc['@id'] = $slug; }
+            // 1) @id = events/{percorso} (dalla radice dei contenuti, non lo slug nudo).
+            // Si usa $rel, non basename: un'occorrenza annidata sotto una serie ha un
+            // percorso di più segmenti e il suo @id deve poterla ritrovare.
+            $selfId = 'events/' . $rel;
+            if (($doc['@id'] ?? null) !== $selfId) { $local[] = "@id: '" . ($doc['@id'] ?? '') . "' → '$selfId'"; $doc['@id'] = $selfId; }
 
             // 2) superEvent → events/{slug}
             if (isset($doc['superEvent'])) {
