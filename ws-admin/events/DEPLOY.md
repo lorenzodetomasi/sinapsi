@@ -36,7 +36,7 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Amministrazione** | `ws-admin/index.php` (hub) + `ws-admin/lib/events-trash.php` | `ws-admin/` e `ws-admin/lib/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
-| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** | `ws-custom/themes/meetoo/` |
+| **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`cards.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** + **`places.css`** | `ws-custom/themes/meetoo/` |
 
 **Hub «Amministrazione»** `ws-admin/index.php`: sezioni Eventi · **Luoghi e attività** · **Organizzazioni**
 (ognuna con la sua card «Nuovo…») · Utenti · Strumenti; visibile solo da autenticati con ruolo redazionale.
@@ -122,6 +122,31 @@ produzione editor ed endpoint sono sullo stesso host.
 `body`, che restava `height: 100vh; overflow: hidden` (su desktop è giusto: sono le colonne a
 scorrere per conto loro). Risultato: sotto i 1000px l'editor era bloccato e non si arrivava ai campi
 in fondo. Ora il body si libera insieme a `.app`.
+
+**Tre livelli di stile, non due.** `meetoo.css` = contratto comune (card, azioni, badge,
+`.description`, «c'è altro sotto», condividi + «mi interessa», toast). **`places.css` (nuovo)** = il
+VOCABOLARIO dei luoghi: tipologia col suo colore, voto, gestore precedente, foto con crediti,
+attività ospitate — non è un formato, e serve identico a home, placecollection e al modale luogo.
+`waterfront.html` = solo il FORMATO quadrato «mappa della metro», con prefisso **`wf-`**
+(`.wf-card`, `.wf-slot`, `.wf-head`, `.wf-body`, `.wf-scroll`, `.wf-foot`, `.wf-name`).
+Niente più nomi condivisi per caso: una regola nuova su `.card` non può più arrivare nel carosello.
+Le misure comuni sono in **`em`**, così la stessa regola serve una card larga mezzo schermo e una
+card quadrata che si misura in `cqw`: `.wf-card .card-act { font-size: 4.6cqw }` e basta.
+Due trappole trovate e documentate: `.card-actions` nel sito prende **un terzo** della card
+(`flex: 0 0 33.333%`), e in una card a colonna quel terzo diventa ALTEZZA (la riga passava da 30 a
+67px); e `@media (max-width: 47.9375rem) .card { flex-wrap: wrap }` mandava il corpo in una seconda
+colonna. Entrambe neutralizzate nella variante `.wf-card`.
+Verificato: **57 card su 59 hanno misure identiche** a prima del rinominio (le altre due sono la
+card centrata, che dipende da dove è fermo il carosello).
+
+**Condividi + «mi interessa» in tutte le card** (`Meetoo.social` in cards.js): stesso markup e stesso
+comportamento ovunque. Sui telefoni la condivisione apre il pannello di sistema, altrove copia il
+link e lo dice con un toast. Il cuore va a finire in due posti diversi a seconda di cosa segna:
+un EVENTO sul server (`meetoo:interestedIn`, serve essere collegati — altrimenti lo dice), un LUOGO
+nel browser di chi guarda (`meetoo:favorites`, la chiave che il lungomare usava già: i preferiti
+segnati restano). I pulsanti NON stanno dentro il link della card — un elemento cliccabile dentro un
+altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
+ha già le sue azioni.
 
 **waterfront.html usa l'header condiviso.** Aveva un header disegnato a mano con i pulsanti inerti
 («Menu (in arrivo)», «Account (in arrivo)») e un proprio selettore del tema: ora carica `meetoo.css`
