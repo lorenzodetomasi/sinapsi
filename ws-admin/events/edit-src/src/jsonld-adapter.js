@@ -88,9 +88,9 @@ export function fromJsonLd(doc) {
     // Tipi = @type esclusi i tipi primari (Event/EventSeries)
     types: typeArr.filter((t) => !BASE_TYPES.includes(t)),
     additionalType: asArray(doc.additionalType).map((s) => String(s).trim()).filter(Boolean),
-    keywords: dedupeKeywords(
-      doc.keywords ? String(doc.keywords).split(',').map((s) => s.trim()) : []
-    ),
+    // In lettura si accetta sia l'array (forma attuale) sia la vecchia stringa
+    // separata da virgole: i file già scritti non vanno riaperti per forza.
+    keywords: dedupeKeywords(asArray(doc.keywords)),
     name: doc.name ?? '',
     description: doc.description ?? '',
     image: doc.image ?? '',
@@ -153,13 +153,12 @@ export function fromJsonLd(doc) {
  * (confronto senza maiuscole/minuscole) tenendo la PRIMA grafia incontrata — così
  * l'ordine di chi scrive non cambia — e SPEZZA le voci che contengono una virgola.
  *
- * Lo spezzare non è un vezzo: le keywords si salvano come un'unica stringa separata
- * da virgole, quindi una keyword con la virgola dentro non esiste — al primo
- * salvataggio diventa comunque due voci. È da qui che nascevano i doppioni di
- * località e regione: il luogo della serie si chiama «Lido di Ostia, Roma», il
- * salvataggio lo spezzava in due keywords e il salvataggio dopo ri-aggiungeva il
- * nome intero, che non combaciava con nessuna delle due metà. Ogni giro ne
- * produceva un paio in più.
+ * Lo spezzare sulle virgole serve ancora, anche ora che si salva un ARRAY: i file
+ * scritti prima hanno la stringa unica, e chi digita continua a incollare elenchi
+ * separati da virgole. È da qui che nascevano i doppioni di località e regione — il
+ * luogo della serie si chiama «Lido di Ostia, Roma»: nella vecchia stringa veniva
+ * spezzato in due voci e al salvataggio dopo si ri-aggiungeva intero, senza
+ * combaciare con nessuna delle due metà. Ogni giro ne produceva un paio in più.
  */
 export function dedupeKeywords(list) {
   const viste = new Set();
@@ -185,9 +184,8 @@ export function dedupeKeywords(list) {
  * mantengono il loro ordine; i doppioni spariscono (vedi dedupeKeywords).
  */
 function mergeKeywords(d) {
-  const base = Array.isArray(d.keywords) ? [...d.keywords] : d.keywords ? [String(d.keywords)] : [];
   const auto = [...(d.organizer ?? []).map((o) => o?.name), d.location?.name];
-  return dedupeKeywords([...base, ...auto]).join(', ');
+  return dedupeKeywords([...asArray(d.keywords), ...auto]);
 }
 
 /** Dati del form -> JSON-LD (index.json), reintroducendo @context/@type/@id/namespace.
@@ -273,7 +271,7 @@ export function toJsonLd(d) {
     ...(sameAs.length ? { sameAs } : {}),
     '@type': types,
     ...(additionalType ? { additionalType } : {}),
-    ...(kw ? { keywords: kw } : {}),
+    ...(kw.length ? { keywords: kw } : {}),
     name: d.name ?? '',
     ...(d.description ? { description: d.description } : {}),
     ...(d.image ? { image: d.image } : {}),

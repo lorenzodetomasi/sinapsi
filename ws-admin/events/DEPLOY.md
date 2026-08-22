@@ -97,13 +97,26 @@ Il riempimento dei nomi mancanti si fa in **App.jsx**, in un passaggio su tutte 
 dentro la singola riga, due righe che si compilano nello stesso istante partono dalla stessa
 istantanea e la seconda cancella la prima.
 
-**Keywords: niente più doppioni di località e regione.** Le keywords si salvano come UNA stringa
-separata da virgole, quindi una keyword che contiene una virgola non esiste. Il luogo della serie si
-chiama «Lido di Ostia, Roma»: il salvataggio lo spezzava in due voci e il salvataggio successivo
-ri-aggiungeva il nome intero, che non combaciava con nessuna delle due metà — ogni giro ne
-produceva un paio in più. Ora `dedupeKeywords` spezza sulle virgole e deduplica TUTTA la lista
-(prima il controllo guardava solo ciò che stava per essere aggiunto), in lettura e in scrittura:
-verificato che quattro salvataggi di fila non cambiano più nulla.
+**Keywords: un ELENCO, non una stringa.** Si salvano come array JSON (`"keywords": ["…","…"]`)
+e in XML come `<keywords>` ripetuto, esattamente come `<organizer>`. Prima erano una stringa separata
+da virgole, e una keyword che contiene una virgola lì dentro non esiste: il luogo della serie si
+chiama «Lido di Ostia, Roma», quindi veniva spezzato in due voci e al salvataggio dopo si
+ri-aggiungeva intero, senza combaciare con nessuna delle due metà — ogni giro ne produceva un paio
+in più. Con l elenco la domanda non si pone. L editor **legge entrambe le forme** (i file vecchi non
+vanno riaperti per forza) e `dedupeKeywords` continua a spezzare sulle virgole e a deduplicare tutta
+la lista, perché chi scrive incolla ancora elenchi separati da virgole.
+Per i file già scritti c è la migrazione **«Keywords come elenco»** nell hub (anteprima + applica):
+converte JSON e **rigenera l XML**, è idempotente e toglie i doppioni preesistenti.
+
+**Luogo scelto da Google: se è già sul sito, si collega.** Scegliendo un suggerimento di Google si
+chiede a `places/id-exists.php?place_id=…` se quel **Google Place ID** è già noto (indice di
+deduplica `_index/google-places.json`): se sì si prendono **@id e nome DAL SITO** (il nome buono è
+quello redazionale, non l insegna su Google) e si mostra «Luogo già sul sito: collegato a …».
+Altrimenti resta il comportamento di prima: @id proposto da tipo+CAP+nome e controllo delle
+collisioni di slug. La domanda si fa sul Place ID e non sull @id costruito perché il Place ID è
+l identità del luogo, mentre l @id cambia se il nome è scritto diversamente e mancherebbe la
+corrispondenza. In sviluppo serve il proxy `/id-exists` di Vite (5173→8091, altra origine); in
+produzione editor ed endpoint sono sullo stesso host.
 
 **Luoghi e organizzazioni nello stesso strumento**: `places/edit` ha un selettore **«Salva come»**
 (Luogo o attività / Organizzazione) che riscrive `@id` e `@type` — `places/<IT+CAP>/<slug>` con

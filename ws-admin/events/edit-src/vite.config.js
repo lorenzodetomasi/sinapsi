@@ -29,6 +29,14 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/content/, ''),
       },
+      // «Questo luogo esiste già sul sito?» in sviluppo → id-exists.php sul PHP
+      // locale (:8091). Serve il proxy perché 5173→8091 è un'altra origine; in
+      // produzione l'editor e l'endpoint stanno sullo stesso host e non passa di qui.
+      '/id-exists': {
+        target: 'http://localhost:8091',
+        changeOrigin: true,
+        rewrite: (p) => '/ws-admin/places/id-exists.php' + (p.includes('?') ? p.slice(p.indexOf('?')) : ''),
+      },
       // Salva-evento sul web in sviluppo → save-event.php servito dal PHP locale (:8091).
       '/save-event': {
         target: 'http://localhost:8091',

@@ -3,7 +3,27 @@
 // restituisce il Google Place ID salvato e alcuni campi confrontabili, così il
 // chiamante può capire se è lo STESSO luogo (→ collega) o una collisione di slug.
 // Usato da events/edit (client) e da places/edit/index.php. GET ?id=<prefix>/<region>/<slug>
+// Seconda domanda, ?place_id=<google place id>: «questo luogo di Google è già sul
+// sito?». È la domanda giusta quando si sceglie un suggerimento di Google, perché
+// il Place ID è l'identità del luogo — mentre l'@id costruito da nome e CAP cambia
+// al variare del nome e non riconoscerebbe lo stesso luogo scritto diversamente.
+// Risponde dall'indice di deduplica (_index/google-places.json), che esiste per questo.
 header('Content-Type: application/json');
+
+$placeId = trim($_GET['place_id'] ?? '');
+if ($placeId !== '') {
+    // I Place ID di Google sono alfanumerici con - e _; niente altro entra qui.
+    if (!preg_match('#^[A-Za-z0-9_-]{5,255}$#', $placeId)) {
+        echo json_encode(['ok' => false, 'error' => 'place_id non valido']);
+        exit;
+    }
+    require_once __DIR__ . '/index-lib.php';
+    $voce = ws_index_lookup($placeId);
+    echo json_encode($voce
+        ? ['ok' => true, 'found' => true, 'id' => $voce['@id'], 'name' => $voce['name'], 'type' => $voce['@type']]
+        : ['ok' => true, 'found' => false]);
+    exit;
+}
 
 $id = trim($_GET['id'] ?? '');
 

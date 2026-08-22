@@ -9,6 +9,7 @@ import {
   buildPlaceId,
   swapIdPrefix,
   lookupId,
+  lookupPlaceId,
   lightPlaceDiff,
 } from './placeId.js';
 
@@ -49,7 +50,20 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
     }
   };
 
-  const onPick = ({ placeId, name, types, addressComponents }) => {
+  // Scelto un suggerimento di Google, la PRIMA domanda è: quel luogo è già sul
+  // sito? Si chiede per Google Place ID, che è l'identità del luogo — non per l'@id
+  // costruito da nome e CAP, che cambia se il nome è scritto diversamente e
+  // mancherebbe la corrispondenza. Se c'è, si prendono @id e nome DAL SITO: il nome
+  // buono è quello redazionale, non quello dell'insegna su Google.
+  const onPick = async ({ placeId, name, types, addressComponents }) => {
+    const noto = await lookupPlaceId(placeId);
+    if (noto) {
+      set({ name: noto.name, type: noto.type || detectPrimaryType(types), id: noto.id, googlePlaceId: placeId });
+      setStatus({ type: 'ok', msg: `Luogo già sul sito: collegato a ${noto.id}.` });
+      return;
+    }
+    // Luogo nuovo: si propone un @id costruito da tipo, CAP e nome, e si controlla
+    // che quello slug non sia già occupato da un altro luogo.
     const type = detectPrimaryType(types);
     const region = regionFromComponents(addressComponents);
     const slug = slugify(name);
@@ -77,7 +91,10 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
         </div>
         <div className="rf rf-text">
           <label className="field-label">@type</label>
-          <select value={d.type === 'LocalBusiness' ? 'LocalBusiness' : 'Place'} onChange={(e) => onType(e.target.value)}>
+          {/* Un luogo preso dal sito può avere un tipo più specifico (Restaurant,
+              Museum…): nel menu vale LocalBusiness, ma il valore salvato resta
+              quello preciso finché non si sceglie esplicitamente altro. */}
+          <select value={d.type && d.type !== 'Place' ? 'LocalBusiness' : 'Place'} onChange={(e) => onType(e.target.value)}>
             <option value="Place">Place</option>
             <option value="LocalBusiness">LocalBusiness</option>
           </select>

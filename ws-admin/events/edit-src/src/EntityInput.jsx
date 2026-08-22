@@ -42,8 +42,11 @@ export function EntityNameInput({ label, value, onChange, onPatch }) {
         onChange={(e) => scrivi(e.target.value)}
       />
       <datalist id={listId}>
-        {lista.map((e) => (
-          <option key={e['@id']} value={e.name}>
+        {/* La chiave include l'indice: due voci con lo stesso @id sono un difetto
+            dei contenuti (è successo: due cartelle per la stessa attività), ma non
+            deve essere il campo a rompersi. */}
+        {lista.map((e, i) => (
+          <option key={e['@id'] + '#' + i} value={e.name}>
             {descrizione(e)}
           </option>
         ))}

@@ -52,6 +52,22 @@ export async function lookupId(id) {
   }
 }
 
+/** «Questo luogo di Google è già sul sito?» — cerca per Google Place ID nell'indice
+ *  di deduplica. È la domanda giusta quando si sceglie un suggerimento di Google:
+ *  il Place ID è l'identità del luogo, mentre l'@id costruito da nome e CAP cambia
+ *  se il nome è scritto diversamente e mancherebbe la corrispondenza.
+ *  Ritorna { id, name, type } se c'è, altrimenti null. */
+export async function lookupPlaceId(placeId) {
+  if (!ID_CHECK_URL || !placeId) return null;
+  try {
+    const res = await fetch(`${ID_CHECK_URL}?place_id=${encodeURIComponent(placeId)}`);
+    const data = await res.json();
+    return data && data.ok && data.found ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 // Componenti indirizzo Google → { postalCode, country }.
 function addr(components = []) {
   let postalCode = '';

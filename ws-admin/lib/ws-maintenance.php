@@ -100,6 +100,28 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'keywords-array' => [
+                'title' => 'Keywords come elenco',
+                'meta'  => 'Da stringa separata da virgole ad array, senza doppioni',
+                'icon'  => 'sell', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Convertire le keywords in elenco? I file interessati (JSON e XML) verranno riscritti.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-keywords.php';
+                    $r = ws_keywords_migrate($base, $apply);
+                    return [
+                        'changes' => count($r['done']),
+                        'summary' => count($r['done'])
+                            ? count($r['done']) . ' file' . ($r['removed'] ? " · {$r['removed']} doppioni tolti" : '')
+                            : 'Tutte le keywords sono già un elenco.',
+                        'lines' => array_merge(
+                            array_map(fn($d) => "{$d['path']}: {$d['before']} → " . count($d['after']) . ' voci'
+                                . ($d['xml'] ? '' : ' (XML non rigenerato)'), $r['done']),
+                            array_map(fn($x) => "⚠ {$x['path']} → {$x['why']}", $r['failed'])
+                        ),
+                    ];
+                },
+            ],
+
             'covers' => [
                 'title' => 'Genera le copertine 1920×1080',
                 'meta'  => 'Dalle immagini già caricate; l\'originale resta in media-sources',
