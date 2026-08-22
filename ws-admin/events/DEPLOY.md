@@ -86,24 +86,24 @@ includeva da solo.
 quindi indicizzarlo è gratis. È la base per le viste per zona (vedi «Territorio» in fondo).
 
 **Organizzatori scelti dall'elenco del sito** (`entities.js` + `EntityInput.jsx` nell'editor,
-`_index/entities.json` lato server): la riga Organizzatore non usa piu' l'autocomplete di Google
+`_index/entities.json` lato server): la riga Organizzatore non usa più l'autocomplete di Google
 (proponeva mezzo mondo e lasciava l'@id da scrivere a memoria). Ora **nome** e **@id** si compilano
 a vicenda: si sceglie il nome dall'elenco e arriva l'@id; si incolla l'@id e arriva il nome (anche
 all'apertura di un evento salvato con il solo @id, cosa frequente); un @id sconosciuto lo dice
-senza bloccare. `_index/entities.json` = TUTTE le organizations + i luoghi/attivita', senza il
+senza bloccare. `_index/entities.json` = TUTTE le organizations + i luoghi/attività, senza il
 filtro `isGroup` di gruppi.json; lo rigenerano `places/rebuild-index.php`, la manutenzione dell'hub
 e il salvataggio di un luogo (altrimenti un'organizzazione appena creata non comparirebbe).
 Il riempimento dei nomi mancanti si fa in **App.jsx**, in un passaggio su tutte le righe: fatto
 dentro la singola riga, due righe che si compilano nello stesso istante partono dalla stessa
 istantanea e la seconda cancella la prima.
 
-**Keywords: niente piu' doppioni di localita' e regione.** Le keywords si salvano come UNA stringa
+**Keywords: niente più doppioni di località e regione.** Le keywords si salvano come UNA stringa
 separata da virgole, quindi una keyword che contiene una virgola non esiste. Il luogo della serie si
 chiama «Lido di Ostia, Roma»: il salvataggio lo spezzava in due voci e il salvataggio successivo
-ri-aggiungeva il nome intero, che non combaciava con nessuna delle due meta' — ogni giro ne
-produceva un paio in piu'. Ora `dedupeKeywords` spezza sulle virgole e deduplica TUTTA la lista
-(prima il controllo guardava solo cio' che stava per essere aggiunto), in lettura e in scrittura:
-verificato che quattro salvataggi di fila non cambiano piu' nulla.
+ri-aggiungeva il nome intero, che non combaciava con nessuna delle due metà — ogni giro ne
+produceva un paio in più. Ora `dedupeKeywords` spezza sulle virgole e deduplica TUTTA la lista
+(prima il controllo guardava solo ciò che stava per essere aggiunto), in lettura e in scrittura:
+verificato che quattro salvataggi di fila non cambiano più nulla.
 
 **Luoghi e organizzazioni nello stesso strumento**: `places/edit` ha un selettore **«Salva come»**
 (Luogo o attività / Organizzazione) che riscrive `@id` e `@type` — `places/<IT+CAP>/<slug>` con
