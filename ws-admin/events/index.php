@@ -110,7 +110,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
             http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono fare manutenzione sugli indici.']); exit;
         }
-        require_once __DIR__ . '/../lib/ws-maintenance.php';
+        // Registro assente (deploy incompleto): si perdono le due scorciatoie,
+        // non l'elenco degli eventi. Errore parlante invece di un fatale PHP.
+        $registro = __DIR__ . '/../lib/ws-maintenance.php';
+        if (!is_file($registro)) {
+            http_response_code(503);
+            echo json_encode(['error' => 'Manutenzione non disponibile: manca ws-admin/lib/ws-maintenance.php sul server.']);
+            exit;
+        }
+        require_once $registro;
         $op = (string)($_POST['op'] ?? '');
         $consentite = array_column(ws_maint_list($base, 'events'), 'id');
         if (!in_array($op, $consentite, true)) {

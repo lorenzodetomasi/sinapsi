@@ -14,6 +14,10 @@ HTML al posto del JSON ("Unexpected token '<'"). È successo con `event_index_sy
 Gli endpoint ora si difendono (`display_errors` spento, fallback al rebuild, guardia sui require),
 ma la cura è caricare le librerie insieme al resto:
 `lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check,events-trash}.php`.
+Le pagine che leggono il **registro della manutenzione** ora si difendono da sole: se
+`lib/ws-maintenance.php` manca, si perde la sezione Manutenzione (con un errore che lo dice) ma
+**non l accesso all amministrazione** — prima il require fallito uccideva anche il login, che
+rispondeva "Il tuo account (, ruolo ?) non e abilitato".
 
 ## 1) Build dell'editor
 

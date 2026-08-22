@@ -27,11 +27,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // che è anche ciò che legge la Gestione eventi. Questa pagina è solo il posto da cui
     // si eseguono tutte. Ogni operazione ha due modi: ANTEPRIMA (dice cosa farebbe, non
     // scrive) e APPLICA; il default è l'anteprima. Riservate agli admin: toccano i contenuti.
-    require_once __DIR__ . '/lib/ws-maintenance.php';
     if ($action === 'maint' || $action === 'maint-list') {
         if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
             http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono eseguire migrazioni.']); exit;
         }
+        // Il registro è una libreria a parte: se manca (deploy incompleto) si perde
+        // la manutenzione, NON l'accesso all'amministrazione. Per questo il require
+        // sta qui dentro ed è controllato, non in cima al file.
+        $registro = __DIR__ . '/lib/ws-maintenance.php';
+        if (!is_file($registro)) {
+            http_response_code(503);
+            echo json_encode(['error' => 'Manutenzione non disponibile: manca ws-admin/lib/ws-maintenance.php sul server (carica le librerie insieme alle pagine).']);
+            exit;
+        }
+        require_once $registro;
         $base = __DIR__ . '/../ws-custom/contents/meetoo/it_IT';
 
         // maint-list: che cosa esiste, quando è stata eseguita l'ultima volta e —
@@ -262,7 +271,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // così le card sanno dire se c'è ancora qualcosa da fare.
     function caricaMaint() {
       return api('maint-list', { probe: '1' }).then((r) => {
-        if (r.status !== 200 || !r.body.ops) return;
+        if (r.status !== 200 || !r.body.ops) {
+          // Meglio dire perché la sezione è vuota che lasciarla vuota e basta.
+          document.getElementById('sec-manutenzione').innerHTML =
+            '<p class="maint-intro">' + (r.body.error || 'Elenco delle operazioni non disponibile.') + '</p>';
+          return;
+        }
         MAINT = r.body.ops;
         document.getElementById('maint-version').textContent = 'Meetoo ' + r.body.version;
         renderMaint();
