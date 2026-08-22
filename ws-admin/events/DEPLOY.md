@@ -116,6 +116,11 @@ pagine sono state indicizzate, valutare una richiesta di rimozione dalla cache d
 adottare un immagine orfana trovata nella cartella) genera le cover 1920×1080 dalle immagini già
 caricate e riscrive `image` in forma assoluta. Poi rigenerare l indice.
 
+La **cover 16:9 con sfumatura e cuore** è ora in `meetoo.css` (non più dentro `event.html`), perché
+la usano DUE pagine: quella dell evento e quella della **collezione** (`collection.html`, che prima
+non mostrava alcuna immagine anche quando la serie ne aveva una). Anche la collezione ha il suo
+«mi interessa»: l azione `like` vale per le serie quanto per le singole date.
+
 **Copertina 16:9 e «mi interessa»** — file nuovi: `ws-admin/lib/ws-media.php`, `ws-admin/events/media.php`.
 Regola: se il file caricato è **già 1920×1080** va dritto in `media/`; altrimenti l'originale resta in
 `media-sources/` e in `media/` va la versione 1920×1080 generata (ritaglio centrato, GD). L'editor
