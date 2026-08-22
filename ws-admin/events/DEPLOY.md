@@ -139,6 +139,15 @@ colonna. Entrambe neutralizzate nella variante `.wf-card`.
 Verificato: **57 card su 59 hanno misure identiche** a prima del rinominio (le altre due sono la
 card centrata, che dipende da dove è fermo il carosello).
 
+**Le attività ospitate usano i componenti comuni.** Il «Dettagli» di un'attività non è più
+`.biz-info` ma **`.card-act primary icon-only`**, e il suo voto non è più `.biz-rating` ma
+**`.rating-pill`**: gli stessi dell'azione e del voto della card. `.biz-info` era per giunta 44×35px
+(un `border-radius: 50%` su un rettangolo dà un'ellisse, non un cerchio) contro i 22×22 dell'azione
+principale, perché la riga delle attività era rimasta a 16px fissi mentre tutto il resto della card
+si misura in `cqw`. Ora `.wf-card .contained { font-size: 4.2cqw }` la rende proporzionale come il
+resto e i due pulsanti coincidono. In places.css di `.biz-*` restano solo le regole di
+IMPAGINAZIONE della riga (nome, allineamenti, striscia scorrevole delle dotazioni).
+
 **Condividi + «mi interessa» in tutte le card** (`Meetoo.social` in cards.js): stesso markup e stesso
 comportamento ovunque. Sui telefoni la condivisione apre il pannello di sistema, altrove copia il
 link e lo dice con un toast. Il cuore va a finire in due posti diversi a seconda di cosa segna:
