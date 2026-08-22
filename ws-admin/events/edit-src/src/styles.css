@@ -320,7 +320,12 @@ body {
 
 @media (max-width: 62.5rem) {
   /* Su mobile torna al flusso normale: la pagina scorre, un pannello per volta.
-     Niente padding attorno al body: contenuto a tutta larghezza. */
+     Niente padding attorno al body: contenuto a tutta larghezza.
+     Il body va liberato INSIEME a .app: su desktop è alto quanto lo schermo e
+     nasconde ciò che esce (sono le colonne a scorrere per conto loro), ma se
+     resta così anche qui la pagina non scorre affatto — è il motivo per cui
+     l'editor era bloccato su telefono. */
+  body { height: auto; min-height: 100vh; overflow: visible; }
   .app { height: auto; overflow: visible; }
   /* Header fisso in cima su mobile */
   .appbar { position: sticky; top: 0; z-index: 20; padding-left: var(--sp-md); padding-right: var(--sp-md); }

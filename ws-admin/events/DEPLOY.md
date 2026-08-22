@@ -118,6 +118,25 @@ l'identità del luogo, mentre l'@id cambia se il nome è scritto diversamente e 
 corrispondenza. In sviluppo serve il proxy `/id-exists` di Vite (5173→8091, altra origine); in
 produzione editor ed endpoint sono sullo stesso host.
 
+**Editor su telefono: la pagina scorre.** La media query mobile liberava `.app` ma non il
+`body`, che restava `height: 100vh; overflow: hidden` (su desktop è giusto: sono le colonne a
+scorrere per conto loro). Risultato: sotto i 1000px l'editor era bloccato e non si arrivava ai campi
+in fondo. Ora il body si libera insieme a `.app`.
+
+**waterfront.html usa l'header condiviso.** Aveva un header disegnato a mano con i pulsanti inerti
+(«Menu (in arrivo)», «Account (in arrivo)») e un proprio selettore del tema: ora carica `meetoo.css`
+e `header.js` come le altre pagine — hamburger con la navigazione, login, Impostazioni → Aspetto,
+breadcrumb via `Meetoo.setBreadcrumb` ('Lido di Ostia | Il lungomare' a sinistra, 'Roma | Municipio
+10' a destra). La **legenda** delle tipologie resta un'azione di questa pagina e vive nello slot
+`Meetoo.setActions`.
+⚠ Attenzione al foglio condiviso su questa pagina: le sue card si chiamano `.card` come quelle del
+sito ma hanno un impianto proprio (quadrate, `cqw`, modello di scatola predefinito). Perciò
+`meetoo.css` va caricato PRIMA dello `<style>` di pagina, e in cima a quello stanno tre neutralizzazioni
+commentate: `box-sizing`/interlinea del carosello, e su `.card` **`flex-wrap: nowrap`** — la regola
+`@media (max-width: 47.9375rem) .card { flex-wrap: wrap }` (pensata per le card di gestione) mandava
+il corpo in una seconda colonna e faceva uscire testo e immagine dalla card su telefono.
+Verificato: tutte e 59 le card hanno misure IDENTICHE a prima della conversione, su desktop e su 375px.
+
 **Luoghi e organizzazioni nello stesso strumento**: `places/edit` ha un selettore **«Salva come»**
 (Luogo o attività / Organizzazione) che riscrive `@id` e `@type` — `places/<IT+CAP>/<slug>` con
 `Place|LocalBusiness`, oppure `organizations/<slug>` con `Organization`; `?as=organization` lo
