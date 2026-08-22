@@ -139,6 +139,16 @@ colonna. Entrambe neutralizzate nella variante `.wf-card`.
 Verificato: **57 card su 59 hanno misure identiche** a prima del rinominio (le altre due sono la
 card centrata, che dipende da dove è fermo il carosello).
 
+⚠ **Il font delle icone va caricato INTERO.** `waterfront.html` chiedeva a Google solo le icone
+che gli servivano (`icon_names=account_balance,…`): un'ottimizzazione sensata finché la pagina era
+sola al mondo, sbagliata da quando ospita header, menu e card condivisi, che usano icone non
+prevedibili da lì (`home`, `event`, `menu_book`…). Quelle mancanti **uscivano scritte a lettere** e
+sfondavano l'impaginazione del menu. Ora usa lo stesso URL completo delle altre pagine.
+Stessa lezione per la CLASSE: la definizione di `.material-symbols-outlined` sta in meetoo.css e le
+pagine non la ridichiarano — `waterfront.html` ne aveva una copia con `font-size: var(--icon-size)`
+che si applicava anche all'header condiviso. Ora la misura di pagina è limitata alle SUE aree
+(`.carousel-container`, `.modal-overlay`, `#app-loader`, `.fab`).
+
 **Le attività ospitate usano i componenti comuni.** Il «Dettagli» di un'attività non è più
 `.biz-info` ma **`.card-act primary icon-only`**, e il suo voto non è più `.biz-rating` ma
 **`.rating-pill`**: gli stessi dell'azione e del voto della card. `.biz-info` era per giunta 44×35px
