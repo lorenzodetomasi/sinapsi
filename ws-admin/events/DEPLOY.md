@@ -114,7 +114,7 @@ deduplica `_index/google-places.json`): se sì si prendono **@id e nome DAL SITO
 quello redazionale, non l'insegna su Google) e si mostra «Luogo già sul sito: collegato a …».
 Altrimenti resta il comportamento di prima: @id proposto da tipo+CAP+nome e controllo delle
 collisioni di slug. La domanda si fa sul Place ID e non sull'@id costruito perché il Place ID è
-l identità del luogo, mentre l'@id cambia se il nome è scritto diversamente e mancherebbe la
+l'identità del luogo, mentre l'@id cambia se il nome è scritto diversamente e mancherebbe la
 corrispondenza. In sviluppo serve il proxy `/id-exists` di Vite (5173→8091, altra origine); in
 produzione editor ed endpoint sono sullo stesso host.
 
