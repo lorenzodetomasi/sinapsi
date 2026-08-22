@@ -101,31 +101,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Manutenzione (solo admin/super-admin), stessa semantica dell'editor:
-    //   rebuild-index → normalizza i riferimenti + reindicizza + controlla
-    //   normalize     → in più ripara la struttura (serie annidate, occorrenze
-    //                   dichiarate ma assenti, subEvent↔superEvent)
-    if ($action === 'rebuild-index' || $action === 'normalize') {
+    // Manutenzione (solo admin/super-admin). Le operazioni NON sono definite qui:
+    // stanno nel registro (lib/ws-maintenance.php) insieme a tutte le altre, e questa
+    // pagina ne mostra come scorciatoia solo quelle dell'ambito «events», che servono
+    // nel lavoro quotidiano. L'elenco completo, e il governo degli aggiornamenti di
+    // Meetoo, stanno nell'hub (ws-admin/index.php).
+    if ($action === 'maint') {
         if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
             http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono fare manutenzione sugli indici.']); exit;
         }
-        require_once __DIR__ . '/../lib/events-index.php';
-        require_once __DIR__ . '/../lib/events-migrate.php';
-        require_once __DIR__ . '/../lib/events-check.php';
-        $norm = null;
-        if ($action === 'normalize') {
-            require_once __DIR__ . '/../lib/events-normalize.php';
-            $norm = event_normalize($base, true);
+        require_once __DIR__ . '/../lib/ws-maintenance.php';
+        $op = (string)($_POST['op'] ?? '');
+        $consentite = array_column(ws_maint_list($base, 'events'), 'id');
+        if (!in_array($op, $consentite, true)) {
+            http_response_code(400); echo json_encode(['error' => 'Da qui si eseguono solo le operazioni sugli eventi.']); exit;
         }
-        $mig = event_migrate_refs($base, true);
-        $res = event_index_rebuild($base);
-        echo json_encode([
-            'success' => true,
-            'index' => $res,
-            'migrated' => is_array($mig) ? (count($mig['files'] ?? $mig)) : 0,
-            'normalized' => $norm,
-            'brokenRefs' => count(event_check_refs($base)),
-        ]);
+        $rep = ws_maint_run($base, $op, ($_POST['apply'] ?? '1') === '1', [], $user['email'] ?? '');
+        if (isset($rep['error'])) { http_response_code(400); echo json_encode($rep); exit; }
+        echo json_encode(['success' => true] + $rep);
         exit;
     }
 
@@ -524,35 +517,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       });
     });
 
-    // Manutenzione: "Rigenera indice" reindicizza, "Normalizza" ripara anche la
-    // struttura (è il caso raro: si usa quando il check segnala incoerenze).
-    function maintenance(action, btn, label) {
+    // Manutenzione: due scorciatoie alle operazioni del registro che riguardano gli
+    // eventi. Il resto (privacy, copertine, indici di immagini e luoghi) sta nell'hub,
+    // che è anche il posto dove si vede che cosa manca dopo un aggiornamento.
+    // Il riepilogo lo scrive il registro: qui non si reinterpreta, si mostra.
+    function maintenance(op, btn, label) {
       btn.disabled = true;
       adminMsg(label + '…');
-      api(action).then((r) => {
+      api('maint', { op }).then((r) => {
         btn.disabled = false;
         if (r.status !== 200) { adminMsg(r.body.error || 'Operazione fallita.', true); return; }
-        const i = r.body.index || {}, n = r.body.normalized;
-        const fixes = n ? [
-          (n.removedSeries || []).length && (n.removedSeries.length + ' serie annidate'),
-          (n.completedOccurrences || []).length && (n.completedOccurrences.length + ' occorrenze completate'),
-          (n.repairedSuperEvent || []).length && (n.repairedSuperEvent.length + ' superEvent riparati'),
-          (n.seriesSubEventUpdated || []).length && (n.seriesSubEventUpdated.length + ' serie riallineate'),
-        ].filter(Boolean) : [];
-        adminMsg(label + ': ' + (i.indexed || 0) + ' eventi · ' + (i.series || 0) + ' collezioni · ' +
-          (i.organizers || 0) + ' organizzatori' +
-          (fixes.length ? ' · riparati → ' + fixes.join(', ') : (n ? ' · nulla da riparare' : '')) +
-          (r.body.brokenRefs ? ' · ⚠ ' + r.body.brokenRefs + ' riferimenti rotti' : ''),
-          !!r.body.brokenRefs);
+        const guai = (r.body.lines || []).some((l) => l.indexOf('⚠') === 0);
+        adminMsg(label + ': ' + (r.body.summary || 'fatto'), guai);
         reloadIndexes();
       });
     }
     document.getElementById('btn-rebuild').addEventListener('click', function () {
-      maintenance('rebuild-index', this, 'Indice rigenerato');
+      maintenance('events-index', this, 'Indice rigenerato');
     });
     document.getElementById('btn-normalize').addEventListener('click', function () {
       if (!confirm('Normalizzare i contenuti?\nRipara la struttura degli eventi (serie annidate, occorrenze mancanti, subEvent↔superEvent) e riscrive i file interessati.')) return;
-      maintenance('normalize', this, 'Contenuti normalizzati');
+      maintenance('events-normalize', this, 'Contenuti normalizzati');
     });
 
     /* ---------- Login: l'elenco si vede solo da autenticati ---------- */

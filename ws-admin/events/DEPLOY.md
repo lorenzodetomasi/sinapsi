@@ -26,6 +26,7 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | Gruppo | Da (SRC) | A (ROOT sul server) |
 |---|---|---|
 | **Backend – lib** | `ws-admin/lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
+| **Backend – lib** | `ws-admin/lib/ws-maintenance.php` (registro delle migrazioni: caricalo PRIMA delle due pagine che lo leggono) | `ws-admin/lib/` |
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Gestione eventi** | `ws-admin/events/index.php` (nuova pagina) | `ws-admin/events/` |
 | **Amministrazione** | `ws-admin/index.php` (hub) + `ws-admin/lib/events-trash.php` | `ws-admin/` e `ws-admin/lib/` |
@@ -287,7 +288,33 @@ rsync -avz ws-custom/themes/meetoo/organizer.html ws-custom/themes/meetoo/collec
 
 ## 3) Una-tantum sul server (dopo il primo deploy di questo ciclo)
 
-Dall'editor come **admin/super-admin** (bottoni in appbar), oppure da shell:
+### Il registro della manutenzione (`ws-admin/lib/ws-maintenance.php`)
+
+Migrazioni e conversioni sono elencate **una volta sola**, nel registro. Le pagine non le
+riscrivono: le leggono.
+
+- **`ws-admin/index.php` (l'hub) le mostra tutte** ed è il posto da cui si completa un
+  aggiornamento di Meetoo. All'apertura interroga le anteprime e scrive sotto ogni voce
+  *«2 in attesa · mai eseguita qui»*: dopo un deploy si vede a colpo d'occhio che cosa
+  manca su **questa** installazione, senza ricordarselo.
+- **`ws-admin/events/index.php` mostra solo le operazioni di ambito `events`** come
+  scorciatoie nel lavoro quotidiano (Rigenera indice, Normalizza); l'endpoint rifiuta le
+  altre. Non è una seconda lista: è un filtro sulla stessa.
+
+**Per aggiungere un'operazione** basta una voce in `ws_maint_ops()`: `title`, `meta`,
+`icon`, `scope`, `since` (versione che l'ha introdotta), l'eventuale `confirm`, e `run`
+che ritorna `['changes'=>int,'summary'=>string,'lines'=>[]]`. Se sa dire cosa farebbe
+senza scrivere, dichiara `'preview' => true` e rispetta `$apply`. Comparirà da sola
+nell'hub — è così che le pagine non possono restare indietro rispetto al codice.
+
+Chi ha già eseguito cosa sta in `contents/…/_index/maintenance.json` (file di **stato**,
+non un contenuto: si può cancellare, si riparte da «mai eseguita»). Attenzione: i comandi
+da shell qui sotto fanno lo stesso lavoro ma **non aggiornano quel file**, quindi l'hub
+continuerà a dire «mai eseguita qui».
+
+### I comandi equivalenti da shell
+
+Dall'hub come **admin/super-admin**, oppure da shell:
 
 ```bash
 php ws-admin/events/normalize-content.php --apply   # ripara superEvent, completa occorrenze, rimuove serie annidate

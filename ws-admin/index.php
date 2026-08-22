@@ -23,58 +23,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     // --- Manutenzione: migrazioni e conversioni ---
-    // Ogni operazione ha due modi: ANTEPRIMA (dice cosa farebbe, non scrive) e
-    // APPLICA. Il valore di default è l anteprima: si scrive solo se richiesto
-    // esplicitamente. Riservate agli admin perché toccano i file dei contenuti.
-    if (in_array($action, ['privacy', 'covers', 'media-index', 'places-index'], true)) {
+    // L'elenco delle operazioni NON sta qui: sta nel registro (lib/ws-maintenance.php),
+    // che è anche ciò che legge la Gestione eventi. Questa pagina è solo il posto da cui
+    // si eseguono tutte. Ogni operazione ha due modi: ANTEPRIMA (dice cosa farebbe, non
+    // scrive) e APPLICA; il default è l'anteprima. Riservate agli admin: toccano i contenuti.
+    require_once __DIR__ . '/lib/ws-maintenance.php';
+    if ($action === 'maint' || $action === 'maint-list') {
         if (!in_array($user['role'], ['admin', 'super-admin'], true)) {
             http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono eseguire migrazioni.']); exit;
         }
-        $base  = __DIR__ . '/../ws-custom/contents/meetoo/it_IT';
-        $apply = ($_POST['apply'] ?? '') === '1';
+        $base = __DIR__ . '/../ws-custom/contents/meetoo/it_IT';
 
-        if ($action === 'privacy') {
-            require_once __DIR__ . '/lib/ws-private.php';
-            $r = ws_privacy_migrate($base, $apply);
-            $righe = array_merge(
-                array_map(fn($p) => "users/{$p['uid']} → " . implode(', ', $p['fields']), $r['profiles']),
-                array_map(fn($x) => "{$x['event']}/rsvp.json → {$x['entries']} registrazioni", $r['rsvp'])
-            );
-            echo json_encode(['success' => true, 'applied' => $apply, 'lines' => $righe,
-                'summary' => $righe ? (count($r['profiles']) . ' profili, ' . count($r['rsvp']) . ' file di registrazioni')
-                                       : 'Nessun dato personale nei file pubblici.']);
+        // maint-list: che cosa esiste, quando è stata eseguita l'ultima volta e —
+        // per chi sa dirlo senza scrivere — quante cose sono in attesa. È questo
+        // che rende la pagina utile dopo un aggiornamento di Meetoo.
+        if ($action === 'maint-list') {
+            $ops = ws_maint_list($base);
+            if (($_POST['probe'] ?? '') === '1') {
+                foreach ($ops as &$op) {
+                    if (empty($op['preview'])) continue;
+                    try { $op['pending'] = (int)(ws_maint_run($base, $op['id'], false)['changes'] ?? 0); }
+                    catch (Throwable $e) { $op['pending'] = null; }
+                }
+                unset($op);
+            }
+            echo json_encode(['success' => true, 'version' => MEETOO_VERSION, 'ops' => $ops]);
             exit;
         }
 
-        if ($action === 'covers') {
-            require_once __DIR__ . '/lib/ws-media.php';
-            $r = ws_media_covers($base, $apply, ($_POST['adopt'] ?? '') === '1');
-            $righe = array_merge(
-                array_map(fn($d) => "{$d['event']} → " . ($d['exact'] ? 'già 1920×1080' : "{$d['from']} → cover"), $r['done']),
-                array_map(fn($x) => "{$x['event']} → {$x['why']}", $r['skipped']),
-                array_map(fn($x) => "{$x['event']} → esterna: {$x['url']}", $r['external']),
-                array_map(fn($b) => "⚠ {$b['event']} → {$b['ref']}" . ($b['found'] ? " (in cartella: {$b['found']})" : ' (nessuna immagine)'), $r['broken'])
-            );
-            if ($apply) { require_once __DIR__ . '/lib/events-index.php'; event_index_rebuild($base); }
-            echo json_encode(['success' => true, 'applied' => $apply, 'lines' => $righe,
-                'summary' => count($r['done']) . ' cover, ' . count($r['broken']) . ' da sistemare a mano']);
-            exit;
-        }
-
-        if ($action === 'media-index') {
-            require_once __DIR__ . '/lib/ws-media.php';
-            $n = count(ws_media_reindex($base));
-            echo json_encode(['success' => true, 'applied' => true, 'lines' => [], 'summary' => "$n immagini indicizzate"]);
-            exit;
-        }
-
-        // places: indice di deduplica google_place_id + elenco Gruppi
-        require_once __DIR__ . '/places/index-lib.php';
-        list($idx, $conf) = ws_index_rebuild(); ws_index_save($idx);
-        $g = ws_gruppi_rebuild(); ws_gruppi_save($g);
-        echo json_encode(['success' => true, 'applied' => true,
-            'lines' => array_map(fn($ids, $gid) => "⚠ stesso place_id su: " . implode(', ', array_unique($ids)), $conf, array_keys($conf)),
-            'summary' => count($idx) . ' luoghi, ' . count($g) . ' gruppi']);
+        $opts = ['adopt' => ($_POST['adopt'] ?? '') === '1'];
+        $rep  = ws_maint_run($base, (string)($_POST['op'] ?? ''), ($_POST['apply'] ?? '') === '1', $opts, $user['email'] ?? '');
+        if (isset($rep['error'])) { http_response_code(400); echo json_encode($rep); exit; }
+        echo json_encode(['success' => true] + $rep);
         exit;
     }
 
@@ -107,6 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .card.soon .card-title { color: var(--color-hint); }
     .maint-intro { color: var(--color-hint); font-size: .9rem; margin: -6px 0 12px; }
     .maint-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .maint-stato { color: var(--color-hint); font-size: .8rem; margin: 4px 0 0; }
+    .maint-stato b { color: var(--color-link); }
     #maint-out { background: var(--color-background-section2); border: 1px solid var(--color-line); border-radius: var(--border-radius);
                  padding: 12px; margin-top: 12px; max-height: 320px; overflow: auto; white-space: pre-wrap; font-size: .85rem; }
   </style>
@@ -140,8 +122,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </section>
 
       <section id="sec-manutenzione-box" hidden>
-        <h2 class="sec-head"><span class="material-symbols-outlined">construction</span>Manutenzione</h2>
-        <p class="maint-intro">Ogni operazione mostra prima <b>cosa farebbe</b>; si scrive solo premendo «Applica».</p>
+        <h2 class="sec-head"><span class="material-symbols-outlined">construction</span>Manutenzione<span class="count" id="maint-version"></span></h2>
+        <p class="maint-intro">Tutte le operazioni disponibili in questa versione: è da qui che si completa un aggiornamento.
+          Ognuna mostra prima <b>cosa farebbe</b>; si scrive solo premendo «Applica».</p>
         <div class="cards" id="sec-manutenzione"></div>
         <pre id="maint-out" hidden></pre>
       </section>
@@ -208,20 +191,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     /* ---------- Manutenzione ----------
      * Migrazioni e conversioni che finora si lanciavano da riga di comando.
-     * Regola: prima ANTEPRIMA (non scrive), poi APPLICA con conferma. Le due
-     * strade usano le stesse funzioni della CLI, quindi non possono divergere. */
-    const MAINT = [
-      { id: 'privacy', icon: 'shield_lock', title: 'Dati personali fuori dai file pubblici',
-        meta: 'Sposta nome ed email dai profili e dalle registrazioni all archivio privato', preview: true,
-        confirm: 'Spostare i dati personali nell archivio privato? I file pubblici verranno riscritti senza nome ed email.' },
-      { id: 'covers', icon: 'crop_16_9', title: 'Genera le copertine 1920×1080',
-        meta: 'Dalle immagini già caricate; l originale resta in media-sources', preview: true, adopt: true,
-        confirm: 'Generare le copertine? Verranno creati file in media/ e aggiornato il campo image degli eventi.' },
-      { id: 'media-index', icon: 'photo_library', title: 'Rigenera l indice delle immagini',
-        meta: 'Serve al riuso senza duplicati (impronta → percorso)' },
-      { id: 'places-index', icon: 'manage_history', title: 'Rigenera indice luoghi e Gruppi',
-        meta: 'Deduplica per Google Place ID + elenco dei Gruppi della home' },
-    ];
+     * L'elenco NON è scritto qui: arriva dal registro (lib/ws-maintenance.php),
+     * che è anche quello letto dalla Gestione eventi. Aggiungere un'operazione
+     * al registro la fa comparire qui da sola: è questa pagina il posto da cui
+     * si governa un aggiornamento di Meetoo, e non può restare indietro.
+     * Regola invariata: prima ANTEPRIMA (non scrive), poi APPLICA con conferma. */
+    let MAINT = [];
 
     function maintShow(titolo, r) {
       const out = document.getElementById('maint-out');
@@ -229,6 +204,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       const testa = titolo + ' — ' + (r.applied ? 'APPLICATO' : 'anteprima (nessuna scrittura)');
       out.textContent = testa + '\n' + (r.summary || '') + (r.lines && r.lines.length ? '\n\n' + r.lines.join('\n') : '');
       out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Riga di stato sotto il titolo: quando è stata eseguita l'ultima volta qui e —
+    // per chi sa dirlo senza scrivere — quante cose restano in attesa. Dopo un
+    // aggiornamento «mai eseguita» è il segnale che quella migrazione va ancora fatta.
+    function maintStato(m) {
+      const parti = [];
+      if (m.pending > 0) parti.push('<b>' + m.pending + ' in attesa</b>');
+      else if (m.pending === 0) parti.push('a posto');
+      if (m.last) {
+        const d = new Date(m.last.at);
+        parti.push('eseguita il ' + d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }));
+      } else {
+        parti.push('mai eseguita qui');
+      }
+      return parti.join(' · ');
     }
 
     function renderMaint() {
@@ -239,6 +230,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const m = MAINT[i];
         card.removeAttribute('href');
         card.querySelector('.card-arrow')?.remove();
+        const stato = document.createElement('p');
+        stato.className = 'maint-stato';
+        stato.innerHTML = maintStato(m);
+        (card.querySelector('.card-body') || card).appendChild(stato);
         const az = document.createElement('div');
         az.className = 'card-actions maint-actions';
         az.innerHTML =
@@ -251,13 +246,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           if (applica && m.confirm && !confirm(m.confirm)) return;
           const adopt = az.querySelector('[data-adopt]')?.checked ? '1' : '';
           b.disabled = true; b.textContent = '…';
-          api(m.id, { apply: applica ? '1' : '', adopt })
+          api('maint', { op: m.id, apply: applica ? '1' : '', adopt })
             .then((r) => {
               b.disabled = false; b.textContent = applica ? (m.preview ? 'Applica' : 'Esegui') : 'Anteprima';
               if (r.status !== 200) { maintShow(m.title, { summary: r.body.error || 'Operazione fallita.', lines: [] }); return; }
               maintShow(m.title, r.body);
+              // Dopo un'esecuzione lo stato è cambiato: ricaricalo invece di indovinarlo.
+              if (applica) caricaMaint();
             });
         }));
+      });
+    }
+
+    // Chiede al registro l'elenco aggiornato; probe=1 fa girare le anteprime,
+    // così le card sanno dire se c'è ancora qualcosa da fare.
+    function caricaMaint() {
+      return api('maint-list', { probe: '1' }).then((r) => {
+        if (r.status !== 200 || !r.body.ops) return;
+        MAINT = r.body.ops;
+        document.getElementById('maint-version').textContent = 'Meetoo ' + r.body.version;
+        renderMaint();
       });
     }
 
@@ -270,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           className: t.soon ? 'soon' : '',
         })).join('');
       });
-      if (adminOnlyOk) { document.getElementById('sec-manutenzione-box').hidden = false; renderMaint(); }
+      if (adminOnlyOk) { document.getElementById('sec-manutenzione-box').hidden = false; caricaMaint(); }
       // Le voci "in arrivo" non portano da nessuna parte: niente clic a vuoto.
       document.querySelectorAll('.card.soon a').forEach((a) => a.addEventListener('click', (e) => e.preventDefault()));
     }
