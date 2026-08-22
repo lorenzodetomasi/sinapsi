@@ -67,8 +67,16 @@ if (!function_exists('event_index_cover')) {
             return trim($owner, '/') . '/' . ltrim($img, '/');
         };
 
+        // Un riferimento che punta a un file inesistente NON è una cover: dichiararlo
+        // farebbe apparire un'immagine rotta e impedirebbe il ripiego sulla serie.
+        $esiste = function (string $img) use ($base): bool {
+            if ($img === '') return false;
+            if (preg_match('#^(https?:)?//#i', $img)) return true;    // esterna: non verificabile qui
+            return $base !== '' && is_file(rtrim($base, '/') . '/' . $img);
+        };
+
         $own = $abs($pick($doc['image'] ?? null) ?: $pick($doc['logo'] ?? null), $relPath);
-        if ($own !== '') return $own;
+        if ($own !== '' && $esiste($own)) return $own;
 
         // Nessuna immagine propria: si guarda la serie contenitrice.
         $superRef = ws_ref_id($doc['superEvent'] ?? null);
@@ -82,7 +90,8 @@ if (!function_exists('event_index_cover')) {
         }
         $s = $cache[$sr];
         if (!is_array($s)) return '';
-        return $abs($pick($s['image'] ?? null) ?: $pick($s['logo'] ?? null), $sr);
+        $della = $abs($pick($s['image'] ?? null) ?: $pick($s['logo'] ?? null), $sr);
+        return $esiste($della) ? $della : '';
     }
 }
 

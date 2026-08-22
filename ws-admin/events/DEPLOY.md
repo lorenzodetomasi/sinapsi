@@ -125,7 +125,9 @@ la stessa immagine (o duplicare un evento) **non copia nulla**, restituisce il p
 percorsi salvati sono **dalla radice** (`events/<slug>/media/…`), così valgono anche citati da un
 altro evento; le pagine accettano entrambe le forme. «Duplica» riscrive `image` in forma assoluta.
 L'indice eventi porta ora **`cover`** risolta, con **ripiego sulla serie**: un'occorrenza senza
-immagine mostra la locandina della rassegna. **«Mi interessa»**: azione `like` in `rsvp.php`,
+immagine — o con un riferimento che punta a un file **inesistente** — mostra la locandina della
+rassegna. Il controllo di esistenza sta sia nell'indice (`event_index_cover`) sia in `event.html`
+(se l'immagine non carica, si prova la serie): un riferimento rotto è peggio di nessun riferimento. **«Mi interessa»**: azione `like` in `rsvp.php`,
 conteggio pubblico in `events/<slug>/likes.json` (**solo uid**, mai nomi o email) e memoria sul
 profilo (`meetoo:interestedIn`). Il conteggio si legge senza login; per metterlo serve l'accesso.
 
