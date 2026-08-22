@@ -33,3 +33,8 @@ export const SAVE_EVENT_URL =
 export const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
   '947742864411-rs99t8lkv5qcv4f5afb3pnhi0lkegbk3.apps.googleusercontent.com';
+
+// Endpoint delle immagini di copertina (carica nella cartella dell evento,
+// genera la versione 1920x1080, riusa gli originali gia presenti).
+export const MEDIA_URL =
+  import.meta.env.VITE_MEDIA_URL || (import.meta.env.DEV ? '/save-event/../media.php' : '../media.php');

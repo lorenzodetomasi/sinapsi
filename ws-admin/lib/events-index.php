@@ -49,6 +49,43 @@ if (!function_exists('event_index_place_ref')) {
     }
 }
 
+// Cover dell'evento, in forma RISOLTA (percorso dalla radice dei contenuti), così
+// ogni pagina la usa senza sapere in quale cartella stia il file.
+// Un'occorrenza senza immagine propria eredita quella della SERIE: la locandina
+// della rassegna vale per tutte le sue date, finché una non ne ha una sua.
+if (!function_exists('event_index_cover')) {
+    function event_index_cover(array $doc, string $relPath, string $base = ''): string {
+        $pick = function ($v) {
+            if (is_string($v)) return trim($v);
+            if (is_array($v)) return trim((string)($v['url'] ?? $v['@id'] ?? (is_string($v[0] ?? null) ? $v[0] : (is_array($v[0] ?? null) ? ($v[0]['url'] ?? '') : ''))));
+            return '';
+        };
+        // Percorso relativo alla cartella (media/x.jpg) → dalla radice (events/<slug>/media/x.jpg).
+        $abs = function (string $img, string $owner) {
+            if ($img === '' || preg_match('#^(https?:)?//#i', $img)) return $img;   // URL esterno: invariato
+            if (preg_match('#^(events|places|organizations)/#', $img)) return $img; // già dalla radice
+            return trim($owner, '/') . '/' . ltrim($img, '/');
+        };
+
+        $own = $abs($pick($doc['image'] ?? null) ?: $pick($doc['logo'] ?? null), $relPath);
+        if ($own !== '') return $own;
+
+        // Nessuna immagine propria: si guarda la serie contenitrice.
+        $superRef = ws_ref_id($doc['superEvent'] ?? null);
+        if ($superRef === '' || $base === '') return '';
+        $sr = strpos($superRef, '/') === false ? "events/$superRef" : $superRef;
+        static $cache = [];
+        if (!array_key_exists($sr, $cache)) {
+            $f = rtrim($base, '/') . '/' . $sr . '/index.json';
+            $j = is_file($f) ? json_decode((string)file_get_contents($f), true) : null;
+            $cache[$sr] = is_array($j) ? ($j['mainEntity'] ?? $j) : null;
+        }
+        $s = $cache[$sr];
+        if (!is_array($s)) return '';
+        return $abs($pick($s['image'] ?? null) ?: $pick($s['logo'] ?? null), $sr);
+    }
+}
+
 // @type dell'organizzatore, letto dal suo documento: serve alle card per dare
 // l'icona giusta (un'associazione non è un negozio). Nell'evento l'organizer è un
 // riferimento {@id, name} e il tipo non c'è. Una lettura per organizzatore,
@@ -134,6 +171,8 @@ if (!function_exists('event_index_item')) {
             'cap'          => $cap,
             'status'       => (string)($doc['eventStatus'] ?? ''),
             'image'        => $img,
+            // Cover risolta (dalla radice), con ripiego sulla serie: vedi event_index_cover.
+            'cover'        => event_index_cover($doc, $relPath, $base),
             'dateModified' => (string)($doc['dateModified'] ?? ''),
         ];
     }

@@ -62,3 +62,21 @@ if (!function_exists('ws_user_get')) {
         return is_array($doc) ? $doc : null;
     }
 }
+
+// Eventi che interessano all utente: elenco sul suo profilo, così "i miei eventi"
+// non dipende dal browser. Idempotente: aggiunge o toglie una sola volta.
+if (!function_exists('ws_user_toggle_like')) {
+    function ws_user_toggle_like(string $base, string $uid, string $eventRel, bool $on): bool {
+        $f = "$base/users/$uid/index.json";
+        $d = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+        if (!is_array($d)) return false;
+        $e = isset($d['mainEntity']) && is_array($d['mainEntity']) ? 'mainEntity' : null;
+        $t = $e ? $d[$e] : $d;
+        $cur = isset($t['meetoo:interestedIn']) && is_array($t['meetoo:interestedIn']) ? $t['meetoo:interestedIn'] : [];
+        $cur = array_values(array_filter($cur, fn($x) => $x !== $eventRel));
+        if ($on) $cur[] = $eventRel;
+        $t['meetoo:interestedIn'] = $cur;
+        if ($e) $d[$e] = $t; else $d = $t;
+        return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+    }
+}

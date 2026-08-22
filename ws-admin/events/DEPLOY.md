@@ -94,6 +94,19 @@ vanno **sotto**, a tutta larghezza, due per riga: accanto al testo quattro pulsa
 capo riducevano il titolo a una colonna larga un carattere. Un conteggio vuoto non si mostra
 (`.count:empty`): l'archivio non annuncia un numero prima di essere caricato.
 
+**Copertina 16:9 e «mi interessa»** — file nuovi: `ws-admin/lib/ws-media.php`, `ws-admin/events/media.php`.
+Regola: se il file caricato è **già 1920×1080** va dritto in `media/`; altrimenti l'originale resta in
+`media-sources/` e in `media/` va la versione 1920×1080 generata (ritaglio centrato, GD). L'editor
+permette di **scegliere l'inquadratura** (`action=recrop`) sovrascrivendo il file in `media/`.
+**Riuso senza duplicati**: l'indice `_index/media.json` mappa l'impronta sha256 → percorso; ricaricare
+la stessa immagine (o duplicare un evento) **non copia nulla**, restituisce il percorso esistente. I
+percorsi salvati sono **dalla radice** (`events/<slug>/media/…`), così valgono anche citati da un
+altro evento; le pagine accettano entrambe le forme. «Duplica» riscrive `image` in forma assoluta.
+L'indice eventi porta ora **`cover`** risolta, con **ripiego sulla serie**: un'occorrenza senza
+immagine mostra la locandina della rassegna. **«Mi interessa»**: azione `like` in `rsvp.php`,
+conteggio pubblico in `events/<slug>/likes.json` (**solo uid**, mai nomi o email) e memoria sul
+profilo (`meetoo:interestedIn`). Il conteggio si legge senza login; per metterlo serve l'accesso.
+
 **Pagina evento (`event.html`) riorganizzata**: breadcrumb **organizzatore | collezione | data**
 («Club del libro Ostia | Reading Party | 25 agosto 2026»); l'ORA si aggiunge solo se un'altra
 occorrenza della stessa collezione cade lo stesso giorno (letto da `by-collection`). Il nome della

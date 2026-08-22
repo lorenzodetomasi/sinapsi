@@ -395,10 +395,20 @@ export default function App() {
       let doc = parsed && typeof parsed === 'object' && parsed.mainEntity && typeof parsed.mainEntity === 'object'
         ? parsed.mainEntity : parsed;
       if (asCopy) {
+        const origin = String(doc['@id'] || '').trim().replace(/^\/+|\/+$/g, '');
         doc = { ...doc };
         delete doc['@id']; delete doc.dateCreated; delete doc.dateModified;
         delete doc.creator; delete doc.author; delete doc.contributor;
         delete doc.subEvent;   // le occorrenze restano dell'originale
+        // La copertina si CITA, non si copia: un percorso relativo alla cartella
+        // dell'originale (media/cover.jpg) qui non troverebbe più il file, quindi
+        // lo si riscrive come percorso dalla radice dei contenuti.
+        ['image', 'logo'].forEach((k) => {
+          const v = doc[k];
+          if (typeof v !== 'string' || !v || /^https?:\/\//i.test(v)) return;
+          if (/^(events|places|organizations)\//.test(v)) return;   // già assoluto
+          if (origin) doc[k] = (origin.includes('/') ? origin : 'events/' + origin) + '/' + v.replace(/^\/+/, '');
+        });
       }
       setData(deriveCapacities(fromJsonLd(doc)));
       setOpenWeb(false);

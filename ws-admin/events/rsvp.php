@@ -69,6 +69,23 @@ function save_rsvp(string $f, array $d): bool {
     return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
 }
 
+
+// «Mi interessa»: file separato dalle registrazioni perché è un dato pubblico
+// (il conteggio si legge senza login) e contiene SOLO gli uid, mai nomi o email.
+function likes_file(string $base, string $rel): string { return "$base/$rel/likes.json"; }
+function load_likes(string $f): array {
+    $d = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+    if (!is_array($d)) $d = [];
+    if (!isset($d["users"]) || !is_array($d["users"])) $d["users"] = [];
+    $d["count"] = count($d["users"]);
+    return $d;
+}
+function save_likes(string $f, array $d): bool {
+    @mkdir(dirname($f), 0775, true);
+    $d["count"] = count($d["users"]);
+    return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+}
+
 // Capienze dal fieldset "Pubblico".
 function capacity(array $event, array $regs): array {
     $m = (string)($event['eventAttendanceMode'] ?? '');
@@ -113,12 +130,35 @@ if ($action === 'status') {
         'myMode' => $user ? (my_reg($rsvp['registrations'], $user)['mode'] ?? null) : null,
         'isAdmin' => is_admin($event, $user),
         'count' => count($rsvp['registrations']),
+        'likes' => count(load_likes(likes_file($base, $relPath))['users']),
+        'liked' => $user ? in_array($user['uid'], load_likes(likes_file($base, $relPath))['users'], true) : false,
     ]);
     exit;
 }
 
 // Da qui in poi serve il login.
 if (!$user) fail(401, 'Accedi con Google per registrarti.');
+
+// --- MI INTERESSA (like) ---
+// Vale per tutti gli eventi, serie comprese: interessarsi a una rassegna ha senso
+// quanto interessarsi a una sua data. Il like resta anche sul profilo dell utente,
+// così "gli eventi che mi interessano" è una domanda a cui si può rispondere.
+if ($action === 'like') {
+    ws_user_upsert($base, $user);
+    $lf = likes_file($base, $relPath);
+    $likes = load_likes($lf);
+    $uid = $user['uid'];
+    $era = in_array($uid, $likes['users'], true);
+    $likes['users'] = $era
+        ? array_values(array_filter($likes['users'], fn($u) => $u !== $uid))
+        : array_merge($likes['users'], [$uid]);
+    $likes['@type'] = 'meetoo:InterestList';
+    $likes['event'] = $relPath;
+    if (!save_likes($lf, $likes)) fail(500, 'Non riesco a salvare: il server ha i permessi sulla cartella dell evento?');
+    ws_user_toggle_like($base, $uid, $relPath, !$era);
+    echo json_encode(['success' => true, 'liked' => !$era, 'likes' => count($likes['users'])]);
+    exit;
+}
 
 // --- REGISTER / UNREGISTER (solo eventi singoli) ---
 if ($action === 'register' || $action === 'unregister') {

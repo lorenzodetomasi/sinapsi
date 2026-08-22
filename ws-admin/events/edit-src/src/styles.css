@@ -872,3 +872,17 @@ button.primary { margin-top: var(--sp-md); }
   font-family: var(--font-mono); font-size: var(--fs-label);
   white-space: pre-wrap; word-break: break-word;
 }
+
+/* Copertina: riuso, inquadratura e selettore delle immagini gia caricate. */
+.image-actions { display: flex; gap: var(--sp-sm); flex-wrap: wrap; margin-top: var(--sp-sm); }
+.hint-line { display: block; color: var(--text-dim); font-size: var(--fs-sm); margin-top: var(--sp-xs); }
+.crop-box, .picker { margin-top: var(--sp-sm); padding: var(--sp-sm); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+.crop-hint { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-sm); color: var(--text-dim); font-size: var(--fs-sm); margin-bottom: var(--sp-sm); }
+/* Il riquadro e 16:9: l immagine scorre dentro, cosi si vede cosa finira nella cover. */
+.crop-frame { position: relative; aspect-ratio: 16/9; overflow: hidden; border-radius: var(--r-sm); background: var(--field-bg); }
+.crop-frame img { width: 100%; display: block; }
+.crop-box input[type=range] { width: 100%; margin: var(--sp-sm) 0 0; }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--sp-sm); max-height: 260px; overflow: auto; }
+.picker-item { padding: 0; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: none; cursor: pointer; aspect-ratio: 16/9; }
+.picker-item:hover { border-color: var(--accent); }
+.picker-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
