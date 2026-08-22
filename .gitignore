@@ -9,3 +9,6 @@ ws-admin/json-xml/uploads/
 
 # Config con le API key (non committare le chiavi in chiaro)
 ws-admin/places/config.php
+
+# Dati personali: mai versionati.
+ws-admin/_private/

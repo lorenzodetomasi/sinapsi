@@ -4,6 +4,8 @@
 // qui vivono i registranti agli eventi, per accessi futuri e memoria di scelte/preferenze.
 // $base = .../contents/meetoo/it_IT. Contiene dati personali → sta in ws-custom (gitignored).
 
+require_once __DIR__ . '/ws-private.php';
+
 if (!function_exists('ws_user_upsert')) {
     // Crea o aggiorna il profilo. $auth = output di ws_authenticate (uid/name/email/...).
     // Ritorna il profilo aggiornato.
@@ -25,9 +27,14 @@ if (!function_exists('ws_user_upsert')) {
                 'meetoo:preferences' => [],
             ];
         }
-        if (!empty($auth['name']))    $doc['name']  = (string)$auth['name'];
-        if (!empty($auth['email']))   $doc['email'] = (string)$auth['email'];
-        if (!empty($auth['picture'])) $doc['image'] = (string)$auth['picture'];
+        // Nome, email e foto NON stanno qui: questo file è servito dal web.
+        // Vanno nell archivio privato, e si ricompongono lato server per chi può vederli.
+        ws_private_user_set($uid, [
+            'name' => (string)($auth['name'] ?? ''),
+            'email' => (string)($auth['email'] ?? ''),
+            'picture' => (string)($auth['picture'] ?? ''),
+        ]);
+        unset($doc['name'], $doc['email'], $doc['image']);   // ripulisce i profili scritti prima
         if (!isset($doc['meetoo:preferences']) || !is_array($doc['meetoo:preferences'])) $doc['meetoo:preferences'] = [];
         if (!isset($doc['dateCreated'])) $doc['dateCreated'] = $now;
         $doc['dateModified'] = $now;

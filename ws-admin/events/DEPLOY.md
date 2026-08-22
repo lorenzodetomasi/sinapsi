@@ -94,6 +94,21 @@ vanno **sotto**, a tutta larghezza, due per riga: accanto al testo quattro pulsa
 capo riducevano il titolo a una colonna larga un carattere. Un conteggio vuoto non si mostra
 (`.count:empty`): l'archivio non annuncia un numero prima di essere caricato.
 
+**⚠ Dati personali fuori dai contenuti pubblici (`ws-admin/lib/ws-private.php`)** — `users/<uid>/index.json`
+e `events/<slug>/rsvp.json` sono file STATICI serviti dal web: contenevano **nome ed email** in chiaro
+(verificato: leggibili in produzione senza autenticazione). Ora nome/email/foto vivono in
+**`ws-admin/_private/users/<uid>.php`** — file `.php`, quindi una richiesta diretta lo esegue e non
+stampa nulla, più un `.htaccess` che nega l accesso; nei contenuti resta solo l uid. Le registrazioni
+salvano `uid/mode/date`; i nomi si ricompongono lato server per i soli amministratori dell evento.
+`_private/` è in `.gitignore`: non va versionato né incluso in backup pubblici.
+**Da eseguire in produzione**: `php ws-admin/users/migrate-privacy.php --apply` (dry-run senza flag)
+sposta i dati già pubblicati e ripulisce i file. NB: l esposizione passata non si annulla — se le
+pagine sono state indicizzate, valutare una richiesta di rimozione dalla cache dei motori.
+
+**Copertine esistenti**: `php ws-admin/events/make-covers.php` (dry-run; `--apply`, `--adopt` per
+adottare un immagine orfana trovata nella cartella) genera le cover 1920×1080 dalle immagini già
+caricate e riscrive `image` in forma assoluta. Poi rigenerare l indice.
+
 **Copertina 16:9 e «mi interessa»** — file nuovi: `ws-admin/lib/ws-media.php`, `ws-admin/events/media.php`.
 Regola: se il file caricato è **già 1920×1080** va dritto in `media/`; altrimenti l'originale resta in
 `media-sources/` e in `media/` va la versione 1920×1080 generata (ritaglio centrato, GD). L'editor

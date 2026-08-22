@@ -13,6 +13,7 @@
 
 require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/ws-users.php';
+require_once __DIR__ . '/../lib/ws-private.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['error' => 'Solo POST']); exit; }
@@ -183,7 +184,9 @@ if ($action === 'register' || $action === 'unregister') {
         if ($cap['full']) fail(409, 'Posti esauriti.');
         if ($mode === 'offline' && $cap['offlineFull']) fail(409, 'Posti in presenza esauriti.');
         if ($mode === 'online'  && $cap['onlineFull'])  fail(409, 'Posti da remoto esauriti.');
-        $rsvp['registrations'][] = ['uid' => $user['uid'], 'name' => $user['name'] ?: $user['email'], 'email' => $user['email'], 'mode' => $mode, 'date' => date('c')];
+        // Solo l uid: nome ed email di chi si registra non finiscono in un file servito
+        // dal web. Chi può vedere la lista li ottiene ricomposti dall archivio privato.
+        $rsvp['registrations'][] = ['uid' => $user['uid'], 'mode' => $mode, 'date' => date('c')];
     } else {
         // cambio modalità: verifica solo la nuova modalità (il totale non cambia)
         if ($existing['mode'] !== $mode) {
@@ -222,7 +225,11 @@ if ($action === 'participants' || $action === 'notify') {
 
     echo json_encode([
         'success' => true,
-        'participants' => array_map(fn($r) => ['name' => $r['name'] ?? '', 'email' => $r['email'] ?? '', 'mode' => $r['mode'] ?? 'offline', 'date' => $r['date'] ?? ''], $regs),
+        // I nomi arrivano dall archivio privato, non dal file dell evento.
+        'participants' => array_map(fn($r) => [
+            'name'  => $r['name'] ?? ws_private_display_name((string)($r['uid'] ?? '')),
+            'email' => $r['email'] ?? ws_private_email((string)($r['uid'] ?? '')),
+            'mode' => $r['mode'] ?? 'offline', 'date' => $r['date'] ?? ''], $regs),
         'count' => count($regs),
         'newCount' => $newCount,
         'notifyEnabled' => (bool)($rsvp['notify'][$uid]['enabled'] ?? false),
