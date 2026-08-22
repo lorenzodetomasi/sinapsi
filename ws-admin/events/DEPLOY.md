@@ -96,11 +96,15 @@ capo riducevano il titolo a una colonna larga un carattere. Un conteggio vuoto n
 (`.count:empty`): l'archivio non annuncia un numero prima di essere caricato.
 
 **Manutenzione dall'hub** (`ws-admin/index.php`, sezione visibile ai soli admin): migrazioni e
-conversioni che prima erano solo da riga di comando — **Dati personali fuori dai file pubblici**,
-**Genera le copertine 1920×1080** (con «adotta orfane»), **Rigenera l'indice delle immagini**,
-**Rigenera indice luoghi e Gruppi**. Regola: prima **Anteprima** (non scrive, elenca cosa farebbe),
-poi **Applica** con conferma. La logica sta nelle librerie (`ws_privacy_migrate`, `ws_media_covers`)
-e i comandi CLI ne sono involucri: interfaccia e riga di comando non possono divergere.
+conversioni che prima erano solo da riga di comando. L'elenco **non è scritto nella pagina**: viene
+dal registro `lib/ws-maintenance.php`, unica fonte (vedi «Il registro della manutenzione» al §3),
+letto anche dalla Gestione eventi. Regola invariata: prima **Anteprima** (non scrive, elenca cosa
+farebbe), poi **Applica** con conferma. La logica sta nelle librerie (`ws_privacy_migrate`,
+`ws_media_covers`, `event_index_rebuild`…) e sia il registro sia i comandi CLI ne sono involucri:
+interfaccia e riga di comando non possono divergere.
+All'apertura l'hub esegue le anteprime disponibili e scrive sotto ogni voce **quante cose sono in
+attesa** e **quando è stata eseguita l'ultima volta su questa installazione** — è ciò che rende la
+pagina utilizzabile per completare un aggiornamento di Meetoo senza ricordarsi la lista a memoria.
 
 **⚠ Dati personali fuori dai contenuti pubblici (`ws-admin/lib/ws-private.php`)** — `users/<uid>/index.json`
 e `events/<slug>/rsvp.json` sono file STATICI serviti dal web: contenevano **nome ed email** in chiaro
