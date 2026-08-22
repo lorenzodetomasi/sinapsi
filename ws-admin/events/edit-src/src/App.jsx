@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { JsonForms } from '@jsonforms/react';
 import { vanillaRenderers, vanillaCells } from '@jsonforms/vanilla-renderers';
 import { schema, uischema } from './schema.js';
-import { fromJsonLd, toJsonLd, blankJsonLd } from './jsonld-adapter.js';
+import { fromJsonLd, toJsonLd, blankJsonLd, dedupeKeywords } from './jsonld-adapter.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
 import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
@@ -16,6 +16,7 @@ import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
 import PlaceLocationRenderer, { placeLocationTester } from './PlaceLocationRenderer.jsx';
+import { loadEntities, findEntityById } from './entities.js';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import PageSettings from './PageSettings.jsx';
@@ -194,6 +195,32 @@ export default function App() {
     const t = setTimeout(() => runValidation(payload), 500);
     return () => clearTimeout(t);
   }, [payload]);
+
+  // Organizzatori con l'@id ma senza nome: il nome si recupera dall'indice delle
+  // entità. Capita di continuo, perché il riferimento vero è l'@id e il nome è solo
+  // l'etichetta che si legge nel form. Si fa QUI, in un colpo solo su tutte le
+  // righe: farlo dentro ogni riga significa che due righe compilate nello stesso
+  // istante partono dalla stessa istantanea e la seconda cancella la prima.
+  useEffect(() => {
+    const orgs = data?.organizer;
+    if (!Array.isArray(orgs) || !orgs.some((o) => o?.id && !(o?.name ?? '').trim())) return;
+    let vivo = true;
+    loadEntities().then((lista) => {
+      if (!vivo || !lista.length) return;
+      setData((d) => {
+        const prima = d.organizer ?? [];
+        const dopo = prima.map((o) => {
+          if (!o?.id || (o.name ?? '').trim()) return o;
+          const e = findEntityById(lista, o.id);
+          return e ? { ...o, name: e.name } : o;
+        });
+        return dopo.some((o, i) => o !== prima[i]) ? { ...d, organizer: dopo } : d;
+      });
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [data?.organizer]);
 
   // Applica la correzione XHTML suggerita (fix_xhtml) e re-idrata il form.
   async function fixXhtml() {
@@ -451,19 +478,12 @@ export default function App() {
   function syncKeywords() {
     setData((d) => {
       const names = [...(d.organizer ?? []).map((o) => o?.name), d.location?.name];
-      const keywords = Array.isArray(d.keywords) ? [...d.keywords] : [];
-      let changed = false;
-
-      names.forEach((name) => {
-        const value = (name ?? '').trim();
-        if (!value) return;
-        if (!keywords.some((k) => (k ?? '').trim().toLowerCase() === value.toLowerCase())) {
-          keywords.push(value);
-          changed = true;
-        }
-      });
-
-      return changed ? { ...d, keywords } : d;
+      const prima = Array.isArray(d.keywords) ? d.keywords : [];
+      // Un solo passaggio: aggiunge i nomi mancanti e ripulisce i doppioni gia'
+      // presenti nel file (il vecchio controllo guardava solo cio' che aggiungeva).
+      const keywords = dedupeKeywords([...prima, ...names]);
+      const uguale = keywords.length === prima.length && keywords.every((k, i) => k === prima[i]);
+      return uguale ? d : { ...d, keywords };
     });
   }
 

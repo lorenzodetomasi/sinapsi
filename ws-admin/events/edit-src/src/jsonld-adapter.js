@@ -88,9 +88,9 @@ export function fromJsonLd(doc) {
     // Tipi = @type esclusi i tipi primari (Event/EventSeries)
     types: typeArr.filter((t) => !BASE_TYPES.includes(t)),
     additionalType: asArray(doc.additionalType).map((s) => String(s).trim()).filter(Boolean),
-    keywords: doc.keywords
-      ? String(doc.keywords).split(',').map((s) => s.trim()).filter(Boolean)
-      : [],
+    keywords: dedupeKeywords(
+      doc.keywords ? String(doc.keywords).split(',').map((s) => s.trim()) : []
+    ),
     name: doc.name ?? '',
     description: doc.description ?? '',
     image: doc.image ?? '',
@@ -149,22 +149,45 @@ export function fromJsonLd(doc) {
 }
 
 /**
+ * Ripulisce una lista di keywords: toglie spazi e vuoti, scarta i doppioni
+ * (confronto senza maiuscole/minuscole) tenendo la PRIMA grafia incontrata — così
+ * l'ordine di chi scrive non cambia — e SPEZZA le voci che contengono una virgola.
+ *
+ * Lo spezzare non è un vezzo: le keywords si salvano come un'unica stringa separata
+ * da virgole, quindi una keyword con la virgola dentro non esiste — al primo
+ * salvataggio diventa comunque due voci. È da qui che nascevano i doppioni di
+ * località e regione: il luogo della serie si chiama «Lido di Ostia, Roma», il
+ * salvataggio lo spezzava in due keywords e il salvataggio dopo ri-aggiungeva il
+ * nome intero, che non combaciava con nessuna delle due metà. Ogni giro ne
+ * produceva un paio in più.
+ */
+export function dedupeKeywords(list) {
+  const viste = new Set();
+  const out = [];
+  (Array.isArray(list) ? list : []).forEach((k) => {
+    String(k ?? '')
+      .split(',')
+      .forEach((parte) => {
+        const value = parte.trim();
+        if (!value) return;
+        const chiave = value.toLowerCase();
+        if (viste.has(chiave)) return;
+        viste.add(chiave);
+        out.push(value);
+      });
+  });
+  return out;
+}
+
+/**
  * Le keywords includono SEMPRE i `name` di tutti gli organizer e del luogo:
- * quelli mancanti vengono aggiunti in coda (confronto case-insensitive, nessun
- * duplicato). Le keywords scritte a mano restano e mantengono il loro ordine.
+ * quelli mancanti vengono aggiunti in coda. Le keywords scritte a mano restano e
+ * mantengono il loro ordine; i doppioni spariscono (vedi dedupeKeywords).
  */
 function mergeKeywords(d) {
   const base = Array.isArray(d.keywords) ? [...d.keywords] : d.keywords ? [String(d.keywords)] : [];
   const auto = [...(d.organizer ?? []).map((o) => o?.name), d.location?.name];
-
-  auto.forEach((name) => {
-    const value = (name ?? '').trim();
-    if (!value) return;
-    const already = base.some((k) => (k ?? '').trim().toLowerCase() === value.toLowerCase());
-    if (!already) base.push(value);
-  });
-
-  return base.map((k) => (k ?? '').trim()).filter(Boolean).join(', ');
+  return dedupeKeywords([...base, ...auto]).join(', ');
 }
 
 /** Dati del form -> JSON-LD (index.json), reintroducendo @context/@type/@id/namespace.

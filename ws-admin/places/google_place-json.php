@@ -749,6 +749,12 @@ if ($action === 'save') {
     $indexUpdated = $savedPlaceId !== ''
         && ws_index_upsert($savedPlaceId, $id, $entity['name'] ?? '', $entity['@type'] ?? '');
 
+    // Elenco di organizzatori e luoghi (lo legge l'editor eventi): va tenuto fresco
+    // qui, altrimenti un'organizzazione appena creata non comparirebbe fra le scelte
+    // finché qualcuno non rigenera gli indici a mano. Scansione di poche decine di
+    // file: costa meno di un'attesa inspiegabile per il redattore.
+    ws_entities_save(ws_entities_rebuild());
+
     echo json_encode([
         "success" => true, "path" => "$id/index.json", "overwritten" => $existed, "mode" => ($mode ?: 'new'),
         "media_saved" => $saved, "media_failed" => $failed, "media_debug" => $mediaDebug,

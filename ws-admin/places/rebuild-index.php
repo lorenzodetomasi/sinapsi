@@ -17,6 +17,10 @@ $gruppi = ws_gruppi_rebuild();
 ws_gruppi_save($gruppi);
 echo "Gruppi: " . count($gruppi) . " voci → " . ws_gruppi_path() . "\n";
 
+$entita = ws_entities_rebuild();
+ws_entities_save($entita);
+echo "Entità (organizzatori e luoghi): " . count($entita) . " voci → " . ws_entities_path() . "\n";
+
 echo "Indice ricostruito: " . count($idx) . " voci → " . ws_index_path() . "\n";
 if ($conflicts) {
     echo "\n⚠ Conflitti (stesso google_place_id su @id diversi — possibili duplicati):\n";

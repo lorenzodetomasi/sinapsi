@@ -3,6 +3,7 @@ import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import XhtmlEditor from './XhtmlEditor.jsx';
 import PlaceInput from './PlaceInput.jsx';
+import { EntityNameInput, EntityIdInput } from './EntityInput.jsx';
 import { usePointerReorder } from './usePointerReorder.js';
 
 // Array di oggetti resi come "card" su più righe. Ogni card ha una striscia
@@ -11,9 +12,17 @@ import { usePointerReorder } from './usePointerReorder.js';
 
 const toLocal = (v) => (v ? String(v).slice(0, 16) : '');
 
-function FieldControl({ name, schema, value, onChange, onPickPlace }) {
+function FieldControl({ name, schema, item, value, onChange, onPickPlace, onPatch }) {
   const label = schema.title || name;
   const listId = useId();
+  // Entità del sito (organizzatori): si sceglie dall'elenco del server, oppure si
+  // incolla l'@id e il nome arriva da solo. Scrivono nome e @id INSIEME.
+  if (schema.format === 'entity') {
+    return <EntityNameInput label={label} value={value} onChange={onChange} onPatch={onPatch} />;
+  }
+  if (schema.format === 'entity-id') {
+    return <EntityIdInput label={label} value={value} name={item?.name} onChange={onChange} onPatch={onPatch} />;
+  }
   // Autocomplete Google Places: compila il nome e registra il Place ID
   if (schema.format === 'place') {
     return (
@@ -156,9 +165,11 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
                         key={key}
                         name={key}
                         schema={sub}
+                        item={item}
                         value={item?.[key]}
                         onChange={(v) => setField(i, key, v)}
                         onPickPlace={({ placeId, name }) => setItemFields(i, { name, googlePlaceId: placeId })}
+                        onPatch={(patch) => setItemFields(i, patch)}
                       />
                     ))}
                 </div>

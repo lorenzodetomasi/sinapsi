@@ -136,7 +136,7 @@ if (!function_exists('ws_maint_ops')) {
 
             'places-index' => [
                 'title' => 'Rigenera indice luoghi e Gruppi',
-                'meta'  => 'Deduplica per Google Place ID + elenco dei Gruppi della home',
+                'meta'  => 'Deduplica per Google Place ID, Gruppi della home, elenco organizzatori dell\'editor',
                 'icon'  => 'travel_explore', 'scope' => 'places', 'preview' => false, 'since' => '2026.07',
                 'run' => function (string $base, bool $apply, array $o): array {
                     require_once __DIR__ . '/../places/index-lib.php';
@@ -144,9 +144,11 @@ if (!function_exists('ws_maint_ops')) {
                     ws_index_save($idx);
                     $g = ws_gruppi_rebuild();
                     ws_gruppi_save($g);
+                    $e = ws_entities_rebuild();
+                    ws_entities_save($e);
                     return [
                         'changes' => count($conf),
-                        'summary' => count($idx) . ' luoghi, ' . count($g) . ' gruppi'
+                        'summary' => count($idx) . ' luoghi, ' . count($g) . ' gruppi, ' . count($e) . ' organizzatori possibili'
                             . (count($conf) ? ' · ⚠ ' . count($conf) . ' possibili duplicati' : ''),
                         'lines' => array_map(fn($ids) => '⚠ stesso place_id: ' . implode(', ', array_unique($ids)), $conf),
                     ];

@@ -136,6 +136,64 @@ function ws_gruppi_save($list) {
     ) !== false;
 }
 
+// ── Indice "Entità" ────────────────────────────────────────────────────────
+// Elenco di TUTTO ciò che può organizzare un evento o ospitarlo: organizations +
+// places/localBusiness, senza il filtro `isGroup` di gruppi.json (un'attività può
+// organizzare senza offrire esperienze collettive). Serve all'editor eventi per
+// scegliere l'organizzatore dall'elenco invece di digitarne l'@id a memoria, e per
+// risalire al nome partendo dall'@id. Derivato e ricostruibile come gli altri.
+function ws_entities_path() {
+    return WS_MEETOO_ROOT . '/_index/entities.json';
+}
+
+// addressRegion nei dati è a volte una stringa, a volte ["Lazio","RM"]: qui si
+// tiene la prima forma leggibile, senza inventare.
+function ws_entities_region($address) {
+    $r = is_array($address) ? ($address['addressRegion'] ?? '') : '';
+    if (is_array($r)) $r = $r[0] ?? '';
+    return is_string($r) ? $r : '';
+}
+
+function ws_entities_rebuild() {
+    $out = [];
+    foreach (WS_INDEX_SCAN_DIRS as $sub) {
+        $base = WS_MEETOO_ROOT . '/' . $sub;
+        if (!is_dir($base)) continue;
+        $isOrgDir = ($sub === 'organizations');
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS));
+        foreach ($it as $file) {
+            if ($file->getFilename() !== 'index.json') continue;
+            $j = json_decode((string)file_get_contents($file->getPathname()), true);
+            if (!is_array($j)) continue;
+            $e = $j['mainEntity'] ?? $j;
+            $id = $e['@id'] ?? '';
+            if ($id === '') continue;
+            $type = $e['@type'] ?? ($isOrgDir ? 'Organization' : 'Place');
+            $addr = $e['address'] ?? [];
+            $out[] = [
+                '@id'      => $id,
+                'name'     => $e['name'] ?? basename($id),
+                '@type'    => is_array($type) ? ($type[0] ?? 'Organization') : $type,
+                'kind'     => $isOrgDir ? 'org' : 'business',
+                'isGroup'  => !empty($e['meetoo:isGroup']),
+                'locality' => is_array($addr) && is_string($addr['addressLocality'] ?? null) ? $addr['addressLocality'] : '',
+                'region'   => ws_entities_region($addr),
+            ];
+        }
+    }
+    usort($out, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+    return $out;
+}
+
+function ws_entities_save($list) {
+    $dir = dirname(ws_entities_path());
+    if (!is_dir($dir)) @mkdir($dir, 0775, true);
+    return @file_put_contents(
+        ws_entities_path(),
+        json_encode($list, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+    ) !== false;
+}
+
 // Ricostruisce l'indice da zero scandendo i JSON. Ritorna [indice, conflitti].
 // Un conflitto = stesso place_id su @id diversi (segnala possibili duplicati).
 function ws_index_rebuild() {

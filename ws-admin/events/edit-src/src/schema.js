@@ -155,8 +155,12 @@ export const schema = {
       items: {
         type: 'object',
         properties: {
-          name: { type: 'string', title: 'Nome', format: 'place' },
-          id: { type: 'string', title: '@id' },
+          // L'organizzatore è un'entità che sta GIÀ sul sito (organizations/… o un
+          // luogo/attività): si sceglie dall'elenco, o si incolla l'@id e il nome
+          // arriva da solo. Prima c'era l'autocomplete di Google Places, che però
+          // proponeva mezzo mondo e lasciava l'@id da scrivere a memoria.
+          name: { type: 'string', title: 'Nome', format: 'entity' },
+          id: { type: 'string', title: '@id', format: 'entity-id' },
           googlePlaceId: { type: 'string', format: 'hidden' },
         },
       },
