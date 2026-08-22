@@ -152,3 +152,66 @@ if (!function_exists('ws_media_index_path')) {
         return $try;
     }
 }
+
+// Genera in blocco le cover 1920x1080 per gli eventi che hanno gia un immagine.
+// $apply=false → dice solo cosa farebbe. $adopt=true → adotta come cover un'immagine
+// trovata nella cartella di un evento che non ne dichiara nessuna (solo se ce n e UNA:
+// scegliere per conto dell utente fra piu immagini sarebbe indovinare).
+if (!function_exists('ws_media_covers')) {
+    function ws_media_covers(string $base, bool $apply, bool $adopt = false): array {
+        $rep = ['done' => [], 'skipped' => [], 'broken' => [], 'external' => [], 'applied' => $apply];
+        $cands = function (string $dir): array {
+            $out = [];
+            foreach (['media', 'media-sources'] as $sub)
+                foreach (glob("$dir/$sub/*.{jpg,jpeg,png,webp}", GLOB_BRACE) ?: [] as $p)
+                    if (!preg_match('#/(logo|satellite)[^/]*$#i', $p)) $out[] = $p;
+            return $out;
+        };
+        foreach (glob("$base/events/*/index.json") as $file) {
+            $dir = dirname($file); $slug = basename($dir); $rel = "events/$slug";
+            $doc = json_decode((string)file_get_contents($file), true);
+            if (!is_array($doc)) continue;
+            $e = isset($doc['mainEntity']) && is_array($doc['mainEntity']) ? 'mainEntity' : null;
+            $t = $e ? $doc[$e] : $doc;
+            $img = $t['image'] ?? '';
+            $img = is_array($img) ? (string)($img['url'] ?? $img['@id'] ?? '') : (string)$img;
+            if ($img === '') {
+                $c = $cands($dir);
+                if (count($c) !== 1) continue;
+                if (!$adopt) { $rep['skipped'][] = ['event' => $slug, 'why' => 'immagine orfana: ' . basename($c[0])]; continue; }
+                $img = ltrim(str_replace($dir, '', $c[0]), '/');
+            }
+            if (preg_match('#^https?://#i', $img)) { $rep['external'][] = ['event' => $slug, 'url' => $img]; continue; }
+            $srcRel = preg_match('#^(events|places|organizations)/#', $img) ? $img : "$rel/" . ltrim($img, '/');
+            $srcPath = "$base/$srcRel";
+            if (!is_file($srcPath)) {
+                $c = $cands($dir);
+                if (!($adopt && $c)) { $rep['broken'][] = ['event' => $slug, 'ref' => $img, 'found' => $c ? basename($c[0]) : '']; continue; }
+                $srcPath = $c[0]; $srcRel = $rel . '/' . ltrim(str_replace($dir, '', $srcPath), '/');
+            }
+            $size = @getimagesize($srcPath);
+            if (!$size) { $rep['broken'][] = ['event' => $slug, 'ref' => $srcRel, 'found' => 'file illeggibile']; continue; }
+            $coverRel = "$rel/media/" . pathinfo($srcRel, PATHINFO_FILENAME) . '.jpg';
+            $isCover = ((int)$size[0] === WS_COVER_W && (int)$size[1] === WS_COVER_H);
+            if ($isCover && $img === $coverRel) continue;
+            $rep['done'][] = ['event' => $slug, 'from' => $size[0] . 'x' . $size[1], 'cover' => $coverRel, 'exact' => $isCover];
+            if (!$apply) continue;
+            if ($isCover) {
+                if ($srcRel !== $coverRel) { @mkdir("$dir/media", 0775, true); @copy($srcPath, "$base/$coverRel"); }
+            } else {
+                $err = '';
+                if (!ws_media_make_cover($srcPath, "$base/$coverRel", null, $err)) {
+                    array_pop($rep['done']); $rep['broken'][] = ['event' => $slug, 'ref' => $srcRel, 'found' => $err]; continue;
+                }
+                if (strpos($srcRel, '/media/') !== false && !is_file("$dir/media-sources/" . basename($srcPath))) {
+                    @mkdir("$dir/media-sources", 0775, true); @copy($srcPath, "$dir/media-sources/" . basename($srcPath));
+                }
+            }
+            $t['image'] = $coverRel;
+            if ($e) $doc[$e] = $t; else $doc = $t;
+            file_put_contents($file, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        }
+        if ($apply) ws_media_reindex($base);
+        return $rep;
+    }
+}

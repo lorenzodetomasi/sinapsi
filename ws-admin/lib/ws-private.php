@@ -60,3 +60,59 @@ if (!function_exists('ws_private_dir')) {
         return (string)(ws_private_user_get($uid)['email'] ?? '');
     }
 }
+
+// Migrazione: toglie i dati personali dai file serviti dal web e li porta
+// nell archivio privato. $apply=false → dice solo cosa farebbe. Idempotente.
+// Ritorna un resoconto strutturato: lo stampano la CLI e la pagina di gestione.
+if (!function_exists('ws_privacy_migrate')) {
+    function ws_privacy_migrate(string $base, bool $apply): array {
+        $PERSONALI = ['name', 'email', 'image', 'telephone', 'givenName', 'familyName'];
+        $rep = ['profiles' => [], 'rsvp' => [], 'fields' => 0, 'entries' => 0, 'applied' => $apply];
+
+        foreach (glob("$base/users/*/index.json") as $f) {
+            $uid = basename(dirname($f));
+            $doc = json_decode((string)file_get_contents($f), true);
+            if (!is_array($doc)) continue;
+            $e = isset($doc['mainEntity']) && is_array($doc['mainEntity']) ? 'mainEntity' : null;
+            $t = $e ? $doc[$e] : $doc;
+            $trovati = [];
+            foreach ($PERSONALI as $k) if (isset($t[$k]) && $t[$k] !== '') $trovati[$k] = $t[$k];
+            if (!$trovati) continue;
+            $rep['profiles'][] = ['uid' => $uid, 'fields' => array_keys($trovati)];
+            $rep['fields'] += count($trovati);
+            if (!$apply) continue;
+            ws_private_user_set($uid, [
+                'name' => (string)($trovati['name'] ?? ''),
+                'email' => (string)($trovati['email'] ?? ''),
+                'picture' => (string)($trovati['image'] ?? ''),
+                'telephone' => (string)($trovati['telephone'] ?? ''),
+            ]);
+            foreach (array_keys($trovati) as $k) unset($t[$k]);
+            if ($e) $doc[$e] = $t; else $doc = $t;
+            file_put_contents($f, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        }
+
+        foreach (glob("$base/events/*/rsvp.json") as $f) {
+            $d = json_decode((string)file_get_contents($f), true);
+            if (!is_array($d) || empty($d['registrations'])) continue;
+            $tocca = 0;
+            foreach ($d['registrations'] as $i => $r) {
+                if (empty($r['name']) && empty($r['email'])) continue;
+                $tocca++;
+                if (!$apply) continue;
+                $uid = (string)($r['uid'] ?? '');
+                if ($uid !== '') ws_private_user_set($uid, ['name' => (string)($r['name'] ?? ''), 'email' => (string)($r['email'] ?? '')]);
+                unset($d['registrations'][$i]['name'], $d['registrations'][$i]['email']);
+            }
+            if (!$tocca) continue;
+            $rep['rsvp'][] = ['event' => basename(dirname($f)), 'entries' => $tocca];
+            $rep['entries'] += $tocca;
+            if ($apply) {
+                $d['registrations'] = array_values($d['registrations']);
+                file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            }
+        }
+        if ($apply) ws_private_ensure();
+        return $rep;
+    }
+}
