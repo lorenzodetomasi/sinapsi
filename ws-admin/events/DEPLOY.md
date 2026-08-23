@@ -263,6 +263,17 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+**«Rigenera indice luoghi e Gruppi» ha l'anteprima.** Era l'unica operazione che scriveva senza
+poter dire prima che cosa avrebbe fatto. I tre indici (deduplica per Place ID, Gruppi della home,
+elenco organizzatori dell'editor) si ricostruiscono già in memoria — `*_rebuild()` non scrive — quindi
+l'anteprima li confronta con quelli su disco e mostra le voci che entrano, escono o cambiano.
+Delle dieci operazioni del pannello, ora **nove su dieci** hanno l'anteprima; resta senza solo
+«Rigenera l'indice delle immagini», che non ha uno stato con cui confrontarsi.
+
+⚠ In più una **guardia**: le funzioni di `places/index-lib.php` scrivono sempre sotto
+`WS_MEETOO_ROOT`, non sotto il `` ricevuto. Eseguirle puntando a una copia avrebbe scritto di
+nascosto nei contenuti veri — ora l'operazione si ferma e lo dice.
+
 **Il record utente nasce al primo accesso.** `ws_user_upsert()` scriveva solo il profilo pubblico
 (`index.json`); ruolo e locale vivono invece in `users/<uid>/index.xml` — il record del CMS, che
 `ws-auth.php` legge attraverso gli `xi:include` di `users/users.xml`. Ora `ws_user_record()` crea

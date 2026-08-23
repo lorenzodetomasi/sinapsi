@@ -230,20 +230,62 @@ if (!function_exists('ws_maint_ops')) {
             'places-index' => [
                 'title' => 'Rigenera indice luoghi e Gruppi',
                 'meta'  => 'Deduplica per Google Place ID, Gruppi della home, elenco organizzatori dell\'editor',
-                'icon'  => 'travel_explore', 'scope' => 'places', 'preview' => false, 'since' => '2026.07',
+                'icon'  => 'travel_explore', 'scope' => 'places', 'preview' => true, 'since' => '2026.07',
                 'run' => function (string $base, bool $apply, array $o): array {
                     require_once __DIR__ . '/../places/index-lib.php';
+
+                    // Queste funzioni scrivono SEMPRE sotto WS_MEETOO_ROOT, non sotto
+                    // il $base ricevuto: eseguirle puntando altrove scriverebbe di
+                    // nascosto nei contenuti veri. Meglio fermarsi e dirlo.
+                    if (realpath($base) !== realpath(WS_MEETOO_ROOT)) {
+                        return ['changes' => 0, 'lines' => [],
+                            'summary' => 'Questa operazione lavora solo sui contenuti reali (' . WS_MEETOO_ROOT . '), non su una copia.'];
+                    }
+
+                    // I tre indici si ricostruiscono in memoria: `*_rebuild()` non
+                    // scrive. Così l'anteprima può confrontarli con quelli su disco
+                    // e dire che cosa cambierebbe, senza toccare niente.
                     list($idx, $conf) = ws_index_rebuild();
-                    ws_index_save($idx);
                     $g = ws_gruppi_rebuild();
-                    ws_gruppi_save($g);
                     $e = ws_entities_rebuild();
-                    ws_entities_save($e);
+
+                    $diff = function (array $nuovo, string $file, string $chiave): array {
+                        $vecchio = is_file($file) ? json_decode((string)@file_get_contents($file), true) : [];
+                        if (!is_array($vecchio)) $vecchio = [];
+                        $id = function ($x) use ($chiave) { return is_array($x) ? (string)($x[$chiave] ?? '') : (string)$x; };
+                        $a = []; foreach ($vecchio as $k => $v) $a[$chiave === '' ? (string)$k : $id($v)] = $v;
+                        $b = []; foreach ($nuovo as $k => $v) $b[$chiave === '' ? (string)$k : $id($v)] = $v;
+                        return [
+                            'entrano' => array_values(array_diff(array_keys($b), array_keys($a))),
+                            'escono'  => array_values(array_diff(array_keys($a), array_keys($b))),
+                            'diversi' => count(array_filter(array_intersect_key($b, $a),
+                                fn($v, $k) => json_encode($v) !== json_encode($a[$k]), ARRAY_FILTER_USE_BOTH)),
+                        ];
+                    };
+                    $dLuoghi = $diff($idx, ws_index_path(), '');          // mappa place_id → voce
+                    $dGruppi = $diff($g, ws_gruppi_path(), '@id');
+                    $dEnt    = $diff($e, ws_entities_path(), '@id');
+
+                    $righe = [];
+                    foreach ([['luoghi', $dLuoghi], ['gruppi', $dGruppi], ['organizzatori', $dEnt]] as [$nome, $d]) {
+                        foreach ($d['entrano'] as $x) $righe[] = "+ $nome: $x";
+                        foreach ($d['escono']  as $x) $righe[] = "− $nome: $x";
+                        if ($d['diversi']) $righe[] = "~ $nome: {$d['diversi']} voci aggiornate";
+                    }
+                    foreach ($conf as $ids) $righe[] = '⚠ stesso place_id: ' . implode(', ', array_unique($ids));
+
+                    $cambi = count($dLuoghi['entrano']) + count($dLuoghi['escono']) + $dLuoghi['diversi']
+                           + count($dGruppi['entrano']) + count($dGruppi['escono']) + $dGruppi['diversi']
+                           + count($dEnt['entrano']) + count($dEnt['escono']) + $dEnt['diversi'];
+
+                    if ($apply) { ws_index_save($idx); ws_gruppi_save($g); ws_entities_save($e); }
+
                     return [
-                        'changes' => count($conf),
+                        'changes' => $cambi,
                         'summary' => count($idx) . ' luoghi, ' . count($g) . ' gruppi, ' . count($e) . ' organizzatori possibili'
+                            . ($cambi ? " · $cambi voci da aggiornare" : ' · indici già in pari')
                             . (count($conf) ? ' · ⚠ ' . count($conf) . ' possibili duplicati' : ''),
-                        'lines' => array_map(fn($ids) => '⚠ stesso place_id: ' . implode(', ', array_unique($ids)), $conf),
+                        'lines' => $righe,
                     ];
                 },
             ],
