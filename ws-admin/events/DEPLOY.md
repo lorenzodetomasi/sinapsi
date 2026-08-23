@@ -275,10 +275,14 @@ degli eventi e il caricamento dei media (gate in `save-event.php`, `media.php`, 
 promuovere qualcuno è una decisione, non un automatismo di primo accesso. Verificato che un ruolo
 alzato a mano **sopravvive** agli accessi successivi: la funzione non riscrive un record esistente.
 
-**Rimosso `events/_index/_index/`**: un residuo di una versione precedente del codice (gli mancano
-`organizerType` e `cover`, aggiunti dopo). Il codice attuale non lo riproduce — verificato
-ricostruendo l'indice da zero su una copia. Era dato derivato e duplicato dentro i contenuti serviti:
-va cancellato anche sul server, dove è arrivato con l'ultimo allineamento.
+**Rimossi DUE annidamenti `_index/_index/`**: uno sotto `events/`, uno sotto la radice dei contenuti.
+Sono residui: quello degli eventi non ha `organizerType` né `cover` (campi aggiunti dopo), quello
+della radice ha **9 gruppi invece di 14**, e portano entrambi la stessa data — 23 ago 16:04. Il
+codice attuale non li riproduce: verificato ricostruendo l'indice eventi da zero su una copia, e
+lanciando davvero «Rigenera indice luoghi e Gruppi», che ha scritto solo in `_index/` lasciando il
+residuo intatto. Origine ignota (nessun percorso del codice attuale ci arriva); dato derivato e
+duplicato dentro i contenuti serviti, quindi **da cancellare anche sul server**, dove è arrivato con
+l'ultimo allineamento.
 
 ## Trasloco verso la radice di isotype.org: cosa regge e cosa no
 
