@@ -172,6 +172,28 @@ letto **prima sulla voce di lista** e poi sul membro.
 }
 ```
 
+**Il vocabolario è quello di JSON Schema.** Le clausole si chiamano `const`, `enum`, `pattern`,
+`exists` e si comportano come là: `const` = valore ESATTO («BookCrossing»), `pattern` = espressione
+(«^BookCrossing» prende anche «BookCrossingPlace»). La distinzione che mancava al primo giro, quando
+c'era un `contains` ambiguo.
+Si scrivono in forma COMPATTA — `{"field": "additionalType", "const": "BookCrossing"}` — e
+`ws_listrule_compile()` le traduce nello JSON Schema equivalente. Perché non JSON Schema scritto a
+mano: `properties` si applica solo se il campo c'è e `contains` solo sugli array, quindi la regola
+ingenua accetta per verità vacua tutto ciò che quel campo non ce l'ha — **provata sui contenuti veri:
+53 luoghi su 59 invece di 3**. Il `required` e il caso stringa-o-array li mette il compilatore.
+Verificata l'equivalenza fra il valutatore PHP e **Ajv** (già nel bundle dell'editor, arriva con JSON
+Forms) su 8 regole — esatto, prefisso, enum, booleano, esiste, non esiste, OR, numerico: **stesso
+risultato su tutte**. Lato client la regola si può quindi valutare con una libreria testata da altri;
+lato PHP (dove non c'è composer) il valutatore è quello della forma compatta, non di JSON Schema.
+
+`php ws-admin/places/rebuild-lists.php` dice che cosa farebbe; con `--apply` scrive. **Non pota**:
+le voci che la regola non trova più restano e vengono segnalate, e le voci senza `@id` (le 47 tappe
+del lungomare che esistono solo nella lista) sopravvivono a ogni rigenerazione. Provata la fusione su
+tre casi: lista vuota → popolata; lista curata → nomi e campi scritti a mano conservati, voce fuori
+regola tenuta come «a mano»; voce `meetoo:auto` non più trovata → tenuta e segnalata come orfana.
+L'ordine alfabetico è lettera per lettera (si ignorano interpunzione e spazi), altrimenti l'esito
+dipende da dove cade un apostrofo.
+
 **Fatto finora**: `places/lido-di-ostia/bookcrossing` è passato da `Collection` + `containsPlace`
 (che in schema.org è il contenimento FISICO fra luoghi, improprio per un tema) a **`ItemList` +
 `itemListElement`**, con la regola dichiarata e la lista materializzata: la regola trova **3** luoghi,
