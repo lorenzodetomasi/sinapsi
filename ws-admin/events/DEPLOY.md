@@ -149,6 +149,24 @@ pagine non la ridichiarano — `waterfront.html` ne aveva una copia con `font-si
 che si applicava anche all'header condiviso. Ora la misura di pagina è limitata alle SUE aree
 (`.carousel-container`, `.modal-overlay`, `#app-loader`, `.fab`).
 
+**Ogni luogo è un BLOCCO, contenitore e ospitati allo stesso modo** (`.place-block` in places.css):
+riga 1 = nome + il pulsante dei dettagli a destra; riga 2 = le caratteristiche che lo distinguono,
+che scorrono in orizzontale, con il voto ancorato a destra (scorre la striscia, non il voto).
+Le attività ospitate non rientrano: si distinguono con un filo sottile e una fascia di fondo a righe
+alterne (`--color-background-section2`), che esce fino ai bordi della card (`--place-bleed`) con il
+padding a compensare, così il testo resta allineato.
+Nella riga 2 le PAROLE (tipologia del Comune, tipo, cucina) stanno nel colore dei titoli; le
+dotazioni sono icone. Fuori dalla riga i **metodi di pagamento** (elenco esplicito di 5 nomi, non
+un'euristica: «Parcheggio a pagamento» contiene la parola pagamento ma è una dotazione vera): carte
+e contactless sono le tre voci più frequenti dell'intero lungomare e non distinguono nulla.
+Una riga senza niente da dire NON si mostra — ed è il segnale di dove mancano i dati.
+**A schermo vanno solo i tipi con un'etichetta italiana**: `translateTypes` restituiva il nome
+schema.org grezzo quando l'etichetta mancava, e «SportsClub» è finito davvero sotto un nome. Ora i
+tipi senza etichetta si tacciono, e TYPE_LABELS copre i 17 tipi che l'importazione da Google assegna.
+⚠ Lacune redazionali che questa struttura rende visibili, sulle 46 attività del lungomare:
+**4 hanno additionalType (9%), nessuna ha servesCuisine**, e 33 hanno dotazioni ma spesso solo
+metodi di pagamento. Il codice per `servesCuisine` c'è ed è muto finché non arriva il dato.
+
 **Le attività ospitate usano i componenti comuni.** Il «Dettagli» di un'attività non è più
 `.biz-info` ma **`.card-act primary icon-only`**, e il suo voto non è più `.biz-rating` ma
 **`.rating-pill`**: gli stessi dell'azione e del voto della card. `.biz-info` era per giunta 44×35px
