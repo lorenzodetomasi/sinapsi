@@ -24,7 +24,7 @@ if (!function_exists('enrichPlaceWithGoogleAPI')) {
         $placeName = trim((string)$placeName);
         if ($placeName === '' || (isset($item['geo']) && isset($item['address']))) return false;
         $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query="
-             . urlencode($placeName . " Ostia") . "&key=" . $apiKey;
+             . urlencode($placeName . " Ostia") . "&language=it&region=IT&key=" . $apiKey;
         $data = googleGet($url);
         if (($data['status'] ?? '') !== 'OK' || empty($data['results'])) return false;
         $best = $data['results'][0];

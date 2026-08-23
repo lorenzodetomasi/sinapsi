@@ -9,7 +9,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <meta charset="UTF-8">
     <title>WS CMS - Data Ingestion Places</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars($mapsJsKey, ENT_QUOTES); ?>&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars($mapsJsKey, ENT_QUOTES); ?>&libraries=places&language=it&region=IT"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
@@ -244,13 +244,21 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             if (!place.name) return;
 
             document.getElementById('error-msg').innerText = "Acquisizione dati in corso...";
-            
+
+            // Si manda il PLACE ID del luogo scelto, non il testo digitato: il
+            // suggerimento che hai selezionato È già l'identità del luogo. Prima
+            // partiva solo `query` e il server rifaceva una ricerca a testo libero
+            // prendendo il primo risultato — che poteva essere un altro luogo, o
+            // nessuno per i punti che la vecchia ricerca non indicizza.
+            // Il server sa già gestirlo: è lo stesso percorso di «Aggiorna da
+            // Google Maps», e costa una chiamata in meno.
             fetch('../google_place-json.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     action: 'search',
                     credential: userJwtToken,
+                    place_id: place.place_id || '',
                     query: input.value
                 })
             })

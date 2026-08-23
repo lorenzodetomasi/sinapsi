@@ -780,7 +780,7 @@ if ($action === 'search') {
 
     if ($forcePlaceId !== '') {
         $detailsFields = "name,geometry,type,address_component,website,rating,user_ratings_total,editorial_summary,business_status,price_level,url";
-        $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . urlencode($forcePlaceId) . "&fields=" . $detailsFields . "&key=" . $googleApiKey;
+        $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . urlencode($forcePlaceId) . "&fields=" . $detailsFields . "&language=it&region=IT&key=" . $googleApiKey;
         $detailsData = googleGet($detailsUrl);
         if (!is_array($detailsData) || ($detailsData['status'] ?? '') !== 'OK' || empty($detailsData['result'])) {
             $gStatus = $detailsData['status'] ?? 'NO_RESPONSE';
@@ -798,7 +798,7 @@ if ($action === 'search') {
         }
 
         // --- LOGICA DELL'API DI GOOGLE MAPS (Text Search per NUOVI luoghi) ---
-        $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=" . urlencode($searchQuery) . "&key=" . $googleApiKey;
+        $url = "https://maps.googleapis.com/maps/api/place/textsearch/json?query=" . urlencode($searchQuery) . "&language=it&region=IT&key=" . $googleApiKey;
         $rawData = googleGet($url);
 
         if (!is_array($rawData) || ($rawData['status'] ?? '') !== 'OK' || empty($rawData['results'])) {
@@ -814,7 +814,7 @@ if ($action === 'search') {
 
         // Chiamata Place Details (arricchimento, non bloccante)
         $detailsFields = "address_component,website,rating,user_ratings_total,editorial_summary,business_status,price_level,url";
-        $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=" . $detailsFields . "&key=" . $googleApiKey;
+        $detailsUrl = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" . $place['place_id'] . "&fields=" . $detailsFields . "&language=it&region=IT&key=" . $googleApiKey;
         $detailsData = googleGet($detailsUrl);
         if (isset($detailsData['result'])) {
             $place = array_merge($place, $detailsData['result']);
