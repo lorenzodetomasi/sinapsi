@@ -45,6 +45,11 @@ if (!function_exists('ws_user_upsert')) {
         @file_put_contents($file, json_encode(
             is_array($documento) ? ws_wrap_set($documento, $doc) : ws_wrap_one($doc),
             JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        // Il record del CMS (ruolo, locale) e la sua registrazione in users.xml.
+        // Non sono derivati dal JSON — sono un'altra cosa — quindi «Riallinea gli XML»
+        // non li tocca: nascono qui, alla prima connessione.
+        ws_user_record($base, $uid, (string)($auth['locale'] ?? ''));
         return $doc;
     }
 }
@@ -93,5 +98,58 @@ if (!function_exists('ws_user_toggle_like')) {
         $t['meetoo:interestedIn'] = $cur;
         if ($e) $d[$e] = $t; else $d = $t;
         return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+ * Il record utente del CMS: `users/<uid>/index.xml` + la riga in `users/users.xml`.
+ *
+ * È la FONTE del ruolo (ws-auth.php lo legge di lì), non un derivato del JSON:
+ * per questo la manutenzione «Riallinea gli XML» tiene `users/` fuori — ci
+ * cancellerebbe sopra.
+ *
+ * Il ruolo predefinito è `verified-visitor`: è ciò che chi si collega ottiene già
+ * oggi in modo implicito, e non apre nulla. `user` invece **sblocca la creazione e
+ * il salvataggio degli eventi** (vedi il gate in save-event.php e media.php):
+ * promuovere qualcuno è una decisione, non un automatismo di primo accesso.
+ * ------------------------------------------------------------------------- */
+if (!function_exists('ws_user_record')) {
+    /** Ruolo di chi si collega per la prima volta. Vedi il commento sopra. */
+    function ws_user_role_default(): string { return 'verified-visitor'; }
+
+    function ws_user_record(string $base, string $uid, string $locale = ''): bool {
+        if (!preg_match('/^[A-Za-z0-9_-]{1,64}$/', $uid)) return false;
+        $dir  = rtrim($base, '/') . '/users/' . $uid;
+        $file = "$dir/index.xml";
+        $loc  = preg_match('/^[a-z]{2}[_-][A-Z]{2}$/', $locale) ? str_replace('-', '_', $locale) : 'it_IT';
+
+        if (!is_file($file)) {
+            @mkdir($dir, 0775, true);
+            $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                 . "<user xmlns:xi=\"http://www.w3.org/2001/XInclude\" id=\"$uid\">\n"
+                 . "  <role>" . ws_user_role_default() . "</role>\n"
+                 . "  <locale>$loc</locale>\n"
+                 . "  <access_paths/>\n"
+                 . "  <permissions/>\n"
+                 . "  <notifications/>\n"
+                 . "</user>\n";
+            if (@file_put_contents($file, $xml) === false) return false;
+        }
+        return ws_users_xml_include($base, $uid);
+    }
+
+    /** Aggiunge l'<xi:include> in users.xml, se non c'è già. */
+    function ws_users_xml_include(string $base, string $uid): bool {
+        $f = rtrim($base, '/') . '/users/users.xml';
+        if (!is_file($f)) return false;
+        $s = (string)@file_get_contents($f);
+        if (strpos($s, "\"$uid/index.xml\"") !== false) return true;   // già registrato
+        $riga = "  <xi:include href=\"$uid/index.xml\" xpointer=\"xpointer(/*[1])\"/>\n";
+        // Si inserisce prima della chiusura, senza toccare il resto del file
+        // (c'è un commento con la legenda dei ruoli: va conservato).
+        $pos = strrpos($s, '</users>');
+        if ($pos === false) return false;
+        $nuovo = substr($s, 0, $pos) . $riga . substr($s, $pos);
+        return @file_put_contents($f, $nuovo) !== false;
     }
 }

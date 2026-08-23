@@ -263,6 +263,23 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+**Il record utente nasce al primo accesso.** `ws_user_upsert()` scriveva solo il profilo pubblico
+(`index.json`); ruolo e locale vivono invece in `users/<uid>/index.xml` — il record del CMS, che
+`ws-auth.php` legge attraverso gli `xi:include` di `users/users.xml`. Ora `ws_user_record()` crea
+entrambi alla prima connessione e registra la riga in `users.xml`.
+**Non lo fa «Riallinea gli XML»**, e non è una dimenticanza: quell'XML non è un derivato del JSON —
+è un'altra cosa, ed è la FONTE del ruolo. Rigenerarlo dal JSON cancellerebbe ruolo e permessi.
+
+⚠ **Il ruolo predefinito è `verified-visitor`, non `user`.** `user` sblocca creazione e salvataggio
+degli eventi e il caricamento dei media (gate in `save-event.php`, `media.php`, `events/index.php`):
+promuovere qualcuno è una decisione, non un automatismo di primo accesso. Verificato che un ruolo
+alzato a mano **sopravvive** agli accessi successivi: la funzione non riscrive un record esistente.
+
+**Rimosso `events/_index/_index/`**: un residuo di una versione precedente del codice (gli mancano
+`organizerType` e `cover`, aggiunti dopo). Il codice attuale non lo riproduce — verificato
+ricostruendo l'indice da zero su una copia. Era dato derivato e duplicato dentro i contenuti serviti:
+va cancellato anche sul server, dove è arrivato con l'ultimo allineamento.
+
 ## Trasloco verso la radice di isotype.org: cosa regge e cosa no
 
 `sinapsi/ws-admin/` → `ws-admin/` e `sinapsi/ws-custom/` → `ws-custom/`. Verificato sul posto:
