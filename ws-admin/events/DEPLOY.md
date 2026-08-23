@@ -149,6 +149,15 @@ pagine non la ridichiarano — `waterfront.html` ne aveva una copia con `font-si
 che si applicava anche all'header condiviso. Ora la misura di pagina è limitata alle SUE aree
 (`.carousel-container`, `.modal-overlay`, `#app-loader`, `.fab`).
 
+**Il voto è una sola pastiglia, sempre cliccabile** (`pastigliaVoto()` in waterfront.html):
+stessa `.rating-pill` nella riga della card, nel blocco di un'attività e **nelle modali**, dove prima
+aveva un aspetto suo (`.modal-rating`, pillola ambra con angoli diversi) ed era l'unico posto in cui
+il voto non si poteva cliccare. Ora `.modal-rating` decide solo DOVE sta, non com'è fatto.
+Il link va a `search.google.com/local/writereview?placeid=<google_place_id>`; senza Place ID
+(6 luoghi con voto su 48) si ripiega su una ricerca per nome su Maps. Nelle modali il conteggio è
+esteso («2573 recensioni»), nelle righe delle card compatto («(2573)»): stessa pastiglia, spazio
+diverso.
+
 **Ogni luogo è un BLOCCO, contenitore e ospitati allo stesso modo** (`.place-block` in places.css):
 riga 1 = nome + il pulsante dei dettagli a destra; riga 2 = le caratteristiche che lo distinguono,
 che scorrono in orizzontale, con il voto ancorato a destra (scorre la striscia, non il voto).
