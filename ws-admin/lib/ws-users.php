@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-wrap.php';
 // Profilo dell'utente/visitatore Google, keyed sull'UID: users/{uid}/index.json (Person +
 // preferenze meetoo). Separato da users/users.xml (che controlla i RUOLI dell'editor):
 // qui vivono i registranti agli eventi, per accessi futuri e memoria di scelte/preferenze.
@@ -16,7 +17,8 @@ if (!function_exists('ws_user_upsert')) {
         $file = "$dir/index.json";
         $now  = date('c');
 
-        $doc = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
+        $documento = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
+        $doc = is_array($documento) ? ws_wrap_entity($documento) : null;
         if (!is_array($doc)) {
             $doc = [
                 '@context'    => 'https://schema.org',
@@ -40,7 +42,9 @@ if (!function_exists('ws_user_upsert')) {
         $doc['dateModified'] = $now;
 
         @mkdir($dir, 0775, true);
-        @file_put_contents($file, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        @file_put_contents($file, json_encode(
+            is_array($documento) ? ws_wrap_set($documento, $doc) : ws_wrap_one($doc),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         return $doc;
     }
 }
@@ -49,6 +53,8 @@ if (!function_exists('ws_user_set_prefs')) {
     // Aggiorna (merge) le preferenze meetoo dell'utente. Ritorna le preferenze aggiornate.
     function ws_user_set_prefs(string $base, string $uid, array $prefs): array {
         $doc = ws_user_get($base, $uid);
+        $documento = is_array($doc) ? $doc : null;
+        $doc = is_array($doc) ? ws_wrap_entity($doc) : null;
         if (!is_array($doc)) $doc = ['@context' => 'https://schema.org', '@type' => 'Person', '@id' => "users/$uid", 'identifier' => $uid, 'dateCreated' => date('c')];
         $cur = (isset($doc['meetoo:preferences']) && is_array($doc['meetoo:preferences'])) ? $doc['meetoo:preferences'] : [];
         // whitelist dei campi ammessi
@@ -57,7 +63,9 @@ if (!function_exists('ws_user_set_prefs')) {
         $doc['dateModified'] = date('c');
         $dir = rtrim($base, '/') . '/users/' . $uid;
         @mkdir($dir, 0775, true);
-        @file_put_contents("$dir/index.json", json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        @file_put_contents("$dir/index.json", json_encode(
+            is_array($documento) ? ws_wrap_set($documento, $doc) : ws_wrap_one($doc),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         return $cur;
     }
 }

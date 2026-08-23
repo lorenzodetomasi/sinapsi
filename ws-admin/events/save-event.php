@@ -13,6 +13,7 @@
 ini_set('display_errors', '0');
 
 require __DIR__ . '/../json-xml/functions.php';
+require_once __DIR__ . '/../lib/ws-wrap.php';
 require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/events-index.php';
 require __DIR__ . '/../lib/events-migrate.php';
@@ -115,14 +116,18 @@ $dir    = $base . '/' . $relPath;
 $file   = "$dir/index.json";
 $exists = is_file($file);
 
-$doc = json_decode($payload, true);
-if (!is_array($doc)) {
+$inviato = json_decode($payload, true);
+if (!is_array($inviato)) {
     echo json_encode(['error' => 'Payload JSON non valido.']);
     exit;
 }
+// L'editor manda l'entità nuda; se un domani mandasse il documento intero, si
+// prende comunque l'entità. Il guscio di pagina lo mette il server (sotto).
+$doc = ws_wrap_entity($inviato);
 
 // Se l'evento esiste già: gate creator/contributor.
-$stored = $exists ? json_decode((string)@file_get_contents($file), true) : null;
+$storedDoc = $exists ? json_decode((string)@file_get_contents($file), true) : null;
+$stored = is_array($storedDoc) ? ws_wrap_entity($storedDoc) : null;
 if (is_array($stored) && !ws_can_edit($stored, $user['uid'], $user['role'])) {
     http_response_code(403);
     echo json_encode(['error' => 'Non sei autorizzato a modificare questo evento (creator: ' . ws_ref_id($stored['creator'] ?? null) . '). Chiedi di essere aggiunto ai contributor.']);
@@ -144,7 +149,10 @@ if (is_array($stored)) {
 }
 $doc['dateModified'] = $now;
 
-$payload = json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+// Si scrive il DOCUMENTO: guscio di pagina + entità. Conserva il guscio esistente
+// se c'era (con i suoi eventuali dati di pagina), altrimenti lo crea.
+$documento = is_array($storedDoc) ? ws_wrap_set($storedDoc, $doc) : ws_wrap_one($doc);
+$payload = json_encode($documento, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 // 1) valida JSON
 $jv = validateJsonPayload($payload);

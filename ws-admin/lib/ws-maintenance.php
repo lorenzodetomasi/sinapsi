@@ -145,15 +145,36 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'wrap' => [
+                'title' => 'Guscio ItemPage per tutti',
+                'meta'  => 'Metadati di pagina fuori, entità dentro: come i contenuti del CMS',
+                'icon'  => 'inventory_2', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Avvolgere le entità nel guscio ItemPage? I file interessati verranno riscritti.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-wrap.php';
+                    $r = ws_wrap_migrate($base, $apply);
+                    return [
+                        'changes' => count($r['done']),
+                        'summary' => count($r['done'])
+                            ? count($r['done']) . ' entità da avvolgere'
+                            : 'Tutte le entità hanno già il guscio.',
+                        'lines' => array_merge(
+                            array_map(fn($d) => "{$d['path']} ({$d['type']})", $r['done']),
+                            array_map(fn($x) => "⚠ {$x['path']}: {$x['why']}", $r['failed'])
+                        ),
+                    ];
+                },
+            ],
+
             'xml-rebuild' => [
                 'title' => 'Riallinea gli XML al JSON',
                 'meta'  => 'L\'XML è derivato: si rigenera dopo ogni migrazione',
                 'icon'  => 'sync_alt', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'option' => ['key' => 'create', 'label' => 'crea anche i mancanti'],
+                'option' => ['key' => 'root', 'label' => 'adotta la nuova radice'],
                 'confirm' => 'Riallineare gli XML? Verranno riscritti solo quelli generati dal JSON.',
                 'run' => function (string $base, bool $apply, array $o): array {
                     require_once __DIR__ . '/ws-xml.php';
-                    $r = ws_xml_rebuild($base, $apply, !empty($o['create']));
+                    $r = ws_xml_rebuild($base, $apply, !empty($o['create']), !empty($o['root']));
                     $n = count($r['riscritti']) + count($r['creati']);
                     return [
                         'changes' => $n,

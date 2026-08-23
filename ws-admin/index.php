@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Le opzioni le dichiara il registro (una spunta per operazione): si passa
         // ciò che è arrivato, senza che l'endpoint conosca i nomi a memoria.
         $opts = [];
-        foreach (['adopt', 'create'] as $k) if (($_POST[$k] ?? '') === '1') $opts[$k] = true;
+        foreach (['adopt', 'create', 'root'] as $k) if (($_POST[$k] ?? '') === '1') $opts[$k] = true;
         $rep  = ws_maint_run($base, (string)($_POST['op'] ?? ''), ($_POST['apply'] ?? '') === '1', $opts, $user['email'] ?? '');
         if (isset($rep['error'])) { http_response_code(400); echo json_encode($rep); exit; }
         echo json_encode(['success' => true] + $rep);

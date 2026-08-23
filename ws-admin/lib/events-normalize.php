@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-wrap.php';
 // Normalizzazione STRUTTURALE dei contenuti eventi (una-tantum, ripetibile e idempotente):
 //   1) rimuove le EventSeries MAL POSIZIONATE (annidate sotto un evento invece che a top-level)
 //   2) per ogni occorrenza dichiarata nel subEvent di una serie:
@@ -38,8 +39,10 @@ if (!function_exists('en_write_occurrence')) {
     function en_write_occurrence(string $dir, array $doc): void {
         @mkdir($dir, 0775, true);
         @mkdir("$dir/media", 0775, true);
-        file_put_contents("$dir/index.json", json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
-        try { file_put_contents("$dir/index.xml", jsonToWsx(json_encode($doc, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))); } catch (\Throwable $e) { /* xml best-effort */ }
+        // Nasce con il guscio di pagina, come ogni altro contenuto.
+        $out = ws_wrap_one($doc);
+        file_put_contents("$dir/index.json", json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        try { file_put_contents("$dir/index.xml", jsonToWsx(json_encode($out, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE))); } catch (\Throwable $e) { /* xml best-effort */ }
     }
 }
 if (!function_exists('en_placeholder_occurrence')) {
@@ -76,7 +79,10 @@ if (!function_exists('event_normalize')) {
         foreach ($it as $f) {
             if ($f->getFilename() !== 'index.json' || strpos($f->getPathname(), '/_index/') !== false) continue;
             $doc = json_decode((string)@file_get_contents($f->getPathname()), true);
-            if (is_array($doc)) $docs[trim(str_replace($eventsDir, '', dirname($f->getPathname())), '/')] = ['file' => $f->getPathname(), 'doc' => $doc];
+            // 'doc' è l'ENTITÀ (le regole guardano @type, superEvent, subEvent…),
+            // 'raw' il documento intero: serve a riscrivere senza perdere il guscio.
+            if (is_array($doc)) $docs[trim(str_replace($eventsDir, '', dirname($f->getPathname())), '/')] =
+                ['file' => $f->getPathname(), 'doc' => ws_wrap_entity($doc), 'raw' => $doc];
         }
 
         // 1) rimuovi le serie mal posizionate (rel con "/" = non top-level)
@@ -127,7 +133,10 @@ if (!function_exists('event_normalize')) {
                         $member[$slug]['seriesRef'] = $seriesRef;
                         if ($apply) {
                             $d = json_decode((string)@file_get_contents("$occDir/index.json"), true);
-                            if (is_array($d)) { $d['superEvent'] = $seriesRef; file_put_contents("$occDir/index.json", json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)); }
+                            if (is_array($d)) {
+                                $de = ws_wrap_entity($d); $de['superEvent'] = $seriesRef;
+                                file_put_contents("$occDir/index.json", json_encode(ws_wrap_set($d, $de), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                            }
                         }
                     }
                     continue;
@@ -137,7 +146,7 @@ if (!function_exists('event_normalize')) {
                 $doc = null; $source = 'generated';
                 if (is_file("$occDir/index.xml")) {
                     $rec = json_decode(WsxToJson((string)file_get_contents("$occDir/index.xml")), true);
-                    if (is_array($rec)) { $doc = $rec; $source = 'xml'; }
+                    if (is_array($rec)) { $doc = ws_wrap_entity($rec); $source = 'xml'; }
                 }
                 if (!is_array($doc)) $doc = en_placeholder_occurrence($slug, $srel, $sdoc);
                 $doc['@id'] = $slug;
@@ -158,7 +167,11 @@ if (!function_exists('event_normalize')) {
             $newSub = array_map(fn($m) => ['@id' => $m['@id'], '@type' => 'Event', 'name' => $m['name']], $mem);
             if (json_encode($sdoc['subEvent'] ?? []) !== json_encode($newSub)) {
                 $report['seriesSubEventUpdated'][] = ['series' => "events/$srel", 'count' => count($newSub)];
-                if ($apply) { $sdoc['subEvent'] = $newSub; file_put_contents("$eventsDir/$srel/index.json", json_encode($sdoc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)); }
+                if ($apply) {
+                    $sdoc['subEvent'] = $newSub;
+                    $sraw = $docs[$srel]['raw'] ?? $sdoc;
+                    file_put_contents("$eventsDir/$srel/index.json", json_encode(ws_wrap_set($sraw, $sdoc), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                }
             }
         }
 

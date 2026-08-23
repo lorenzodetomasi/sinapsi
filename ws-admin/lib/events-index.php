@@ -294,7 +294,10 @@ if (!function_exists('event_index_rebuild')) {
             $doc = json_decode((string)@file_get_contents($file), true);
             if (!is_array($doc)) { $skipped++; continue; }
             $rel = trim(str_replace(rtrim($base, '/'), '', dirname($file)), '/');
-            $docs[] = [$rel, $doc];
+            // L'entità sta dentro il guscio di pagina, quando c'è: senza scartarlo
+            // qui si indicizzerebbe un ItemPage — nessun organizer, nessun subEvent,
+            // e l'indice esce vuoto pur senza errori.
+            $docs[] = [$rel, $doc['mainEntity'] ?? $doc];
             if ($isSeriesDoc($doc)) {
                 $ids = function_exists('ws_ref_ids') ? ws_ref_ids($doc['organizer'] ?? null) : [];
                 $seriesOrgs[event_index_key((string)($doc['@id'] ?? basename($rel)))] = $ids;

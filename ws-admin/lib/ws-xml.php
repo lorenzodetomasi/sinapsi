@@ -44,7 +44,7 @@ if (!function_exists('ws_xml_rebuild')) {
      * Ritorna ['riscritti'=>[], 'creati'=>[], 'falliti'=>[], 'controllati'=>int,
      *          'mancanti'=>int, 'nonGemelli'=>[]].
      */
-    function ws_xml_rebuild(string $base, bool $apply, bool $creaMancanti = false): array {
+    function ws_xml_rebuild(string $base, bool $apply, bool $creaMancanti = false, bool $adottaRadice = false): array {
         $conv = __DIR__ . '/../json-xml/functions.php';
         if (!is_file($conv)) {
             return ['riscritti' => [], 'creati' => [], 'controllati' => 0, 'mancanti' => 0,
@@ -86,7 +86,10 @@ if (!function_exists('ws_xml_rebuild')) {
 
             // Radici diverse = non è un gemello di questo JSON (è il caso del record
             // utente del CMS). Non si riscrive niente che non si sia generato.
-            if ($esiste && ws_xml_root($vecchio) !== ws_xml_root($atteso)) {
+            // `$adottaRadice` è il consenso esplicito a cambiare forma: serve una
+            // volta sola, quando il modello cambia davvero (è stato il caso del
+            // guscio di pagina). `users/` resta comunque fuori dalla scansione.
+            if (!$adottaRadice && $esiste && ws_xml_root($vecchio) !== ws_xml_root($atteso)) {
                 $nonGemelli[] = ['path' => $rel, 'root' => ws_xml_root($vecchio), 'atteso' => ws_xml_root($atteso)];
                 continue;
             }

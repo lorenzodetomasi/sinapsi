@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-wrap.php';
 // Normalizzazione dei riferimenti eventi verso le convenzioni (CONTENT-STRUCTURE.md):
 //   • @id = events/{slug} — il percorso dalla radice dei contenuti, come per
 //     places/…, organizations/…, users/… Un'entità ha UN nome solo: lo stesso con
@@ -37,6 +38,10 @@ if (!function_exists('event_migrate_refs')) {
         foreach ($files as $file) {
             $doc = json_decode((string)@file_get_contents($file), true);
             if (!is_array($doc)) continue;
+            // Si lavora sull'ENTITÀ, non sul documento: con il guscio di pagina
+            // (`ItemPage` + `mainEntity`) i campi dell'evento stanno dentro. Scrivendo
+            // `$doc` direttamente si cancellava il guscio senza accorgersene.
+            $ent  = ws_wrap_entity($doc);
             $rel  = trim(str_replace($eventsDir, '', dirname($file)), '/');
             $slug = basename($rel);
             $local = [];
@@ -45,22 +50,22 @@ if (!function_exists('event_migrate_refs')) {
             // Si usa $rel, non basename: un'occorrenza annidata sotto una serie ha un
             // percorso di più segmenti e il suo @id deve poterla ritrovare.
             $selfId = 'events/' . $rel;
-            if (($doc['@id'] ?? null) !== $selfId) { $local[] = "@id: '" . ($doc['@id'] ?? '') . "' → '$selfId'"; $doc['@id'] = $selfId; }
+            if (($ent['@id'] ?? null) !== $selfId) { $local[] = "@id: '" . ($ent['@id'] ?? '') . "' → '$selfId'"; $ent['@id'] = $selfId; }
 
             // 2) superEvent → events/{slug}
-            if (isset($doc['superEvent'])) {
-                $se = $doc['superEvent']; $ref = null;
-                if (is_string($se)) { $n = event_ref_to_events($se); if ($n !== $se) { $local[] = "superEvent: '$se' → '$n'"; $doc['superEvent'] = $n; } $ref = $n; }
-                elseif (is_array($se) && isset($se['@id'])) { $n = event_ref_to_events($se['@id']); if ($n !== $se['@id']) { $local[] = "superEvent.@id → '$n'"; $doc['superEvent']['@id'] = $n; } $ref = $n; }
+            if (isset($ent['superEvent'])) {
+                $se = $ent['superEvent']; $ref = null;
+                if (is_string($se)) { $n = event_ref_to_events($se); if ($n !== $se) { $local[] = "superEvent: '$se' → '$n'"; $ent['superEvent'] = $n; } $ref = $n; }
+                elseif (is_array($se) && isset($se['@id'])) { $n = event_ref_to_events($se['@id']); if ($n !== $se['@id']) { $local[] = "superEvent.@id → '$n'"; $ent['superEvent']['@id'] = $n; } $ref = $n; }
                 if ($ref && !isset($existing[$ref])) $warns[] = "$rel: superEvent → $ref (cartella mancante)";
             }
 
             // 3) subEvent[].@id (solo riferimenti a occorrenze; il programma inline non ha @id)
-            if (isset($doc['subEvent']) && is_array($doc['subEvent'])) {
-                foreach ($doc['subEvent'] as $i => $sub) {
+            if (isset($ent['subEvent']) && is_array($ent['subEvent'])) {
+                foreach ($ent['subEvent'] as $i => $sub) {
                     if (is_array($sub) && isset($sub['@id'])) {
                         $n = event_ref_to_events($sub['@id']);
-                        if ($n !== $sub['@id']) { $local[] = "subEvent[$i].@id → '$n'"; $doc['subEvent'][$i]['@id'] = $n; }
+                        if ($n !== $sub['@id']) { $local[] = "subEvent[$i].@id → '$n'"; $ent['subEvent'][$i]['@id'] = $n; }
                         if (!isset($existing[$n])) $warns[] = "$rel: subEvent → $n (cartella mancante)";
                     }
                 }
@@ -68,7 +73,8 @@ if (!function_exists('event_migrate_refs')) {
 
             if ($local) {
                 $changedFiles++; $changes += count($local); $details[$rel] = $local;
-                if ($apply) file_put_contents($file, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                // ws_wrap_set rimette l'entità conservando il guscio (e lo crea se manca).
+                if ($apply) file_put_contents($file, json_encode(ws_wrap_set($doc, $ent), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             }
         }
         return ['changedFiles' => $changedFiles, 'changes' => $changes, 'details' => $details, 'warns' => array_values(array_unique($warns))];

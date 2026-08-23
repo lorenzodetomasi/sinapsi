@@ -22,6 +22,8 @@ if (!function_exists('event_check_refs')) {
             if ($f->getFilename() !== 'index.json' || strpos($f->getPathname(), '/_index/') !== false) continue;
             $doc = json_decode((string)@file_get_contents($f->getPathname()), true);
             if (!is_array($doc)) continue;
+            // I riferimenti da controllare stanno nell'ENTITÀ, non nel guscio di pagina.
+            $doc = $doc['mainEntity'] ?? $doc;
             $rel = 'events/' . trim(str_replace($eventsDir, '', dirname($f->getPathname())), '/');
 
             // self-@id: deve essere il percorso dell'evento (events/{slug}), come per

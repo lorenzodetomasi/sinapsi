@@ -263,6 +263,38 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+## Il guscio di pagina: `ItemPage` + `mainEntity`, ovunque
+
+Un file di contenuto descrive DUE cose: la **pagina** (quando è cambiata, a che indirizzo risponde,
+se va indicizzata) e l'**entità** di cui parla. Il guscio le separa — ed è la forma che il CMS usa
+già: `<section>` porta `wspath`, `query`, `robots`, `changefreq`, e poi `mainContentOfPage`. Senza
+guscio quei dati finirebbero dentro l'entità, e un `Event` non ha un `robots`.
+
+Luoghi e organizzazioni l'avevano da sempre (62 file); eventi e utenti no (12). Ora l'hanno tutti.
+Gli XML rispecchiano il JSON e hanno radice `<ItemPage>`.
+
+**Le librerie che riscrivono sono state adeguate PRIMA dei dati**, e non è un dettaglio: chi legge,
+modifica e riscrive senza sapere del guscio lo **cancella in silenzio** al primo passaggio.
+In `lib/ws-wrap.php` ci sono le tre funzioni da usare sempre: `ws_wrap_entity()` per leggere,
+`ws_wrap_set()` per riscrivere conservando il guscio, `ws_wrap_one()` per crearlo.
+Adeguati: `save-event.php`, `ws-users.php`, `events-migrate.php`, `events-normalize.php` (anche nel
+recupero di un'occorrenza dall'XML), `events-index.php` e `events-check.php`.
+
+⚠ **Due difetti trovati dalle prove, non dalla lettura del codice.** Dopo aver avvolto i dati su una
+COPIA, l'indice usciva con «11 eventi · **0 collezioni · 0 organizzatori**»: `event_index_rebuild`
+indicizzava l'ItemPage invece dell'evento — nessun errore, solo un indice vuoto. E `event_check_refs`
+segnalava 11 problemi inesistenti per lo stesso motivo. Entrambi corretti prima di toccare i
+contenuti veri.
+
+Verifica finale: **74 file su 74 col guscio**, **0 entità con contenuto cambiato** (il guscio non
+tocca i dati), indice **identico** a prima, e le sei pagine del tema caricano come sempre
+(27 · evento · 2 · 7 · 6 · 59 card).
+
+Operazioni nuove nel pannello: **«Guscio ItemPage per tutti»** e **«Riallinea gli XML al JSON»**,
+quest'ultima con l'opzione **«adotta la nuova radice»** — il consenso esplicito a cambiare forma,
+necessario una volta sola. Senza quell'opzione la protezione rifiuta di riscrivere ciò che non ha
+generato: è quella che ha salvato il record utente del CMS.
+
 **La base è DICHIARATA, non indovinata.** Header e pagine ricavavano la radice del sito e la base
 dei contenuti tagliando l'indirizzo su `/ws-custom/` o `/themes/` — con un ripiego su
 `/sinapsi/…` in cinque pagine. Con gli URL puliti (`meetoo.it/lido-di-ostia/eventi`) quei segmenti
