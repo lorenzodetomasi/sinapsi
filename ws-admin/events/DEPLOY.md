@@ -158,6 +158,40 @@ Il link va a `search.google.com/local/writereview?placeid=<google_place_id>`; se
 esteso («2573 recensioni»), nelle righe delle card compatto («(2573)»): stessa pastiglia, spazio
 diverso.
 
+## Liste con regola (`meetoo:listRule`) — primo passo, solo BookCrossing
+
+Una lista (`ItemList`) può dichiarare **come si popola** e **come si ordina**. È dato, non codice:
+clausole in OR su campi (`contains`, `in`, `equals`, `exists`, `prefix`) e un ordinamento per campo,
+letto **prima sulla voce di lista** e poi sul membro.
+
+```jsonc
+"meetoo:listRule": {
+  "from": ["places"],
+  "match": { "any": [ {"field": "additionalType", "contains": "BookCrossing"} ] },
+  "order": { "by": "name", "as": "text", "direction": "asc" }
+}
+```
+
+**Fatto finora**: `places/lido-di-ostia/bookcrossing` è passato da `Collection` + `containsPlace`
+(che in schema.org è il contenimento FISICO fra luoghi, improprio per un tema) a **`ItemList` +
+`itemListElement`**, con la regola dichiarata e la lista materializzata: la regola trova **3** luoghi,
+uno più di prima — «Social Pallet Park», taggato `additionalType: BookCrossing` ma mai aggiunto alla
+lista a mano. `placecollection.html` non è stato toccato: leggeva già `containsPlace || hasPart ||
+itemListElement` e sa scartare il `ListItem`.
+
+⚠ **La regola oggi è dichiarativa: nessun codice la esegue.** La lista è stata materializzata una
+volta. Finché non esiste il valutatore lato server, un luogo taggato dopo d'oggi NON entra da solo.
+
+**Il lungomare resta curato, senza regola d'appartenenza** — e non per pigrizia: i suoi due campi
+(`meetoo:coastalPosition` e `meetoo:m_from_border_south`) vivono **solo nelle voci di lista**
+(59 su 59; nei file dei luoghi: 0), e 47 tappe su 61 non hanno nemmeno un file proprio. Una regola
+non può generare un itinerario: può dire CHI c'è, non in che ordine né a che distanza.
+
+**Politica di fusione** (quando il valutatore ci sarà): la rigenerazione non riscrive, fonde. Le voci
+esistenti restano coi loro dati; le nuove si aggiungono; quelle che la regola non trova più **non si
+cancellano**, si segnalano. `meetoo:auto: true` marca chi è entrato per regola; chi non ha il
+marcatore è stato messo a mano e non si tocca.
+
 **Ogni luogo è un BLOCCO, contenitore e ospitati allo stesso modo** (`.place-block` in places.css):
 riga 1 = nome + il pulsante dei dettagli a destra; riga 2 = le caratteristiche che lo distinguono,
 che scorrono in orizzontale, con il voto ancorato a destra (scorre la striscia, non il voto).
