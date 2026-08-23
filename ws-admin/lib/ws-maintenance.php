@@ -145,10 +145,37 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'xml-rebuild' => [
+                'title' => 'Riallinea gli XML al JSON',
+                'meta'  => 'L\'XML è derivato: si rigenera dopo ogni migrazione',
+                'icon'  => 'sync_alt', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'option' => ['key' => 'create', 'label' => 'crea anche i mancanti'],
+                'confirm' => 'Riallineare gli XML? Verranno riscritti solo quelli generati dal JSON.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-xml.php';
+                    $r = ws_xml_rebuild($base, $apply, !empty($o['create']));
+                    $n = count($r['riscritti']) + count($r['creati']);
+                    return [
+                        'changes' => $n,
+                        'summary' => $n
+                            ? (count($r['riscritti']) . ' da riallineare, ' . count($r['creati']) . ' da creare')
+                            : 'Tutti gli XML sono in pari.'
+                            . ($r['mancanti'] ? " · {$r['mancanti']} entità senza gemello" : ''),
+                        'lines' => array_merge(
+                            array_map(fn($x) => "riallineato: $x", $r['riscritti']),
+                            array_map(fn($x) => "creato: $x", $r['creati']),
+                            array_map(fn($x) => "⚠ {$x['path']}: l'XML ha radice <{$x['root']}>, il JSON produrrebbe <{$x['atteso']}> — non lo tocco", $r['nonGemelli']),
+                            array_map(fn($x) => "⚠ {$x['path']}: {$x['why']}", $r['falliti'])
+                        ),
+                    ];
+                },
+            ],
+
             'covers' => [
                 'title' => 'Genera le copertine 1920×1080',
                 'meta'  => 'Dalle immagini già caricate; l\'originale resta in media-sources',
-                'icon'  => 'crop_16_9', 'scope' => 'media', 'preview' => true, 'adopt' => true, 'since' => '2026.08',
+                'icon'  => 'crop_16_9', 'scope' => 'media', 'preview' => true, 'since' => '2026.08',
+                'option' => ['key' => 'adopt', 'label' => 'adotta orfane'],
                 'confirm' => 'Generare le copertine? Verranno creati file in media/ e aggiornato il campo image degli eventi.',
                 'run' => function (string $base, bool $apply, array $o): array {
                     require_once __DIR__ . '/ws-media.php';

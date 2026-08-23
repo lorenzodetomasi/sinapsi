@@ -263,6 +263,30 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+**La base è DICHIARATA, non indovinata.** Header e pagine ricavavano la radice del sito e la base
+dei contenuti tagliando l'indirizzo su `/ws-custom/` o `/themes/` — con un ripiego su
+`/sinapsi/…` in cinque pagine. Con gli URL puliti (`meetoo.it/lido-di-ostia/eventi`) quei segmenti
+non esistono: la deduzione fallirebbe e il ripiego scatterebbe **proprio nel momento del trasloco**,
+rompendo insieme login, menu e caricamento dei contenuti.
+Ora `header.js` espone `Meetoo.siteRoot()` e `Meetoo.contentBase()`, che leggono
+`<meta name="meetoo:site-root">` e `<meta name="meetoo:content-base">` — quando il CMS servirà le
+pagine, li stamperà lui. Senza i meta si ricade sulla deduzione di prima: **oggi non cambia nulla**
+(verificate le cinque pagine, base risolta correttamente e contenuti caricati). `?base=` continua a
+scavalcare tutto, per provare una copia dei contenuti.
+
+**Riallinea gli XML al JSON** (nuova voce di manutenzione, `lib/ws-xml.php`): l'XML è **derivato**,
+ma le migrazioni riscrivevano solo il JSON — quella degli `@id` ha lasciato un evento con il vecchio
+identificativo nell'XML. Ora c'è la rete di sicurezza da passare dopo ogni migrazione, con anteprima
+e opzione «crea anche i mancanti» (oggi 57 entità non hanno il gemello).
+⚠ **Due protezioni, e servono entrambe.** `users/` è escluso: là `index.xml` NON è un gemello ma il
+**record utente del CMS** (ruolo, permessi, percorsi d'accesso) — rigenerarlo cancellerebbe il ruolo
+di super-admin. E prima di riscrivere si confronta l'elemento RADICE: se non combacia, quel file non
+l'abbiamo generato noi e non si tocca. La seconda protezione ha intercettato **6 casi** veri: i JSON
+di luoghi e organizzazioni hanno il guscio `ItemPage`+`mainEntity` mentre i loro XML sono radicati
+sull'entità (`<Place>`, `<Organization>`) — gli eventi invece non hanno guscio, e infatti combaciano.
+Sono **due forme diverse nello stesso albero**: da decidere quale sia quella buona, prima di
+riallinearle.
+
 **L'accesso sopravvive alla scheda.** Il token Google stava in `sessionStorage`, che vive UNA
 scheda: aprendo il sito in una scheda nuova non risultavi più collegato e il menu perdeva la voce
 «Amministrazione» — la stessa pagina sembrava comportarsi in due modi, ed era l'unica cosa a non

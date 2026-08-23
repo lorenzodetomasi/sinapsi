@@ -60,7 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $opts = ['adopt' => ($_POST['adopt'] ?? '') === '1'];
+        // Le opzioni le dichiara il registro (una spunta per operazione): si passa
+        // ciò che è arrivato, senza che l'endpoint conosca i nomi a memoria.
+        $opts = [];
+        foreach (['adopt', 'create'] as $k) if (($_POST[$k] ?? '') === '1') $opts[$k] = true;
         $rep  = ws_maint_run($base, (string)($_POST['op'] ?? ''), ($_POST['apply'] ?? '') === '1', $opts, $user['email'] ?? '');
         if (isset($rep['error'])) { http_response_code(400); echo json_encode($rep); exit; }
         echo json_encode(['success' => true] + $rep);
@@ -247,15 +250,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         az.className = 'card-actions maint-actions';
         az.innerHTML =
           (m.preview ? '<button type="button" class="card-act" data-do="preview">Anteprima</button>' : '') +
-          (m.adopt ? '<label class="card-act"><input type="checkbox" data-adopt> adotta orfane</label>' : '') +
+          (m.option ? '<label class="card-act"><input type="checkbox" data-opt> ' + m.option.label + '</label>' : '') +
           '<button type="button" class="card-act primary" data-do="apply">' + (m.preview ? 'Applica' : 'Esegui') + '</button>';
         card.appendChild(az);
         az.querySelectorAll('button[data-do]').forEach((b) => b.addEventListener('click', () => {
           const applica = b.dataset.do === 'apply';
           if (applica && m.confirm && !confirm(m.confirm)) return;
-          const adopt = az.querySelector('[data-adopt]')?.checked ? '1' : '';
+          const extra = {};
+          if (m.option && az.querySelector('[data-opt]')?.checked) extra[m.option.key] = '1';
           b.disabled = true; b.textContent = '…';
-          api('maint', { op: m.id, apply: applica ? '1' : '', adopt })
+          api('maint', Object.assign({ op: m.id, apply: applica ? '1' : '' }, extra))
             .then((r) => {
               b.disabled = false; b.textContent = applica ? (m.preview ? 'Applica' : 'Esegui') : 'Anteprima';
               if (r.status !== 200) { maintShow(m.title, { summary: r.body.error || 'Operazione fallita.', lines: [] }); return; }
