@@ -271,7 +271,7 @@ Delle dieci operazioni del pannello, ora **nove su dieci** hanno l'anteprima; re
 «Rigenera l'indice delle immagini», che non ha uno stato con cui confrontarsi.
 
 ⚠ In più una **guardia**: le funzioni di `places/index-lib.php` scrivono sempre sotto
-`WS_MEETOO_ROOT`, non sotto il `` ricevuto. Eseguirle puntando a una copia avrebbe scritto di
+`WS_MEETOO_ROOT`, non sotto il `$base` ricevuto. Eseguirle puntando a una copia avrebbe scritto di
 nascosto nei contenuti veri — ora l'operazione si ferma e lo dice.
 
 **Il record utente nasce al primo accesso.** `ws_user_upsert()` scriveva solo il profilo pubblico
