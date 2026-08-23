@@ -263,6 +263,14 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+**L'accesso sopravvive alla scheda.** Il token Google stava in `sessionStorage`, che vive UNA
+scheda: aprendo il sito in una scheda nuova non risultavi più collegato e il menu perdeva la voce
+«Amministrazione» — la stessa pagina sembrava comportarsi in due modi, ed era l'unica cosa a non
+sopravvivere (tema, preferiti e densità erano già in `localStorage`). Ora sta in `localStorage`, con
+migrazione automatica per chi era collegato prima. Prezzo dichiarato: vive più a lungo ed è leggibile
+da qualunque script della stessa origine — resta però un token Google a scadenza breve (~1h),
+verificato dal server a ogni richiesta: una credenziale che invecchia da sola, non una sessione.
+
 **Il tema si scrive anche come attributo** (`header.js`): oltre a `color-scheme` su `<html>`, la
 scelta diventa `data-theme="light|dark"` (con «automatico» l'attributo si toglie). Serve perché
 `light-dark()` **vale solo per i colori**: tutto ciò che non è un colore — l'immagine di uno sfondo,
