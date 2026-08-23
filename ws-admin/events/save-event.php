@@ -202,11 +202,28 @@ try {
     $index = ['error' => 'evento salvato, ma indice non aggiornato: ' . $e->getMessage()];
 }
 
+// Liste con regola: un evento appena salvato può entrare (o uscire) da una
+// collezione tematica, e chi la guarda deve trovarcelo subito. Costa ~5 ms e non
+// scrive nulla se non è cambiato niente. Stessa cautela dell'indice: l'evento è
+// GIÀ scritto, un problema qui non deve far credere che il salvataggio sia fallito.
+$liste = null;
+try {
+    $libListe = __DIR__ . '/../lib/ws-listrule.php';
+    if (is_file($libListe)) {
+        require_once $libListe;
+        $r = ws_listrule_sync($base, true);
+        if ($r['cambiate']) $liste = ['aggiornate' => $r['cambiate']];
+    }
+} catch (\Throwable $e) {
+    $liste = ['error' => 'liste non aggiornate: ' . $e->getMessage()];
+}
+
 echo json_encode([
     'success'       => true,
     'path'          => $relPath,
     'folderCreated' => $created,
     'wrote'         => ['index.json', 'index.xml'],
     'index'         => $index,
+    'lists'         => $liste,
     'by'            => $user['email'],
 ]);

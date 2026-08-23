@@ -122,6 +122,29 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'lists' => [
+                'title' => 'Rigenera le liste con regola',
+                'meta'  => 'Chi soddisfa la regola entra; ciò che è stato curato a mano resta',
+                'icon'  => 'rule', 'scope' => 'places', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Rigenerare le liste? Le voci nuove verranno aggiunte; niente viene tolto.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-listrule.php';
+                    $r = ws_listrule_sync($base, $apply);
+                    $righe = [];
+                    foreach ($r['liste'] as $l) {
+                        foreach ($l['aggiunte'] as $id)   $righe[] = "{$l['id']}: + $id";
+                        foreach ($l['orfane'] as $id)     $righe[] = "⚠ {$l['id']}: $id non soddisfa più la regola (resta nella lista)";
+                        foreach ($l['incomplete'] as $id) $righe[] = "⚠ {$l['id']}: a $id manca il dato su cui si ordina";
+                    }
+                    return [
+                        'changes' => $r['cambiate'],
+                        'summary' => count($r['liste']) . ' liste con regola'
+                            . ($r['cambiate'] ? " · {$r['cambiate']} da aggiornare" : ' · già in pari'),
+                        'lines' => $righe,
+                    ];
+                },
+            ],
+
             'covers' => [
                 'title' => 'Genera le copertine 1920×1080',
                 'meta'  => 'Dalle immagini già caricate; l\'originale resta in media-sources',

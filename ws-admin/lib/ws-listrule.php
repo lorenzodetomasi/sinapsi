@@ -202,6 +202,62 @@ if (!function_exists('ws_listrule_match')) {
         return ['itemListElement' => $out, 'aggiunte' => $aggiunte, 'orfane' => $orfane, 'incomplete' => $incomplete];
     }
 
+    /* ---- Sincronizzazione ---------------------------------------------------
+     * Trova TUTTE le liste che dichiarano una regola e le rimette in pari.
+     * La usano tutti e tre i richiamanti — la riga di comando, il pannello di
+     * manutenzione e il salvataggio — così non possono divergere.
+     *
+     * $apply = false → dice soltanto che cosa farebbe.
+     * Ritorna ['liste'=>[{id,trovati,voci,aggiunte,orfane,incomplete,scritta}], 'cambiate'=>int].
+     */
+    function ws_listrule_sync(string $base, bool $apply): array {
+        $out = ['liste' => [], 'cambiate' => 0];
+        foreach (ws_listrule_lists($base) as $f => $doc) {
+            $ent = $doc['mainEntity'] ?? $doc;
+            $regola = $ent['meetoo:listRule'];
+            $trovati = ws_listrule_collect($base, $regola);
+            $r = ws_listrule_merge($regola, $ent['itemListElement'] ?? [], $trovati);
+
+            // Si scrive solo se qualcosa è davvero cambiato: una rigenerazione a
+            // vuoto non deve toccare dateModified né sporcare il diff dei contenuti.
+            $diverso = json_encode($ent['itemListElement'] ?? []) !== json_encode($r['itemListElement']);
+            $scritta = false;
+            if ($apply && $diverso) {
+                $ent['itemListElement'] = $r['itemListElement'];
+                $ent['numberOfItems'] = count($r['itemListElement']);
+                if (isset($doc['mainEntity'])) $doc['mainEntity'] = $ent; else $doc = $ent;
+                $doc['dateModified'] = date('c');
+                $scritta = @file_put_contents($f, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+            }
+            if ($diverso) $out['cambiate']++;
+            $out['liste'][] = [
+                'id' => $ent['@id'] ?? $f,
+                'trovati' => count($trovati),
+                'voci' => count($r['itemListElement']),
+                'aggiunte' => $r['aggiunte'],
+                'orfane' => $r['orfane'],
+                'incomplete' => $r['incomplete'],
+                'diversa' => $diverso,
+                'scritta' => $scritta,
+            ];
+        }
+        return $out;
+    }
+
+    /** Le liste che dichiarano una regola, come [percorso file => documento]. */
+    function ws_listrule_lists(string $base): array {
+        $out = [];
+        foreach (['places/*/*', 'places/*', 'events/*', 'organizations/*'] as $g) {
+            foreach (glob(rtrim($base, '/') . "/$g/index.json") as $f) {
+                $j = json_decode((string)@file_get_contents($f), true);
+                if (!is_array($j)) continue;
+                $e = $j['mainEntity'] ?? $j;
+                if (!empty($e['meetoo:listRule'])) $out[$f] = $j;
+            }
+        }
+        return $out;
+    }
+
     /** Tipo da mettere nella voce di lista: il primo, per non copiare tutto. */
     function ws_listrule_tipo(array $e): string {
         $t = $e['@type'] ?? 'Thing';

@@ -30,7 +30,7 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | Gruppo | Da (SRC) | A (ROOT sul server) |
 |---|---|---|
 | **Backend – lib** | `ws-admin/lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check}.php` | `ws-admin/lib/` |
-| **Backend – lib** | `ws-admin/lib/ws-maintenance.php` (registro delle migrazioni: caricalo PRIMA delle due pagine che lo leggono) | `ws-admin/lib/` |
+| **Backend – lib** | `ws-admin/lib/ws-maintenance.php` (registro delle migrazioni: caricalo PRIMA delle due pagine che lo leggono) + `ws-admin/lib/ws-listrule.php` (liste con regola: la usano il salvataggio eventi E quello dei luoghi) | `ws-admin/lib/` |
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Gestione eventi** | `ws-admin/events/index.php` (nuova pagina) | `ws-admin/events/` |
 | **Amministrazione** | `ws-admin/index.php` (hub) + `ws-admin/lib/events-trash.php` | `ws-admin/` e `ws-admin/lib/` |
@@ -201,8 +201,21 @@ uno più di prima — «Social Pallet Park», taggato `additionalType: BookCross
 lista a mano. `placecollection.html` non è stato toccato: leggeva già `containsPlace || hasPart ||
 itemListElement` e sa scartare il `ListItem`.
 
-⚠ **La regola oggi è dichiarativa: nessun codice la esegue.** La lista è stata materializzata una
-volta. Finché non esiste il valutatore lato server, un luogo taggato dopo d'oggi NON entra da solo.
+**La regola gira in tre punti, con la stessa funzione** (`ws_listrule_sync`, in `lib/ws-listrule.php`):
+
+1. **al salvataggio di un luogo o di un'organizzazione** (`places/google_place-json.php`): taggare un
+   luogo come «BookCrossing» basta a farlo comparire nella sua collezione;
+2. **al salvataggio di un evento** (`events/save-event.php`), per le collezioni tematiche che li
+   includeranno;
+3. **dal pannello di manutenzione** («Rigenera le liste con regola», con anteprima), e da
+   `php ws-admin/places/rebuild-lists.php`.
+
+Costa **~5 ms** e **non scrive se nulla è cambiato**: una rigenerazione a vuoto non tocca
+`dateModified` né sporca il diff dei contenuti. Entrambi gli agganci sono difensivi come quello
+dell'indice eventi — libreria mancante o errore non trasformano un salvataggio riuscito in un errore.
+Verificato end-to-end su una COPIA dei contenuti: tolta una voce dalla lista, la sincronizzazione la
+rimette (2 → 3), il campo scritto a mano su un'altra voce sopravvive, `numberOfItems` si aggiorna, e
+il secondo giro non cambia più niente.
 
 **Il lungomare resta curato, senza regola d'appartenenza** — e non per pigrizia: i suoi due campi
 (`meetoo:coastalPosition` e `meetoo:m_from_border_south`) vivono **solo nelle voci di lista**

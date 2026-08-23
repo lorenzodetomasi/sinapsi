@@ -755,10 +755,23 @@ if ($action === 'save') {
     // file: costa meno di un'attesa inspiegabile per il redattore.
     ws_entities_save(ws_entities_rebuild());
 
+    // Liste con regola: taggare un luogo come «BookCrossing» deve bastare a farlo
+    // comparire nella sua collezione, senza passare dal pannello di manutenzione.
+    // Non pota mai e non scrive se nulla è cambiato; il luogo è GIÀ salvato, quindi
+    // un problema qui non deve trasformarsi in un errore di salvataggio.
+    $listeAggiornate = 0;
+    try {
+        $libListe = __DIR__ . '/../lib/ws-listrule.php';
+        if (is_file($libListe)) {
+            require_once $libListe;
+            $listeAggiornate = ws_listrule_sync(WS_MEETOO_ROOT, true)['cambiate'];
+        }
+    } catch (\Throwable $e) { /* il salvataggio resta valido */ }
+
     echo json_encode([
         "success" => true, "path" => "$id/index.json", "overwritten" => $existed, "mode" => ($mode ?: 'new'),
         "media_saved" => $saved, "media_failed" => $failed, "media_debug" => $mediaDebug,
-        "index_updated" => $indexUpdated,
+        "index_updated" => $indexUpdated, "lists_updated" => $listeAggiornate,
     ]);
     exit;
 }
