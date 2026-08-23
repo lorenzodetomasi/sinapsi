@@ -3,21 +3,28 @@
 // isotype.org NON c'è il proxy: imposta VITE_API_BASE (in .env.local o a build)
 // all'URL reale di json-xml/index.php, es. "../json-xml/index.php" oppure
 // "https://www.isotype.org/ws-admin/json-xml/index.php".
-export const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+export const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? '/api' : '../../json-xml/index.php');
 
 // Endpoint che verifica se un @id di place/localbusiness esiste già
 // (ws-admin/places/id-exists.php). Se vuoto, il controllo live è disattivato.
-export const ID_CHECK_URL = import.meta.env.VITE_ID_CHECK_URL || '';
+export const ID_CHECK_URL = import.meta.env.VITE_ID_CHECK_URL || (import.meta.env.DEV ? '' : '../../places/id-exists.php');
 
 // Base dei CONTENUTI (per aprire un evento dal web via @id/percorso).
 // In produzione l'editor è servito da isotype.org, stessa origine dei contenuti:
 // path assoluto relativo alla root del sito. In sviluppo si usa il proxy /content
 // di Vite (vedi vite.config.js) verso un server statico locale del repo.
+// La radice del sito si ricava da dove è servito l'editor, tagliando su
+// /ws-admin/: oggi dà '/sinapsi/', dopo il trasloco darà '/'. Prima era scritta
+// a mano ('/sinapsi/…') e il trasloco l'avrebbe rotta in silenzio.
+const RADICE = typeof location !== 'undefined'
+  ? location.pathname.replace(/\/ws-admin\/.*/, '/')
+  : '/';
+
 export const CONTENT_BASE =
   import.meta.env.VITE_CONTENT_BASE ||
   (import.meta.env.DEV
     ? '/content/ws-custom/contents/meetoo/it_IT/'
-    : '/sinapsi/ws-custom/contents/meetoo/it_IT/');
+    : RADICE + 'ws-custom/contents/meetoo/it_IT/');
 
 // Indice degli eventi (per il picker con ricerca). Popolato al salvataggio web (Fase 4).
 export const EVENTS_INDEX_URL =

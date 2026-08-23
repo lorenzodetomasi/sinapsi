@@ -263,6 +263,26 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+## Trasloco verso la radice di isotype.org: cosa regge e cosa no
+
+`sinapsi/ws-admin/` → `ws-admin/` e `sinapsi/ws-custom/` → `ws-custom/`. Verificato sul posto:
+
+- **I percorsi relativi del PHP reggono**: 19 riferimenti usano `__DIR__ . '/../../ws-custom/contents/'`,
+  e siccome `ws-admin` e `ws-custom` traslocano INSIEME mantenendo la stessa distanza, continuano a
+  risolvere. Non c'è niente da riscrivere lato server.
+- **Nessuna collisione**: il `ws-admin/` del CMS ha solo `refresh-*.php`, `load.php`, `ws_sitemap.wsx`;
+  in `ws-custom/contents/` e `ws-custom/themes/` la cartella `meetoo` non esiste ancora.
+- **Il .htaccess non intercetta**: la regola manda a `index.php` solo ciò che NON è un file o una
+  cartella esistente, quindi gli endpoint continuano a rispondere.
+- **L'editor non ha più percorsi assoluti.** Aveva tre `/sinapsi/…` scritti a mano (`.env.production`
+  e il ripiego di `config.js`) che il trasloco avrebbe rotto in silenzio. Ora la radice si ricava da
+  dove è servito l'editor (taglio su `/ws-admin/`) e gli endpoint sono relativi
+  (`../../json-xml/index.php`): il pacchetto costruito **non contiene più la stringa `/sinapsi/`** e
+  funziona da entrambe le posizioni senza essere ricostruito.
+- **Da non dimenticare**: `ws-custom/themes/meetoo/` (senza il tema le pagine non esistono alla nuova
+  posizione) e `ws-admin/_private/` con il suo `.htaccess`, che protegge i dati personali.
+- Le chiavi Google non si toccano: sono limitate per dominio e IP, non per percorso.
+
 ## Il guscio di pagina: `ItemPage` + `mainEntity`, ovunque
 
 Un file di contenuto descrive DUE cose: la **pagina** (quando è cambiata, a che indirizzo risponde,
