@@ -194,6 +194,15 @@ segnati restano). I pulsanti NON stanno dentro il link della card — un element
 altro non si può — ma accanto, in `.card-holder`. Le pagine di gestione non li mostrano: lì la card
 ha già le sue azioni.
 
+**Il tema si scrive anche come attributo** (`header.js`): oltre a `color-scheme` su `<html>`, la
+scelta diventa `data-theme="light|dark"` (con «automatico» l'attributo si toglie). Serve perché
+`light-dark()` **vale solo per i colori**: tutto ciò che non è un colore — l'immagine di uno sfondo,
+una maschera, un'icona a due tinte — non può seguire `color-scheme`, e senza un attributo il CSS non
+ha modo di sapere quale tema hai SCELTO (le `@media prefers-color-scheme` leggono il sistema, non la
+scelta). È il caso dell'onda del lungomare (`--wave-url`): con sistema scuro e tema chiaro restava
+l'onda scura, perché le sue regole si appoggiavano a un attributo che la vecchia intestazione di
+pagina impostava e quella condivisa no. Verificate tutte e sei le combinazioni sistema × scelta.
+
 **waterfront.html usa l'header condiviso.** Aveva un header disegnato a mano con i pulsanti inerti
 («Menu (in arrivo)», «Account (in arrivo)») e un proprio selettore del tema: ora carica `meetoo.css`
 e `header.js` come le altre pagine — hamburger con la navigazione, login, Impostazioni → Aspetto,
