@@ -1,0 +1,10 @@
+#header,
+#header > div {
+  height: $maxgrid-header-height;
+}
+#header1 {
+  height: $maxgrid-header1-height;
+  [itemprop="logo"] {
+    height: $maxgrid-logo-height;
+  }
+}

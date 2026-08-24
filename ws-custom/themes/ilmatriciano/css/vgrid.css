@@ -1,0 +1,33 @@
+/*
+ & > .flex-grow1 {// equal width children
+ @include flexbox((
+ flex-grow: 1
+ ));
+ }
+ &.nowrap {
+ @include flexbox((
+ flex-wrap: nowrap
+ ));
+ }
+ &.align-top {
+ @include align-items(flex-start);
+ }
+ &.align-bottom {
+ @include align-items(flex-end);
+ }
+ &.align-middle {
+ @include align-items(center);
+ }
+ &.align-baseline {
+ @include align-items(baseline);
+ }
+ &.align-left {
+ @include justify-content(flex-start);
+ }
+ &.align-center {
+ @include justify-content(center);
+ }
+ &.align-right {
+ @include justify-content(flex-end);
+ }
+ */

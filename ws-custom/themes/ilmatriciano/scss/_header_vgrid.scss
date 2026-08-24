@@ -1,0 +1,27 @@
+#header,
+#header > div {
+  height: $vgrid-header-height;
+  .link .text {
+    display: none;
+  }
+  hgroup {
+    overflow: auto;
+    width: calc(100% - 37px);
+    height: $vgrid-header1-height;
+  }
+}
+#header1 {
+  height: $vgrid-header1-height;
+  picture[itemprop="logo"],
+  picture[itemprop="logo"] img {
+    height: $vgrid-logo-height;
+  }
+  hgroup h1[itemprop="name"]{
+    top: 2px;
+  }
+}
+#nav1 {
+}
+#nav1_prodotti ul.dropdown {
+  display: block;
+}

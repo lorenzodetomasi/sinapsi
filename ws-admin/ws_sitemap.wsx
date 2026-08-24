@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset	xml:lang="it-IT"
+				xmlns:xi="http://www.w3.org/2001/XInclude">
+	<url>
+	    <wspath>/admin/refresh</wspath>
+	    <query>/?theme=your-theme&amp;template=refresh</query>
+		<changefreq>yearly</changefreq>
+		<priority>0</priority>
+		<robots>noindex, follow</robots>
+		<dateCreated>2020-04-30T10:27:41Z</dateCreated>
+		<datePublished>2020-04-30T10:27:41Z</datePublished>
+		<dateModified>2020-04-30T10:27:41Z</dateModified>
+ 	</url>
+	<url>
+	    <wspath>/admin/refresh/contents</wspath>
+	    <query>/?theme=your-theme&amp;template=refresh-contents</query>
+		<changefreq>yearly</changefreq>
+		<priority>0</priority>
+		<robots>noindex, follow</robots>
+		<dateCreated>2020-04-30T10:27:41Z</dateCreated>
+		<datePublished>2020-04-30T10:27:41Z</datePublished>
+		<dateModified>2020-04-30T10:27:41Z</dateModified>
+	</url>
+	<url>
+	    <wspath>/admin/refresh/images</wspath>
+	    <query>/?theme=your-theme&amp;template=refresh-images</query>
+		<changefreq>yearly</changefreq>
+		<priority>0</priority>
+		<robots>noindex, follow</robots>
+		<dateCreated>2020-04-30T10:27:41Z</dateCreated>
+		<datePublished>2020-04-30T10:27:41Z</datePublished>
+		<dateModified>2020-04-30T10:27:41Z</dateModified>
+	</url>
+	<url>
+	    <wspath>/admin/refresh/themes</wspath>
+	    <query>/?theme=your-theme&amp;template=refresh-themes</query>
+		<changefreq>yearly</changefreq>
+		<priority>0</priority>
+		<robots>noindex, follow</robots>
+		<dateCreated>2020-04-30T10:27:41Z</dateCreated>
+		<datePublished>2020-04-30T10:27:41Z</datePublished>
+		<dateModified>2020-04-30T10:27:41Z</dateModified>
+	</url>
+	<url>
+	    <wspath>/admin/refresh/htmlcache</wspath>
+	    <query>/?theme=your-theme&amp;template=refresh-htmlcache</query>
+		<changefreq>yearly</changefreq>
+		<priority>0</priority>
+		<robots>noindex, follow</robots>
+		<dateCreated>2020-04-30T10:27:41Z</dateCreated>
+		<datePublished>2020-04-30T10:27:41Z</datePublished>
+		<dateModified>2020-04-30T10:27:41Z</dateModified>
+	</url>
+</urlset>

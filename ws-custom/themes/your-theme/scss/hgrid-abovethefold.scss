@@ -1,0 +1,26 @@
+@import
+  "settings";
+// Grid
+.hgrid-no,
+.vgrid,
+.maxgrid,
+.print {
+  display: none !important;
+}
+.nav.hgrid-horizontal {
+    & > div {
+        & > ul,
+        & > ol {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            & > li {
+                display: inline-block;
+                margin: 0 $gutter;
+            }
+        }
+    }
+}
+#header1-nav1 {
+    overflow-x: auto;
+}

@@ -1,0 +1,27 @@
+@import "settings";
+#page,
+.page-shadow {
+  -webkit-box-shadow: $shadow-large;
+  -moz-box-shadow: $shadow-large;
+  box-shadow: $shadow-large;
+}
+#header,
+.shadow-bottom {
+  -webkit-box-shadow: $shadow-bottom;
+  -moz-box-shadow: $shadow-bottom;
+  box-shadow: $shadow-bottom;
+}
+#page {
+  max-width: 1280px;
+}
+#header {
+  background-color: $header-background;
+}
+#footer {
+  background-color: $footer-background;
+}
+nav.vertical {
+  & > h3 {
+    margin-bottom: $gutter/2;
+  }
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collezione di luoghi — Meetoo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+  <link rel="stylesheet" href="meetoo.css" />
+  <style>
+    * { box-sizing: border-box; }
+    .coll-head { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+    .coll-badge { width: 64px; height: 64px; border-radius: 14px; background: var(--color-park); color: var(--color1); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .coll-badge .material-symbols-outlined { font-size: 2rem; }
+    .kicker { text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; color: var(--color-hint); font-weight: 700; }
+    .coll-name { font-family: var(--font-family1); font-weight: 700; font-size: 1.7rem; color: var(--color1); margin: 0; }
+    .coll-desc { color: var(--color-hint); margin: 4px 0 0; } .coll-desc strong { color: var(--color-text); }
+.state { color: var(--color-hint); padding: 24px 0; text-align: center; } .state.err { color: var(--color1); }
+  
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="coll-head">
+      <div class="coll-badge"><span class="material-symbols-outlined">menu_book</span></div>
+      <div><div class="kicker">Collezione di luoghi</div><h1 class="coll-name" id="collName">Collezione</h1><p class="coll-desc" id="collDesc"></p></div>
+    </header>
+    <section><h2 class="sec-head"><span class="material-symbols-outlined">place</span>Le tappe <span class="count" id="cnt"></span></h2>
+      <div class="grid" id="places"><div class="state">Carico i luoghi…</div></div>
+    </section>
+  </div>
+
+  <!-- Moduli condivisi: template delle card + header (prima dello script di pagina). -->
+  <script src="cards.js"></script>
+  <script src="header.js"></script>
+
+  <script>
+  (function () {
+    const params = new URLSearchParams(location.search);
+    const collId = (params.get('id') || '').replace(/^\/+|\/+$/g, '');
+    // Dove stanno i contenuti lo dice l'header condiviso: dichiarato con un <meta>
+    // se c'è, altrimenti dedotto. Prima ogni pagina se lo ricavava per conto suo,
+    // con un ripiego su '/sinapsi/…' che sarebbe scattato proprio al trasloco.
+    const CONTENT_BASE = Meetoo.contentBase();
+    const box = document.getElementById('places');
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const asArr = (v) => Array.isArray(v) ? v : v == null ? [] : [v];
+
+    if (!collId) { box.innerHTML = '<div class="state err">Collezione non indicata. Aggiungi <code>?id=places/&lt;slug&gt;</code>.</div>'; return; }
+    (function crumb() { if (window.Meetoo) Meetoo.setBreadcrumb([{ label: 'Lido di Ostia', href: 'index.html' }, { label: 'BookCrossing', current: true }]); else setTimeout(crumb, 100); })();
+
+    // Card del luogo: template condiviso (cards.js), stessa struttura .card delle
+    // altre pagine. Il documento del luogo (dati ricchi) ha la precedenza sul
+    // riferimento scritto nella collezione.
+    function placeCard(ref, doc) {
+      const e = (doc && (doc.mainEntity || doc)) || {};
+      return Meetoo.placeCard(Object.assign({}, ref, e));
+    }
+
+    fetch(CONTENT_BASE + collId + '/index.json', { headers: { Accept: 'application/json' } })
+      .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(r.status); })
+      .then((doc) => {
+        const c = doc.mainEntity || doc;
+        document.getElementById('collName').textContent = c.name || collId;
+        document.title = (c.name || collId) + ' — Meetoo';
+        if (c.description) document.getElementById('collDesc').innerHTML = c.description;
+        if (window.Meetoo) Meetoo.setBreadcrumb([{ label: 'Lido di Ostia', href: 'index.html' }, { label: c.name || collId, current: true }]);
+        const members = asArr(c.containsPlace || c.hasPart || c.itemListElement).map((m) => (m && m.item) ? m.item : m).filter(Boolean);
+        document.getElementById('cnt').textContent = members.length || '';
+        if (!members.length) { box.innerHTML = '<div class="empty">Nessun luogo in questa collezione.</div>'; return; }
+        // Carica ogni tappa per i dati ricchi (indirizzo, geo, rating).
+        Promise.all(members.map((ref) => {
+          const path = typeof ref === 'string' ? ref : ref['@id'];
+          return fetch(CONTENT_BASE + String(path).replace(/^\/+/, '') + '/index.json').then((r) => r.ok ? r.json() : null).catch(() => null).then((d) => placeCard(typeof ref === 'string' ? { '@id': ref } : ref, d));
+        })).then((cards) => { box.innerHTML = cards.join(''); });
+      })
+      .catch((s) => { box.innerHTML = '<div class="state err">Collezione non disponibile (' + esc(s) + ').</div>'; });
+  })();
+  </script>
+</body>
+</html>

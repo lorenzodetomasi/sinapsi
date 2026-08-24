@@ -1,0 +1,65 @@
+strong,
+.strong{
+  font-weight: $text-strong-font-weight;
+}
+em,
+.em {
+  font-style: italic;
+}
+small, .small {
+  font-size: $text-small-font-size;
+  line-height: $text-small-line-height;
+}
+pre {
+  overflow-x: auto;
+}
+code {
+	font-family: $code-font-family;
+	font-size: $code-font-size;
+}
+abbr,
+acronym {
+  cursor: inherit;
+  &[title]{
+    cursor: help;
+    text-decoration: none;
+    border-bottom: none;
+  }
+}
+abbr.abbr,
+abbr.acronym,
+acronym.acronym {
+  &[title]{
+    text-decoration: underline; // 2
+    text-decoration: underline dotted; // 2
+  }
+}
+// Links
+a {
+	color: $text-link-color;
+	text-decoration: none;
+				&:focus {
+					outline: thin dotted;
+				}
+				&:hover,
+				&:active {
+								text-decoration: underline;
+								color: $text-link-hover-color;
+								outline: 0;
+				}
+}
+.highlight {
+
+}
+.message {
+
+}
+.success {
+
+}
+.error {
+
+}
+.warning {
+
+}

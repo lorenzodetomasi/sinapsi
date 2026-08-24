@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mappa Stabilimenti Ostia - Linea Mare</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  
+  <style>
+    /* Variabili Material 3 & Tema Linea 1 Napoli */
+    :root {
+      /* Palette ispirata alla Metro di Napoli */
+      --metro-line: #F5A623; /* Giallo Metro Napoli */
+      --metro-dark: #14213D; /* Blu Notte / Antracite */
+      --metro-node: #FFFFFF; /* Bianco */
+      
+      /* Material 3 System Colors */
+      --md-sys-color-surface: #FEF7FF;
+      --md-sys-color-on-surface: #1D1B20;
+      --md-sys-color-on-surface-variant: #49454F;
+      --md-sys-color-background: #F4F5F7;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-surface);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Testata in stile targa metropolitana */
+    header {
+      background-color: var(--metro-line);
+      color: var(--metro-dark);
+      padding: 32px 16px;
+      text-align: center;
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 16px 40px 16px;
+    }
+
+    /* La linea della metropolitana */
+    .metro-line {
+      position: relative;
+      padding-left: 56px; /* Spazio per la linea visiva */
+    }
+
+    .metro-line::before {
+      content: '';
+      position: absolute;
+      top: 32px;
+      bottom: 32px;
+      left: 20px;
+      width: 12px;
+      background-color: var(--metro-line);
+      border-radius: 6px;
+    }
+
+    /* Singola Stazione (Nodo) */
+    .station {
+      position: relative;
+      margin-bottom: 24px;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .station:hover {
+      transform: translateX(4px);
+    }
+
+    /* Il "pallino" della fermata sulla linea */
+    .station::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: -48px; /* Centrato sopra la linea */
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      background-color: var(--metro-node);
+      border: 6px solid var(--metro-dark);
+      border-radius: 50%;
+      z-index: 1;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Stato attivo (Stazione selezionata) */
+    .station.active::before {
+      background-color: var(--metro-line);
+      transform: translateY(-50%) scale(1.2);
+    }
+
+    /* Card della stazione (Stile Material 3) */
+    .card {
+      background-color: var(--md-sys-color-surface);
+      border-radius: 24px; /* Raggio M3 */
+      padding: 20px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: hidden;
+      border: 1px solid transparent;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .station.active .card {
+      border-color: var(--metro-line);
+      box-shadow: 0 4px 12px rgba(245, 166, 35, 0.2);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .station-name {
+      font-size: 20px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    /* Contenuto espandibile */
+    .details {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, margin-top 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .station.active .details {
+      max-height: 200px;
+      opacity: 1;
+      margin-top: 16px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+      padding-top: 16px;
+    }
+
+    .distance {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    /* Bottone Material 3 Tonal / FAB style */
+    .map-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: var(--metro-dark);
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 100px; /* Pill shape M3 */
+      font-weight: 500;
+      font-size: 14px;
+      transition: background-color 0.2s, transform 0.1s;
+      align-self: flex-start;
+    }
+
+    .map-btn:hover {
+      background-color: #0b1222;
+    }
+    
+    .map-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Setup per le icone Google Material Round */
+    .icon {
+      font-family: 'Material Icons Round';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 24px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+    }
+    
+    /* Regola di transizione per l'icona freccia */
+    .card-header .icon {
+      transition: transform 0.3s ease;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+    .station.active .card-header .icon {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span class="icon" style="font-size: 36px;">subway</span> Linea Mare</h1>
+    <p style="margin: 8px 0 0; font-size: 16px; font-weight: 500;">Da Ostia Porto a Torvaianica</p>
+  </header>
+
+  <div class="container">
+    <div class="metro-line" id="metro-line">
+      </div>
+  </div>
+
+  <script>
+    // Dati della "linea": puoi aggiungere e modificare le fermate qui
+    const stabilimenti = [
+      { name: "Porto Turistico di Roma", distance: "Capolinea Nord", searchMaps: "Porto Turistico di Roma Ostia" },
+      { name: "Il Gabbiano", distance: "850 m", searchMaps: "Stabilimento Il Gabbiano Ostia" },
+      { name: "La Rotonda", distance: "1.2 km", searchMaps: "La Rotonda Ostia" },
+      { name: "L'Oasi", distance: "600 m", searchMaps: "L'Oasi Ostia" },
+      { name: "Plinius", distance: "800 m", searchMaps: "Plinius Ostia" },
+      { name: "Kursaal", distance: "1.5 km", searchMaps: "Kursaal Ostia" },
+      { name: "Sporting Beach", distance: "400 m", searchMaps: "Sporting Beach Ostia" },
+      { name: "La Vecchia Pineta", distance: "750 m", searchMaps: "La Vecchia Pineta Ostia" },
+      { name: "Le Dune", distance: "1.1 km", searchMaps: "Le Dune Ostia" },
+      { name: "La Casetta", distance: "900 m", searchMaps: "La Casetta Ostia" },
+      { name: "Spiaggia Libera Castelporziano (Cancello 1)", distance: "2.5 km", searchMaps: "Cancello 1 Castelporziano" },
+      { name: "Spiaggia Libera Castelporziano (Cancello 8)", distance: "3.2 km", searchMaps: "Cancello 8 Castelporziano" },
+      { name: "Capocotta", distance: "1.8 km", searchMaps: "Spiaggia Capocotta" },
+      { name: "Torvaianica (Confine)", distance: "Capolinea Sud", searchMaps: "Torvaianica" }
+    ];
+
+    const metroLineContainer = document.getElementById('metro-line');
+
+    // Generazione dinamica della UI
+    stabilimenti.forEach((stazione, index) => {
+      const isFirst = index === 0;
+      
+      const stationDiv = document.createElement('div');
+      stationDiv.className = 'station';
+      
+      // Creazione URL di Google Maps sicuro e standard
+      const mapsQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(stazione.searchMaps)}`;
+
+      stationDiv.innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <h3 class="station-name">${stazione.name}</h3>
+            <span class="icon">expand_more</span>
+          </div>
+          <div class="details">
+            <div class="distance">
+              <span class="icon" style="font-size: 20px;">
+                ${isFirst ? 'trip_origin' : 'directions_walk'}
+              </span>
+              <span>
+                ${isFirst ? stazione.distance : `Distanza dal precedente: <strong>${stazione.distance}</strong>`}
+              </span>
+            </div>
+            <a href="${mapsQueryUrl}" target="_blank" class="map-btn" onclick="event.stopPropagation();">
+              <span class="icon" style="font-size: 20px;">map</span>
+              Apri in Maps
+            </a>
+          </div>
+        </div>
+      `;
+
+      // Logica ad Accordion: espande una stazione cliccandola e chiude le altre
+      stationDiv.addEventListener('click', () => {
+        const isActive = stationDiv.classList.contains('active');
+        
+        // Chiudi tutte le altre stazioni
+        document.querySelectorAll('.station').forEach(s => s.classList.remove('active'));
+        
+        // Se non era attiva, attivala
+        if (!isActive) {
+          stationDiv.classList.add('active');
+        }
+      });
+
+      metroLineContainer.appendChild(stationDiv);
+    });
+  </script>
+</body>
+</html>

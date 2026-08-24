@@ -1,0 +1,1036 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2024-03-27 17:07+0100\n"
+"PO-Revision-Date: 2024-03-27 17:07+0100\n"
+"Last-Translator: Lorenzo De Tomasi <lorenzo.detomasi@gmail.com>\n"
+"Language-Team: \n"
+"Language: it_IT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.4.2\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-KeywordsList: __;_e;_x;_ex;_n:1,2\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: ui.php\n"
+
+#: ui.php:2
+msgid "Website under construction."
+msgstr "Sito web in costruzione."
+
+#: ui.php:4
+#, php-format
+msgid "Content in %1$s. "
+msgstr "Contenuti in %1$s. "
+
+#: ui.php:5
+msgid "Content language not specified. "
+msgstr "La lingua dei contenuti non è specificata. "
+
+#: ui.php:6
+#, php-format
+msgid "Page not available in %1$s. "
+msgstr "Questa pagina non è disponibile in %1$s. "
+
+#: ui.php:7
+msgid "Page not found"
+msgstr "Pagina non trovata"
+
+#: ui.php:8
+msgid "Error 404"
+msgstr "Errore 404"
+
+#: ui.php:9
+msgid "Close"
+msgstr "Chiudi"
+
+#: ui.php:10
+msgid "Main menù"
+msgstr "Menù principale"
+
+#: ui.php:11
+msgid "Main <strong>menu</strong>"
+msgstr "<strong>Menù</strong> principale"
+
+#: ui.php:12
+msgid "Show main menu"
+msgstr "Apri il menù principale"
+
+#: ui.php:13
+msgid "Hide main menu"
+msgstr "Nascondi il menù principale"
+
+#: ui.php:14
+msgid "Go to homepage"
+msgstr "Vai alla homepage"
+
+#: ui.php:15
+msgid "Go to parent page"
+msgstr "Vai alla pagina genitore"
+
+#: ui.php:16
+msgid "Go to previous page"
+msgstr "Vai alla pagina precedente"
+
+#: ui.php:17
+msgid "Go to next page"
+msgstr "Vai alla pagina successiva"
+
+#: ui.php:18
+msgid "Search"
+msgstr "Cerca"
+
+#: ui.php:19
+msgid "Search on this website"
+msgstr "Cerca nel sito"
+
+#: ui.php:20
+msgid "Share"
+msgstr "Condividi"
+
+#: ui.php:21
+msgid "Share on social media or email"
+msgstr "Condividi sui social media o via email"
+
+#: ui.php:22
+msgid "Follow us"
+msgstr "Seguici"
+
+#: ui.php:23
+msgid "Follow us on social media and newsletter"
+msgstr "Seguici su social media e newsletter"
+
+#: ui.php:24
+msgid "Address"
+msgstr "Indirizzo"
+
+#: ui.php:25
+msgid "Contact us"
+msgstr "Contattaci"
+
+#: ui.php:26
+#, php-format
+msgid "Contact %s"
+msgstr "Contatta %s"
+
+#: ui.php:27
+msgid "Contacts"
+msgstr "Contatti"
+
+#: ui.php:28
+msgid "Contact form"
+msgstr "Modulo di contatto"
+
+#: ui.php:29
+msgid "Bold fields are required."
+msgstr "I campi in grassetto sono obbligatori."
+
+#: ui.php:30
+msgid "Leave your contact information: will answer you as soon as possible."
+msgstr "Lasciaci i tuoi contatti: ti risponderemo il prima possibile."
+
+#: ui.php:31
+msgid "Enter your name and surname"
+msgstr "Inserisci il tuo nome e cognome"
+
+#: ui.php:32 ui.php:206
+msgid "i.e. John Smith"
+msgstr "ad es. Mario Rossi"
+
+#: ui.php:33
+msgid "Subject"
+msgstr "Oggetto"
+
+#: ui.php:34 ui.php:81
+msgid "Message"
+msgstr "Messaggio"
+
+#: ui.php:35
+msgid "Submit message"
+msgstr "Invia messaggio"
+
+#: ui.php:36
+msgid "Submit"
+msgstr "Invia"
+
+#: ui.php:37
+msgid "Mobile"
+msgstr "Cellulare"
+
+#: ui.php:38
+msgid "Email"
+msgstr ""
+
+#: ui.php:39
+msgid "Website"
+msgstr "Sito web"
+
+#: ui.php:40
+msgid "Phone"
+msgstr "Telefono"
+
+#: ui.php:41
+msgid "Call now"
+msgstr "Chiama ora"
+
+#: ui.php:42
+msgid "Call us by phone"
+msgstr "Chiamaci al telefono"
+
+#: ui.php:43
+msgid "For <strong>emergencies</strong>"
+msgstr "Per <strong>emergenze</strong>"
+
+#: ui.php:44
+msgid "even on holidays"
+msgstr "anche nei giorni festivi"
+
+#: ui.php:45
+#, php-format
+msgid "Call %s immediately"
+msgstr "Chiama immediatamente il %s"
+
+#: ui.php:46
+msgid "Email us"
+msgstr "Scrivi un’email"
+
+#: ui.php:47
+msgid "Write us by email"
+msgstr "Scrivici un’email"
+
+#: ui.php:48
+msgid "Request information"
+msgstr "Chiedi informazioni"
+
+#: ui.php:49
+msgid "Book an appointment"
+msgstr "Prenota un appuntamento"
+
+#: ui.php:50
+msgid "Accepted payment methods"
+msgstr "Metodi di pagamento accettati"
+
+#: ui.php:51
+msgid "an appointment"
+msgstr "un appuntamento"
+
+#: ui.php:52
+msgid "Language"
+msgstr "Lingua"
+
+#: ui.php:53
+msgid "Fiscal data"
+msgstr "Dati fiscali"
+
+#: ui.php:54
+#, php-format
+msgid "Vat ID: %s"
+msgstr "Partita IVA: %s"
+
+#: ui.php:55
+#, php-format
+msgid "Tax ID: %s"
+msgstr "Codice fiscale: %s"
+
+#: ui.php:56
+msgid "Vat ID"
+msgstr "<abbr title=“Partita IVA”>P. IVA</abbr>"
+
+#: ui.php:57
+msgid "Tax ID"
+msgstr "<abbr title=“Codice fiscale”>Cod. fisc.</abbr>"
+
+#: ui.php:58
+msgid "Legal informations"
+msgstr "Informazioni legali"
+
+#: ui.php:59
+msgid "Credits"
+msgstr "Crediti"
+
+#: ui.php:60
+msgid "Informations"
+msgstr "Informazioni"
+
+#: ui.php:61
+msgid "Notes"
+msgstr "Note"
+
+#: ui.php:62
+msgid "Legend"
+msgstr "Legenda"
+
+#: ui.php:64
+#, php-format
+msgid "[%1$s] Your request"
+msgstr "[%1$s] La tua richiesta"
+
+#: ui.php:65
+#, php-format
+msgid "[%1$s] Your request to %2$s"
+msgstr "[%1$s] La tua richiesta a %2$s"
+
+#: ui.php:66
+#, php-format
+msgid "[%1$s] Request for %2$s"
+msgstr "[%1$s] Richiesta per %2$s"
+
+#: ui.php:67
+#, php-format
+msgid "[%1$s] Request from %2$s"
+msgstr "[%1$s] Richiesta da %2$s"
+
+#: ui.php:68
+#, php-format
+msgid "Thank you for your request to %s"
+msgstr "Grazie per la tua richiesta a %s"
+
+#: ui.php:69
+#, php-format
+msgid "Thanks for using %1$s. We sent your message to %2$s %3$s."
+msgstr ""
+"Grazie per aver utilizzato %1$s. Abbiamo inviato il tuo messaggio a %2$s "
+"%3$s."
+
+#: ui.php:70
+#, php-format
+msgid "A %1$s user has sent a message."
+msgstr "Un utente di %1$s ha inviato un messaggio."
+
+#: ui.php:71
+#, php-format
+msgid "A %1$s user has sent a message to %2$s %3$s."
+msgstr "Un utente di %1$s ha inviato un messaggio a %2$s %3$s."
+
+#: ui.php:72
+msgid "Reply to your customer as soon as possible."
+msgstr "Rispondi al cliente il prima possibile."
+
+#: ui.php:73
+msgid "Reply now to your customer"
+msgstr "Rispondi ora al cliente"
+
+#: ui.php:74
+#, php-format
+msgid "Language: %s"
+msgstr "Lingua: %s"
+
+#: ui.php:76
+msgid "Your contacts"
+msgstr "I tuoi contatti"
+
+#: ui.php:77
+msgid "Your email"
+msgstr "La tua email"
+
+#: ui.php:78
+msgid "your@email.com"
+msgstr "latua@email.it"
+
+#: ui.php:79
+msgid "Your phone"
+msgstr "Il tuo telefono"
+
+#: ui.php:80
+msgid "06 12 34 567"
+msgstr ""
+
+#: ui.php:82
+msgid "Why are you contacting us?"
+msgstr "Perché ci stai contattando?"
+
+#: ui.php:83
+msgid "Add this configuration to your profile"
+msgstr "Aggiungi questa configurazione al tuo profilo"
+
+#: ui.php:84
+msgid "Save your contact details"
+msgstr "Salva le tue informazioni di contatto"
+
+#: ui.php:85
+msgid "Receive our best tips and offers by email"
+msgstr "Ricevi via email i nostri migliori consigli e offerte"
+
+#: ui.php:86
+#, php-format
+msgid "Accept our %s"
+msgstr "Accetta la nostra %s"
+
+#: ui.php:87
+msgid "Privacy Policy"
+msgstr "Informativa sulla Privacy"
+
+#: ui.php:88
+#, php-format
+msgid "E.g. %s"
+msgstr "Ad es. %s"
+
+#: ui.php:89
+#, php-format
+msgid ""
+"The user has stated that he has read and accepted your Privacy Policy %s."
+msgstr ""
+"L’utente ha dichiarato di aver letto e accettato la tua Privacy Policy %s."
+
+#: ui.php:90
+#, php-format
+msgid "You stated that you have read and accepted our Privacy Policy %s."
+msgstr "Hai dichiarato di aver letto e accettato la nostra Privacy Policy %s."
+
+#: ui.php:91
+#, php-format
+msgid ""
+"The user has stated that he has read and accepted %1$s’s Privacy Policy %2$s."
+msgstr ""
+"L’utente ha dichiarato di aver letto e accettato la Privacy Policy di %1$s "
+"%2$s."
+
+#: ui.php:92
+msgid "The user has authorized the storage of his contact information."
+msgstr ""
+"L’utente ha autorizzato il salvataggio delle sue informazioni di contatto."
+
+#: ui.php:93
+msgid "You have authorized the storage of your contact information."
+msgstr "Hai autorizzato il salvataggio delle tue informazioni di contatto."
+
+#: ui.php:94
+msgid ""
+"The user has authorized the sending of our best tips and offers by email."
+msgstr ""
+"L’utente ha autorizzato l’invio via email dei nostri migliori consigli e "
+"offerte."
+
+#: ui.php:95
+msgid "You have authorized the sending of our best tips and offers by email."
+msgstr ""
+"Hai autorizzato l’invio via email dei nostri migliori consigli e offerte."
+
+#: ui.php:96
+#, php-format
+msgid "The user has authorized the sending of a copy of his message to %s."
+msgstr "L’utente ha autorizzato l’invio di una copia di questo messaggio a %s."
+
+#: ui.php:97
+#, php-format
+msgid "You have authorized the sending of a copy of your message to %s."
+msgstr "Hai autorizzato l’invio di una copia di questo messaggio a %s."
+
+#: ui.php:98
+#, php-format
+msgid "Your message has been sent to %1$s %2$s."
+msgstr "Il tuo messaggio è stato inviato a %1$s %2$s."
+
+#: ui.php:99
+msgid ""
+"We will get back to you as soon as possible. If you do not receive answers, "
+"please report it to us."
+msgstr ""
+"Ti risponderemo il più presto possibile. Se non ricevi risposte, ti "
+"preghiamo di segnalarcelo."
+
+#: ui.php:100
+msgid ""
+"We will get back to you as soon as possible. If you do not receive answers, "
+"please report it to us by replying to this email."
+msgstr ""
+"Ti risponderemo il più presto possibile. Se non ricevi risposte, ti "
+"preghiamo di segnalarcelo rispondendo a questa email."
+
+#: ui.php:101
+#, php-format
+msgid ""
+"%1$s will get back to you as soon as possible. If you do not receive "
+"answers, please report it to us by replying to this email."
+msgstr ""
+"%1$s ti risponderà il più presto possibile. Se non ricevi risposte, ti "
+"preghiamo di segnalarcelo rispondendo a questa email."
+
+#: ui.php:102
+#, php-format
+msgid "A copy of your message has been sent to your email %s."
+msgstr "Una copia del tuo messaggio è stata inviata al tuo indirizzo email %s."
+
+#: ui.php:103
+msgid "We have encountered problems sending your request."
+msgstr "Abbiamo riscontrato problemi nell’invio della tua richiesta."
+
+#: ui.php:104
+#, php-format
+msgid ""
+"We have encountered problems sending a copy of your message to your email %s."
+msgstr ""
+"Abbiamo riscontrato problemi durante l’invio di una copia del tuo messaggio "
+"al tuo indirizzo email %s."
+
+#: ui.php:105
+#, php-format
+msgid ""
+"We have encountered problems sending your message to %s, in order to improve "
+"the quality of this service."
+msgstr ""
+"Abbiamo riscontrato problemi durante l’invio del tuo messaggio a %s, con "
+"l’obiettivo di migliorare la qualità di questo servizio."
+
+#: ui.php:106
+#, php-format
+msgid ""
+"We will send a copy of your message to %s, to improve the quality of this "
+"service."
+msgstr ""
+"Invieremo una copia del tuo messaggio a %s, con l’obiettivo di migliorare la "
+"qualità di questo servizio."
+
+#: ui.php:107
+#, php-format
+msgid ""
+"Improve the quality of this service, sending a copy of your message to %s"
+msgstr ""
+"Migliora la qualità di questo servizio, inviando una copia del tuo messaggio "
+"a %s"
+
+#: ui.php:108
+#, php-format
+msgid ""
+"Your message has also been sent to %s in order to improve the quality of "
+"this service."
+msgstr ""
+"Il tuo messaggio è stato inviato anche a %s, con l’obiettivo di migliorare "
+"la qualità di questo servizio."
+
+#: ui.php:109
+#, php-format
+msgid "This email was sent to you by a form on <%s>."
+msgstr "Questa email ti è stata inviata da un modulo su <%s>."
+
+#: ui.php:110
+#, php-format
+msgid "This email was sent to you by a form on %s."
+msgstr "Questa email ti è stata inviata da un modulo su %s."
+
+#: ui.php:111
+#, php-format
+msgid ""
+"If you have not authorized the sending of this email, contact us at the "
+"email address %s."
+msgstr ""
+"Se non hai autorizzato l’invio di questa email, contattaci all’indirizzo "
+"email %s."
+
+#: ui.php:114
+msgid "Suggest business"
+msgstr "Suggerisci impresa"
+
+#: ui.php:115
+msgid "Submit business"
+msgstr "Aggiungi impresa"
+
+#: ui.php:116
+msgid "Business postal address"
+msgstr "Indirizzo dell’impresa"
+
+#: ui.php:117
+msgid "You are the business owner"
+msgstr "Sei il titolare dell’impresa"
+
+#: ui.php:118
+#, php-format
+msgid "You are %s"
+msgstr "Sei %s"
+
+#: ui.php:119
+msgid "the business owner"
+msgstr "il titolare dell’impresa"
+
+#: ui.php:120
+msgid "If you want, describe the business"
+msgstr "Se vuoi, descrivi l’attività"
+
+#: ui.php:121
+msgid "offered services and/or products"
+msgstr "prodotti e servizi offerti"
+
+#: ui.php:123
+msgid "Other"
+msgstr "Altro"
+
+#: ui.php:124
+msgid "Continues"
+msgstr "Continua"
+
+#: ui.php:125
+msgid "Continue reading"
+msgstr "Continua a leggere"
+
+#: ui.php:126
+#, php-format
+msgid "Page published on %s"
+msgstr "Pagina pubblicata il %s"
+
+#: ui.php:127
+#, php-format
+msgid "Page published on %1$s, at %2$s"
+msgstr "Pagina pubblicata il %1$s, alle %2$s"
+
+#: ui.php:128
+#, php-format
+msgid "Article published on %s"
+msgstr "Articolo pubblicato il %s"
+
+#: ui.php:129
+#, php-format
+msgid "Article published on %1$s, at %2$s"
+msgstr "Articolo pubblicato il %1$s, alle %2$s"
+
+#: ui.php:130
+#, php-format
+msgid "and modified on %s"
+msgstr "e aggiornata il %s"
+
+#: ui.php:131
+msgid "Previous Article"
+msgstr "Articolo precedente"
+
+#: ui.php:132
+msgid "All Articles"
+msgstr "Tutti gli articoli"
+
+#: ui.php:133
+msgid "Next Article"
+msgstr "Articolo successivo"
+
+#: ui.php:135
+msgid "Locations"
+msgstr "Sedi"
+
+#: ui.php:136
+msgid "Location"
+msgstr "Sede"
+
+#: ui.php:137
+msgid "Directions"
+msgstr "Indicazioni stradali"
+
+#: ui.php:139
+msgid "Opening Hours"
+msgstr "Orari di apertura"
+
+#: ui.php:140
+msgid "Now we are <strong>open</strong>."
+msgstr "Ora siamo <strong>aperti</strong>."
+
+#: ui.php:141
+msgid "Now we are <strong>closed</strong>."
+msgstr "Ora siamo <strong>chiusi</strong>."
+
+#: ui.php:142
+msgid "Closed"
+msgstr "Chiuso"
+
+#: ui.php:143
+msgid "Special Hours"
+msgstr "Orari speciali"
+
+#: ui.php:144
+msgid "Weekday"
+msgstr "Giorni della settimana"
+
+#: ui.php:145
+msgid "Monday"
+msgstr "Lunedì"
+
+#: ui.php:146
+msgid "Tuesday"
+msgstr "Martedì"
+
+#: ui.php:147
+msgid "Wednesday"
+msgstr "Mercoledì"
+
+#: ui.php:148
+msgid "Thursday"
+msgstr "Giovedì"
+
+#: ui.php:149
+msgid "Friday"
+msgstr "Venerdì"
+
+#: ui.php:150
+msgid "Saturday"
+msgstr "Sabato"
+
+#: ui.php:151
+msgid "Sunday"
+msgstr "Domenica"
+
+#: ui.php:153
+msgid "Awards"
+msgstr "Premi"
+
+#: ui.php:154
+msgid "The awards and acknowledgments we have obtained"
+msgstr "I premi e riconoscimenti che abbiamo ottenuto"
+
+#: ui.php:156
+msgid "Reviews"
+msgstr "Recensioni"
+
+#: ui.php:157
+msgid "What our customers say about us"
+msgstr "Quello che i nostri clienti dicono di noi"
+
+#: ui.php:158
+msgid "Write your review"
+msgstr "Scrivi la tua recensione"
+
+#: ui.php:159
+msgid "This business has no reviews."
+msgstr "Questa attività non ha recensioni."
+
+#: ui.php:160
+msgid "Write the first one."
+msgstr "Scrivi tu la prima."
+
+#: ui.php:161
+msgid "Previous Review"
+msgstr "Recensione precedente"
+
+#: ui.php:162
+msgid "All Reviews"
+msgstr "Tutte le recensioni"
+
+#: ui.php:163
+msgid "Next Review"
+msgstr "Recensione successiva"
+
+#: ui.php:164
+#, php-format
+msgid "%1$s star review by %2$s"
+msgid_plural "%1$s stars review by %2$s"
+msgstr[0] "Recensione da %1$s stella di %2$s"
+msgstr[1] "Recensione da %1$s stelle di %2$s"
+
+#: ui.php:166
+msgid "Edit your <strong>daily offer</strong>"
+msgstr "Modifica la tua <strong>offerta giornaliera</strong>"
+
+#: ui.php:167
+msgid "Daily items"
+msgstr "Piatti del giorno"
+
+#: ui.php:169
+#, php-format
+msgid "Valid from %1$s to %2$s"
+msgstr "Valido dal %1$s al %2$s"
+
+#: ui.php:170
+#, php-format
+msgid "Valid from %s"
+msgstr "Valido dal %s"
+
+#: ui.php:171
+msgid "Allergens"
+msgstr "Allergeni"
+
+#: ui.php:172
+msgid "Summary"
+msgstr "Sommario"
+
+#: ui.php:173
+msgid "Offer valid from"
+msgstr "Offerta valida dal"
+
+#: ui.php:174
+msgid "to"
+msgstr "al"
+
+#: ui.php:175
+msgid "Created"
+msgstr "Creato"
+
+#: ui.php:176
+msgid "Published"
+msgstr "Pubblicato"
+
+#: ui.php:177
+#, php-format
+msgid "Published on %s"
+msgstr "Pubblicato il %s"
+
+#: ui.php:178
+msgid "Modified"
+msgstr "Modificato"
+
+#: ui.php:179
+msgid "Add"
+msgstr "Aggiungi"
+
+#: ui.php:180
+msgid "Delete"
+msgstr "Elimina"
+
+#: ui.php:181
+msgid "Drag and drop to organize the order of the items."
+msgstr "Sposta gli elementi per definirne l’ordine."
+
+#: ui.php:182
+msgid "Save"
+msgstr "Salva"
+
+#: ui.php:183
+msgid "Save draft"
+msgstr "Salva bozza"
+
+#: ui.php:184
+msgid "Publish"
+msgstr "Pubblica"
+
+#: ui.php:185
+msgid "Download"
+msgstr "Scarica"
+
+#: ui.php:187
+msgid "Date"
+msgstr "Data"
+
+#: ui.php:188
+msgid "F jS, Y"
+msgstr "J F Y"
+
+#: ui.php:189
+msgid "Y"
+msgstr ""
+
+#: ui.php:190
+msgid "Time"
+msgstr "Ora"
+
+#: ui.php:192
+msgid "Name"
+msgstr "Nome"
+
+#: ui.php:193
+msgid "Description"
+msgstr "Descrizione"
+
+#: ui.php:194
+msgid "Offer"
+msgstr "Offerta"
+
+#: ui.php:195
+msgid "Price"
+msgstr "Prezzo"
+
+#: ui.php:196
+msgid "Currency"
+msgstr "Valuta"
+
+#: ui.php:197
+msgid "Value"
+msgstr "Importo"
+
+#: ui.php:200
+msgid "Offer code"
+msgstr "Codice offerta"
+
+#: ui.php:201
+msgid "Book a table"
+msgstr "Prenota un tavolo"
+
+#: ui.php:202
+msgid "Book"
+msgstr "Prenota"
+
+#: ui.php:203
+msgid "a table"
+msgstr "un tavolo"
+
+#: ui.php:204
+msgid ""
+"Leave your contact information: you will be contacted soon to be informed on "
+"the <strong>outcome of the reservation</strong>."
+msgstr ""
+"Lasciaci i tuoi dati: sarai ricontattato al più presto per essere informato "
+"sull’<strong>esito della prenotazione</strong>."
+
+#: ui.php:205
+msgid "Reservation in the name of"
+msgstr "A nome di"
+
+#: ui.php:207
+msgid ""
+"Enter the name and surname of the person to whom the table will be reserved"
+msgstr ""
+"Inserisci il nome e il cognome della persona a cui sarà riservato il tavolo"
+
+#: ui.php:208
+msgid "Adults and children on chairs"
+msgstr "Adulti e bambini su sedie"
+
+#: ui.php:209
+msgid "Babies on high chairs"
+msgstr "Bambini su seggioloni"
+
+#: ui.php:210
+msgid "People with allergies or intolerances to substances or drugs"
+msgstr "Persone con allergie o intolleranze a sostanze o farmaci"
+
+#: ui.php:211
+msgid "Submit booking request"
+msgstr "Invia richiesta di prenotazione"
+
+#: ui.php:213
+msgid "Add a local business"
+msgstr "Aggiungi un’impresa locale"
+
+#: ui.php:214
+msgid "I would refer you to the following local business:"
+msgstr "Vorrei segnalarvi la seguente impresa locale:"
+
+#: ui.php:215
+msgid "Business name and address"
+msgstr "Nome e indirizzo dell’impresa"
+
+#: ui.php:216
+msgid "Enter business name, street address and city…"
+msgstr "Scrivi nome dell’attività, via, numero civico e città…"
+
+#: ui.php:218
+msgid "Direct producer"
+msgstr "Produttore diretto"
+
+#: ui.php:219
+msgid "Certified organic products"
+msgstr "Prodotti biologici certificati"
+
+#: ui.php:221
+msgid "Order at home"
+msgstr "Ordina a domicilio"
+
+#: ui.php:222
+msgid "Order now"
+msgstr "Ordina ora"
+
+#: ui.php:223
+msgid "Home delivery"
+msgstr "Consegna a domicilio"
+
+#: ui.php:224
+#, php-format
+msgid "%1$s from %2$s"
+msgstr "%1$s da %2$s"
+
+#: ui.php:225
+msgid "at home"
+msgstr "a domicilio"
+
+#: ui.php:226
+msgid "When you think you pick up your order?"
+msgstr "Quando pensi di ritirare il tuo ordine?"
+
+#: ui.php:227
+msgid "Enter date and time"
+msgstr "Inserisci data e ora"
+
+#: ui.php:228
+msgid "Your Order"
+msgstr "Il tuo ordine"
+
+#: ui.php:229
+msgid "Describe your order in detail"
+msgstr "Descrivi dettagliatamente il tuo ordine"
+
+#: ui.php:230
+msgid "Postal address"
+msgstr "Indirizzo postale"
+
+#: ui.php:231
+msgid "Delivery address"
+msgstr "Indirizzo di consegna"
+
+#: ui.php:232
+msgid "Enter your street address and city…"
+msgstr "Scrivi almeno via, numero civico e città…"
+
+#: ui.php:233
+msgid "Name on the intercom"
+msgstr "Nome sul citofono"
+
+#: ui.php:234
+msgid "John Smith"
+msgstr "Mario Rossi"
+
+#: ui.php:235
+msgid "Submit order"
+msgstr "Invia ordine"
+
+#: ui.php:236
+msgid "takeaway"
+msgstr "a portar via"
+
+#: ui.php:237
+msgid "a gift card"
+msgstr "un buono regalo"
+
+#: ui.php:238
+msgid "gift card"
+msgstr "buono regalo"
+
+#: ui.php:239
+msgid "Buy a gift card"
+msgstr "Acquista un buono regalo"
+
+#: ui.php:240
+msgid "Other <strong>menues</strong>"
+msgstr "Altri <strong>menù</strong>"
+
+#: ui.php:242
+msgid "Pickup at the store"
+msgstr "Ritiro in negozio"
+
+#: ui.php:243
+msgid "Order to take away"
+msgstr "Ordina a portar via"
+
+#: ui.php:244
+msgid "Tomorrow at 12:00 am"
+msgstr "Domani alle 12:00"
+
+#: ui.php:246
+msgid "Our specialties"
+msgstr "Le nostre specialità"
+
+#: ui.php:247
+msgid "The most popular dishes on our menu"
+msgstr "I piatti più apprezzati del nostro menù"
+
+#: ui.php:248
+msgid "Previous Dish"
+msgstr "Piatto precedente"
+
+#: ui.php:249
+msgid "All Specialties"
+msgstr "Tutte le specialità"
+
+#: ui.php:250
+msgid "Next Dish"
+msgstr "Piatto successivo"
+
+#: ui.php:252
+#, php-format
+msgid "Visit “%s” website"
+msgstr "Visita il sito web “%s”"
+
+#, php-format
+#~ msgid ""
+#~ "Send a copy of your message to %s, to improve the quality of this service"
+#~ msgstr ""
+#~ "Invia una copia del tuo messaggio a %s, con l’obiettivo di migliorare la "
+#~ "qualità di questo servizio"
+
+#, fuzzy
+#~| msgid "Opening Hours"
+#~ msgid "Opening times"
+#~ msgstr "Orari di apertura"

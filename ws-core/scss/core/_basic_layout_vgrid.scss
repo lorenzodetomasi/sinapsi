@@ -1,0 +1,27 @@
+@import
+"grid_vgrid";
+@include navs('vgrid-');
+// Grid
+.hgrid,
+.maxgrid,
+.print {
+display: none !important;
+}
+@include grid('vgrid-');
+@include box-model('vgrid-');
+#main,
+.section-padding-top,
+.section {
+padding-top: $vgrid-content-start-top;
+}
+.section-padding-bottom,
+.section {
+padding-bottom: $vgrid-content-start-top;
+}
+.cover {
+height: $vgrid-cover-height;
+}
+.content-container {
+  padding-left: $gutter/2;
+  padding-right: $gutter/2;
+}

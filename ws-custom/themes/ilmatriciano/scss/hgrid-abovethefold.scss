@@ -1,0 +1,30 @@
+@import
+  "settings",
+  "../../../../ws-core/scss/core/grid_hgrid",
+  "header_hgrid",
+  "header_top_hgrid",
+  "../../../../ws-core/scss/core/reviews/hgrid";
+@include navs('hgrid-');
+// Grid
+.vgrid,
+.maxgrid,
+.print {
+  display: none !important;
+}
+@include grid('hgrid-');
+@include box-model('hgrid-');
+#header1 li.cta {
+  margin: $cta-margin;
+}
+#main,
+.section-padding-top,
+.section {
+  padding-top: $hgrid-content-start-top;
+}
+.section-padding-bottom,
+.section {
+  padding-bottom: $hgrid-content-start-top;
+}
+.cover {
+  height: $hgrid-cover-height;
+}

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Mare Ostia - Swipe Map</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  
+  <style>
+    :root {
+      --metro-line: #F5A623;
+      --metro-dark: #14213D;
+      --metro-node: #FFFFFF;
+      --md-sys-color-surface: #FEF7FF;
+      --md-sys-color-on-surface: #1D1B20;
+      --md-sys-color-on-surface-variant: #49454F;
+      --md-sys-color-background: #F4F5F7;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-surface);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: var(--metro-line);
+      color: var(--metro-dark);
+      padding: 32px 16px;
+      text-align: center;
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+      flex-shrink: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .carousel-container {
+      display: flex;
+      flex: 1;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      padding: 24px 50vw 48px 24px;
+      gap: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .carousel-container::-webkit-scrollbar {
+      display: none;
+    }
+    .carousel-container {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .station-wrapper {
+      flex: 0 0 85%;
+      max-width: 340px;
+      scroll-snap-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      padding: 0 8px;
+    }
+
+    .station-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background-color: var(--metro-line);
+      z-index: 0;
+    }
+    
+    .station-wrapper:first-child::before { left: 50%; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+    .station-wrapper:last-child::before { right: 50%; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+
+    .node {
+      width: 20px;
+      height: 20px;
+      background-color: var(--metro-node);
+      border: 6px solid var(--metro-dark);
+      border-radius: 50%;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 24px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card {
+      width: 100%;
+      background-color: var(--md-sys-color-surface);
+      border-radius: 28px;
+      padding: 24px;
+      box-sizing: border-box;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border: 2px solid transparent;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: scale(0.95);
+      opacity: 0.7;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: -4px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-privato { background-color: #3498db; }
+    .badge-libero { background-color: #2ecc71; }
+    .badge-cancello { background-color: #e67e22; }
+    .badge-alert { background-color: #e74c3c; } /* Per sequestri e chiusure */
+    .badge-info { background-color: #95a5a6; } /* Per le note */
+
+    .station-name {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .distance {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface-variant);
+      background-color: rgba(0,0,0,0.04);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .map-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: var(--metro-dark);
+      color: white;
+      text-decoration: none;
+      padding: 14px 24px;
+      border-radius: 100px;
+      font-weight: 500;
+      font-size: 15px;
+      margin-top: 8px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .map-btn:active {
+      transform: scale(0.97);
+    }
+
+    .icon {
+      font-family: 'Material Icons Round';
+      font-size: 24px;
+      line-height: 1;
+      direction: ltr;
+    }
+
+    .station-wrapper.active .node {
+      background-color: var(--metro-line);
+      transform: scale(1.4);
+      box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.3);
+    }
+    
+    .station-wrapper.active .card {
+      transform: scale(1);
+      opacity: 1;
+      border-color: var(--metro-line);
+      box-shadow: 0 8px 24px rgba(20, 33, 61, 0.15);
+    }
+    
+    /* Schermata di caricamento */
+    #loader {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      gap: 16px;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span class="icon" style="font-size: 32px;">swipe</span> Linea Mare</h1>
+    <p style="margin: 8px 0 0; font-size: 15px;">Scorri lateralmente per navigare</p>
+  </header>
+
+  <div class="carousel-container" id="carousel">
+    <div id="loader">
+      <span class="icon" style="font-size: 40px; animation: spin 2s linear infinite;">sync</span>
+      Caricamento stazioni...
+    </div>
+  </div>
+
+  <script>
+    const carousel = document.getElementById('carousel');
+
+    // Funzione principale asincrona per recuperare e renderizzare il JSON
+    async function loadBeaches() {
+      try {
+        const response = await fetch('beaches.json');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const schemaData = await response.json();
+
+        // 1. Iniezione del JSON-LD per la SEO
+        const scriptTag = document.createElement('script');
+        scriptTag.type = 'application/ld+json';
+        scriptTag.text = JSON.stringify(schemaData);
+        document.head.appendChild(scriptTag);
+
+        // Rimuoviamo il loader
+        carousel.innerHTML = '';
+
+        // 2. Generazione dell'interfaccia UI
+        schemaData.itemListElement.forEach((element) => {
+          const beach = element.item;
+          const isFirst = element.position === 1;
+          const isLast = element.position === schemaData.itemListElement.length;
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'station-wrapper';
+          
+          // Costruzione dinamica dei badge
+          let badgeHtml = `<span class="badge badge-${beach.tipo}">${beach.tipo}</span>`;
+          if (beach.stato === 'sequestrato' || beach.stato === 'chiuso') {
+            badgeHtml += `<span class="badge badge-alert">${beach.stato}</span>`;
+          }
+          if (beach.note) {
+            badgeHtml += `<span class="badge badge-info" style="margin-top: 4px; width: fit-content;">${beach.note}</span>`;
+          }
+
+          wrapper.innerHTML = `
+            <div class="node"></div>
+            <div class="card">
+              <div class="card-header">
+                <div class="badges">${badgeHtml}</div>
+                <span style="font-size: 12px; font-weight: 700; color: #94a3b8;">#${element.position}</span>
+              </div>
+              
+              <h3 class="station-name">${beach.name}</h3>
+              
+              <div class="distance">
+                <span class="icon" style="font-size: 18px;">${isFirst ? 'trip_origin' : 'directions_walk'}</span>
+                ${isFirst ? `<strong>Capolinea Nord</strong>` : `Distanza: <strong>${beach.distanza_m} m</strong>`}
+              </div>
+              
+              <a href="${beach.url}" target="_blank" class="map-btn">
+                <span class="icon">map</span> Apri Maps
+              </a>
+            </div>
+          `;
+          
+          carousel.appendChild(wrapper);
+        });
+
+        // 3. Attivazione dell'IntersectionObserver per lo scorrimento
+        const observerOptions = {
+          root: carousel,
+          rootMargin: '0px -10% 0px -10%',
+          threshold: 0.6 
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('active');
+            } else {
+              entry.target.classList.remove('active');
+            }
+          });
+        }, observerOptions);
+
+        document.querySelectorAll('.station-wrapper').forEach(station => {
+          observer.observe(station);
+        });
+
+      } catch (error) {
+        carousel.innerHTML = `<div id="loader" style="color: #e74c3c;"><span class="icon">error</span> Errore caricamento dati. Assicurati di usare un Live Server.</div>`;
+        console.error("Errore nel caricamento del file JSON:", error);
+      }
+    }
+
+    // Inizializza l'app
+    loadBeaches();
+  </script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collezione — Meetoo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+  <link rel="stylesheet" href="meetoo.css" />
+  <style>
+    * { box-sizing: border-box; }
+
+    .crumb .material-symbols-outlined { font-size: 1.1rem; }
+
+    .coll-head { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+    .coll-badge { width: 64px; height: 64px; border-radius: 14px; background: var(--color-background-section2); color: var(--color1); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .coll-badge .material-symbols-outlined { font-size: 2rem; }
+    .coll-kicker { text-transform: uppercase; letter-spacing: .06em; font-size: .72rem; color: var(--color-hint); font-weight: 700; }
+    .coll-name { font-family: var(--font-family1); font-weight: 700; font-size: 1.6rem; color: var(--color1); margin: 0; }
+    .coll-desc { color: var(--color-hint); margin: 2px 0 0; font-size: .95rem; }
+
+    section.archive .sec-head { color: var(--color-past); }
+    section.archive .sec-head .material-symbols-outlined { color: var(--color-past); }
+
+    section.archive .card { opacity: .82; }
+    section.archive .card-date .d { color: var(--color-past); }
+
+    .load-archive { margin-top: 12px; background: var(--color-background-section2); color: var(--color-link); border: 1px solid var(--color-line); border-radius: 999px; padding: 8px 16px; font: inherit; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+    .load-archive:hover { border-color: var(--color-link); }
+    .load-archive:disabled { color: var(--color-hint); cursor: default; }
+  
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="coll-head">
+      <div class="coll-badge"><span class="material-symbols-outlined">collections_bookmark</span></div>
+      <div>
+        <div class="coll-kicker">Collezione di eventi</div>
+        <h1 class="coll-name" id="collName">Collezione</h1>
+        <p class="coll-desc" id="collDesc"></p>
+      </div>
+    </header>
+
+    <div id="cover"></div>
+
+    <div id="content"><div class="state">Carico gli eventi…</div></div>
+  </div>
+
+  <!-- Moduli condivisi: template delle card + header (prima dello script di pagina). -->
+  <script src="cards.js"></script>
+  <script src="header.js"></script>
+
+  <script>
+  (function () {
+    const params = new URLSearchParams(location.search);
+    // Percorso della collection (serie), es. events/reading-party.
+    const collId = (params.get('id') || params.get('collection') || '').replace(/^\/+|\/+$/g, '');
+
+    // Dove stanno i contenuti lo dice l'header condiviso: dichiarato con un <meta>
+    // se c'è, altrimenti dedotto. Prima ogni pagina se lo ricavava per conto suo,
+    // con un ripiego su '/sinapsi/…' che sarebbe scattato proprio al trasloco.
+    const CONTENT_BASE = Meetoo.contentBase();
+    const BASE_Q = params.get('base') ? '&base=' + encodeURIComponent(params.get('base')) : '';
+
+    const content = document.getElementById('content');
+    const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+
+    if (!collId) {
+      content.innerHTML = '<div class="state err">Collezione non indicata. Aggiungi <code>?id=events/&lt;slug&gt;</code> all\'URL.</div>';
+      return;
+    }
+
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+
+    // Template condiviso (cards.js): stessa card in tutte le pagine.
+    const eventCard = (ev) => Meetoo.eventCard(ev, { base: BASE_Q, organizer: false });
+
+    function section(cls, icon, title, items, emptyMsg) {
+      const cards = items.length ? '<div class="cards">' + items.map(eventCard).join('') + '</div>' : '<div class="empty">' + esc(emptyMsg) + '</div>';
+      return '<section class="' + cls + '"><h2 class="sec-head"><span class="material-symbols-outlined">' + icon + '</span>' + esc(title) +
+             ' <span class="count">' + items.length + '</span></h2>' + cards + '</section>';
+    }
+
+    // Archivio: passati già presenti (drift) + pulsante che carica il resto su richiesta.
+    function archiveSection(initialPast) {
+      return (
+        '<section class="archive">' +
+          '<h2 class="sec-head"><span class="material-symbols-outlined">history</span>Archivio eventi passati</h2>' +
+          '<div class="cards" id="archiveCards">' + initialPast.map((e) => eventCard(e)).join('') + '</div>' +
+          '<button type="button" class="link load-archive" id="loadArchive">Carica eventi passati</button>' +
+        '</section>'
+      );
+    }
+    function wireArchive(archiveUrl, alreadyShown, filterFn) {
+      const btn = document.getElementById('loadArchive');
+      if (!btn) return;
+      const keep = filterFn || (() => true);
+      const shown = new Set(alreadyShown.map((e) => e.path));
+      const emptyIfNeeded = () => {
+        const cont = document.getElementById('archiveCards');
+        if (cont && !cont.children.length) cont.innerHTML = '<div class="empty">Nessun evento passato in questa collezione.</div>';
+      };
+      btn.addEventListener('click', () => {
+        btn.disabled = true; btn.textContent = 'Carico…';
+        fetch(CONTENT_BASE + archiveUrl, { headers: { Accept: 'application/json' } })
+          .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(); })
+          .then((list) => {
+            const arr = (Array.isArray(list) ? list : []).filter((e) => keep(e) && !shown.has(e.path)).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+            document.getElementById('archiveCards').insertAdjacentHTML('beforeend', arr.map((e) => eventCard(e)).join(''));
+            btn.remove();
+            emptyIfNeeded();
+          })
+          .catch(() => { btn.remove(); emptyIfNeeded(); });
+      });
+    }
+
+    // Membri della collection: percorsi dichiarati nel subEvent della serie UNITI a chi ha
+    // collection===id nell'indice. Robusto anche se le occorrenze non hanno superEvent (e
+    // quindi non esiste by-collection): la fonte è il subEvent curato dalla serie.
+    const memberPaths = new Set();
+    const toEventsPath = (r) => { const s = String((r && (r['@id'] || r)) || '').trim(); return s && !s.includes('/') ? 'events/' + s : s; };
+    const isMember = (e) => memberPaths.has(String(e.path)) || e.collection === collId;
+
+    // Carica gli eventi dall'indice globale (prossimi subito, archivio on demand), filtrati sui membri.
+    function loadEvents() {
+      fetch(CONTENT_BASE + 'events/_index/events.json', { headers: { Accept: 'application/json' } })
+        .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(r.status); })
+        .then((list) => {
+          const all = (Array.isArray(list) ? list : (Array.isArray(list && list.events) ? list.events : [])).filter(isMember);
+          const now = Date.now();
+          const endOf = (e) => new Date(e.endDate || e.startDate || 0).getTime();
+          const upcoming = all.filter((e) => endOf(e) >= now).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+          const boundaryPast = all.filter((e) => endOf(e) < now).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+          content.innerHTML =
+            section('upcoming', 'event', 'Prossimi eventi', upcoming, 'Nessun evento in programma in questa collezione.') +
+            archiveSection(boundaryPast);
+          wireArchive('events/_index/events.archive.json', boundaryPast, isMember);
+        })
+        .catch(() => {
+          content.innerHTML =
+            '<div class="empty">Indice non disponibile: apri l\'editor e usa <b>Rebuild index</b> (admin), oppure esegui <code>php ws-admin/events/rebuild-index.php</code>.</div>';
+        });
+    }
+
+
+    /* ---------- Cover + «mi interessa» della collezione ---------- */
+    const asMedia = (rel) => {
+      if (!rel) return '';
+      if (/^https?:\/\//i.test(rel)) return rel;
+      if (/^(events|places|organizations)\//.test(rel)) return CONTENT_BASE + rel;
+      return CONTENT_BASE + collId + '/' + rel;
+    };
+    const likeHtml = () =>
+      '<button class="like-btn" id="like-btn" type="button" title="Mi interessa" aria-pressed="false">' +
+      '<span class="material-symbols-outlined">favorite</span></button>' +
+      '<span class="like-count" id="like-count"></span>';
+
+    function mostraCover(s) {
+      const img = s.image || s.logo;
+      const rel = typeof img === 'string' ? img : (img && (img.url || img['@id']));
+      const box = document.getElementById('cover');
+      if (!box) return;
+      box.innerHTML = rel
+        ? '<div class="cover"><img src="' + esc(asMedia(rel)) + '" alt="" onerror="this.closest(\'.cover\').remove()">' +
+          '<div class="cover-foot"><span></span><span class="cover-actions">' + likeHtml() + '</span></div></div>'
+        : '<div class="like-row">' + likeHtml() + '</div>';
+      setupLike();
+    }
+
+    function paintLike(liked, n) {
+      const b = document.getElementById('like-btn'), c = document.getElementById('like-count');
+      if (!b) return;
+      b.classList.toggle('on', !!liked);
+      b.setAttribute('aria-pressed', liked ? 'true' : 'false');
+      b.title = liked ? 'Non mi interessa più' : 'Mi interessa';
+      if (c) c.textContent = n > 0 ? n : '';
+    }
+
+    // Il conteggio è pubblico (file statico); per metterlo o toglierlo serve il login.
+    function setupLike() {
+      const b = document.getElementById('like-btn');
+      if (!b) return;
+      fetch(CONTENT_BASE + collId + '/likes.json', { headers: { Accept: 'application/json' } })
+        .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : null; })
+        .then((j) => paintLike(false, (j && j.count) || 0)).catch(() => {});
+      const S = window.meetooSession;
+      if (S) S.subscribe(() => S.api('status', { path: collId })
+        .then((r) => { if (r.status === 200 && r.body) paintLike(r.body.liked, r.body.likes || 0); }));
+      b.addEventListener('click', () => {
+        const S2 = window.meetooSession;
+        if (!S2 || !S2.getUser()) { alert('Accedi con Google (in alto a destra) per segnalare il tuo interesse.'); return; }
+        b.disabled = true;
+        S2.api('like', { path: collId }).then((r) => {
+          b.disabled = false;
+          if (r.status === 200 && r.body && r.body.success) paintLike(r.body.liked, r.body.likes);
+        });
+      });
+    }
+
+    // Intestazione della collection dal suo index.json (documento "evento" piatto).
+    fetch(CONTENT_BASE + collId + '/index.json', { headers: { Accept: 'application/json' } })
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((doc) => {
+        const s = doc && doc.mainEntity ? doc.mainEntity : doc;
+        document.getElementById('collName').textContent = s.name || collId;
+        document.title = (s.name || collId) + ' — Collezione';
+        if (s.description) document.getElementById('collDesc').innerHTML = s.description; // rich-text XHTML
+        // Cover della collezione: stessa forma della pagina evento (16:9, sfumatura,
+        // cuore). L immagine può essere un percorso dalla radice, uno relativo alla
+        // cartella della collezione o un URL esterno.
+        mostraCover(s);
+
+        // Breadcrumb (header): organizzatore (ancestor) › collezione (corrente).
+        const org = Array.isArray(s.organizer) ? s.organizer[0] : s.organizer;
+        const orgRef = org && (org['@id'] || org);
+        const crumbs = [];
+        if (typeof orgRef === 'string' && orgRef) {
+          const key = orgRef.split('/').pop();
+          crumbs.push({ label: (org && org.name) || key, href: 'organizer.html?org=' + encodeURIComponent(key) + BASE_Q, title: 'Vai all\'organizzatore' });
+        }
+        crumbs.push({ label: s.name || collId, current: true });
+        if (window.Meetoo) Meetoo.setBreadcrumb(crumbs);
+        // Membri dichiarati nel subEvent della serie.
+        (Array.isArray(s.subEvent) ? s.subEvent : []).forEach((sub) => { const p = toEventsPath(sub && sub['@id'] ? sub['@id'] : sub); if (p) memberPaths.add(p); });
+        loadEvents();
+      })
+      .catch(() => { document.getElementById('collName').textContent = collId; if (window.Meetoo) Meetoo.setBreadcrumb([{ label: collId, current: true }]); loadEvents(); });
+  })();
+  </script>
+</body>
+</html>

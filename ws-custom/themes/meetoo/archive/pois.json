@@ -1,0 +1,56 @@
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Punti di Interesse Lungomare Ostia",
+  "description": "Principali luoghi di interesse turistico, monumenti e attrazioni sul lungomare di Ostia.",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "item": {
+        "@type": "TouristAttraction",
+        "identifier": "porto-turistico",
+        "name": "Porto Turistico di Roma",
+        "tipo": "infrastruttura",
+        "descrizione": "Moderno porto turistico con passeggiata pedonale, ristoranti, eventi e servizi nautici.",
+        "url": "https://www.google.com/maps/search/?api=1&query=Porto+Turistico+di+Roma+Ostia"
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "item": {
+        "@type": "TouristAttraction",
+        "identifier": "borghetto-pescatori",
+        "name": "Borghetto dei Pescatori",
+        "tipo": "borgo storico",
+        "descrizione": "Caratteristico e storico insediamento di pescatori, famoso per le sue tradizioni e sagre.",
+        "url": "https://www.google.com/maps/search/?api=1&query=Borghetto+dei+Pescatori+Ostia"
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "item": {
+        "@type": "TouristAttraction",
+        "identifier": "pontile-ostia",
+        "name": "Il Pontile (Piazza dei Ravennati)",
+        "tipo": "monumento",
+        "descrizione": "Il celebre pontile che si protende nel mare, cuore della passeggiata centrale di Ostia.",
+        "url": "https://www.google.com/maps/search/?api=1&query=Pontile+di+Ostia+Piazza+dei+Ravennati"
+      }
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "item": {
+        "@type": "TouristAttraction",
+        "identifier": "rotonda-zodiaco",
+        "name": "Rotonda dello Zodiaco",
+        "tipo": "piazza",
+        "descrizione": "La storica e ampia piazza circolare affacciata sul mare nella zona di Levante.",
+        "url": "https://www.google.com/maps/search/?api=1&query=Rotonda+dello+Zodiaco+Ostia"
+      }
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+/* ===========================================================================
+ * places.css — il vocabolario delle card dei LUOGHI
+ *
+ * Non è un formato: è ciò che si dice di un luogo. La tipologia (classificazione
+ * del Comune) con il suo colore, il voto, il gestore precedente, la foto con i
+ * crediti, le attività ospitate. Il FORMATO — quadrato, tondo, in riga — lo
+ * decide la pagina: qui non ci sono misure legate a un impianto particolare.
+ *
+ * Lo caricano le pagine che mostrano luoghi, DOPO meetoo.css (da cui eredita
+ * token e componenti comuni: .card, .card-act, .badge, .description).
+ *
+ * Le misure sono in `em`: chi usa queste classi decide il font-size e tutto
+ * scala con lui. È così che le stesse regole servono una card larga mezzo
+ * schermo e una card quadrata proporzionale alla propria larghezza (`cqw`).
+ * =========================================================================== */
+
+/* --- Tipologia della spiaggia (additionalType = classificazione del Comune) ---
+   I colori sono la legenda del lungomare, ma valgono ovunque si mostri lo stesso
+   dato: stessa tipologia, stesso colore, su qualunque pagina. */
+.tip-libera { background: #1b5e20; color: #c8e6c9; }
+.tip-attrezzata { background: #00695c; color: #b2dfdb; }
+.tip-concessione { background: #e65100; color: #ffe0b2; }
+.tip-riservato { background: #37474f; color: #cfd8dc; }
+.tip-dog { background: #4e342e; color: #d7ccc8; }
+/* Non classificato (o non è una spiaggia): neutro, mai inventare una tipologia. */
+.cat-neutral { background: rgba(245,166,35,.14); color: var(--color-line-track); }
+
+/* --- Gestore precedente (managementHistory) ---
+   Il nome storico di uno stabilimento: chi cerca «Kursaal» deve ritrovarlo anche
+   quando la concessione è cambiata. */
+.ex-operator {
+  font-size: .85em; font-style: italic; color: var(--color-hint); margin: 0 0 .8em;
+}
+.ex-operator b { color: var(--color1); font-weight: 700; font-style: normal; }
+.ex-operator span { color: var(--color-hint); }
+
+/* --- Voto (aggregateRating) --- pastiglia piena, stella inclusa.
+   Spesso è un link alle recensioni: niente sottolineatura, la pastiglia è già
+   un bersaglio evidente. */
+.rating-pill {
+  display: inline-flex; align-items: center; gap: .3em; text-decoration: none;
+  background: var(--color-link); color: var(--color-text-neg);
+  border-radius: 999px; font-weight: 700; font-size: .85em;
+  padding: .35em .85em; white-space: nowrap;
+}
+.rating-pill .material-symbols-outlined {
+  font-size: 1.1em; color: inherit;
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* --- Foto del luogo, con i crediti in sovrimpressione ---
+   Il rapporto 16:10 è quello delle foto dei luoghi (le COPERTINE degli eventi
+   sono 16:9 e stanno in meetoo.css: sono un'altra cosa). */
+.place-media {
+  position: relative; width: auto; aspect-ratio: 16 / 10; overflow: hidden;
+  background: linear-gradient(165deg, #91daee, #bfe6f2 55%, #ebe9e5);
+}
+.place-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Velatura in fondo alla foto: serve SOLO a leggere i crediti, ed è sempre scura
+   (anche in tema chiaro) perché il testo sopra è bianco. */
+.place-media .media-bar {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: flex-end; padding: 0 .8em .4em; min-height: 2.6em;
+  background: linear-gradient(to top, rgba(0,0,0,.6), transparent);
+}
+.place-media .credit {
+  font-size: .7em; line-height: 1.15; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.9); pointer-events: none;
+  max-width: 100%; overflow: hidden;
+}
+
+/* --- Il BLOCCO di un luogo -------------------------------------------------
+ * Ogni luogo — che sia il contenitore o una delle attività che ospita — si
+ * racconta con le stesse due righe:
+ *   1. nome, e a destra il pulsante che apre i dettagli;
+ *   2. le caratteristiche essenziali che lo distinguono (tipologia, tipo,
+ *      cucina, dotazioni), che scorrono in orizzontale, e a destra il voto.
+ * La riga 2 SCORRE ma il voto no: resta ancorato, perché è il dato che si
+ * cerca per primo e non deve sparire scorrendo.
+ */
+.place-row { display: flex; align-items: center; gap: .6em; }
+.place-name {
+  font-size: 1em; font-weight: 600; color: var(--color1);
+  flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.place-row > .card-act { flex: 0 0 auto; }
+
+.place-traits { display: flex; align-items: center; gap: .6em; }
+.place-traits:empty { display: none; }
+/* La striscia che scorre: niente barra di scorrimento visibile, e lo slancio
+   non trascina con sé la pagina sotto (overscroll-behavior). */
+.traits-scroll {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: .8em;
+  overflow-x: auto; flex-wrap: nowrap;
+  scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain;
+}
+.traits-scroll::-webkit-scrollbar { display: none; }
+.place-traits > .rating-pill { flex: 0 0 auto; }
+
+/* Tipo e tipologia: parole, non icone — sono pochi caratteri e contano.
+   Nel colore dei titoli, così si distinguono dalle dotazioni che seguono.
+   (Quando il lavoro redazionale avrà una legenda di icone chiare, queste
+   parole potranno diventare simboli: cambia il contenuto, non la struttura.) */
+.trait-type {
+  flex: 0 0 auto; white-space: nowrap;
+  font-size: .85em; font-weight: 700; color: var(--color-heading);
+}
+/* Dotazioni: icone, con il nome nel titolo. */
+.trait-amen { flex: 0 0 auto; font-size: 1.05em; color: var(--color-hint); cursor: default; }
+
+/* --- Attività ospitate (containsPlace) ---
+   Un luogo che ne contiene altri: il lungomare contiene gli stabilimenti, una
+   piazza i suoi locali. Riga compatta con nome, voto, info e dotazioni. */
+.contained { margin-top: .8em; }
+.contained-in {
+  display: flex; align-items: center; gap: .5em;
+  font-size: .85em; color: var(--color-hint); margin-bottom: .5em;
+}
+.contained-in .material-symbols-outlined { font-size: 1.05em; }
+
+/* Le attività ospitate sono blocchi come il contenitore: stesse due righe.
+   Nessun rientro — si distinguono con una linea sottile e una fascia di fondo
+   a righe alterne, presa dalla palette esistente. La fascia esce fino ai bordi
+   della card (--place-bleed) e il padding la ricompensa, così il testo resta
+   allineato a tutto il resto. */
+.contained > .place-block {
+  border-top: 1px solid var(--color-line-track);
+  padding: .5em var(--place-bleed, 0);
+  margin: 0 calc(-1 * var(--place-bleed, 0px));
+}
+.contained > .place-block:nth-of-type(odd) { background: var(--color-background-section2); }

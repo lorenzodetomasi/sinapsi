@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metropolitana del Mare - Ostia (Aggiornamento 2026)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #003366;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 40px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 2px #333;
+        }
+        #subway-map-container {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+        svg {
+            display: block;
+            margin: 0 auto;
+        }
+        .node-label {
+            font-size: 13px;
+            font-weight: 600;
+            fill: #2c3e50;
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+        .node-label:hover {
+            fill: #3498db;
+            text-decoration: underline;
+        }
+        .status-label {
+            font-size: 11px;
+            font-weight: bold;
+            fill: #e74c3c;
+        }
+        .info-label {
+            font-size: 11px;
+            fill: #7f8c8d;
+            font-style: italic;
+        }
+        .distance-label {
+            font-size: 10px;
+            fill: #95a5a6;
+        }
+        .line-path {
+            stroke: #bdc3c7;
+            stroke-width: 6;
+            stroke-linecap: round;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>La Metropolitana del Mare</h1>
+    <p class="subtitle">Mappa aggiornata delle concessioni 2026 da Ostia Porto a Torvaianica</p>
+
+    <div class="legend">
+        <div class="legend-item"><div class="dot" style="background-color: #3498db;"></div> Stabilimento Attivo</div>
+        <div class="legend-item"><div class="dot" style="background-color: #e74c3c;"></div> Chiuso / Sequestrato</div>
+        <div class="legend-item"><div class="dot" style="background-color: #2ecc71;"></div> Spiaggia Libera</div>
+        <div class="legend-item"><div class="dot" style="background-color: #e67e22;"></div> Cancelli / Capocotta</div>
+    </div>
+
+    <div id="subway-map-container"></div>
+</div>
+
+<script>
+// JSON AGGIORNATO E INTEGRATO CON AMANUSA E ISOLA FIORITA
+const ostiaData = [
+  { "id": "porto", "nome": "Porto Turistico di Roma", "tipo": "libero", "stato": "aperto", "distanza_m": 0, "link": "https://goo.gl/maps/porto_ostia" },
+  { "id": "sp-idroscalo", "nome": "Spiaggia Libera Idroscalo", "tipo": "libero", "stato": "aperto", "distanza_m": 350, "link": "https://goo.gl/maps/idroscalo" },
+  { "id": "bettina", "nome": "Bagni Bettina", "tipo": "privato", "stato": "aperto", "note": "Dissequestro temporaneo", "distanza_m": 850, "link": "https://goo.gl/maps/bettina" },
+  { "id": "vittoria", "nome": "Bagni Vittoria", "tipo": "privato", "stato": "sequestrato", "note": "Sequestrato (Maggio 2026)", "distanza_m": 200, "link": "https://goo.gl/maps/vittoria" },
+  { "id": "arcobaleno", "nome": "Arcobaleno Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://goo.gl/maps/arcobaleno" },
+  { "id": "bahia", "nome": "Bahia", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/bahia" },
+  { "id": "conchiglia", "nome": "La Conchiglia", "tipo": "privato", "stato": "aperto", "distanza_m": 300, "link": "https://goo.gl/maps/conchiglia" },
+  { "id": "urbinati", "nome": "Urbinati", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/urbinati" },
+  { "id": "salus", "nome": "Salus Beach", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 50, "link": "https://goo.gl/maps/salus" },
+  { "id": "edone", "nome": "Ristorante Edonè", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione/gestione", "distanza_m": 50, "link": "https://goo.gl/maps/edone" },
+  { "id": "elmi", "nome": "Stabilimento Elmi", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 60, "link": "https://goo.gl/maps/elmi" },
+  { "id": "battistini", "nome": "Battistini", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 450, "link": "https://goo.gl/maps/battistini" },
+  { "id": "lido-beach", "nome": "Lido Beach / Ristorante Lido", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 50, "link": "https://goo.gl/maps/lido" },
+  { "id": "kellys", "nome": "Kelly's", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 350, "link": "https://goo.gl/maps/kellys" },
+  { "id": "marechiaro", "nome": "Marechiaro", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/marechiaro" },
+  { "id": "miramar", "nome": "El Miramar", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 50, "link": "https://goo.gl/maps/miramar" },
+  { "id": "capanno", "nome": "Il Capanno", "tipo": "privato", "stato": "aperto", "distanza_m": 400, "link": "https://goo.gl/maps/capanno" },
+  { "id": "delfino", "nome": "Il Delfino", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/delfino" },
+  { "id": "belsito", "nome": "Belsito", "tipo": "privato", "stato": "aperto", "distanza_m": 250, "link": "https://goo.gl/maps/belsito" },
+  { "id": "vecchia-pineta", "nome": "La Vecchia Pineta", "tipo": "privato", "stato": "sequestrato", "note": "Sequestrato (Maggio 2026)", "distanza_m": 300, "link": "https://goo.gl/maps/vecchiapineta" },
+  { "id": "plinius", "nome": "Plinius", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://goo.gl/maps/plinius" },
+  { "id": "tibidabo", "nome": "Tibidabo Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://goo.gl/maps/tibidabo" },
+  { "id": "le-dune", "nome": "Le Dune", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/ledune" },
+  { "id": "mami", "nome": "Mami", "tipo": "privato", "stato": "aperto", "distanza_m": 100, "link": "https://goo.gl/maps/mami" },
+  { "id": "lega-navale", "nome": "Lega Navale Italiana", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/leganavale" },
+  { "id": "nuova-pineta", "nome": "Nuova Pineta / Pinetina", "tipo": "privato", "stato": "aperto", "distanza_m": 400, "link": "https://goo.gl/maps/nuovapineta" },
+  { "id": "cotral", "nome": "Dopolavoro Co.Tra.L.", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://goo.gl/maps/cotral" },
+  { "id": "kursaal", "nome": "Kursaal Village", "tipo": "privato", "stato": "aperto", "distanza_m": 250, "link": "https://goo.gl/maps/kursaal" },
+  { "id": "sporting", "nome": "Sporting Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://goo.gl/maps/sporting" },
+  { "id": "venezia", "nome": "Il Venezia", "tipo": "privato", "stato": "aperto", "note": "Parziale sequestro cabine", "distanza_m": 50, "link": "https://goo.gl/maps/venezia" },
+  
+  // INIZIO TRATTO COLOMBO - OASI
+  { "id": "rotonda", "nome": "La Rotonda", "tipo": "privato", "stato": "aperto", "distanza_m": 300, "link": "https://goo.gl/maps/rotonda" },
+  { "id": "gambrinus", "nome": "Gambrinus", "tipo": "privato", "stato": "aperto", "distanza_m": 100, "link": "https://goo.gl/maps/gambrinus" },
+  { "id": "orsa-maggiore", "nome": "Orsa Maggiore", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 150, "link": "https://goo.gl/maps/orsamaggiore" },
+  { "id": "atac", "nome": "Dopolavoro ATAC", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/atac" },
+  { "id": "mariposa", "nome": "La Mariposa", "tipo": "privato", "stato": "sequestrato", "note": "Sotto controllo autorità", "distanza_m": 100, "link": "https://goo.gl/maps/mariposa" },
+  { "id": "zenith", "nome": "Zenith", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/zenith" },
+  { "id": "nauticlub", "nome": "Nauticlub Castelfusano", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/nauticlub" },
+  { "id": "vlounge", "nome": "V Lounge Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://goo.gl/maps/vlounge" },
+  { "id": "le-palme", "nome": "Le Palme / La Caletta", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/lepalme" },
+  { "id": "casetta", "nome": "La Casetta / Shilling", "tipo": "privato", "stato": "aperto", "distanza_m": 100, "link": "https://goo.gl/maps/casetta" },
+  { "id": "bussola", "nome": "La Bussola", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/bussola" },
+  { "id": "bicocca", "nome": "La Bicocca", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 50, "link": "https://goo.gl/maps/bicocca" },
+  { "id": "laspiaggia", "nome": "La Spiaggia", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 550, "link": "https://goo.gl/maps/laspiaggia" },
+  { "id": "vela", "nome": "La Vela", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 50, "link": "https://goo.gl/maps/vela" },
+  { "id": "amanusa", "nome": "L'Amanusa Beach", "tipo": "libero", "stato": "aperto", "note": "Nuova concessione / Ex Spiaggia Libera", "distanza_m": 150, "link": "https://goo.gl/maps/amanusa" },
+  { "id": "bungalow", "nome": "Bungalow Beach", "tipo": "privato", "stato": "sequestrato", "note": "Chiuso per sequestro", "distanza_m": 100, "link": "https://goo.gl/maps/bungalow" },
+  { "id": "corsaro", "nome": "Il Corsaro", "tipo": "privato", "stato": "chiuso", "note": "Chiuso", "distanza_m": 100, "link": "https://goo.gl/maps/corsaro" },
+  { "id": "isola-fiorita", "nome": "Isola Fiorita (CRAL)", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/isolafiorita" },
+  { "id": "gabbiano", "nome": "Il Gabbiano", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/gabbiano" },
+  { "id": "ancora", "nome": "L'Ancora", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/ancora" },
+  { "id": "guerrino", "nome": "Guerrino Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/guerrino" },
+  { "id": "bonaccia", "nome": "La Bonaccia", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/bonaccia" },
+  { "id": "if", "nome": "IF", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://goo.gl/maps/if" },
+  { "id": "capannina", "nome": "La Capannina", "tipo": "privato", "stato": "chiuso", "note": "Chiuso", "distanza_m": 50, "link": "https://goo.gl/maps/capannina" },
+  { "id": "playa", "nome": "La Playa", "tipo": "privato", "stato": "chiuso", "note": "Chiuso", "distanza_m": 150, "link": "https://goo.gl/maps/playa" },
+  { "id": "miami", "nome": "Miami", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 50, "link": "https://goo.gl/maps/miami" },
+  { "id": "marinella", "nome": "La Marinella", "tipo": "privato", "stato": "chiuso", "note": "Chiuso per abbattimento", "distanza_m": 150, "link": "https://goo.gl/maps/marinella" },
+  { "id": "finanziere", "nome": "Lido del Finanziere", "tipo": "privato", "stato": "chiuso", "note": "Chiuso", "distanza_m": 100, "link": "https://goo.gl/maps/finanziere" },
+  { "id": "oasi", "nome": "L'Oasi", "tipo": "privato", "stato": "sequestrato", "note": "Chiuso per sequestro", "distanza_m": 50, "link": "https://goo.gl/maps/oasi" },
+  // FINE TRATTO COLOMBO - OASI
+  
+  { "id": "spqr", "nome": "Spiaggia Libera SPQR", "tipo": "libero", "stato": "aperto", "distanza_m": 400, "link": "https://goo.gl/maps/spqr" },
+  { "id": "cancello-1", "nome": "Primo Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 800, "link": "https://goo.gl/maps/cancello1" },
+  { "id": "cancello-2", "nome": "Secondo Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 600, "link": "https://goo.gl/maps/cancello2" },
+  { "id": "cancello-3", "nome": "Terzo Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 650, "link": "https://goo.gl/maps/cancello3" },
+  { "id": "cancello-4", "nome": "Quarto Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 700, "link": "https://goo.gl/maps/cancello4" },
+  { "id": "cancello-5", "nome": "Quinto Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 700, "link": "https://goo.gl/maps/cancello5" },
+  { "id": "cancello-6", "nome": "Sesto Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 800, "link": "https://goo.gl/maps/cancello6" },
+  { "id": "cancello-7", "nome": "Settimo Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 750, "link": "https://goo.gl/maps/cancello7" },
+  { "id": "cancello-8", "nome": "Ottavo Cancello", "tipo": "cancello", "stato": "aperto", "distanza_m": 600, "link": "https://goo.gl/maps/cancello8" },
+  { "id": "capocotta", "nome": "Oasi Naturista Capocotta", "tipo": "cancello", "stato": "aperto", "distanza_m": 850, "link": "https://goo.gl/maps/capocotta" },
+  { "id": "mecs", "nome": "Mecs Village", "tipo": "cancello", "stato": "aperto", "distanza_m": 1100, "link": "https://goo.gl/maps/mecs" },
+  { "id": "tognazzi", "nome": "Villaggio Tognazzi (Confine)", "tipo": "libero", "stato": "aperto", "distanza_m": 900, "link": "https://goo.gl/maps/tognazzi" }
+];
+
+function drawSubwayMap() {
+    const container = document.getElementById('subway-map-container');
+    const svgNS = "http://www.w3.org/2000/svg";
+    
+    const nodeGap = 55; 
+    const startY = 40;
+    const svgHeight = (ostiaData.length * nodeGap) + (startY * 2);
+    const svgWidth = 650;
+    const xPosLine = 150; 
+    
+    const svg = document.createElementNS(svgNS, "svg");
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", svgHeight);
+    svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+    
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", xPosLine);
+    line.setAttribute("y1", startY);
+    line.setAttribute("x2", xPosLine);
+    line.setAttribute("y2", startY + ((ostiaData.length - 1) * nodeGap));
+    line.setAttribute("class", "line-path");
+    svg.appendChild(line);
+
+    ostiaData.forEach((stop, index) => {
+        const yPos = startY + (index * nodeGap);
+        
+        let fillColor = "#3498db"; 
+        if (stop.tipo === "libero") fillColor = "#2ecc71"; 
+        if (stop.tipo === "cancello") fillColor = "#e67e22"; 
+        
+        // Sovrascrive il colore se chiuso o sequestrato
+        if (stop.stato === "chiuso" || stop.stato === "sequestrato") fillColor = "#e74c3c";
+
+        if (index > 0) {
+            const distText = document.createElementNS(svgNS, "text");
+            distText.setAttribute("x", xPosLine - 20);
+            distText.setAttribute("y", yPos - (nodeGap / 2) + 4);
+            distText.setAttribute("text-anchor", "end");
+            distText.setAttribute("class", "distance-label");
+            distText.textContent = `+ ${stop.distanza_m} m`;
+            svg.appendChild(distText);
+        }
+
+        const circle = document.createElementNS(svgNS, "circle");
+        circle.setAttribute("cx", xPosLine);
+        circle.setAttribute("cy", yPos);
+        circle.setAttribute("r", 7);
+        circle.setAttribute("fill", fillColor);
+        circle.setAttribute("stroke", "#ffffff");
+        circle.setAttribute("stroke-width", "2");
+        circle.style.filter = "drop-shadow(0px 0px 0px 2px #333333)";
+        svg.appendChild(circle);
+
+        const text = document.createElementNS(svgNS, "text");
+        text.setAttribute("x", xPosLine + 25);
+        text.setAttribute("y", yPos + 4);
+        text.setAttribute("class", "node-label");
+        
+        // Aggiunge la label di chiuso/sequestrato se applicabile
+        if (stop.stato === "chiuso" || stop.stato === "sequestrato") {
+            text.textContent = stop.nome;
+            text.style.textDecoration = "line-through";
+            text.style.fill = "#7f8c8d";
+            
+            const statusText = document.createElementNS(svgNS, "tspan");
+            statusText.setAttribute("class", "status-label");
+            statusText.setAttribute("dx", "10");
+            statusText.textContent = `[${stop.note.toUpperCase()}]`;
+            text.appendChild(statusText);
+        } else {
+            text.textContent = stop.nome;
+            // Aggiunge note positive (nuove concessioni, subentri)
+            if (stop.note) {
+                const infoText = document.createElementNS(svgNS, "tspan");
+                infoText.setAttribute("class", "info-label");
+                infoText.setAttribute("dx", "10");
+                infoText.textContent = `— ${stop.note}`;
+                text.appendChild(infoText);
+            }
+        }
+        
+        const linkWrapper = document.createElementNS(svgNS, "a");
+        linkWrapper.setAttribute("href", stop.link);
+        linkWrapper.setAttribute("target", "_blank");
+        linkWrapper.appendChild(text);
+        
+        svg.appendChild(linkWrapper);
+    });
+
+    container.appendChild(svg);
+}
+
+window.onload = drawSubwayMap;
+</script>
+
+</body>
+</html>

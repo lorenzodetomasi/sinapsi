@@ -1,0 +1,17 @@
+@import "settings";
+.reviews {
+  [itemprop="award"] {
+    height: rem-calc(100px);
+    width: auto;
+  }
+  article {
+    &:first-child {
+      border-right: 1px solid $color1;
+      padding-right: $gutter;
+    }
+    &:last-child {
+      border-left: 1px solid $color1;
+      padding-left: $gutter;
+    }
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 24" preserveAspectRatio="none" width="200" height="24">
+  <!-- Onda tileable: mare (#91daee) sopra la cresta, trasparente sotto, filo bianco sulla cresta -->
+  <path d="M0,12 C50,3 150,21 200,12 L200,0 L0,0 Z" fill="#91daee"/>
+  <path d="M0,12 C50,3 150,21 200,12" fill="none" stroke="#fff" stroke-width="3"/>
+</svg>

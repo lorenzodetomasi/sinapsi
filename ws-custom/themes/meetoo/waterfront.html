@@ -1,0 +1,1543 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Mare Ostia - UI Proporzionale</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+  
+  <!-- Stili condivisi Meetoo (token + componenti + header), come nelle altre
+       pagine. Vanno PRIMA dello <style> di pagina: questa pagina ha classi
+       omonime (.wf-card, .badge, .crumb) con un impianto proprio, e a parità di
+       peso deve vincere la regola più specifica del lungomare. -->
+  <link rel="stylesheet" href="meetoo.css">
+  <!-- Vocabolario delle card dei luoghi (tipologia, voto, gestore precedente,
+       foto con crediti, attività ospitate): condiviso con le altre pagine che
+       mostrano luoghi. Dopo meetoo.css, da cui eredita token e componenti. -->
+  <link rel="stylesheet" href="places.css">
+  
+  <style>
+@import url("meetoo-tokens.css");
+
+/* --- Base del carosello ---------------------------------------------------
+   meetoo.css (caricato per l'header condiviso) applica a TUTTO il sito
+   `box-sizing: border-box` e un'interlinea di base. Le card del lungomare sono
+   invece costruite in `cqw` sul modello di scatola predefinito, con l'opt-in a
+   border-box dichiarato caso per caso più sotto: con la regola comune il testo e
+   l'immagine uscivano dalla card su telefono. Sta in cima apposta — è una base,
+   e ogni regola successiva di questa pagina la sovrascrive. */
+.carousel-container, .carousel-container * { box-sizing: content-box; }
+.carousel-container { line-height: normal; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family2);
+  background-color: var(--color-background-main);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.carousel-container {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  align-items: center;
+  padding: 0 calc(50vw - var(--base-vw) * 0.5vw);
+  -webkit-overflow-scrolling: touch;
+}
+
+.carousel-container::-webkit-scrollbar { display: none; }
+.carousel-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+.station-wrapper {
+  scroll-snap-align: center;
+  display: grid;
+  /* 9 righe: card mare · tab · line-waterfront · gap(4) · metro-line · gap(4) · line-waterfrontStreet · tab · card strada.
+     Le righe-tab sono ESTERNE alla card (il quadrato sta tra la card e la line). */
+  grid-template-rows:
+    var(--card-slot) var(--line-h) var(--line-h) 4px var(--line-h) 4px var(--line-h) var(--line-h) var(--card-slot);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.3s;
+}
+
+.wf-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+.slot-top { align-items: flex-end; padding-bottom: 0; }   /* card a filo del tab sotto */
+.slot-bottom { align-items: flex-start; padding-top: 0; }  /* card a filo del tab sopra */
+
+/* Binari esterni (line-waterfront / line-waterfrontStreet): banda #8ba5c2 con
+   il containedInPlace della fermata + tab connettore verso la card. */
+.rail { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 12px; box-sizing: border-box; background: var(--rail); }
+.rail .zone { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; font-size: var(--font-size-small); color: var(--rail-text); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* Righe-tab ESTERNE: stanno tra la card e la line, senza sovrapporsi alla card.
+   Quadrato --line-h nel colore del bordo card + triangolo equilatero bianco verso la card. */
+.tab-row { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; }
+.tab-row .tab { width: var(--line-h); height: var(--line-h); background: var(--tab, #8ba5c2); display: none; align-items: center; justify-content: center; }
+.station-wrapper.active .tab-row .tab { display: flex; }   /* solo per la card al centro */
+/* triangolo equilatero: base 16px → altezza ≈14px */
+.tab-row .tab::after { content: ''; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; }
+.tab-top .tab::after { border-bottom: 14px solid #fff; }   /* punta su (verso la card mare) */
+.tab-bottom .tab::after { border-top: 14px solid #fff; }   /* punta giù (verso la card strada) */
+
+/* Metro-line (binario centrale): banda blu-grigia con stop ai bordi, distanze e indirizzo */
+.line-track { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--metro); }
+/* Punto (stop) unico, centrato = al centro della card sopra/sotto */
+.line-track .node { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; border-radius: 50%; background: #fff; z-index: 1; }
+/* Distanza: posizionata (via JS) a metà strada tra due fermate */
+.line-dist { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: var(--font-size-small); color: #fff; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.line-address { display: inline-flex; align-items: center; gap: 6px; max-width: 74%; background: light-dark(#ffffff, #e6e0e9); color: #2e3192; border-radius: 999px; padding: 5px 14px; font-size: var(--font-size-small); font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.25); opacity: 0; transition: opacity .2s; z-index: 2; }
+.line-address .material-symbols-outlined { font-size: 1.05em; color: #c1272d; }
+.line-address .addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.station-wrapper.active .line-address { opacity: 1; }   /* indirizzo solo sulla card a fuoco */
+
+/* --- Capolinea (City) agli estremi: card centrata verticalmente + freccia sulla metro-line --- */
+.terminus-wrapper { scroll-snap-align: center; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: calc(var(--base-vw) * 0.9vw); padding: 0 12px; }
+/* stub metro-line a 50% (allineato alle stazioni), dalla card verso l'interno */
+.terminus-wrapper::before { content: ''; position: absolute; top: 50%; transform: translateY(-50%); height: var(--line-h); background: var(--metro); z-index: 0; }
+.term-start::before { left: 50%; right: -1px; }   /* verso destra (stazioni) */
+.term-end::before { right: 50%; left: -1px; }      /* verso sinistra (stazioni) */
+.wf-terminus { --cat: var(--metro); position: relative; z-index: 2; width: min(calc(var(--base-vw) * 0.72vw), 190px); background: var(--card-background); border: 2px solid var(--cat); box-shadow: 0 2px 6px rgba(0,0,0,.16); }
+.terminus-head { display: flex; align-items: stretch; border-bottom: 2px solid var(--cat); }
+.terminus-head .t-label { flex: 1 1 auto; min-width: 0; align-self: center; padding: 0 8px 0 10px; font-family: 'Roboto Slab', Georgia, serif; font-weight: 500; color: var(--cat); font-size: var(--font-size-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terminus-head .t-sq { flex: 0 0 auto; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--cat); color: #fff; }
+.terminus-head .t-sq .material-symbols-outlined { font-size: 1.3em; }
+.wf-terminus .t-name { margin: 0; padding: 8px 10px; font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--color1); font-size: var(--font-size); line-height: 1.2; }
+/* freccia bianca sulla metro-line, punta verso le stazioni */
+/* marker del confine: quadrato alto quanto la metro-line (estensione della linea),
+   TRA la card e la metro-line, senza sovrapporsi alla card. Icona stop centrata. */
+.term-marker { position: absolute; top: 50%; transform: translateY(-50%); width: var(--line-h); height: var(--line-h); display: flex; align-items: center; justify-content: center; background: var(--metro); color: #fff; z-index: 3; }
+.term-marker .material-symbols-outlined { font-size: 26px; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.term-start .term-marker { right: calc(-1 * var(--line-h) - 2px); }   /* a filo del bordo destro card (compensa il border 2px) */
+.term-end .term-marker { left: calc(-1 * var(--line-h) - 2px); }      /* a filo del bordo sinistro card */
+
+
+
+.wf-card {
+  width: 100%;
+  min-width: 0;
+  /* La card non eredita lo scarto-distanza del wrapper: resta a larghezza "base"
+     e centrata (lo scarto è solo spazio/linea). Evita card enormi e non centrate. */
+  max-width: calc(var(--base-vw, 33.33) * 1vw);
+  max-height: 100%;              /* non superare lo slot: il contenuto extra scorre */
+  background-color: var(--card-background);
+  border-radius: 20px;
+  padding: 18px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.92);
+  opacity: 1;   /* le card non-attive NON sono trasparenti: solo rimpicciolite */
+  position: relative;
+}
+/* Contenuto scrollabile verticalmente quando è troppo (es. molti containsPlace) */
+.wf-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+/* I figli non si comprimono verticalmente: il contenuto extra scorre (niente chip schiacciate) */
+.wf-scroll > * { flex-shrink: 0; }
+
+/* Indicatore di scroll verticale: sfumatura + chevron, visibile SOLO quando c'è
+   contenuto nascosto sotto (classe .scroll-more sul contenitore .wf-card / .modal). */
+.scroll-hint {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 36px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;
+  background: linear-gradient(to bottom, transparent, var(--card-background) 78%);
+  color: var(--color-line-track);
+  pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+  z-index: 3;
+  border-radius: 0 0 18px 18px;
+}
+.scroll-more .scroll-hint { opacity: 1; }
+.scroll-hint .material-symbols-outlined { font-size: 1.4em; animation: scrollhint-bob 1.5s ease-in-out infinite; }
+@keyframes scrollhint-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+.wf-scroll::-webkit-scrollbar { width: 6px; }
+.wf-scroll::-webkit-scrollbar-thumb { background: var(--color-hint); border-radius: 3px; }
+
+
+.additional-type {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+
+.address {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+.spacer { flex: 1; }
+
+.actions { display: flex; flex-direction: row; gap: 8px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: var(--button-padding);
+  border-radius: var(--button-border-radius);
+  font-weight: 600;
+  font-size: var(--button-font-size);
+  transition: transform 0.1s, background-color 0.2s;
+  background-color: var(--button-background); color: var(--button-color);
+}
+.btn:hover { background-color: #0d1629; }
+.btn:active { transform: scale(0.97); }
+
+.station-wrapper.active .wf-card {
+  transform: scale(1);
+  opacity: 1;
+  border-color: var(--card-focus-border-color);
+  box-shadow: 0 8px 24px rgba(20, 33, 61, 0.15);
+}
+
+/* Struttura invisibile dei triangoli per il focus */
+.slot-top .wf-card::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-style: solid;
+  border-color: var(--card-border-color) transparent transparent transparent;
+  transition: border-color 0.3s;
+}
+
+.slot-bottom .wf-card::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 8px 8px 8px;
+  border-style: solid;
+  border-color: var(--card-border-color);
+  transition: border-color 0.3s;
+}
+
+/* Triangoli colorati quando la card è attiva (selezionata) */
+.station-wrapper.active .slot-top .wf-card::after {
+  border-color: var(--card-focus-border-color) transparent transparent transparent;
+}
+
+.station-wrapper.active .slot-bottom .wf-card::after {
+  border-color: transparent transparent var(--card-focus-border-color) transparent;
+}
+
+/* L'icona come componente sta in meetoo.css. Qui cambia solo la MISURA: sul
+   lungomare le icone si misurano sul testo che accompagnano (--icon-size), e la
+   regola vale SOLO nelle aree di questa pagina — l'header e il menu condivisi
+   devono restare uguali a tutte le altre pagine. */
+.carousel-container .material-symbols-outlined,
+.modal-overlay .material-symbols-outlined,
+#app-loader .material-symbols-outlined,
+.fab .material-symbols-outlined { font-size: var(--icon-size); }
+/* Icone "piene" dove serve (stelle rating, cuore preferito attivo) */
+
+#loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; color: var(--md-sys-color-on-surface-variant); }
+
+/* Categoria (tipo tradotto + additionalType) sopra al nome della spiaggia */
+/* Chip UNICA: tipo (icona) + tipologia (Comune). Colorata per tipologia. */
+
+/* Stato della fermata (badge in alto): libera / concessione / non accessibile / chiuso */
+.beach-status { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-size-small); font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 8px; align-self: flex-start; }
+.beach-status .material-symbols-outlined { font-size: 1.05em; }
+.status-chiusa { background: #b71c1c; color: #ffcdd2; }
+
+/* Stabilimento precedente (managementHistory) */
+
+/* --- Attività contenute nella spiaggia (containsPlace) --- */
+/* Luogo che contiene la fermata (containedInPlace), prima dell'indirizzo */
+/* Rating del contenitore + Maps, prima della linea dei containsPlace */
+.container-actions { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; }
+/* Il blocco di un luogo (.place-block) sta in places.css: qui solo la misura
+   della fascia, che esce fino ai bordi della card come fa l'immagine. */
+.wf-card .contained { --place-bleed: 4.5cqw; }
+.wf-card .place-block { display: flex; flex-direction: column; gap: 1cqw; }
+/* Il nome di un'attività ospitata scala con la card come tutto il resto, ma
+   entro limiti LEGGIBILI: mai sotto 0.8rem su una card stretta, mai sopra 1rem
+   su una larga. È l'unico dato che si deve poter leggere sempre. */
+.wf-card .place-block .place-name { font-size: clamp(.8rem, 5.5cqw, 1rem); }
+/* Servizi: strip a tutta larghezza card, scrollabile orizzontalmente se molti */
+
+/* --- Scheda dettagli in sovrimpressione (modale) --- */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card-background); color: var(--color-text); border-radius: 20px; padding: 0; max-width: 440px; width: 100%; max-height: 82vh; overflow: hidden; position: relative; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+.modal-scroll { padding: 26px; max-height: 82vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.modal-scroll::-webkit-scrollbar { width: 6px; }
+.modal-scroll::-webkit-scrollbar-thumb { background: var(--color-hint); border-radius: 3px; }
+.modal-close { position: absolute; top: 10px; right: 10px; border: none; background: transparent; color: var(--color-text); cursor: pointer; padding: 4px; }
+.modal-title { margin: 0 28px 8px 0; font-size: 1.3em; line-height: 1.25; }
+.modal-sub { font-size: var(--font-size-small); font-weight: 600; margin-bottom: 14px; color: var(--color-text); }
+/* Il voto nella modale è la stessa pastiglia delle card (.rating-pill): qui si
+   decide solo DOVE sta, non com'è fatto. Prima aveva un aspetto suo — pillola
+   ambra con angoli diversi — ed era l'unico posto in cui il voto si vedeva in
+   un altro modo. */
+.modal-rating { display: block; margin-bottom: 16px; }
+.modal-desc { line-height: 1.55; margin: 16px 0; }
+.modal-line { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-small); margin: 12px 0; }
+.modal-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+.modal-loading { padding: 24px; text-align: center; color: var(--color-hint); }
+.modal-services { margin-top: 22px; }
+.modal-services-label { font-size: var(--font-size-small); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-hint); margin-bottom: 10px; }
+.modal-amenities { display: flex; flex-wrap: wrap; gap: 12px 22px; }
+.amenity { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-size-small); color: var(--color-text); }
+.amenity .material-symbols-outlined { font-size: 1.15em; }
+.amenity.amenity-no { color: var(--color-hint); text-decoration: line-through; }
+.amenity.amenity-no .material-symbols-outlined { color: var(--color-hint); }
+
+/* La chip non deve sforare su card strette */
+
+/* L'header (2 righe, logo, breadcrumb, Impostazioni, login) è quello CONDIVISO:
+   markup e comportamento stanno in header.js, gli stili .mt-* in meetoo.css.
+   Qui restano solo .icon-btn e .crumb, che servono ancora dentro le modali e
+   nelle card del lungomare. */
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: none; border-radius: 999px; background: transparent; color: var(--color-link); cursor: pointer; }
+.icon-btn:hover { background: rgba(128,128,128,.14); }
+.crumb { white-space: nowrap; text-decoration: none; }
+
+/* Legenda (contenuti nella modale) */
+.legend-list { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.legend-row { display: flex; align-items: flex-start; gap: 12px; }
+.legend-swatch { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
+.legend-swatch .material-symbols-outlined { font-size: 1.15em; }
+.legend-row b { display: block; font-size: var(--font-size); margin-bottom: 2px; }
+.legend-row > div > span { display: block; font-size: var(--font-size-small); color: var(--color-hint); line-height: 1.4; }
+.legend-note { margin-top: 20px; font-size: var(--font-size-small); color: var(--color-hint); font-style: italic; }
+
+/* --- Mobile: card con margine, così si vedono le distanze verso i vicini --- */
+@media (max-width: 768px) {
+  :root { --base-vw: 66; }
+}
+@media (max-width: 560px) {
+  .icon-btn { width: 34px; height: 34px; }
+}
+@media (max-width: 480px) {
+  :root { --base-vw: 66; }
+  .modal { max-width: 92vw; }
+}
+
+/* ============================================================
+   REDESIGN CARD (mockup): testata colorata + immagine footer.
+   I colori arrivano dal const CATEGORY/STATUS via la variabile --cat.
+   ============================================================ */
+/* Sfondo carosello: layer ONDA (tila su repeat-x e resta fissa al viewport, non
+   scorre coi wrapper) + gradiente mare→arenile→verde. L'onda è a metà del top-card. */
+.carousel-container {
+  background-image:
+    var(--wave-url),
+    linear-gradient(to bottom,
+      var(--color-sea) 0, var(--color-sea) calc(var(--card-slot) / 2),
+      var(--color-sand) calc(var(--card-slot) / 2), var(--color-sand) calc(var(--card-slot) + 2.5 * var(--line-h) + 4px),
+      var(--color-park) calc(var(--card-slot) + 2.5 * var(--line-h) + 4px), var(--color-park) 100%);
+  background-repeat: repeat-x, no-repeat;
+  background-position: left calc(var(--card-slot) / 2 - 15px), left top;
+  background-size: auto 30px, auto;
+  position: relative;
+}
+/* Onda scura: auto se sistema dark (salvo forzatura light), o forzata via data-theme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --wave-url: url('media-sources/meetoo-wave-band-dark.svg'); }
+}
+:root[data-theme="dark"] { --wave-url: url('media-sources/meetoo-wave-band-dark.svg'); }
+:root[data-theme="light"] { --wave-url: url('media-sources/meetoo-wave-band.svg'); }
+/* Toggle tema manuale: forza color-scheme (i token light-dark() seguono) */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* Card quadrata ad ANGOLI VIVI (mockup). I corpi/spaziature scalano col container
+   (cqw = 1% della larghezza card) per restare proporzionali a qualsiasi dimensione. */
+.wf-card {
+  container-type: inline-size;
+  padding: 0;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  max-width: min(calc(var(--base-vw, 33.33) * 1vw), calc(var(--card-slot, 260px) - 16px));
+  max-height: calc(var(--card-slot, 260px) - 16px);
+  border: 2px solid var(--cat, transparent);
+  border-radius: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.14);
+}
+.station-wrapper.active .wf-card {
+  border-color: var(--cat, var(--card-focus-border-color));
+  box-shadow: 0 10px 26px rgba(20, 33, 61, .22);
+}
+.slot-top .wf-card::after,
+.slot-bottom .wf-card::after { display: none; }
+
+/* HEADER FISSO = barra categoria (label + quadrato) + Name. Il resto scrolla. */
+.wf-head { flex: 0 0 auto; height: 13%; display: flex; align-items: stretch; padding: 0; border-bottom: 2px solid var(--cat); background: var(--card-background); }
+.wf-head-label { flex: 1 1 auto; min-width: 0; align-self: center; padding: 0 2cqw 0 4cqw; font-family: 'Roboto Slab', Georgia, serif; font-weight: 500; color: var(--cat); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 5cqw; line-height: 1.05; }
+.wf-head-icon { flex: 0 0 auto; aspect-ratio: 1 / 1; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--cat); color: #fff; border-radius: 0; }
+.wf-head-icon .material-symbols-outlined { font-size: 8cqw; }
+/* Riga 1 del contenitore: il nome e, a destra, il pulsante dei dettagli. Resta
+   FISSA insieme alla barra colorata — è l'identità della card; scorre solo ciò
+   che viene dopo. */
+.wf-card .wf-name { flex: 0 0 auto; margin: 0; padding: 3cqw 4.5cqw 2.5cqw; background: var(--card-background); }
+.wf-card .wf-name .place-name { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--color1); font-size: 6cqw; line-height: 1.15; }
+
+/* CORPO SCROLLABILE = tutto il resto (descrizione, azioni, attività, immagine) */
+.wf-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+.wf-scroll { padding: 0 4.5cqw; }
+.wf-card .ex-operator { font-size: 4.2cqw; font-style: normal; line-height: 1.3; margin: 0 0 1.5cqw; }
+.wf-card .ex-operator b { color: var(--color1); font-weight: 700; }
+.wf-card .ex-operator span { color: var(--color-hint); }
+/* La descrizione condivisa (meetoo.css) qui non si tronca a due righe: la card
+   scorre, quindi il testo si legge tutto. */
+.wf-card .description { display: block; font-size: 4.2cqw; line-height: 1.4; margin: 0 0 1.5cqw; overflow: visible; -webkit-line-clamp: none; }
+
+/* Riga azione: sottotipo (blu) a sx, poi Info/Mappa (icona) + rating */
+/* La riga azione e i suoi pulsanti sono i COMPONENTI CONDIVISI (.card-actions,
+   .card-act, .rating-pill): qui cambia solo la MISURA, che in una card quadrata
+   è proporzionale alla larghezza (cqw) invece che al testo. Le regole comuni
+   sono scritte in `em` apposta: basta dare loro un font-size. */
+.wf-card .card-actions {
+  display: flex; align-items: center; align-self: stretch; flex-wrap: nowrap;
+  gap: 2.5cqw; padding: 1cqw 0 2.5cqw;
+  /* Nelle pagine di gestione la striscia azioni prende un terzo della card
+     (`flex: 0 0 33.333%`), perché lì la card è in riga. Qui la card è a colonna:
+     quel terzo diventerebbe ALTEZZA, e la riga si gonfiava da 30 a 67px. */
+  flex: 0 0 auto;
+}
+.wf-card .card-actions .subtype { color: var(--color-link); flex: 0 0 auto; display: inline-flex; }
+.wf-card .card-actions .subtype .material-symbols-outlined { font-size: 8cqw; }
+.wf-card .card-actions .spacer { flex: 1 1 auto; }
+.wf-card .card-act { font-size: 4.6cqw; border: none; font-weight: 700; }
+/* Le attività ospitate sono contenuto della card: si misurano come il resto, in
+   proporzione alla sua larghezza. Restavano a 16px fissi, e dentro una card
+   piccola risultavano più grandi del titolo. */
+.wf-card .contained { font-size: 4.2cqw; }
+.wf-card .rating-pill { font-size: 4.6cqw; }
+
+/* Immagine del luogo (places.css): qui esce dai margini del testo e va a filo
+   dei bordi della card — il rientro negativo pareggia il padding di .wf-scroll. */
+.wf-card .place-media { margin: 2cqw -4.5cqw 0; }
+.wf-card .place-media .credit { font-size: 2.8cqw; }
+/* La velatura per i crediti sta in places.css: qui solo la misura in cqw. */
+.wf-card .media-bar { padding: 0 3cqw 1.5cqw; min-height: 11cqw; }
+
+/* PIEDE FISSO card: share + like SEMPRE visibili + freccia scroll, su scrim NERO
+   (light e dark) così le icone bianche si leggono su qualunque contenuto sottostante. */
+.wf-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; min-height: 15cqw; padding: 0 3cqw 1.5cqw; display: flex; align-items: flex-end; justify-content: flex-end; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,.2) 55%, transparent); pointer-events: none; }
+.wf-foot .card-social { pointer-events: auto; display: flex; gap: 3cqw; }
+.card-social button { border: none; background: transparent; color: #fff; cursor: pointer; padding: 0; line-height: 0; filter: drop-shadow(0 1px 3px rgba(0,0,0,.85)); }
+.card-social .material-symbols-outlined { font-size: 7cqw; }
+.card-social .fav.on { color: #ff5a7a; }
+.wf-foot .scroll-arrow { position: absolute; left: 50%; bottom: 1.5cqw; transform: translateX(-50%); color: #fff; opacity: 0; transition: opacity .2s; }
+.wf-foot .scroll-arrow .material-symbols-outlined { font-size: 6.5cqw; animation: scrollhint-bob 1.5s ease-in-out infinite; }
+.scroll-more .wf-foot .scroll-arrow { opacity: 1; }
+
+.scroll-hint { border-radius: 0; }
+
+/* --- FAB "richiedi inserimento" (add_location) --- */
+.fab { position: fixed; right: 20px; bottom: 20px; z-index: 900; width: 56px; height: 56px; border-radius: 50%; border: none; background: #c1272d; color: #fff; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.3); display: inline-flex; align-items: center; justify-content: center; }
+.fab .material-symbols-outlined { font-size: 1.8em; }
+.fab:hover { filter: brightness(1.05); }
+
+/* --- Form contatti (dentro la modale) --- */
+.contact-intro { line-height: 1.55; margin: 10px 0 4px; }
+.contact-highlight { background: rgba(245,166,35,.14); border-radius: 10px; padding: 10px 12px; margin: 12px 0 18px; font-size: var(--font-size-small); color: var(--color-text); }
+.contact-form { display: flex; flex-direction: column; gap: 12px; }
+.contact-form label { display: flex; flex-direction: column; gap: 5px; font-size: var(--font-size-small); font-weight: 600; color: var(--color-text); }
+.contact-form input, .contact-form select, .contact-form textarea { font: inherit; font-size: var(--font-size); padding: 9px 11px; border: 1px solid var(--color-hint); border-radius: 10px; background: var(--card-background); color: var(--color-text); }
+.contact-form textarea { resize: vertical; min-height: 74px; }
+.contact-submit { margin-top: 6px; align-self: flex-start; }
+
+/* --- Impostazioni: toggle tema (Auto/Chiaro/Scuro) --- */
+.settings-group { margin-top: 18px; }
+.settings-label { font-size: var(--font-size-small); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-hint); margin-bottom: 10px; }
+
+/* --- Loader iniziale (coprente finché la linea non è pronta) --- */
+/* Copre la pagina sotto l'header condiviso: due righe alte --mt-h, la misura
+   che usa meetoo.css — non più il --line-h dell'header disegnato qui. */
+#app-loader { position: fixed; inset: calc(2 * var(--mt-h)) 0 0 0; z-index: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--color-background-main); color: var(--color-hint); transition: opacity .35s; }
+#app-loader.hide { opacity: 0; pointer-events: none; }
+#app-loader .spin { font-size: 46px; color: #406abf; animation: spin 1.1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Toast "Link copiato" --- */
+  </style>
+</head>
+<body>
+
+  <div id="app-loader"><span class="material-symbols-outlined spin">sync</span><div>Caricamento del lungomare…</div></div>
+
+
+  <div class="carousel-container" id="carousel">
+    <div id="loader">
+      <span class="material-symbols-outlined" style="font-size: 40px; animation: spin 2s linear infinite;">sync</span>
+      Caricamento in corso...
+    </div>
+  </div>
+
+  <div id="place-modal" class="modal-overlay" onclick="if(event.target===this) closePlaceModal()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" title="Chiudi" onclick="closePlaceModal()"><span class="material-symbols-outlined">close</span></button>
+      <div class="modal-scroll"><div id="place-modal-body"></div></div>
+      <div class="scroll-hint"><span class="material-symbols-outlined">keyboard_arrow_down</span></div>
+    </div>
+  </div>
+
+  <div id="legend-modal" class="modal-overlay" onclick="if(event.target===this) closeLegend()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" title="Chiudi" onclick="closeLegend()"><span class="material-symbols-outlined">close</span></button>
+      <div class="modal-scroll">
+      <h2 class="modal-title">Tipologie di spiaggia</h2>
+      <div class="modal-sub" style="text-transform:none">Classificazione di Roma Capitale</div>
+      <div class="legend-list" id="legend-list">
+        <div class="legend-row"><span class="legend-swatch tip-libera"><span class="material-symbols-outlined">beach_access</span></span><div><strong>Spiaggia libera</strong><span>Arenile accessibile gratuitamente a tutti, senza servizi aggiuntivi.</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-attrezzata"><span class="material-symbols-outlined">deck</span></span><div><strong>Spiaggia libera attrezzata</strong><span>Accesso gratuito con servizi facoltativi a pagamento (chioschi, docce, wc, spogliatoi).</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-concessione"><span class="material-symbols-outlined">holiday_village</span></span><div><strong>Stabilimento balneare (in concessione)</strong><span>Arenile dato in concessione a privati o associazioni, con servizi a pagamento.</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-riservato"><span class="material-symbols-outlined">block</span></span><div><strong>Accesso riservato</strong><span>Riservata a categorie specifiche (forze armate, circoli privati).</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-dog"><span class="material-symbols-outlined">pets</span></span><div><strong>Spiaggia per cani — BauBeach</strong><span>Aree, libere o attrezzate, dove è consentito l'accesso ai cani.</span></div></div>
+        <div class="legend-row"><span class="legend-swatch status-chiusa"><span class="material-symbols-outlined">dangerous</span></span><div><strong>Area chiusa</strong><span> per questioni legali o altri motivi.</span></div></div>
+      </div>
+      <div class="legend-note">La classificazione può variare di anno in anno in base alle ordinanze del Comune di Roma.</div>
+      </div>
+      <div class="scroll-hint"><span class="material-symbols-outlined">keyboard_arrow_down</span></div>
+    </div>
+  </div>
+
+  <!-- FAB: richiedi l'inserimento di un place / attività -->
+  <button id="add-place-fab" class="fab" title="Richiedi l'inserimento di un luogo o attività"><span class="material-symbols-outlined">add_location</span></button>
+
+  <!-- Modale: servizio (a pagamento) di gestione della presenza sulle mappe + form contatti -->
+  <div id="contact-modal" class="modal-overlay" onclick="if(event.target===this) closeContact()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" title="Chiudi" onclick="closeContact()"><span class="material-symbols-outlined">close</span></button>
+      <div class="modal-scroll">
+        <h2 class="modal-title">Sei sulla mappa di MeeToo?</h2>
+        <p class="contact-intro">Gestiamo per te la presenza del tuo stabilimento, locale o punto d'interesse sulle mappe online: scheda curata, foto, servizi, orari e recensioni sempre aggiornati.</p>
+        <div class="contact-highlight"><span class="material-symbols-outlined" style="vertical-align:middle;color:var(--color1)">verified</span> Servizio di gestione <b>a pagamento</b>. Compila il form: ti ricontattano i super-admin di MeeToo.</div>
+        <form class="contact-form" id="contact-form" onsubmit="return submitContact(event)">
+          <label>Nome e cognome
+            <input type="text" name="nome" required autocomplete="name">
+          </label>
+          <label>Email
+            <input type="email" name="email" required autocomplete="email">
+          </label>
+          <label>Cosa vuoi inserire
+            <select name="tipo">
+              <option value="Stabilimento / luogo (place)">Stabilimento / luogo</option>
+              <option value="Attività / esercizio (localbusiness)">Attività / esercizio commerciale</option>
+            </select>
+          </label>
+          <label>Nome del luogo / attività
+            <input type="text" name="luogo" required>
+          </label>
+          <label>Messaggio (facoltativo)
+            <textarea name="messaggio" placeholder="Indirizzo, sito web, social, orari…"></textarea>
+          </label>
+          <button type="submit" class="btn contact-submit"><span class="material-symbols-outlined">mail</span> Invia richiesta</button>
+        </form>
+      </div>
+      <div class="scroll-hint"><span class="material-symbols-outlined">keyboard_arrow_down</span></div>
+    </div>
+  </div>
+
+  <!-- Toast (es. "Link copiato") -->
+
+  <!-- Header condiviso (logo, hamburger, Impostazioni, login, breadcrumb):
+       stesso file di tutte le altre pagine. Deve precedere lo script di pagina. -->
+  <script src="cards.js"></script>
+  <script src="header.js"></script>
+
+  <script>
+    // Riga 2: a sinistra dove sei, a destra il contesto territoriale — come index.html.
+    // La legenda è un'azione DI QUESTA pagina: entra nello slot azioni dell'header
+    // condiviso invece di essere un pulsante disegnato a parte.
+    (function intestazione() {
+      if (!window.Meetoo) { setTimeout(intestazione, 100); return; }
+      Meetoo.setBreadcrumb(
+        [{ label: 'Lido di Ostia', href: 'index.html', title: 'Vai a: Lido di Ostia' },
+         { label: 'Il lungomare', current: true }],
+        [{ label: 'Roma' }, { label: 'Municipio 10' }]
+      );
+      Meetoo.setActions(
+        '<button class="mt-icon-btn" id="legend-btn" title="Legenda delle tipologie di spiaggia">' +
+        '<span class="material-symbols-outlined">list_alt</span></button>'
+      );
+      document.getElementById('legend-btn').addEventListener('click', apriLegenda);
+    })();
+
+    const carousel = document.getElementById('carousel');
+    const jsonPath = '../../contents/meetoo/it_IT/places/lido-di-ostia/lungomare/index.json';
+
+    // --- Dati dei place contenuti (containsPlace) con cache condivisa ---
+    // Il JSON del lungomare tiene solo il rimando {@type,@id,name}; i dati ricchi
+    // (rating, tipo, descrizione, sito) stanno nell'index.json di ciascun place.
+    const PLACE_BASE = '../../contents/meetoo/it_IT/';
+    const placeCache = new Map(); // pid -> Promise<doc|null> (deduplica le richieste)
+
+    function fetchPlace(pid) {
+      if (placeCache.has(pid)) return placeCache.get(pid);
+      const p = fetch(`${PLACE_BASE}${pid}/index.json`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null);
+      placeCache.set(pid, p);
+      return p;
+    }
+
+    // Cartella dell'index.json del lungomare (per risolvere image relative del lungomare).
+    const LUNGOMARE_DIR = jsonPath.replace(/[^/]*$/, '');
+    // Dati completi delle fermate (per la modale spiaggia e la risoluzione immagini).
+    const beachData = {};
+    // Destinatario del form "richiedi inserimento": super-admin da users.xml
+    // (100449157359400577039 → persons/…/email). Sostituibile con un alias.
+    const CONTACT_EMAIL = 'lorenzo.detomasi@gmail.com';
+
+    // ===== Palette/legenda come FONTE UNICA (colore + icona + etichetta) =====
+    // Il colore del bordo/testata card e la Legenda derivano da qui.
+    const CATEGORY = {
+      stabilimento: { label: 'Stabilimento in concessione', color: '#2e3192', icon: 'holiday_village', desc: 'Arenile dato in concessione a privati o associazioni, con servizi a pagamento.' },
+      attrezzata:   { label: 'Spiaggia libera attrezzata',  color: '#2e3192', icon: 'deck',            desc: 'Accesso gratuito con servizi facoltativi a pagamento (chioschi, docce, wc).' },
+      libera:       { label: 'Spiaggia libera',             color: '#406abf', icon: 'beach_access',    desc: 'Arenile accessibile gratuitamente a tutti, senza servizi aggiuntivi.' },
+      riservata:    { label: 'Accesso riservato',           color: '#8ba5c2', icon: 'block',           desc: 'Riservata a categorie specifiche (forze armate, circoli privati).' },
+      dog:          { label: 'Spiaggia per cani — BauBeach', color: '#00a99d', icon: 'pets',           desc: 'Aree, libere o attrezzate, dove è consentito l’accesso ai cani.' },
+      monumento:    { label: 'Monumento storico',           color: '#00a99d', icon: 'photo_camera',    desc: 'Punto d’interesse storico o panoramico del litorale.' },
+      pedonale:     { label: 'Area pedonale',               color: '#00a99d', icon: 'directions_walk', desc: 'Piazze e passeggiate esclusivamente pedonali.' },
+      struttura:    { label: 'Struttura pubblica',          color: '#406abf', icon: 'account_balance', desc: 'Pontili, approdi e altre strutture pubbliche.' },
+    };
+    const STATUS = {
+      chiusa: { label: 'Area chiusa', color: '#c1272d', icon: 'dangerous', desc: 'Chiusa per questioni legali o altri motivi.' },
+    };
+
+    // Categoria della fermata → chiave di CATEGORY (da additionalType + @type).
+    function categoryOf(item) {
+      const at = Array.isArray(item.additionalType) ? item.additionalType : (item.additionalType ? [item.additionalType] : []);
+      const ty = Array.isArray(item['@type']) ? item['@type'].join(' ') : (item['@type'] || '');
+      const s = (at.join(' ') + ' ' + ty).toLowerCase();
+      if (s.includes('cani') || s.includes('baubeach')) return 'dog';
+      if (s.includes('riservat')) return 'riservata';
+      if (s.includes('concessione') || s.includes('stabilimento')) return 'stabilimento';
+      if (s.includes('attrezzat')) return 'attrezzata';
+      if (s.includes('monument') || s.includes('storic') || s.includes('touristattraction') || s.includes('panoram')) return 'monumento';
+      if (s.includes('pedonale') || s.includes('piazza')) return 'pedonale';
+      if (s.includes('civicstructure') || s.includes('pontile') || s.includes('struttura') || s.includes('boatterminal')) return 'struttura';
+      if (s.includes('libera') || s.includes('beach')) return 'libera';
+      return '';
+    }
+
+    // Escape HTML e risoluzione path immagine (assoluto → invariato; relativo → base+rel).
+    function escHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+    function resolveImg(base, rel) { if (!rel) return ''; return /^(https?:)?\/\/|^\//.test(rel) ? rel : base + rel; }
+    // Item-riferimento: @id verso una cartella place/organization (senza traversal).
+    function isPlaceRef(id) { return /^(places\/[^/]+\/[^/]+|organizations\/[^/]+)$/.test(String(id || '')); }
+
+    // ===== Preferiti (heart): persistono in localStorage (nessun account) =====
+    // Preferiti, condivisione e messaggi passeggeri: li fa cards.js, per tutte le
+    // card del sito (stessa chiave 'meetoo:favorites' di prima: i preferiti già
+    // segnati restano). Qui si usano solo i suoi due ingressi.
+    const toast = (msg, ico) => Meetoo.toast(msg, ico);
+
+    // ===== FAB "richiedi inserimento" → form mailto (nessun invio automatico) =====
+    function openContact() { document.getElementById('contact-modal').classList.add('open'); }
+    function closeContact() { document.getElementById('contact-modal').classList.remove('open'); }
+    function submitContact(e) {
+      e.preventDefault();
+      const f = e.target, g = n => (f.elements[n] && f.elements[n].value || '').trim();
+      const subject = `[MeeToo] Richiesta inserimento: ${g('luogo') || '(senza nome)'}`;
+      const body = `Nome: ${g('nome')}\nEmail: ${g('email')}\nTipo: ${g('tipo')}\nLuogo/Attività: ${g('luogo')}\n\nMessaggio:\n${g('messaggio')}\n`;
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      closeContact(); toast('Apertura del client email…');
+      return false;
+    }
+
+    // Aspetto (chiaro/scuro/automatico): lo gestisce l'header condiviso, che usa
+    // la stessa chiave 'meetoo:theme' — la preferenza già salvata resta valida.
+
+    // ===== Legenda generata dal const (fonte unica) =====
+    function buildLegend() {
+      const el = document.getElementById('legend-list'); if (!el) return;
+      const row = d => `<div class="legend-row"><span class="legend-swatch" style="background:${d.color};color:#fff"><span class="material-symbols-outlined">${d.icon}</span></span><div><strong>${escHtml(d.label)}</strong><span>${escHtml(d.desc || '')}</span></div></div>`;
+      // Solo tipologie di SPIAGGIA (niente monumento/pedonale/struttura); "Accesso riservato" appena sopra "Area chiusa".
+      const LEGEND_TIPI = ['stabilimento', 'attrezzata', 'libera', 'dog', 'riservata'];
+      el.innerHTML = LEGEND_TIPI.map(k => row(CATEGORY[k])).join('') + row(STATUS.chiusa);
+    }
+
+    // ===== Modale della SPIAGGIA (fermata): dettaglio esteso + Mappa =====
+    function renderBeachModal(item) {
+      const at = Array.isArray(item.additionalType) ? item.additionalType : (item.additionalType ? [item.additionalType] : []);
+      const cats = [...translateTypes(item['@type']), ...at].filter(Boolean);
+      const name = item.name || at[0] || 'Luogo';
+      const rv = item.aggregateRating && item.aggregateRating.ratingValue;
+      const rc = item.aggregateRating && (item.aggregateRating.reviewCount || item.aggregateRating.ratingCount);
+      const a = item.address || {};
+      const addr = a.streetAddress ? (a.streetAddress + (a.addressLocality ? ', ' + a.addressLocality : '')) : '';
+      const cip = item.containedInPlace; const zone = (cip && cip.name) || '';
+      const ex = previousOperatorName(item['meetoo:managementHistory']);
+      const desc = item.description || '';
+      const url = item.url || '';
+      const maps = item['meetoo:_mapsLink'] || '';
+      const amen = Array.isArray(item.amenityFeature) ? item.amenityFeature.filter(x => x && x.name) : [];
+      let h = `<h2 class="modal-title">${escHtml(name)}</h2>`;
+      if (cats.length) h += `<div class="modal-sub">${escHtml(cats.join(' · '))}</div>`;
+      // Il voto rimanda alle recensioni, come nelle card: stessa pastiglia, stesso link.
+      const votoHtml = pastigliaVoto(item, { esteso: true });
+      if (votoHtml) h += `<div class="modal-rating">${votoHtml}</div>`;
+      if (ex) h += `<p class="ex-operator" style="margin:6px 0 0"><b>Nuova gestione</b> <span>ex ${escHtml(ex)}</span></p>`;
+      if (desc) h += `<p class="modal-desc">${desc}</p>`;
+      if (zone) h += `<div class="modal-line"><span class="material-symbols-outlined">location_city</span> ${escHtml(zone)}</div>`;
+      if (addr) h += `<div class="modal-line"><span class="material-symbols-outlined">place</span> ${escHtml(addr)}</div>`;
+      if (amen.length) {
+        const items = amen.map(x => { const no = x.value === false; return `<span class="amenity${no ? ' amenity-no' : ''}"><span class="material-symbols-outlined">${iconForAmenity(x.name)}</span>${escHtml(x.name)}</span>`; }).join('');
+        h += `<div class="modal-services"><div class="modal-services-label">Servizi</div><div class="modal-amenities">${items}</div></div>`;
+      }
+      const acts = [];
+      if (maps) acts.push(`<a class="btn" href="${maps}" target="_blank" rel="noopener"><span class="material-symbols-outlined">map</span> Mappa</a>`);
+      if (url) acts.push(`<a class="btn" href="${escHtml(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined">public</span> Sito</a>`);
+      if (acts.length) h += `<div class="modal-actions">${acts.join('')}</div>`;
+      return h;
+    }
+    function openBeachModal(id) {
+      const item = beachData[id];
+      if (!item) { openPlaceModal(id); return; }
+      const modal = document.getElementById('place-modal');
+      document.getElementById('place-modal-body').innerHTML = renderBeachModal(item);
+      modal.classList.add('open');
+      requestAnimationFrame(() => updateScrollHint(document.querySelector('#place-modal .modal-scroll')));
+    }
+
+    // Risolve/carica l'immagine della card (image lungomare → satelliteView place → 1ª attività).
+    function fillMedia(mediaEl) {
+      const id = mediaEl.dataset.mediaId;
+      if (!id || mediaEl.dataset.filled) return;
+      mediaEl.dataset.filled = '1';
+      const item = beachData[id]; if (!item) return;
+      const setImg = (src, credit) => {
+        if (!src) return;
+        const img = new Image();
+        img.onload = () => {
+          mediaEl.insertBefore(img, mediaEl.firstChild);
+          const c = mediaEl.querySelector('.credit');
+          if (c && credit) c.textContent = credit;
+          updateScrollHint(mediaEl.closest('.wf-scroll'));
+        };
+        img.src = src;
+      };
+      if (item.image) { setImg(resolveImg(LUNGOMARE_DIR, item.image), item['meetoo:imageCredit'] || ''); return; }
+      const pid = item['@id'];
+      if (pid && isPlaceRef(pid)) {
+        fetchPlace(pid).then(doc => {
+          const pe = doc && (doc.mainEntity || doc);
+          if (pe && (pe['meetoo:satelliteView'] || pe.image)) {
+            setImg(resolveImg(PLACE_BASE + pid + '/', pe['meetoo:satelliteView'] || pe.image), pe['meetoo:satelliteCredit'] || '');
+            return;
+          }
+          const cp = item.containsPlace, first = Array.isArray(cp) ? cp[0] : cp, fid = first && first['@id'];
+          if (fid) fetchPlace(fid).then(d2 => {
+            const p2 = d2 && (d2.mainEntity || d2);
+            if (p2 && (p2['meetoo:satelliteView'] || p2.image))
+              setImg(resolveImg(PLACE_BASE + fid + '/', p2['meetoo:satelliteView'] || p2.image), p2['meetoo:satelliteCredit'] || '');
+          });
+        });
+      }
+    }
+
+    // --- Traduzioni e icone (schema.org @type → IT + Material Icons) ---
+    const TYPE_LABELS = {
+      Beach: 'Spiaggia', Restaurant: 'Ristorante', Park: 'Parco', Playground: 'Area giochi',
+      BoatTerminal: 'Approdo', NGO: 'No-profit', TouristAttraction: 'Attrazione turistica',
+      CivicStructure: 'Struttura pubblica',
+      // Tipi che l'importazione da Google assegna davvero (vedi TYPE_MAP in
+      // googleMaps.js): senza etichetta finirebbero a schermo in inglese.
+      SportsClub: 'Circolo sportivo', BarOrPub: 'Bar', CafeOrCoffeeShop: 'Caffè',
+      NightClub: 'Locale notturno', Museum: 'Museo', Library: 'Biblioteca',
+      BookStore: 'Libreria', Store: 'Negozio', LodgingBusiness: 'Struttura ricettiva',
+      MovieTheater: 'Cinema', StadiumOrArena: 'Impianto sportivo', School: 'Scuola',
+      CollegeOrUniversity: 'Università', Church: 'Chiesa', PlaceOfWorship: 'Luogo di culto',
+      GovernmentBuilding: 'Edificio pubblico', CityHall: 'Municipio'
+    };
+    // Tipi generici che non mostriamo (es. LocalBusiness).
+    const HIDDEN_TYPES = new Set(['LocalBusiness', 'Place', 'Organization', 'Thing', 'ItemList']);
+
+    function translateTypes(t) {
+      const arr = Array.isArray(t) ? t : (t ? [t] : []);
+      return arr.filter(x => x && !HIDDEN_TYPES.has(x)).map(x => TYPE_LABELS[x] || x);
+    }
+
+    const RestrictedDiet = [
+      "DiabeticDiet",
+      "GlutenFreeDiet",
+      "HalalDiet",
+      "HinduDiet",
+      "KosherDiet",
+      "LowCalorieDiet",
+      "LowFatDiet",
+      "LowLactoseDiet",
+      "LowSaltDiet",
+      "VeganDiet",
+      "VegetarianDiet"
+    ];
+    const servesCuisine = [
+      "Pizza",
+      "Meat",
+      "Fish"
+    ];
+    const FoodEstablishment = [
+      "Bakery",
+      "BarOrPub",
+      "Brewery",
+      "CafeOrCoffeeShop",
+      "Distillery",
+      "FastFoodRestaurant",
+      "IceCreamShop",
+      "Restaurant",
+      "Winery"
+    ];
+    
+    // Icona Material per una categoria (tipo tradotto o additionalType, in IT).
+    function iconForCategory(label) {
+      const s = String(label).toLowerCase();
+      if (s.includes('spiaggia')) return 'beach_access';
+      if (s.includes('ristorante')) return 'restaurant';
+      if (s.includes('piscina')) return 'pool';
+      if (s.includes('parco') || s.includes('naturale') || s.includes('riserva')) return 'park';
+      if (s.includes('pontile') || s.includes('approdo') || s.includes('barche')) return 'directions_boat';
+      if (s.includes('pedonale')) return 'directions_walk';
+      if (s.includes('fontana')) return 'water_drop';
+      if (s.includes('panoramico') || s.includes('borgo') || s.includes('attrazione')) return 'photo_camera';
+      if (s.includes('ludico') || s.includes('giochi')) return 'attractions';
+      if (s.includes('formazione')) return 'school';
+      if (s.includes('associazione') || s.includes('no-profit')) return 'volunteer_activism';
+      if (s.includes('struttura pubblica')) return 'account_balance';
+      return '';
+    }
+
+    // Icona Material per un servizio (amenityFeature, nome in IT).
+    function iconForAmenity(name) {
+      const s = String(name).toLowerCase();
+      if (s.includes('parcheggio')) return 'local_parking';
+      if (s.includes('bagn')) return 'wc';
+      if (s.includes('bambin')) return 'child_friendly';
+      if (s.includes('gruppi')) return 'groups';
+      if (s.includes('contactless')) return 'contactless';
+      if (s.includes('carte') || s.includes('credito') || s.includes('debito') || s.includes('pagament')) return 'credit_card';
+      if (s.includes('wi-fi') || s.includes('wifi')) return 'wifi';
+      if (s.includes('cani') || s.includes('animal')) return 'pets';
+      if (s.includes('asporto')) return 'takeout_dining';
+      if (s.includes('consumo')) return 'restaurant';
+      if (s.includes('prenot')) return 'event_available';
+      if (s.includes('colazione')) return 'free_breakfast';
+      if (s.includes('pranzo')) return 'lunch_dining';
+      if (s.includes('cena')) return 'dinner_dining';
+      if (s.includes('caff')) return 'local_cafe';
+      if (s.includes('birra')) return 'sports_bar';
+      if (s.includes('vino')) return 'wine_bar';
+      if (s.includes('cocktail')) return 'local_bar';
+      if (s.includes('dolci')) return 'cake';
+      if (s.includes('aperto')) return 'deck';
+      return 'check_circle';
+    }
+
+    // A. TIPO (schema.org @type) → icona. Beach = ombrellone.
+    /* Dotazioni che non distinguono un'attività da un'altra: come si paga lo fanno
+     * quasi tutti allo stesso modo (carte e contactless sono le tre voci più
+     * frequenti dell'intero lungomare). Restano nel dettaglio, non nella riga
+     * essenziale, che deve dire che cosa rende QUESTO posto diverso.
+     * Elenco esplicito e non un'euristica: «Parcheggio a pagamento» contiene la
+     * parola pagamento ma è una dotazione vera. */
+    const AMENITIES_PAGAMENTO = new Set(['Carte di credito', 'Carte di debito', 'Pagamento contactless', 'Contanti', 'Buoni pasto']);
+    const amenitiesCaratterizzanti = (lista) =>
+      (Array.isArray(lista) ? lista : []).filter(x => x && x.name && x.value !== false && !AMENITIES_PAGAMENTO.has(x.name));
+
+    /* Le parole che distinguono il luogo, in ordine di forza:
+     * la tipologia del Comune (additionalType), poi il tipo schema.org tradotto,
+     * poi la cucina servita. I tipi generici (LocalBusiness, Place…) restano fuori:
+     * «Attività locale» non distingue nulla. Quando non resta niente da dire la
+     * riga non compare — ed è il segnale che a quel luogo mancano i dati. */
+    function paroleDelLuogo(e) {
+      const out = [];
+      const add = Array.isArray(e.additionalType) ? e.additionalType : (e.additionalType ? [e.additionalType] : []);
+      add.filter(Boolean).forEach(x => out.push(String(x)));
+      const tipi = (Array.isArray(e['@type']) ? e['@type'] : (e['@type'] ? [e['@type']] : []))
+        .filter(x => x && !HIDDEN_TYPES.has(x))
+        .map(x => TYPE_LABELS[x])            // senza etichetta italiana non si mostra
+        .filter(x => x && !out.includes(x));
+      // «Attività locale» (LocalBusiness) entra solo come ultima risorsa.
+      out.push(...tipi);
+      const cucina = Array.isArray(e.servesCuisine) ? e.servesCuisine : (e.servesCuisine ? [e.servesCuisine] : []);
+      cucina.filter(Boolean).forEach(x => out.push(String(x)));
+      return out;
+    }
+
+    /* Riga 2 di un luogo: parole + icone delle dotazioni, che scorrono; il voto
+     * resta fuori dallo scorrimento, ancorato a destra. `parole: false` per il
+     * contenitore, che tipo e tipologia li ha già scritti nella barra colorata. */
+    /* Una riga che non ha niente da dire non si mostra: meglio lo spazio bianco
+     * di una fila di segnaposto. (Ed è visibile a colpo d'occhio quali luoghi
+     * aspettano ancora i dati.) */
+    function nascondiSeVuota(riga) {
+      if (!riga) return;
+      const vuota = !riga.querySelector('.trait-type, .trait-amen, .rating-pill');
+      riga.hidden = vuota;
+    }
+
+    function rigaCaratteristiche(e, opzioni) {
+      const conParole = !opzioni || opzioni.parole !== false;
+      const parole = conParole ? paroleDelLuogo(e) : [];
+      const amen = amenitiesCaratterizzanti(e.amenityFeature);
+      return parole.map(x => `<span class="trait-type">${escHtml(x)}</span>`).join('') +
+        amen.map(x => `<span class="trait-amen material-symbols-outlined" title="${String(x.name).replace(/"/g, '&quot;')}">${iconForAmenity(x.name)}</span>`).join('');
+    }
+
+    /* Recensioni su Google. Il pulsante «scrivi una recensione» apre la scheda del
+     * luogo con la valutazione in evidenza; senza Place ID non si può puntare a
+     * una scheda precisa e si ripiega su una ricerca per nome. */
+    const URL_RECENSIONI = 'https://search.google.com/local/writereview?placeid=';
+
+    /* La pastiglia del voto, IDENTICA ovunque compaia — riga della card, blocco
+     * di un'attività, modale — e sempre cliccabile: il voto senza le recensioni
+     * è un numero che non si può verificare.
+     * `esteso` scrive «(128 recensioni)» invece di «(128)»: nelle modali c'è lo
+     * spazio, nella riga di una card no. */
+    function pastigliaVoto(e, opzioni) {
+      const r = (e && e.aggregateRating) || null;
+      const rv = r && r.ratingValue;
+      if (!rv) return '';
+      const rc = r.reviewCount || r.ratingCount || 0;
+      const conteggio = rc ? (opzioni && opzioni.esteso ? ` (${escHtml(rc)} recensioni)` : ` (${escHtml(rc)})`) : '';
+      const gid = e['meetoo:google_place_id'] || e['meetoo:googlePlaceId'] || '';
+      const href = gid
+        ? URL_RECENSIONI + encodeURIComponent(gid)
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.name || '')}`;
+      return `<a class="rating-pill" href="${href}" target="_blank" rel="noopener" title="Recensioni su Google Maps" onclick="event.stopPropagation()">` +
+        `<span class="material-symbols-outlined">star</span>${escHtml(rv)}${conteggio}</a>`;
+    }
+
+    function iconForType(t) {
+      const arr = Array.isArray(t) ? t : (t ? [t] : []);
+      const map = {
+        Beach: 'beach_access', Park: 'park', Playground: 'attractions',
+        BoatTerminal: 'directions_boat', Restaurant: 'restaurant', NGO: 'volunteer_activism',
+        TouristAttraction: 'photo_camera', CivicStructure: 'account_balance'
+      };
+      for (const x of arr) if (map[x]) return map[x];
+      return 'place';
+    }
+
+    // B. TIPOLOGIA = prima voce di additionalType (classificazione Comune),
+    // mostrata verbatim. Il colore deriva dalla categoria riconosciuta.
+    function tipoClass(label) {
+      const s = String(label).toLowerCase();
+      if (s.includes('cani')) return 'tip-dog';
+      if (s.includes('riservat')) return 'tip-riservato';
+      if (s.includes('concessione') || s.includes('stabilimento')) return 'tip-concessione';
+      if (s.includes('attrezzat')) return 'tip-attrezzata';
+      if (s.includes('libera')) return 'tip-libera';
+      return 'cat-neutral'; // non-beach o non classificato
+    }
+    // Icona Material per la tipologia della spiaggia.
+    function iconForTipologia(label) {
+      const s = String(label).toLowerCase();
+      if (s.includes('attrezzat')) return 'deck';
+      if (s.includes('concessione') || s.includes('stabilimento')) return 'holiday_village';
+      if (s.includes('riservat')) return 'block';
+      if (s.includes('cani')) return 'pets';
+      if (s.includes('libera')) return 'beach_access';
+      return ''; // non-beach
+    }
+
+    // C. STATO LEGALE: "chiusa" è l'unica eccezione mostrata come badge.
+    function legalStatusOf(item) {
+      const s = String(item['meetoo:legalStatus'] || '').toLowerCase();
+      if (s.includes('chius') || s.includes('closed')) return 'chiusa';
+      return ''; // aperta / non specificato → nessun badge
+    }
+
+    // Nome dello stabilimento precedente (meetoo:managementHistory): operatore con
+    // endDate più alta (a parità, l'ultimo elencato). Preferisce alternateName.
+    function previousOperatorName(mh) {
+      if (!Array.isArray(mh) || !mh.length) return '';
+      let best = null, bestYear = -Infinity;
+      mh.forEach(role => {
+        const ed = role && role.endDate;
+        const y = ed ? parseInt((String(ed).match(/\d{4}/) || [])[0], 10) : NaN;
+        const key = isNaN(y) ? -1 : y;
+        if (key >= bestYear) { bestYear = key; best = role; }
+      });
+      const op = best && best['meetoo:operator'];
+      return op ? (op.alternateName || op.name || '') : '';
+    }
+
+    // Indicatore di scroll: mostra l'hint sul contenitore (.wf-card/.modal) solo se
+    // c'è ancora contenuto sotto la parte visibile dello scroller.
+    function updateScrollHint(scrollEl) {
+      if (!scrollEl) return;
+      const host = scrollEl.closest('.wf-card, .modal');
+      if (!host) return;
+      const more = (scrollEl.scrollHeight - scrollEl.clientHeight - scrollEl.scrollTop) > 4;
+      host.classList.toggle('scroll-more', more);
+    }
+    // Un solo listener in cattura: intercetta lo scroll di qualsiasi scroller (lo
+    // scroll non fa bubbling, quindi serve la fase di capture).
+    document.addEventListener('scroll', (e) => {
+      const sc = e.target && e.target.closest && e.target.closest('.wf-scroll, .modal-scroll');
+      if (sc) updateScrollHint(sc);
+    }, true);
+    window.addEventListener('resize', () =>
+      document.querySelectorAll('.wf-scroll, .modal-scroll').forEach(updateScrollHint));
+
+    // Centra un wrapper con uno scrollTo CALCOLATO: scrollIntoView({inline:'center'})
+    // con scroll-snap mandatory non aggancia i wrapper stretti tra wrapper larghi.
+    function centerWrapper(w, smooth) {
+      if (!w) return;
+      const left = w.offsetLeft + w.offsetWidth / 2 - carousel.clientWidth / 2;
+      // 'instant' (non 'auto') per NON ereditare scroll-behavior:smooth del CSS:
+      // su distanze lunghe lo smooth + snap-mandatory si blocca a metà.
+      carousel.scrollTo({ left, behavior: smooth ? 'smooth' : 'instant' });
+    }
+
+    // Riempie la riga attività con il rating (le altre info sono nel modale).
+    function fillBiz(bizEl) {
+      const pid = bizEl.dataset.placeId;
+      if (!pid || bizEl.dataset.filled) return;
+      bizEl.dataset.filled = '1';
+      fetchPlace(pid).then(doc => {
+        if (!doc) return; // place non ancora creato: resta il solo nome
+        const pe = doc.mainEntity || doc;
+        // Nome mancante (era solo un @id): completalo dal place.
+        if (bizEl.dataset.nameMissing && pe.name) {
+          const nameEl = bizEl.querySelector('.place-name');
+          if (nameEl) nameEl.textContent = pe.name;
+        }
+        const ratingSlot = bizEl.querySelector('.rating-slot');
+        if (ratingSlot) ratingSlot.innerHTML = pastigliaVoto(pe);
+        // Riga essenziale: le parole che distinguono l'attività + le dotazioni
+        // che la caratterizzano (i modi di pagamento restano nel dettaglio).
+        const strip = bizEl.querySelector('.traits-scroll');
+        if (strip) strip.innerHTML = rigaCaratteristiche(pe);
+        nascondiSeVuota(bizEl.querySelector('.place-traits'));
+        updateScrollHint(bizEl.closest('.wf-scroll'));
+      });
+    }
+
+    // Carica il nome del containedInPlace (quando è solo un @id) dal place.
+    function fillContainedIn(el) {
+      const pid = el.dataset.cip;
+      if (!pid || el.dataset.filled) return;
+      el.dataset.filled = '1';
+      fetchPlace(pid).then(doc => {
+        if (!doc) return;
+        const pe = doc.mainEntity || doc;
+        const nameEl = el.querySelector('.cip-name');
+        if (nameEl && pe.name) nameEl.textContent = pe.name;
+        updateScrollHint(el.closest('.wf-scroll'));
+      });
+    }
+
+    // Carica le attività della fermata corrente e delle due adiacenti (i 3 a video).
+    function loadWindow(wrapper) {
+      [wrapper.previousElementSibling, wrapper, wrapper.nextElementSibling].forEach(w => {
+        if (w && w.classList && w.classList.contains('station-wrapper')) {
+          w.querySelectorAll('.place-block[data-place-id]').forEach(fillBiz);
+          w.querySelectorAll('[data-cip]').forEach(fillContainedIn);
+          w.querySelectorAll('.place-media[data-media-id]').forEach(fillMedia);
+        }
+      });
+    }
+
+    // Scheda dettagli in sovrimpressione per un'attività.
+    function openPlaceModal(pid) {
+      const modal = document.getElementById('place-modal');
+      const body = document.getElementById('place-modal-body');
+      body.innerHTML = '<div class="modal-loading">Caricamento…</div>';
+      modal.classList.add('open');
+      fetchPlace(pid).then(doc => {
+        const pe = doc && (doc.mainEntity || doc);
+        if (!pe) { body.innerHTML = '<div class="modal-loading">Dettagli non ancora disponibili per questo luogo.</div>'; return; }
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        const name = pe.name || pid.split('/').pop();
+        // Tipi: tradotti in IT, generici (LocalBusiness…) esclusi, più additionalType.
+        const addTypeArr = Array.isArray(pe.additionalType) ? pe.additionalType : (pe.additionalType ? [pe.additionalType] : []);
+        const cats = [...translateTypes(pe['@type']), ...addTypeArr].filter(Boolean);
+        const desc = pe.description || '';
+        const rv = pe.aggregateRating && pe.aggregateRating.ratingValue;
+        const rc = pe.aggregateRating && (pe.aggregateRating.reviewCount || pe.aggregateRating.ratingCount);
+        const a = pe.address || {};
+        const addr = a.streetAddress ? (a.streetAddress + (a.addressLocality ? ', ' + a.addressLocality : '')) : '';
+        const url = pe.url || '';
+        const amen = Array.isArray(pe.amenityFeature)
+          ? pe.amenityFeature.filter(x => x && x.name) : [];
+
+        let html = `<h2 class="modal-title">${esc(name)}</h2>`;
+        if (cats.length) html += `<div class="modal-sub">${esc(cats.join(' · '))}</div>`;
+        const votoHtml = pastigliaVoto(pe, { esteso: true });
+        if (votoHtml) html += `<div class="modal-rating">${votoHtml}</div>`;
+        if (desc) html += `<p class="modal-desc">${esc(desc)}</p>`;
+        if (addr) html += `<div class="modal-line"><span class="material-symbols-outlined">place</span> ${esc(addr)}</div>`;
+        if (amen.length) {
+          // Servizi: semplice icona + testo (niente pill/spunta); il non disponibile è barrato.
+          const items = amen.map(x => {
+            const no = x.value === false;
+            return `<span class="amenity${no ? ' amenity-no' : ''}"><span class="material-symbols-outlined">${iconForAmenity(x.name)}</span>${esc(x.name)}</span>`;
+          }).join('');
+          html += `<div class="modal-services"><div class="modal-services-label">Servizi</div><div class="modal-amenities">${items}</div></div>`;
+        }
+        if (url) {
+          html += `<div class="modal-actions"><a class="btn" href="${esc(url)}" target="_blank" rel="noopener"><span class="material-symbols-outlined">public</span> Sito</a></div>`;
+        }
+        body.innerHTML = html;
+        updateScrollHint(document.querySelector('#place-modal .modal-scroll'));
+      });
+    }
+    function closePlaceModal() { document.getElementById('place-modal').classList.remove('open'); }
+
+    // Legenda delle tipologie (header)
+    function closeLegend() { document.getElementById('legend-modal').classList.remove('open'); }
+    // La apre il pulsante messo nell'header condiviso (vedi in cima allo script).
+    function apriLegenda() {
+      document.getElementById('legend-modal').classList.add('open');
+      requestAnimationFrame(() => updateScrollHint(document.querySelector('#legend-modal .modal-scroll')));
+    }
+    buildLegend();                                    // legenda dal const (fonte unica)
+    document.getElementById('add-place-fab').addEventListener('click', openContact);
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePlaceModal(); closeLegend(); closeContact(); } });
+
+    async function initApp() {
+      try {
+        const response = await fetch(jsonPath);
+        if (!response.ok) throw new Error("Errore nel caricamento del JSON");
+        
+        const schemaData = await response.json();
+        
+        const scriptTag = document.createElement('script');
+        scriptTag.type = 'application/ld+json';
+        scriptTag.text = JSON.stringify(schemaData);
+        document.head.appendChild(scriptTag);
+
+        carousel.innerHTML = '';
+        let pontileElement = null;
+
+        // Raggruppamento degli item per distanza in metri da sud.
+        // itemListElement può stare al primo livello (vecchio formato) o dentro
+        // mainEntity (envelope ItemPage, come gli altri file del CMS).
+        const itemList = (schemaData.mainEntity && schemaData.mainEntity.itemListElement)
+                         || schemaData.itemListElement || [];
+
+        // Item-riferimento: se un item ha SOLO un @id (a una cartella place/organization)
+        // e nessun dato proprio (name), carica il place dalla relativa cartella e ne
+        // fonde i campi mancanti (i campi già presenti sull'item vincono).
+        const refItems = itemList
+          .map(el => el && el.item)
+          .filter(it => it && isPlaceRef(it['@id']) && !it.name);
+        if (refItems.length) {
+          await Promise.all(refItems.map(it => fetchPlace(it['@id']).then(doc => {
+            if (!doc) return; // cartella assente: resta il fallback dal nome dell'@id
+            const pe = doc.mainEntity || doc;
+            for (const k in pe) if (!(k in it)) it[k] = pe[k];
+          })));
+        }
+
+        // I capolinea (@type City, coastalPosition "all") NON entrano nel raggruppamento
+        // per distanza: vanno come card speciali agli estremi della linea.
+        const termini = [];
+        const groupsMap = new Map();
+        itemList.forEach((element) => {
+          const item = element.item;
+          const types = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
+          if (types.includes('City') || item['meetoo:coastalPosition'] === 'all') { termini.push(item); return; }
+          const dist = item["meetoo:m_from_border_south"] !== undefined && item["meetoo:m_from_border_south"] !== null
+                       ? item["meetoo:m_from_border_south"]
+                       : 0;
+
+          if (!groupsMap.has(dist)) {
+            groupsMap.set(dist, { distance: dist, items: [] });
+          }
+          groupsMap.get(dist).items.push(item);
+        });
+
+        const sortedGroups = Array.from(groupsMap.values()).sort((a, b) => a.distance - b.distance);
+
+        let prevDistanceGapPx = 0; // Traccia la distanza in pixel del blocco precedente per calcolare la mezzeria esatta
+
+        sortedGroups.forEach((group, index) => {
+          const currentDistance = group.distance;
+          
+          let prevDistance = index > 0 ? sortedGroups[index - 1].distance : 0;
+          let distanceDiff = Math.abs(currentDistance - prevDistance);
+
+          let diffLabel = "";
+          if (index > 0) {
+            // Rimosso il "+" e mantenuto solo il valore
+            if (distanceDiff >= 1000) diffLabel = `${(distanceDiff / 1000).toFixed(1)} km`;
+            else diffLabel = `${distanceDiff} m`;
+          }
+
+          let topCardHtml = '';
+          let bottomCardHtml = '';
+          let mainItemForId = group.items[0];
+          let groupAddr = '';                                   // → metro-line (centro)
+          let wfZoneName = '', wfZoneId = '', stZoneName = '', stZoneId = ''; // → binari esterni
+          let topCatColor = '', bottomCatColor = '';            // → colore tab connettore
+
+          group.items.forEach(item => {
+            // --- Identità della SPIAGGIA (fermata) ---
+            let displayName = item.name;
+            if (!displayName && item.address && item.address.streetAddress) displayName = item.address.streetAddress;
+            if (!displayName && item["@id"]) {
+              let idParts = item["@id"].split('/');
+              let rawName = idParts[idParts.length - 1].replace(/[-_]/g, ' ');
+              displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+            }
+            if (!displayName) displayName = "Fermata";
+
+            // ---- Categoria / colore / icona (fonte: CATEGORY / STATUS) ----
+            const cat = categoryOf(item);
+            const catDef = CATEGORY[cat] || { label: (translateTypes(item['@type'])[0] || 'Luogo'), color: '#455a64', icon: 'place' };
+            const closed = legalStatusOf(item) === 'chiusa';
+            const headColor = closed ? STATUS.chiusa.color : catDef.color;
+            const headIcon  = closed ? STATUS.chiusa.icon  : catDef.icon;
+            const addTypeArr = Array.isArray(item.additionalType) ? item.additionalType : (item.additionalType ? [item.additionalType] : []);
+            let headLabel = addTypeArr[0] || catDef.label;
+            if (/concessione/i.test(headLabel) && !/stabilimento/i.test(headLabel)) headLabel = 'Stabilimento in concessione';
+
+            // Attività contenute (containsPlace: 0, 1 o più)
+            const cpRaw = item.containsPlace;
+            const businesses = cpRaw ? (Array.isArray(cpRaw) ? cpRaw : [cpRaw]) : [];
+
+            // Nome: se manca name E non ci sono attività → "ex {gestione storica}".
+            const exName = previousOperatorName(item['meetoo:managementHistory']);
+            let title = displayName;
+            if (!item.name && businesses.length === 0 && exName) title = 'ex ' + exName;
+            // "Nuova gestione ex …" solo quando esiste un name proprio (niente doppione col titolo).
+            const exHtml = (exName && item.name) ? `<div class="ex-operator"><b>Nuova gestione</b> <span>ex ${escHtml(exName)}</span></div>` : '';
+
+            const descRaw = item.description || '';
+            const descHtml = descRaw ? `<div class="description">${descRaw}</div>` : '';
+
+            // Indirizzo (metro-line, centro) raccolto a livello di gruppo.
+            if (!groupAddr && item.address && item.address.streetAddress) groupAddr = item.address.streetAddress;
+
+            // Link a Google Maps
+            const locality = (item.address && item.address.addressLocality) || '';
+            const regionRaw = (item.address && item.address.addressRegion) || '';
+            const region = Array.isArray(regionRaw) ? regionRaw.join(' ') : regionRaw;
+            const mapsQuery = locality ? `${title}, ${locality} ${region}` : title;
+            const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery).replace(/%20/g, '+')}`;
+
+            // Rating della fermata (formato mockup: ★ 4.6 (226))
+            const rObj = item.aggregateRating || {};
+            const rv = rObj.ratingValue, rc = rObj.reviewCount || rObj.ratingCount;
+            const ratingPill = pastigliaVoto(item);
+
+            // Icona sottotipo (nel corpo, a sx della riga azione) dal @type schema.org
+            const subIcon = iconForType(item['@type']);
+
+            // Azione: Info (apre la modale, con la Mappa dentro) se c'è dettaglio extra,
+            // altrimenti Mappa diretta.
+            const hasInfo = businesses.length > 0 || closed || descRaw.length > 110
+              || (Array.isArray(item.amenityFeature) && item.amenityFeature.length)
+              || (Array.isArray(item['meetoo:managementHistory']) && item['meetoo:managementHistory'].length)
+              || !!item.url;
+            const idAttr = item['@id'] || '';
+            if (idAttr) { beachData[idAttr] = item; item['meetoo:_mapsLink'] = mapsLink; }
+            const actionBtn = hasInfo
+              ? `<button class="card-act primary icon-only" title="Dettagli" onclick="event.stopPropagation(); openBeachModal('${idAttr}')"><span class="material-symbols-outlined">info</span></button>`
+              : `<a class="card-act primary icon-only" href="${mapsLink}" title="Apri in Google Maps" target="_blank" rel="noopener" onclick="event.stopPropagation()"><span class="material-symbols-outlined">map</span></a>`;
+
+            // Righe attività (rating + info riempiti in lazyload)
+            let containedHtml = '';
+            if (businesses.length) {
+              const rows = businesses.map(b => {
+                const bid = b["@id"] || '';
+                let bname = b.name;
+                const nameMissing = !bname;
+                if (!bname && bid) { const s = bid.split('/').pop().replace(/[-_]/g, ' '); bname = s.charAt(0).toUpperCase() + s.slice(1); }
+                // Stesso blocco del contenitore: riga nome+dettagli, riga
+                // caratteristiche+voto. Le due righe si riempiono al volo quando
+                // la card entra in vista (fillBiz), leggendo il file del luogo.
+                return `
+                    <div class="place-block" data-place-id="${bid}"${nameMissing ? ' data-name-missing="1"' : ''}>
+                      <div class="place-row">
+                        <span class="place-name">${escHtml(bname || 'Attività')}</span>
+                        <button class="card-act primary icon-only" data-place-id="${bid}" title="Dettagli"
+                                onclick="event.stopPropagation(); openPlaceModal(this.dataset.placeId)">
+                          <span class="material-symbols-outlined">info</span>
+                        </button>
+                      </div>
+                      <div class="place-traits">
+                        <div class="traits-scroll"></div>
+                        <span class="rating-slot"></span>
+                      </div>
+                    </div>`;
+              }).join('');
+              // Niente separatore in testa: ogni blocco porta già il proprio filo.
+              containedHtml = `<div class="contained">${rows}</div>`;
+            }
+
+            // Footer immagine (cover/satellite in lazyload) con share + heart
+            // Immagine con SOLO il credit; share/like stanno nel piede fisso della card.
+            const mediaHtml = `
+              <div class="place-media" data-media-id="${idAttr}">
+                <div class="media-bar"><span class="credit"></span></div>
+              </div>`;
+            // Piede fisso: freccia scroll (centro, condizionale) + share/like (dx, sempre).
+            // Condividi + «mi interessa»: componente condiviso (cards.js), lo stesso
+            // delle card di eventi e luoghi. Qui vive dentro il piede fisso della
+            // card quadrata, sopra la velatura.
+            const footHtml = `
+              <div class="wf-foot">
+                <span class="scroll-arrow"><span class="material-symbols-outlined">keyboard_arrow_down</span></span>
+                ${Meetoo.social({ kind: 'place', id: idAttr, url: '#' + idAttr })}
+              </div>`;
+
+            // Header FISSO = categoria + Name; tutto il resto (azioni, attività, immagine) scorre.
+            const cardContent = `
+              <div class="wf-card"${idAttr ? ` id="${idAttr}"` : ''} style="--cat:${headColor}">
+                <div class="wf-head">
+                  <span class="wf-head-label">${escHtml(headLabel)}</span>
+                  <span class="wf-head-icon"><span class="material-symbols-outlined">${headIcon}</span></span>
+                </div>
+                <div class="place-row wf-name">
+                  <h3 class="place-name">${escHtml(title)}</h3>
+                  ${actionBtn}
+                </div>
+                <div class="wf-body">
+                  <div class="wf-scroll">
+                    <div class="place-traits"${(rigaCaratteristiche(item, { parole: false }) || ratingPill) ? '' : ' hidden'}>
+                      <div class="traits-scroll">${rigaCaratteristiche(item, { parole: false })}</div>
+                      ${ratingPill}
+                    </div>
+                    ${exHtml}
+                    ${descHtml}
+                    ${containedHtml}
+                    ${mediaHtml}
+                  </div>
+                  ${footHtml}
+                </div>
+              </div>
+            `;
+
+            const cipN = (item.containedInPlace && item.containedInPlace.name) || '';
+            const cipI = (item.containedInPlace && item.containedInPlace['@id']) || '';
+            if (item["meetoo:coastalPosition"] === "waterfrontStreet") {
+              bottomCardHtml = cardContent; bottomCatColor = headColor;
+              stZoneName = stZoneName || cipN; stZoneId = stZoneId || cipI;
+            } else {
+              topCardHtml = cardContent; topCatColor = headColor;
+              wfZoneName = wfZoneName || cipN; wfZoneId = wfZoneId || cipI;
+            }
+
+            if (item["@id"] && item["@id"].includes("pontile")) {
+              mainItemForId = item;
+            }
+          });
+
+          const baseWidth = 33.33; 
+          const distanceGapPx = distanceDiff * 0.1; 
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'station-wrapper';
+          wrapper.dataset.station = mainItemForId["@id"] || ''; // id vero è sulle card
+          // Larghezza da --base-vw (responsive: più grande su mobile) + scarto distanza.
+          wrapper.style.width = `calc(var(--base-vw, ${baseWidth}) * 1vw + ${distanceGapPx}px)`;
+
+          // Calcolo della posizione esattamente a metà tra i due nodi.
+          // Ogni nodo è situato al 50% della propria card.
+          // Spostando l'etichetta al 50% e decurtando metà della larghezza base e lo scarto proporzionale, troviamo il punto mediano geometrico perfetto.
+          // Distanza dalla fermata precedente, posizionata al MIDPOINT tra i due punti
+          // (i dot sono centrati sulle card): 50% − metà larghezza base − ¼ degli scarti.
+          let distHtml = '';
+          if (index > 0 && diffLabel) {
+            const offsetPx = (distanceGapPx + prevDistanceGapPx) / 4;
+            distHtml = `<span class="line-dist" style="left: calc(50% - var(--base-vw, 33.33) * 0.5vw - ${offsetPx}px)">${diffLabel}</span>`;
+          }
+
+          // Indirizzo al centro della metro-line (visibile solo sul focus, via CSS).
+          const addrHtml = groupAddr
+            ? `<div class="line-address" title="${escHtml(groupAddr)}"><span class="material-symbols-outlined">place</span><span class="addr">${escHtml(groupAddr)}</span></div>` : '';
+
+          // Zone dei binari (containedInPlace). DEDUP se identiche → tengo solo quella lato strada.
+          const sameZone = (!!wfZoneName && wfZoneName === stZoneName) || (!!wfZoneId && wfZoneId === stZoneId);
+          const zoneEl = (name, id) => {
+            if (!name && !(id && isPlaceRef(id))) return '';
+            const attr = (!name && id && isPlaceRef(id)) ? ` data-cip="${id}"` : '';
+            return `<span class="zone"${attr}><span class="cip-name">${escHtml(name || '…')}</span></span>`;
+          };
+          const wfZoneHtml = sameZone ? '' : zoneEl(wfZoneName, wfZoneId);
+          const stZoneHtml = zoneEl(stZoneName, stZoneId);
+
+          const upTab = topCardHtml ? `<span class="tab"></span>` : '';
+          const downTab = bottomCardHtml ? `<span class="tab"></span>` : '';
+
+          wrapper.innerHTML = `
+            <div class="wf-slot slot-top">${topCardHtml}</div>
+            <div class="tab-row tab-top"${topCatColor ? ` style="--tab:${topCatColor}"` : ''}>${upTab}</div>
+            <div class="rail rail-waterfront">${wfZoneHtml}</div>
+            <div class="line-gap"></div>
+            <div class="line-track">
+              <span class="node"></span>
+              ${distHtml}${addrHtml}
+            </div>
+            <div class="line-gap"></div>
+            <div class="rail rail-street">${stZoneHtml}</div>
+            <div class="tab-row tab-bottom"${bottomCatColor ? ` style="--tab:${bottomCatColor}"` : ''}>${downTab}</div>
+            <div class="wf-slot slot-bottom">${bottomCardHtml}</div>
+          `;
+          
+          wrapper.addEventListener('click', () => {
+            centerWrapper(wrapper, false);
+            // Aggiorna l'URL con /#<@id> (link condivisibile), senza far saltare la pagina.
+            if (wrapper.dataset.station) history.replaceState(null, '', '#' + wrapper.dataset.station);
+          });
+
+          carousel.appendChild(wrapper);
+
+          if (mainItemForId["@id"] && mainItemForId["@id"].includes("pontile")) {
+            pontileElement = wrapper;
+          }
+
+          prevDistanceGapPx = distanceGapPx; // Salva la distanza per l'iterazione successiva
+        });
+
+        // --- Capolinea (City) agli estremi: card centrata verticalmente + freccia ---
+        function buildTerminus(item, side) {
+          const w = document.createElement('div');
+          w.className = 'terminus-wrapper ' + (side === 'start' ? 'term-start' : 'term-end');
+          w.innerHTML = `
+            <div class="wf-terminus">
+              <div class="terminus-head">
+                <span class="t-label">Confine</span>
+                <span class="t-sq"><span class="material-symbols-outlined">location_city</span></span>
+              </div>
+              <h3 class="t-name">${escHtml(item.name || 'Confine')}</h3>
+              <span class="term-marker"><span class="material-symbols-outlined">stop</span></span>
+            </div>`;
+          return w;
+        }
+        if (termini.length) {
+          // primo City = capolinea sud (sinistra), ultimo = nord (destra)
+          carousel.insertBefore(buildTerminus(termini[0], 'start'), carousel.firstChild);
+          carousel.appendChild(buildTerminus(termini[termini.length - 1], 'end'));
+        }
+
+        // --- Prefetch/lazy dei dati delle attività (containsPlace) ---
+        // I rating compaiono nelle righe attività: precarico la finestra visibile e
+        // poi, in idle, tutte le altre → nessuna attesa percepibile scorrendo.
+        // Wrapper ATTIVO = quello col centro più vicino al centro del carosello.
+        // Robusto anche con wrapper molto più larghi del viewport (scarti-distanza
+        // grandi), dove l'IntersectionObserver a soglia non attivava mai.
+        function updateActive() {
+          const cx = carousel.scrollLeft + carousel.clientWidth / 2;
+          let best = null, bestD = Infinity;
+          for (const w of carousel.children) {
+            if (!(w.classList && w.classList.contains('station-wrapper'))) continue;
+            const d = Math.abs((w.offsetLeft + w.offsetWidth / 2) - cx);
+            if (d < bestD) { bestD = d; best = w; }
+          }
+          if (!best) return;
+          carousel.querySelectorAll('.station-wrapper.active').forEach(w => { if (w !== best) w.classList.remove('active'); });
+          best.classList.add('active');
+          loadWindow(best);
+        }
+        let activeRAF = null;
+        carousel.addEventListener('scroll', () => {
+          if (activeRAF) return;
+          activeRAF = requestAnimationFrame(() => { activeRAF = null; updateActive(); });
+        });
+
+        // Observer solo per il lazy-load anticipato dei vicini che entrano in vista.
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => { if (entry.isIntersecting) loadWindow(entry.target); });
+        }, { root: carousel, threshold: 0.01, rootMargin: "0px 30% 0px 30%" });
+
+        document.querySelectorAll('.station-wrapper').forEach(station => observer.observe(station));
+        document.querySelectorAll('.wf-scroll').forEach(updateScrollHint); // stato iniziale hint
+        updateActive(); // stato attivo iniziale
+
+        // Prefetch di TUTTO in background (idle): attività + containedInPlace.
+        const prefetchAll = () => {
+          document.querySelectorAll('.place-block[data-place-id]').forEach(fillBiz);
+          document.querySelectorAll('[data-cip]').forEach(fillContainedIn);
+          document.querySelectorAll('.place-media[data-media-id]').forEach(fillMedia);
+        };
+        if ('requestIdleCallback' in window) requestIdleCallback(prefetchAll, { timeout: 1500 });
+        else setTimeout(prefetchAll, 300);
+
+        // Centraggio da URL: /#<@id> porta quella card al centro (priorità sul pontile).
+        function centerFromHash() {
+          const id = decodeURIComponent((location.hash || '').slice(1));
+          if (!id) return false;
+          const card = document.getElementById(id);
+          const w = card && card.closest('.station-wrapper');
+          if (!w) return false;
+          centerWrapper(w, false);
+          updateActive();
+          return true;
+        }
+        const hasHash = !!(location.hash || '').slice(1);
+
+        if (pontileElement && !hasHash) {
+          // Centra il pontile solo se l'URL non chiede già una card specifica.
+          setTimeout(() => {
+            centerWrapper(pontileElement, false);
+            updateActive();
+          }, 100);
+        }
+        // Più tentativi: il layout/scroll-snap si assesta dopo il primo frame.
+        [150, 450, 900].forEach(d => setTimeout(centerFromHash, d));
+        window.addEventListener('hashchange', centerFromHash);
+
+        // Linea pronta: nascondo il loader iniziale.
+        const loaderEl = document.getElementById('app-loader');
+        if (loaderEl) setTimeout(() => loaderEl.classList.add('hide'), 250);
+
+      } catch (error) {
+        carousel.innerHTML = `<div id="loader" style="color: #e74c3c;"><span class="material-symbols-outlined" style="font-size: 40px;">error</span> Errore di caricamento. Verifica il file JSON.</div>`;
+        const loaderEl = document.getElementById('app-loader');
+        if (loaderEl) loaderEl.classList.add('hide');
+        console.error(error);
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>

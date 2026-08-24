@@ -1,0 +1,42 @@
+<?php
+if($menu->hasMenuSection){
+?>
+		<nav class="content-nav nav background-color2 hgrid-padding vgrid-width-full vgrid-padding-d2">
+			<h1><?php _e('Summary'); ?></h1>
+			<ul>
+<?php
+	foreach ($menu->hasMenuSection as $hasMenuSection) {
+?>
+				<li>
+					<a href="#<?php echo $hasMenuSection['id']; ?>">
+						<strong><?php echo $hasMenuSection->name->innerHTML(); ?></strong>&nbsp;
+<?php
+/*
+		if(!empty($hasMenuSection->description)){
+?>
+					<span class="description"><?php echo $hasMenuSection->description->innerHTML(); ?></span>
+<?php
+}
+*/
+?>
+					</a>
+				</li>
+<?php
+	}
+?>
+			</ul>
+		</nav>
+<?php
+}
+?>
+
+<?php
+$ingredients_legend = $ws_content->xpath('id("ingredients_legend")')[0];
+?>
+		<section class="hgrid-padding vgrid-padding-d2">
+			<h1><?php _e('Legend'); ?></h1>
+			<?php
+			echo $ingredients_legend->innerHTML();
+			?>
+		</section>
+	</div>

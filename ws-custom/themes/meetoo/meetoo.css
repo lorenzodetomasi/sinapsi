@@ -1,0 +1,457 @@
+/* ===========================================================================
+ * meetoo.css — foglio di stile CONDIVISO di Meetoo (frontend + backend admin).
+ *
+ * Unica fonte di verità per: token di colore/tipografia (light-dark), base della
+ * pagina, componenti comuni (wrap, sezioni, card, badge, stati) e l'header a due
+ * righe (.mt-*) che header.js costruisce.
+ *
+ * Uso:  <link rel="stylesheet" href="<percorso>/ws-custom/themes/meetoo/meetoo.css">
+ * header.js lo inietta comunque da sé se la pagina non l'ha già incluso, così
+ * ogni pagina che monta l'header eredita gli stessi stili.
+ *
+ * Le pagine aggiungono SOLO le regole che le riguardano (le loro specificità),
+ * mai una ridefinizione dei token: cambiare un colore qui lo cambia ovunque.
+ * =========================================================================== */
+
+@import url("meetoo-tokens.css");
+
+/* ---------- Base ---------- */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--color-background-main);
+  color: var(--color-text);
+  font-family: var(--font-family2);
+  line-height: 1.5;
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal; font-style: normal;
+  font-size: 20px; line-height: 1;
+  letter-spacing: normal; text-transform: none;
+  display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Headings */
+h1, h2, h3, h4, h5 {
+  color: var(--color-heading);
+}
+
+/* Buttons & Links */
+button {
+  background-color: var(--button-background);
+  color: var(--button-color);
+  font-size: var(--button-font-size);
+  padding: var(--button-padding);
+  border: 0 none;
+  border-radius: var(--button-border-radius);
+  cursor: pointer;
+}
+button .icon {
+  font-size: var(--button-icon-size);
+}
+button:disabled {
+  color: var(--color-inactive); 
+  cursor: default;
+}
+a,
+button.link {
+  background-color: transparent;
+  color: var(--color-link);
+}
+a:hover,
+button.link:hover {
+  color: var(--color-hover);
+}
+
+/* ---------- Impaginazione ---------- */
+/* Stessa colonna centrata dell'header, così contenuto e header sono allineati. */
+.wrap { max-width: 960px; margin: 0 auto; padding: var(--gutter); }
+section { margin-top: 32px; }
+
+.sec-head {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--font-family1); font-weight: 600; font-size: 1.15rem;
+  margin: 0 0 14px;
+}
+.sec-head .material-symbols-outlined { font-size: 1.4rem; }
+/* Un conteggio vuoto non è "zero": è "non lo so ancora" (es. l'archivio prima di
+   caricarlo). Senza numero il pallino non si mostra. */
+.count:empty { display: none; }
+.count {
+  font-family: var(--font-family2);
+  font-weight: 500; 
+  font-size: .85rem; 
+  text-align: center;
+  color: var(--color-heading); 
+  border-color: var(--color-heading); 
+  padding: .25em .5em;
+  border: 2px solid;
+  border-radius: 1em;
+  min-width: 2em;
+}
+
+/* ---------- Card ---------- */
+.cards { display: flex; flex-direction: column; gap: var(--gutter); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gutter); }
+
+.card {
+  display: flex; gap: var(--gutter); align-items: stretch;
+  text-decoration: none; color: inherit;
+  background: var(--color-background-section1); border: 1px solid var(--color-line);
+  border-radius: var(--border-radius); overflow: hidden;
+  transition: border-color .15s, transform .15s;
+}
+.card:hover { border-color: var(--color-link); transform: translateY(-1px); }
+.card-icon,
+.card-date {
+  flex: 0 0 76px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: var(--color-background-section2);  
+}
+.card-date {
+  padding: 10px 8px; text-align: center;
+}
+.card-date .d { font-family: var(--font-family1); font-weight: 700; font-size: 1.5rem; line-height: 1; }
+.card-date .m { text-transform: uppercase; font-size: .72rem; letter-spacing: .04em; margin-top: 2px; }
+.card-date .y { font-size: .68rem; }
+.card-body {
+  flex: 1 1 auto; min-width: 0; padding: 12px 12px 12px 2px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.card-title { font-family: var(--font-family1); font-weight: 600; font-size: 1.05rem; margin: 0 0 4px; overflow-wrap: anywhere; }
+a.card {
+
+}
+a.card .card-title,
+a.card .card-icon,
+a.card .card-date,
+a.card .card-arrow { color: var(--color-link); }
+.card-meta { display: flex; flex-wrap: wrap; gap: 4px var(--gutter); color: var(--color-hint); font-size: .85rem; }
+.card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.card-arrow { flex: 0 0 auto; align-self: center; padding-right: 12px; color: var(--color-hint); display: flex; }
+
+/* Azioni in coda alla card (pagine di gestione): prendono il posto della freccia.
+   Qui la card non è un link — lo sono il titolo e le singole azioni. */
+.card-actions {
+  flex: 0 0 auto; align-self: center;
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px;
+}
+/* Schermi larghi: il contenuto tiene i due terzi, le azioni l'ultimo terzo su due
+   righe di due (Visualizza Modifica / Duplica Cestina). Larghezza FISSA, non "quel
+   che avanza": così le azioni sono incolonnate fra card diverse. */
+@media (min-width: 48rem) {
+  .card-actions {
+    flex: 0 0 33.333%;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .card-actions .card-act { justify-content: center; }
+}
+
+/* Schermi stretti: le azioni NON stanno accanto al testo — quattro pulsanti che
+   non vanno a capo lascerebbero al titolo una colonna larga un carattere. Vanno
+   sotto, a tutta larghezza, due per riga. */
+@media (max-width: 47.9375rem) {
+  /* row-gap a 0: il gap della card serve fra le colonne, non fra le due righe
+     (lascerebbe una banda vuota sopra i pulsanti). */
+  .card { flex-wrap: wrap; row-gap: 0; }
+  .card-body { flex: 1 1 0; min-width: 0; padding: 12px; }
+  .card-actions {
+    flex: 1 1 100%; order: 1;          /* sempre in fondo, anche dopo la data */
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--color-line);
+  }
+  .card-actions .card-act { justify-content: center; }
+}
+.card-act {
+  /* Vale sia per un <a> sia per un <button>: lo sfondo va dichiarato, altrimenti
+     un button eredita quello pieno della regola globale e il testo (dello stesso
+     colore) sparisce.
+     Tutte le misure sono in `em`: così LO STESSO pulsante serve le card di
+     gestione (0.85rem) e le card quadrate del lungomare, che sono proporzionali
+     alla propria larghezza e gli danno una misura in `cqw`. Chi lo usa decide
+     solo il font-size. */
+  background: transparent; font-family: inherit; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: .35em;
+  padding: .4em .85em; border: 1px solid var(--color-line); border-radius: 999px;
+  text-decoration: none; color: var(--color-link);
+  font-size: .85rem; font-weight: 600; white-space: nowrap;
+}
+.card-act:hover { border-color: var(--color-link); background: var(--color-background-section2); }
+.card-act .material-symbols-outlined { font-size: 1.25em; }
+.card-act.primary { background: var(--color-link); border-color: transparent; color: var(--color-text-neg); }
+.card-act.primary:hover { background: var(--color-link); filter: brightness(1.08); }
+/* Solo icona: quadrato, senza testo (Info, Mappa…). */
+.card-act.icon-only { padding: 0; width: 2em; height: 2em; }
+
+/* Descrizione breve dentro una card: due righe, poi taglia. Nata nel lungomare,
+   serve a qualunque card che riassuma un testo. */
+.description {
+  font-size: .9rem; line-height: 1.45; color: var(--color-hint); margin: 0 0 .6em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* «C'è altro sotto»: sfumatura + freccia in fondo a un'area che scorre. Si mostra
+   solo quando il contenitore ha la classe .scroll-more (la mette chi misura lo
+   scorrimento). La usano le card e le finestre modali. */
+.scroll-hint {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 36px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;
+  background: linear-gradient(to bottom, transparent, var(--color-background-section1) 85%);
+  color: var(--color-hint); pointer-events: none; opacity: 0; transition: opacity .2s;
+}
+.scroll-more > .scroll-hint { opacity: 1; }
+.scroll-hint .material-symbols-outlined { animation: mt-bob 1.5s ease-in-out infinite; }
+@keyframes mt-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
+/* Condividi + «mi interessa»: la coppia di icone in fondo a una card, su una
+   velatura scura così restano leggibili sopra qualsiasi contenuto. */
+/* La card resta un LINK: la coppia gli sta accanto, non dentro (un pulsante
+   dentro un link non si può). .card-holder è quel contenitore. */
+.card-holder { position: relative; }
+.card-holder > .card { padding-right: 4.2em; }
+.card-holder > .card-social { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
+.card-social {
+  display: flex; align-items: center; gap: .6em;
+  font-size: .9rem; line-height: 1; color: var(--color-link);
+}
+.card-social button {
+  background: transparent; border: none; padding: .25em; cursor: pointer;
+  color: inherit; display: inline-flex; line-height: 1;
+}
+.card-social button:hover { filter: brightness(1.15); }
+.card-social .material-symbols-outlined { font-size: 1.35em; }
+/* Cuore pieno quando è attivo (in Material Symbols il nome dell'icona non cambia). */
+.card-social .fav.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; color: var(--color1); }
+
+/* Messaggio passeggero in fondo allo schermo (es. «Link copiato»). */
+.toast {
+  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%) translateY(12px); z-index: 2000;
+  background: var(--color-background-neg, #14213D); color: var(--color-text-neg, #fff);
+  padding: 11px 18px; border-radius: 999px; font-size: .85rem; font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0,0,0,.35); opacity: 0; pointer-events: none;
+  transition: opacity .25s, transform .25s; display: inline-flex; align-items: center; gap: 8px;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast .material-symbols-outlined { font-size: 1.1em; }
+.card-title a { text-decoration: none; color: inherit; }
+.card-title a:hover { text-decoration: underline; }
+
+/* ---------- Cover 16:9 ----------
+   Immagine di copertina 1920×1080 con sfumatura in basso e cuore: la usano la
+   pagina evento e quella della collezione, quindi vive qui. */
+  /* Cover 16:9 (1920×1080): l'immagine riempie il riquadro restando centrata,
+     la sfumatura in basso regge il cuore senza coprire il soggetto. */
+  .cover { position: relative; aspect-ratio: 16 / 9; width: 100%; overflow: hidden;
+       border-radius: var(--border-radius); margin: 14px 0;
+       background: linear-gradient(165deg, var(--color-sea), var(--color-sand)); }
+  .cover img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  .cover-foot { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end;
+          justify-content: space-between; gap: 12px; padding: 10px 14px; min-height: 84px;
+          background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,.2) 55%, transparent); }
+  .cover-credit { color: #fff; font-size: .8rem; text-shadow: 0 1px 2px rgba(0,0,0,.9); }
+  .cover-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+  .like-btn { border: none; background: transparent; color: #fff; cursor: pointer; padding: 0; line-height: 0;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,.85)); display: inline-flex; }
+  .like-btn .material-symbols-outlined { font-size: 2rem; }
+  .like-btn.on { color: #ff5a7a; }
+  .like-btn.on .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .like-count { color: #fff; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.85); min-width: 1ch; }
+  /* Senza cover il cuore resta comunque disponibile, in linea sotto le informazioni. */
+  .like-row { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 0; }
+  .like-row .like-btn { color: var(--color-link); filter: none; }
+  .like-row .like-count { color: var(--color-hint); text-shadow: none; }
+
+
+/* Pulsante flottante (stessa forma in tutto il sito: vedi waterfront). */
+.fab {
+  position: fixed; right: 20px; bottom: 20px; z-index: 900;
+  width: 56px; height: 56px; border-radius: 50%; border: none;
+  background: var(--color1); color: #fff; cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,.3);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.fab:hover { filter: brightness(1.05); }
+.fab .material-symbols-outlined, .fab .icon { font-size: 1.8em; }
+/* Il FAB galleggia sopra il contenuto: senza spazio in fondo copre le azioni
+   dell'ultima card. Lo stacco si aggiunge SOLO nelle pagine che il FAB ce l'hanno
+   (56px del pulsante + 20px dal bordo + aria). */
+body:has(.fab) .wrap { padding-bottom: calc(var(--gutter) + 96px); }
+
+/* Archives */
+/* Sezioni */
+section.archive .sec-head { color: var(--color-past); }
+section.archive .sec-head .material-symbols-outlined { color: var(--color-past); }
+
+/* Card evento */
+section.archive .card { opacity: .82; }
+section.archive .card-date .d { color: var(--color-past); }
+
+/* Card collection */
+.card-icon .material-symbols-outlined { font-size: 2rem; }
+section.collections .sec-head .material-symbols-outlined { color: var(--color1); }
+
+/* ---------- Stati e badge ---------- */
+.empty { color: var(--color-hint); font-size: .9rem; padding: 8px 0; }
+.state { color: var(--color-hint); padding: 24px 0; text-align: center; }
+.state.err { color: var(--color-danger); }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: .74rem; font-weight: 700; padding: 1px 7px;
+  border-radius: 999px; margin-left: 6px; vertical-align: middle;
+}
+.badge .material-symbols-outlined { font-size: .9rem; color: var(--color-heading); }
+.badge.cancelled { background: var(--color-background-danger); color: var(--color-danger); }
+.badge.postponed, .badge.rescheduled { background: var(--color-background-warning); color: var(--color-warning); }
+
+.crumb {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--color-link); text-decoration: none; font-size: .9rem; margin-bottom: 10px;
+}
+
+/* ===========================================================================
+ * Header a due righe (costruito da header.js)
+ *   riga 1 = hamburger + logo + azioni (slot, Impostazioni, login/account)
+ *   riga 2 = breadcrumb a sinistra, contesto amministrativo a destra
+ *            (nascosta quando vuota: vedi header.js)
+ * =========================================================================== */
+
+
+.mt-header,
+.mt-row {
+  background: var(--color-background-main); 
+}
+.mt-header {
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid var(--mt-line);
+  font-family: var(--font-family2);
+  display: flex; flex-direction: column;
+}
+.mt-row {
+  height: var(--mt-h); box-sizing: border-box;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 0 16px;
+  max-width: var(--mt-w); width: 100%; margin: 0 auto;
+}
+.mt-row-2 { border-top: 1px solid var(--mt-line); min-width: 0; }
+.mt-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mt-brand { display: inline-flex; align-items: center; text-decoration: none; }
+.mt-logo { position: relative; top: -0.1em; height: 1.5rem; width: auto; display: block; }
+.mt-actions { display: flex; align-items: center; gap: 4px; }
+.mt-actions > * {
+  display: flex;
+}
+
+.mt-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border: none; border-radius: 999px;
+  background: transparent; color: var(--color-link); cursor: pointer;
+}
+.mt-icon-btn:hover { background: rgba(128,128,128,.14); }
+.mt-icon-btn .material-symbols-outlined { font-size: 22px; }
+
+.mt-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; cursor: pointer; border: none; padding: 0; background: var(--color-background-section1); }
+.mt-avatar-fallback {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--color-link); color: #fff; font-weight: 700; font-size: .85rem;
+  cursor: pointer; border: none;
+}
+
+/* Breadcrumb (riga 2) */
+.mt-crumbs { font-family: var(--font-family1); display: flex; align-items: baseline; gap: 8px; min-width: 0; overflow: hidden; font-size: 1rem; }
+.mt-crumbs .c { white-space: nowrap; text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
+.mt-crumbs a.c { cursor: pointer; color: var(--color-link); }
+.mt-crumbs a.c:hover { text-decoration: underline; }
+.mt-crumbs .cur { color: var(--color-heading); font-weight: 600; }
+.mt-crumbs .sep { color: var(--color-hint); opacity: .6; }
+.mt-admin { font-family: var(--font-family1); display: flex; align-items: baseline; gap: 8px; white-space: nowrap; font-size: .92rem; }
+.mt-admin a { text-decoration: none; }
+.mt-admin a:hover { text-decoration: underline; }
+.mt-admin .sep { color: var(--color-hint); opacity: .6; }
+
+/* Modale Impostazioni */
+.mt-ov { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+.mt-ov.open { display: flex; }
+.mt-modal {
+  background: var(--color-background-section1); color: var(--color-text); border-radius: 20px;
+  max-width: 440px; width: 100%; max-height: 82vh; overflow: hidden; position: relative;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45); font-family: var(--font-family2);
+}
+.mt-modal-scroll { padding: 26px; max-height: 82vh; overflow-y: auto; }
+.mt-modal-close { position: absolute; top: 10px; right: 10px; border: none; background: transparent; color: var(--color-text); cursor: pointer; padding: 4px; display: inline-flex; }
+.mt-modal-title { margin: 0 28px 14px 0; color: var(--color-heading); font-family: var(--font-family1); font-size: 1.3rem; }
+
+.mt-userblock { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--mt-line); border-radius: 14px; margin-bottom: 18px; }
+.mt-userblock img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.mt-userblock .nm { font-weight: 700; color: var(--color-text); }
+.mt-userblock .em { font-size: .85rem; color: var(--color-hint); }
+.mt-userblock button { margin-left: auto; background: transparent; border: 1px solid var(--mt-line); border-radius: 999px; color: var(--color-text); padding: 5px 14px; font: inherit; cursor: pointer; }
+
+.mt-set-group { margin-top: 18px; }
+.mt-set-label { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-hint); margin-bottom: 10px; }
+.mt-theme { display: flex; gap: 8px; }
+.mt-theme button {
+  flex: 1; display: inline-flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 6px; border: 2px solid var(--color-hint); border-radius: 14px;
+  background: transparent; color: var(--color-text); cursor: pointer; font: inherit; font-size: .82rem; font-weight: 600;
+}
+.mt-theme button .material-symbols-outlined { font-size: 1.5rem; }
+.mt-theme button:hover { border-color: var(--color-link); }
+.mt-theme button.active { border-color: var(--color-link); color: var(--color-link); background: rgba(64,106,191,.10); }
+
+.mt-pref { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 10px 0; }
+.mt-pref label { color: var(--color-text); }
+.mt-pref select { background: var(--color-background-section1); color: var(--color-text); border: 1px solid var(--color-hint); border-radius: 10px; padding: 6px 10px; font: inherit; }
+.mt-pref .sw { position: relative; width: 44px; height: 24px; }
+.mt-pref .sw input { opacity: 0; width: 0; height: 0; }
+.mt-pref .sw span { position: absolute; inset: 0; background: var(--color-hint); border-radius: 999px; transition: .2s; cursor: pointer; }
+.mt-pref .sw span:before { content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.mt-pref .sw input:checked + span { background: var(--color-link); }
+.mt-pref .sw input:checked + span:before { transform: translateX(20px); }
+
+/* Impostazioni specifiche della pagina, montate sotto quelle dell'header
+   (es. l'editor eventi vi porta Densità e Salvataggio su PC). */
+.mt-page-settings .mt-choice { display: flex; gap: 8px; }
+.mt-page-settings .mt-choice button {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 8px; border: 2px solid var(--color-hint); border-radius: 14px;
+  background: transparent; color: var(--color-text); cursor: pointer; font: inherit; font-size: .82rem; font-weight: 600;
+}
+.mt-page-settings .mt-choice button:hover { border-color: var(--color-link); }
+.mt-page-settings .mt-choice button[aria-pressed="true"] { border-color: var(--color-link); color: var(--color-link); background: rgba(64,106,191,.10); }
+.mt-page-settings .mt-choice .material-symbols-outlined { font-size: 1.1rem; }
+
+/* Drawer (hamburger) */
+.mt-drawer-ov { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 1200; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.mt-drawer-ov.open { opacity: 1; pointer-events: auto; }
+.mt-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0; width: 280px; max-width: 82vw;
+  background: var(--color-background-section1); z-index: 1201; transform: translateX(-100%);
+  transition: transform .24s cubic-bezier(.22,1,.36,1);
+  display: flex; flex-direction: column; box-shadow: 2px 0 24px rgba(0,0,0,.3);
+}
+.mt-drawer.open { transform: none; }
+.mt-drawer-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 10px 16px; border-bottom: 1px solid var(--mt-line); }
+.mt-drawer-head img { height: 22px; }
+.mt-nav { display: flex; flex-direction: column; padding: 8px; gap: 2px; overflow-y: auto; }
+.mt-nav a {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+  border-radius: 12px; text-decoration: none; color: var(--color-text);
+  font-family: var(--font-family2); font-weight: 500;
+}
+.mt-nav a:hover { background: rgba(128,128,128,.12); }
+.mt-nav a .material-symbols-outlined { font-size: 22px; }
+
+@media (max-width: 560px) {
+  .mt-logo { height: 1.5rem; }
+  .mt-crumbs { font-size: .9rem; }
+  .mt-admin { display: none; }
+}

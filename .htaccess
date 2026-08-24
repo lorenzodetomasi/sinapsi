@@ -1,0 +1,14 @@
+# BEGIN WordPress
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress
+
+Redirect 301 /facebook-review https://www.facebook.com/pg/isotypeorg/reviews/
+Redirect 301 /google-review https://www.google.it/search?q=ISOTYPE.ORG%2C%20via%20Angelo%20Bertolotto%2019%2C%20scala%20A%20interno%209%2C%2000122%20Lido%20di%20Ostia%2C%20Roma%20RM&ludocid=9748451456443728681&ved=1i%3A2%2Ct%3A10503%2Ce%3A1%2Cp%3AyAe0WM2sKIP5dM_ZmdAD%3A13&ei=yAe0WM2sKIP5dM_ZmdAD%3A24&hl=it-IT#fpstate=lie&lrd=0x1325efd79e9b0157:0x874974f33b77c329,3,5

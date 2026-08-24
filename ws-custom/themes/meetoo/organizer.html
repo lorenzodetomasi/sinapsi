@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eventi dell'organizzatore — Meetoo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+  <link rel="stylesheet" href="meetoo.css" />
+  <style>
+    * { box-sizing: border-box; }
+
+    /* Intestazione organizzatore */
+    .org-head { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; }
+    .org-logo { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; background: var(--color-background-section2); flex: 0 0 auto; }
+    .org-logo.placeholder { display: flex; align-items: center; justify-content: center; color: var(--color-hint); }
+    .org-name { font-family: var(--font-family1); font-weight: 700; font-size: 1.6rem; color: var(--color1); margin: 0; }
+    .org-desc { color: var(--color-hint); margin: 2px 0 0; font-size: .95rem; }
+    .org-social { display: flex; gap: 10px; margin-top: 6px; }
+    .org-social a { display: inline-flex; text-decoration: none; }
+  
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="org-head" id="orgHead">
+      <div class="org-logo placeholder"><span class="material-symbols-outlined">groups</span></div>
+      <div>
+        <h1 class="org-name" id="orgName">Organizzatore</h1>
+        <p class="org-desc" id="orgDesc"></p>
+        <div class="org-social" id="orgSocial"></div>
+      </div>
+    </header>
+
+    <div id="content"><div class="state">Carico gli eventi…</div></div>
+  </div>
+
+  <!-- Moduli condivisi: template delle card + header (prima dello script di pagina). -->
+  <script src="cards.js"></script>
+  <script src="header.js"></script>
+
+  <script>
+  (function () {
+    // Chiave organizzatore: da ?org=… oppure dall'ultimo segmento del percorso (organizations/<key>/).
+    const params = new URLSearchParams(location.search);
+    const orgKey = (params.get('org') || (location.pathname.match(/organizations\/([^\/]+)/) || [])[1] || '').trim();
+
+    // Base dei contenuti: ?base=… ha priorità; se servito da /themes/… la si deriva; altrimenti default di produzione.
+    // Dove stanno i contenuti lo dice l'header condiviso: dichiarato con un <meta>
+    // se c'è, altrimenti dedotto. Prima ogni pagina se lo ricavava per conto suo,
+    // con un ripiego su '/sinapsi/…' che sarebbe scattato proprio al trasloco.
+    const CONTENT_BASE = Meetoo.contentBase();
+
+    const content = document.getElementById('content');
+    const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+    const SOCIAL_ICON = 'link';
+    // Propaga l'eventuale override ?base=… ai link verso collection.html.
+    const BASE_Q = params.get('base') ? '&base=' + encodeURIComponent(params.get('base')) : '';
+
+    if (!orgKey) {
+      content.innerHTML = '<div class="state err">Organizzatore non indicato. Aggiungi <code>?org=&lt;chiave&gt;</code> all\'URL.</div>';
+      return;
+    }
+
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const asMedia = (rel) => !rel ? '' : (/^https?:\/\//i.test(rel) ? rel : CONTENT_BASE + 'organizations/' + orgKey + '/' + rel);
+
+    // Stato evento (schema.org) → etichetta/badge.
+
+    // Template condivisi (cards.js). Nelle pagine di un organizzatore
+    // l organizzatore non si ripete su ogni card: e gia il contesto.
+    const eventCard = (ev) => Meetoo.eventCard(ev, { base: BASE_Q, organizer: false });
+
+    // Card di una collection (EventSeries) → link alla pagina della collection.
+    const collectionCard = (c) => Meetoo.tileCard({ href: "collection.html?id=" + encodeURIComponent(c.path) + BASE_Q, icon: "collections_bookmark", className: "coll-card", title: c.name || c.path, meta: "Collezione di eventi" });
+    function collectionsSection(items) {
+      const cards = items.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).map(collectionCard).join('');
+      return (
+        '<section class="collections">' +
+          '<h2 class="sec-head"><span class="material-symbols-outlined">category</span>Collezioni <span class="count">' + items.length + '</span></h2>' +
+          '<div class="cards">' + cards + '</div>' +
+        '</section>'
+      );
+    }
+
+    function section(cls, icon, title, items, past, emptyMsg) {
+      const cards = items.length
+        ? '<div class="cards">' + items.map((e) => eventCard(e)).join('') + '</div>'
+        : '<div class="empty">' + esc(emptyMsg) + '</div>';
+      return (
+        '<section class="' + cls + '">' +
+          '<h2 class="sec-head"><span class="material-symbols-outlined">' + icon + '</span>' + esc(title) +
+            ' <span class="count">' + items.length + '</span></h2>' + cards +
+        '</section>'
+      );
+    }
+
+    // Sezione archivio: mostra subito gli eventuali passati già nel file principale
+    // (drift al confine) e un pulsante che carica l'archivio completo solo su richiesta.
+    function archiveSection(initialPast) {
+      return (
+        '<section class="archive">' +
+          '<h2 class="sec-head"><span class="material-symbols-outlined">history</span>Archivio eventi passati</h2>' +
+          '<div class="cards" id="archiveCards">' + initialPast.map((e) => eventCard(e)).join('') + '</div>' +
+          '<button type="button" class="link load-archive" id="loadArchive">Carica eventi passati</button>' +
+        '</section>'
+      );
+    }
+    function wireArchive(archiveUrl, alreadyShown) {
+      const btn = document.getElementById('loadArchive');
+      if (!btn) return;
+      const shown = new Set(alreadyShown.map((e) => e.path));
+      const emptyIfNeeded = () => {
+        const cont = document.getElementById('archiveCards');
+        if (cont && !cont.children.length) cont.innerHTML = '<div class="empty">Nessun evento passato.</div>';
+      };
+      btn.addEventListener('click', () => {
+        btn.disabled = true; btn.textContent = 'Carico…';
+        fetch(CONTENT_BASE + archiveUrl, { headers: { Accept: 'application/json' } })
+          .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(); })
+          .then((list) => {
+            const arr = (Array.isArray(list) ? list : []).filter((e) => !shown.has(e.path)).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+            document.getElementById('archiveCards').insertAdjacentHTML('beforeend', arr.map((e) => eventCard(e)).join(''));
+            btn.remove();
+            emptyIfNeeded();
+          })
+          .catch(() => { btn.remove(); emptyIfNeeded(); });
+      });
+    }
+
+    // Intestazione organizzatore (opzionale: se l'index.json non c'è, si mostra la sola chiave).
+    fetch(CONTENT_BASE + 'organizations/' + orgKey + '/index.json', { headers: { Accept: 'application/json' } })
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((doc) => {
+        const org = doc && doc.mainEntity ? doc.mainEntity : doc;
+        document.getElementById('orgName').textContent = org.name || orgKey;
+        document.title = (org.name || orgKey) + ' — Eventi';
+        if (window.Meetoo) Meetoo.setBreadcrumb([{ label: org.name || orgKey, current: true }]);
+        if (org.description) document.getElementById('orgDesc').innerHTML = org.description; // rich-text XHTML
+        const logo = asMedia(org.logo || org.image);
+        if (logo) {
+          const head = document.getElementById('orgHead');
+          head.querySelector('.org-logo').outerHTML = '<img class="org-logo" src="' + esc(logo) + '" alt="" onerror="this.style.display=\'none\'">';
+        }
+        const social = (Array.isArray(org.sameAs) ? org.sameAs : org.sameAs ? [org.sameAs] : []).filter(Boolean);
+        if (social.length) {
+          document.getElementById('orgSocial').innerHTML = social.map((u) =>
+            '<a href="' + esc(u) + '" target="_blank" rel="noopener" title="' + esc(u) + '"><span class="material-symbols-outlined">' + SOCIAL_ICON + '</span></a>').join('');
+        }
+      })
+      .catch(() => { document.getElementById('orgName').textContent = orgKey; if (window.Meetoo) Meetoo.setBreadcrumb([{ label: orgKey, current: true }]); });
+
+    // Indice eventi dell'organizzatore. Nota: se il file non esiste, il CMS risponde
+    // 200 con una PAGINA HTML (non 404) → controllo il content-type prima di parsare.
+    fetch(CONTENT_BASE + 'events/_index/by-organizer/' + orgKey + '.json', { headers: { Accept: 'application/json' } })
+      .then((r) => {
+        const ct = r.headers.get('content-type') || '';
+        return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(r.status);
+      })
+      .then((list) => {
+        // Il file principale contiene le serie + i singoli PROSSIMI; l'archivio (singoli
+        // passati) sta in un file a parte, caricato solo su richiesta (scala coi volumi).
+        const all = Array.isArray(list) ? list : (Array.isArray(list && list.events) ? list.events : []);
+        const collections = all.filter((e) => e.kind === 'series');
+        const singles = all.filter((e) => e.kind !== 'series');
+        const now = Date.now();
+        const endOf = (e) => new Date(e.endDate || e.startDate || 0).getTime();
+        const upcoming = singles.filter((e) => endOf(e) >= now).sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        const boundaryPast = singles.filter((e) => endOf(e) < now).sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+        content.innerHTML =
+          (collections.length ? collectionsSection(collections) : '') +
+          section('upcoming', 'event', 'Prossimi eventi', upcoming, false, 'Nessun evento in programma al momento.') +
+          archiveSection(boundaryPast);
+        wireArchive('events/_index/by-organizer/' + orgKey + '.archive.json', boundaryPast);
+      })
+      .catch(() => {
+        content.innerHTML =
+          '<section class="upcoming"><h2 class="sec-head"><span class="material-symbols-outlined">event_busy</span>Prossimi eventi</h2>' +
+          '<div class="empty">Elenco eventi non disponibile: l\'indice non è ancora stato generato sul server. ' +
+          'Apri l\'editor e usa <b>Rebuild index</b> (admin), oppure esegui <code>php ws-admin/events/rebuild-index.php</code>.</div></section>';
+      });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-07-12 09:03+0200\n"
+"PO-Revision-Date: 2019-07-12 17:53+0200\n"
+"Last-Translator: Lorenzo De Tomasi <lorenzo.detomasi@gmail.com>\n"
+"Language-Team: \n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.2.3\n"
+"X-Poedit-Basepath: ../../ws-core\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: class-ws-locale.php:78 class-ws-locale.php:87 class-ws-locale.php:96
+msgid "Sunday"
+msgstr "domenica"
+
+#: class-ws-locale.php:79 class-ws-locale.php:88 class-ws-locale.php:97
+msgid "Monday"
+msgstr "lunedì"
+
+#: class-ws-locale.php:80 class-ws-locale.php:89 class-ws-locale.php:98
+msgid "Tuesday"
+msgstr "martedì"
+
+#: class-ws-locale.php:81 class-ws-locale.php:90 class-ws-locale.php:99
+msgid "Wednesday"
+msgstr "mercoledì"
+
+#: class-ws-locale.php:82 class-ws-locale.php:91 class-ws-locale.php:100
+msgid "Thursday"
+msgstr "giovedì"
+
+#: class-ws-locale.php:83 class-ws-locale.php:92 class-ws-locale.php:101
+msgid "Friday"
+msgstr "venerdì"
+
+#: class-ws-locale.php:84 class-ws-locale.php:93 class-ws-locale.php:102
+msgid "Saturday"
+msgstr "sabato"
+
+#: class-ws-locale.php:96
+msgid "Sun"
+msgstr "dom"
+
+#: class-ws-locale.php:97
+msgid "Mon"
+msgstr "lun"
+
+#: class-ws-locale.php:98
+msgid "Tue"
+msgstr "mar"
+
+#: class-ws-locale.php:99
+msgid "Wed"
+msgstr "mer"
+
+#: class-ws-locale.php:100
+msgid "Thu"
+msgstr "gio"
+
+#: class-ws-locale.php:101
+msgid "Fri"
+msgstr "ven"
+
+#: class-ws-locale.php:102
+msgid "Sat"
+msgstr "sab"
+
+#: class-ws-locale.php:105 class-ws-locale.php:133
+msgid "January"
+msgstr "gennaio"
+
+#: class-ws-locale.php:106 class-ws-locale.php:134
+msgid "February"
+msgstr "febbraio"
+
+#: class-ws-locale.php:107 class-ws-locale.php:135
+msgid "March"
+msgstr "marzo"
+
+#: class-ws-locale.php:108 class-ws-locale.php:136
+msgid "April"
+msgstr "aprile"
+
+#: class-ws-locale.php:109 class-ws-locale.php:137
+msgid "May"
+msgstr "maggio"
+
+#: class-ws-locale.php:110 class-ws-locale.php:138
+msgid "June"
+msgstr "giugno"
+
+#: class-ws-locale.php:111 class-ws-locale.php:139
+msgid "July"
+msgstr "luglio"
+
+#: class-ws-locale.php:112 class-ws-locale.php:140
+msgid "August"
+msgstr "agosto"
+
+#: class-ws-locale.php:113 class-ws-locale.php:141
+msgid "September"
+msgstr "settembre"
+
+#: class-ws-locale.php:114 class-ws-locale.php:142
+msgid "October"
+msgstr "ottobre"
+
+#: class-ws-locale.php:115 class-ws-locale.php:143
+msgid "November"
+msgstr "novembre"
+
+#: class-ws-locale.php:116 class-ws-locale.php:144
+msgid "December"
+msgstr "dicembre"
+
+#: class-ws-locale.php:147
+msgid "am"
+msgstr ""
+
+#: class-ws-locale.php:148
+msgid "pm"
+msgstr ""
+
+#: class-ws-locale.php:149
+msgid "AM"
+msgstr ""
+
+#: class-ws-locale.php:150
+msgid "PM"
+msgstr ""
+
+#: class-ws-locale.php:156
+msgid "number_format_thousands_sep"
+msgstr ""
+
+#: class-ws-locale.php:169
+msgid "number_format_decimal_point"
+msgstr ""
+
+#: class-ws-locale.php:193
+#, php-format
+msgid "The %s directory of the develop repository must be used for RTL."
+msgstr ""
+
+#: class-ws-locale.php:337
+msgid "F j, Y"
+msgstr ""
+
+#: class-ws-locale.php:339
+msgid "g:i a"
+msgstr ""
+
+#: class-ws-locale.php:341
+msgid "F j, Y g:i a"
+msgstr ""
+
+#: functions.php:206
+msgid "&laquo; Back"
+msgstr ""
+
+#: functions.php:216
+msgid "WS &rsaquo; Error"
+msgstr ""
+
+#: load-install.php:11
+msgid ""
+"The site you have requested is not installed properly. Please contact the "
+"system administrator."
+msgstr ""
+
+#: load.php:420
+msgid "Scrape nonce check failed. Please try again."
+msgstr ""
+
+#: mysql-load.php:50
+#, php-format
+msgid ""
+"<strong>ERROR</strong>: %1$s in %2$s can only contain numbers, letters, and "
+"underscores."
+msgstr ""
+
+#: plugins.php:425
+msgid ""
+"Only a static class method or function can be used in an uninstall hook."
+msgstr ""
+
+#: server.php:86
+#, php-format
+msgid ""
+"Your server is running PHP version %1$s but WS %2$s requires at least %3$s."
+msgstr ""
+
+#: server.php:93
+msgid ""
+"Your PHP installation appears to be missing the MySQL extension which is "
+"required by WS."
+msgstr ""
+
+#: template-load.php:8
+#, php-format
+msgid "Main theme (%1$s) settings loaded."
+msgstr ""
+
+#: template-load.php:15
+#, php-format
+msgid "Parent theme (%1$s) settings loaded."
+msgstr ""
+
+#: template-load.php:24
+#, php-format
+msgid "Theme plugins found: %1$s."
+msgstr ""
+
+#: template-load.php:73
+#, php-format
+msgid "Theme template (%1$s) loaded."
+msgstr ""
+
+#: templates.php:121
+#, php-format
+msgid "File (%1$s) included."
+msgstr ""
+
+#: templates/debug.php:6
+msgid "Debug"
+msgstr ""
+
+#: templates/debug.php:27
+msgid "$ws_headings not set."
+msgstr ""
+
+#: templates/debug.php:42
+msgid "Logs"
+msgstr ""
+
+#: templates/maintenance.php:14
+msgid "Maintenance"
+msgstr ""
+
+#: templates/maintenance.php:17
+msgid "Briefly unavailable for scheduled maintenance. Check back in a minute."
+msgstr ""
+
+#: user.php:27
+#, php-format
+msgid "Failed to connect to MySQL: %s"
+msgstr ""
+
+#: user.php:49
+#, php-format
+msgid "Table “%s” created."
+msgstr ""
+
+#: user.php:51
+#, php-format
+msgid "Not able to execute: %1$s. %2$s"
+msgstr "Impossibile eseguire: %1$s. %2$s"
+
+#: xml-json.old0002.php:24 xml-json.php:24
+#, php-format
+msgid "Unable to load file %1$s."
+msgstr "Impossibile caricare il file %1$s."
+
+#: xml-json.old0002.php:24 xml-json.php:24
+#, php-format
+msgid "<a href=\"%2$s\">Debug</a>"
+msgstr ""
+
+#: xml-json.old0002.php:201 xml-json.php:373
+#, php-format
+msgid "File <a href=\"%1$s\">%2$s</a> (%3$s bytes) saved."
+msgstr "Il file <a href=“%1$s”>%2$s</a> (%3$s byte) è stato salvato."

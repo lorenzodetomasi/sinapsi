@@ -1,0 +1,65 @@
+@import
+  "settings";
+.vgrid-no,
+.hgrid,
+.maxgrid,
+.print {
+  display: none !important;
+}
+#header,
+#main,
+#footer,
+aside.meta {
+
+}
+.content-container {
+  box-sizing: border-box;
+  padding: $gutter/2;
+}
+#header-top {
+  .email.link,
+  .telephone.link {
+    .text {
+      display: none;
+    }
+  }
+}
+#header1 {
+  flex-wrap: wrap;
+  & > * {
+    width: 100%;
+  }
+  & > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    & > [itemprop="logo"] {
+      & > img {
+        margin-top: 0;
+        margin-right: 0;
+      }
+    }
+  }
+  h1[itemprop="name"] {
+    margin-bottom: 0.2em;
+  }
+  h2[itemprop="headline"] {
+    margin-top: 0;
+  }
+}
+#header1-nav1 {
+    h3 {
+        text-align: right;
+    }
+}
+.nav {
+  &.vgrid-fullwidth {
+    & > div > ul > li,
+    & > div > ol > li {
+      width: 100%;
+      a {
+       width: 100%;
+      }
+    }
+  }
+}

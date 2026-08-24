@@ -1,0 +1,94 @@
+<?php
+// Query
+function get_query($path){
+	if(empty($path)){
+		global $ws_query;
+		return $ws_query;
+	} else {
+		$path_parts = parse_url($path);
+		parse_str($path_parts['query'], $path_query);
+		return $path_query;
+	}
+}
+global $ws_query;
+// Set query defaults (Priority 3)
+$ws_query_defaults = array(
+	'locale' => false,
+	'lang' => false,
+	'themes' => false,
+	'plugins' => false,
+	'template' => false,
+	'content' => false
+);
+// Get query from url (Priority 1)
+$uri = rtrim( dirname($_SERVER["SCRIPT_NAME"]), '/' );
+$uri = '/' . trim( str_replace( $uri, '', $_SERVER['REQUEST_URI'] ), '/' );
+$uri = urldecode( $uri );
+$uri_parts = parse_url($uri);
+if(!empty($uri_parts['query'])){
+	parse_str($uri_parts['query'], $uri_query);
+}
+// Load sitemap and rewrite rules
+if(file_exists(ws_contents_abspath().'/ws_sitemap.wsx')){
+	$ws_sitemap_abspath = ws_contents_abspath().'/ws_sitemap.wsx';
+} else {
+	$ws_sitemap_abspath = ws_admin_abspath().'/ws_sitemap.wsx';
+}
+if(file_exists($ws_sitemap_abspath)){
+	$ws_sitemap = ws_load_file($ws_sitemap_abspath);
+	$ws_sitemap_array = simplexml2array($ws_sitemap)['urlset']['url'];
+}
+// Array with rewrite rule that transforms a URL structure to a set of query vars.
+// Any value in the $after parameter that isn't 'bottom' will result in the rule being placed at the top of the rewrite rules.
+// @since 0.0.1
+// @param string       $wspath wspath or regular expression to match request against.
+// @param string|array $query The corresponding query vars for this rewrite rule.
+// @param string       $after Optional. Priority of the new rule. Accepts 'top' or 'bottom'. Default 'bottom'.
+$rewrite_rules = $ws_sitemap_array;
+
+// Get query from rewrite rule (Priority 2)
+$wspath = $uri_parts['path'];
+// If /sitemap.xml load it
+if($wspath == '/sitemap.xml' and file_exists(ws_contents_abspath().'/sitemap.xml')){
+	$sitemap_xml = new \DOMDocument('1.0');
+	$sitemap_xml->preserveWhiteSpace = true;
+	$sitemap_xml->formatOutput = true;
+	$sitemap_xml->load(ws_contents_abspath().'/sitemap.xml');
+	header('Content-Type: text/xml; charset=utf-8');
+	echo $sitemap_xml->saveXML();
+	exit;
+}
+if($wspath !== '/' or $wspath !== ''){
+	$wspath = ws_normalize_relpath($uri_parts['path']);
+}
+// Search for uri/path in rewrite_rules/wspath
+$rewrite_rule = $ws_sitemap->xpath('./url[./wspath = "/'.$wspath.'"]')[0];
+if(empty($rewrite_rule)){
+	$rewrite_rule = $ws_sitemap->xpath('./url[./wspath = "/"]')[0];
+	$rewrite_rule_query = get_query($rewrite_rule->query);
+	$rewrite_rule_query['template'] = "404";
+	$rewrite_rule_query['content'] = explode_and_remove_last('/', $rewrite_rule_query['content'])."/404";
+} else {
+	$rewrite_rule_query = get_query($rewrite_rule->query);
+}
+if(isset($rewrite_rule_query['theme'])){
+	$rewrite_rule_query['themes'][] = $rewrite_rule_query['theme'];
+	unset($rewrite_rule_query['theme']);
+}
+if(isset($rewrite_rule_query['plugin'])){
+	foreach($rewrite_rule_query['plugin'] as $ws_plugin){
+		$ws_logs[] = sprintf('Content plugin added to ws_query: %1$s.', $ws_plugin);
+		$rewrite_rule_query['plugins'][] = $ws_plugin;
+	}
+	unset($rewrite_rule_query['plugin']);
+}
+// Removes first "/" from content value
+if(isset($rewrite_rule_query['content'])){
+	$rewrite_rule_query['content'] = ws_normalize_relpath($rewrite_rule_query['content']);
+}
+$ws_query = array_merge($ws_query_defaults, $rewrite_rule_query);
+if(!empty($uri_query)){
+	$ws_query = array_merge($ws_query, $uri_query);
+}
+$ws_query['wspath'] = $wspath;
+?>

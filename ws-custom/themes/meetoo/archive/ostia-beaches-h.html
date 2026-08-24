@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Metropolitana del Mare - Ostia</title>
+    <style>
+        :root {
+            --primary-color: #003366;
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --privato: #3498db;
+            --libero: #2ecc71;
+            --cancello: #e67e22;
+            --chiuso: #e74c3c;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        header p {
+            font-size: 0.75rem;
+            opacity: 0.85;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        @media (min-width: 768px) {
+            .main-layout {
+                flex-direction: row;
+            }
+        }
+
+        .map-panel {
+            flex: 1;
+            background: #ffffff;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            border-right: 1px solid #e1e8ed;
+            padding: 20px 0;
+            min-height: 0;
+        }
+
+        .map-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        .map-panel::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        #svgContainer {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        svg {
+            display: block;
+        }
+
+        .node-group {
+            cursor: pointer;
+        }
+
+        .node-circle {
+            transition: r 0.2s, fill 0.2s;
+        }
+
+        .node-group:hover .node-circle {
+            r: 10px;
+        }
+
+        .node-group.active .node-circle {
+            r: 12px;
+            stroke: #f1c40f;
+            stroke-width: 4px;
+        }
+
+        .node-text {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #333;
+        }
+
+        .node-group.active .node-text {
+            font-weight: bold;
+            fill: var(--primary-color);
+        }
+
+        .info-panel {
+            width: 100%;
+            height: 280px;
+            background: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #cbd5e1;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        @media (min-width: 768px) {
+            .info-panel {
+                width: 400px;
+                height: 100%;
+                border-top: none;
+                border-left: 1px solid #cbd5e1;
+            }
+        }
+
+        .swipe-hint {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            padding: 6px 0;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .carousel-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            touch-action: pan-y;
+            min-height: 0;
+        }
+
+        .cards-track {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+        }
+
+        .card {
+            flex: 0 0 100%;
+            width: 100%;
+            height: 100%;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: var(--card-bg);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-privato { background-color: var(--privato); }
+        .badge-libero { background-color: var(--libero); }
+        .badge-cancello { background-color: var(--cancello); }
+        .badge-chiuso { background-color: var(--chiuso); }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .card-details {
+            font-size: 0.85rem;
+            color: #555;
+            line-height: 1.35;
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 4px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            width: 110px;
+            color: #64748b;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: #334155;
+        }
+
+        .card-footer {
+            margin-top: 5px;
+        }
+
+        .btn-maps {
+            display: block;
+            width: 100%;
+            background-color: #10b981;
+            color: white;
+            text-align: center;
+            padding: 9px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+            transition: background 0.2s;
+        }
+
+        .btn-maps:hover {
+            background-color: #059669;
+        }
+
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 20px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .nav-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+
+        .counter-indicator {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Metropolitana del Mare</h1>
+    <p>Ostia Porto — Torvaianica | Mappa Proporzionale & Swipe</p>
+</header>
+
+<div class="main-layout">
+    <div class="map-panel" id="mapPanel">
+        <div id="svgContainer"></div>
+    </div>
+
+    <div class="info-panel">
+        <div class="swipe-hint">↔ Scorri orizzontalmente o usa i pulsanti per navigare</div>
+        <div class="carousel-container" id="carouselContainer">
+            <div class="cards-track" id="cardsTrack"></div>
+        </div>
+        <div class="nav-controls">
+            <button class="nav-btn" id="prevBtn">← Prec</button>
+            <div class="counter-indicator" id="counterIndicator">1 / 72</div>
+            <button class="nav-btn" id="nextBtn">Succ →</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const ostiaData = [
+  { "id": "porto", "nome": "Porto Turistico di Roma", "tipo": "libero", "stato": "aperto", "distanza_m": 0, "link": "https://www.google.com/maps/search/?api=1&query=Porto+Turistico+di+Roma+Ostia", "desc": "Punto di partenza settentrionale, area portuale e commerciale." },
+  { "id": "sp-idroscalo", "nome": "Spiaggia Libera Idroscalo", "tipo": "libero", "stato": "aperto", "distanza_m": 350, "link": "https://www.google.com/maps/search/?api=1&query=Spiaggia+Libera+Idroscalo+Ostia", "desc": "Spiaggia libera alla foce del Tevere." },
+  { "id": "bettina", "nome": "Bagni Bettina", "tipo": "privato", "stato": "aperto", "note": "Dissequestro temporaneo", "distanza_m": 850, "link": "https://www.google.com/maps/search/?api=1&query=Bagni+Bettina+Ostia", "desc": "Stabilimento storico di Levante." },
+  { "id": "vittoria", "nome": "Bagni Vittoria", "tipo": "privato", "stato": "sequestrato", "note": "Sequestrato (Maggio 2026)", "distanza_m": 200, "link": "https://www.google.com/maps/search/?api=1&query=Bagni+Vittoria+Ostia", "desc": "Attualmente sotto provvedimento giudiziario." },
+  { "id": "arcobaleno", "nome": "Arcobaleno Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://www.google.com/maps/search/?api=1&query=Arcobaleno+Beach+Ostia", "desc": "Stabilimento balneare attrezzato." },
+  { "id": "bahia", "nome": "Bahia", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Bahia+Stabilimento+Ostia", "desc": "Lido balneare con servizi di ristorazione." },
+  { "id": "conchiglia", "nome": "La Conchiglia", "tipo": "privato", "stato": "aperto", "distanza_m": 300, "link": "https://www.google.com/maps/search/?api=1&query=La+Conchiglia+Ostia", "desc": "Storica struttura sul Lungomare Toscanelli." },
+  { "id": "urbinati", "nome": "Urbinati", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Stabilimento+Urbinati+Ostia", "desc": "Tradizionale stabilimento di Ostia." },
+  { "id": "salus", "nome": "Salus Beach", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Salus+Beach+Ostia", "desc": "Gestione rinnovata con nuovi servizi." },
+  { "id": "edone", "nome": "Ristorante Edonè", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione/gestione", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Ristorante+Edone+Ostia", "desc": "Ristorazione e spiaggia." },
+  { "id": "elmi", "nome": "Stabilimento Elmi", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 60, "link": "https://www.google.com/maps/search/?api=1&query=Stabilimento+Elmi+Ostia", "desc": "Stabilimento balneare storico." },
+  { "id": "battistini", "nome": "Battistini", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 450, "link": "https://www.google.com/maps/search/?api=1&query=Stabilimento+Battistini+Ostia", "desc": "Spiaggia attrezzata e ombrelloni." },
+  { "id": "lido-beach", "nome": "Lido Beach / Ristorante Lido", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Lido+Beach+Ostia", "desc": "Ristorante e lido sul mare." },
+  { "id": "kellys", "nome": "Kelly's", "tipo": "privato", "stato": "aperto", "note": "Nuova concessione", "distanza_m": 350, "link": "https://www.google.com/maps/search/?api=1&query=Kellys+Ostia", "desc": "Lido ricettivo e bar." },
+  { "id": "marechiaro", "nome": "Marechiaro", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Stabilimento+Marechiaro+Ostia", "desc": "Struttura balneare attrezzata." },
+  { "id": "miramar", "nome": "El Miramar", "tipo": "privato", "stato": "aperto", "note": "Nuova gestione", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=El+Miramar+Ostia", "desc": "Stabilimento con cucina e spiaggia." },
+  { "id": "capanno", "nome": "Il Capanno", "tipo": "privato", "stato": "aperto", "distanza_m": 400, "link": "https://www.google.com/maps/search/?api=1&query=Il+Capanno+Ostia", "desc": "Notorio stabilimento e locale serale." },
+  { "id": "delfino", "nome": "Il Delfino", "tipo": "privato", "stato": "aperto", "distanza_m": 50, "link": "https://www.google.com/maps/search/?api=1&query=Il+Delfino+Ostia", "desc": "Spiaggia attrezzata." },
+  { "id": "belsito", "nome": "Belsito", "tipo": "privato", "stato": "aperto", "distanza_m": 250, "link": "https://www.google.com/maps/search/?api=1&query=Stabilimento+Belsito+Ostia", "desc": "Stabilimento balneare." },
+  { "id": "vecchia-pineta", "nome": "La Vecchia Pineta", "tipo": "privato", "stato": "sequestrato", "note": "Sequestrato (Maggio 2026)", "distanza_m": 300, "link": "https://www.google.com/maps/search/?api=1&query=La+Vecchia+Pineta+Ostia", "desc": "Storico lido con ristorante di pesce, attualmente sotto sequestro." },
+  { "id": "plinius", "nome": "Plinius", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "https://www.google.com/maps/search/?api=1&query=Stabilimento+Plinius+Ostia", "desc": "Uno dei lidi più grandi e attrezzati di Ostia." },
+  { "id": "tibidabo", "nome": "Tibidabo Beach", "tipo": "privato", "stato": "aperto", "distanza_m": 150, "link": "

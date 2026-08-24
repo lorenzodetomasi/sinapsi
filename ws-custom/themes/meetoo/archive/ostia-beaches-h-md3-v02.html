@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Mare Ostia - Swipe Map</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  
+  <style>
+    /* Variabili Material 3 & Tema Linea 1 Napoli */
+    :root {
+      --metro-line: #F5A623; /* Giallo/Arancio Metro Napoli */
+      --metro-dark: #14213D; /* Blu Notte / Antracite */
+      --metro-node: #FFFFFF; /* Bianco */
+      
+      /* Material 3 System Colors */
+      --md-sys-color-surface: #FEF7FF;
+      --md-sys-color-on-surface: #1D1B20;
+      --md-sys-color-on-surface-variant: #49454F;
+      --md-sys-color-background: #F4F5F7;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-surface);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Testata */
+    header {
+      background-color: var(--metro-line);
+      color: var(--metro-dark);
+      padding: 32px 16px;
+      text-align: center;
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* Contenitore a scorrimento orizzontale (Swipe) */
+    .carousel-container {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory; /* Ancoraggio magnetico */
+      scroll-behavior: smooth;
+      padding: 24px 50vw 48px 24px; /* Padding extra per permettere lo scroll finale */
+      gap: 0;
+      -webkit-overflow-scrolling: touch;
+      /* Nascondere la scrollbar su browser Webkit */
+    }
+    
+    .carousel-container::-webkit-scrollbar {
+      display: none;
+    }
+    .carousel-container {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Involucro della singola stazione (Nodo + Card) */
+    .station-wrapper {
+      flex: 0 0 85%; /* La card occupa l'85% dello schermo, lasciando intravedere la successiva */
+      max-width: 320px;
+      scroll-snap-align: center; /* Si allinea sempre al centro durante lo scroll */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      padding: 0 8px;
+    }
+
+    /* La linea orizzontale della metropolitana */
+    .station-wrapper::before {
+      content: '';
+      position: absolute;
+      top: 16px; /* Altezza della linea */
+      left: 0;
+      right: 0;
+      height: 12px;
+      background-color: var(--metro-line);
+      z-index: 0;
+    }
+    
+    /* Taglia la linea alla prima e all'ultima stazione */
+    .station-wrapper:first-child::before { left: 50%; border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+    .station-wrapper:last-child::before { right: 50%; border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+
+    /* Il nodo (pallino) */
+    .node {
+      width: 20px;
+      height: 20px;
+      background-color: var(--metro-node);
+      border: 6px solid var(--metro-dark);
+      border-radius: 50%;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 24px;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Stile Card M3 */
+    .card {
+      width: 100%;
+      background-color: var(--md-sys-color-surface);
+      border-radius: 28px;
+      padding: 24px;
+      box-sizing: border-box;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border: 2px solid transparent;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: scale(0.95);
+      opacity: 0.7;
+    }
+
+    .station-name {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .distance {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--md-sys-color-on-surface-variant);
+      background-color: rgba(0,0,0,0.04);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    /* Bottone Maps M3 Tonal */
+    .map-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: var(--metro-dark);
+      color: white;
+      text-decoration: none;
+      padding: 14px 24px;
+      border-radius: 100px;
+      font-weight: 500;
+      font-size: 15px;
+      margin-top: 8px;
+      transition: background-color 0.2s, transform 0.1s;
+    }
+
+    .map-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Setup Icone */
+    .icon {
+      font-family: 'Material Icons Round';
+      font-size: 24px;
+      line-height: 1;
+      direction: ltr;
+    }
+
+    /* STATO ATTIVO (La stazione al centro dello schermo) */
+    .station-wrapper.active .node {
+      background-color: var(--metro-line);
+      transform: scale(1.4);
+      box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.3);
+    }
+    
+    .station-wrapper.active .card {
+      transform: scale(1);
+      opacity: 1;
+      border-color: var(--metro-line);
+      box-shadow: 0 8px 24px rgba(20, 33, 61, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span class="icon" style="font-size: 32px;">swipe</span> Linea Mare</h1>
+    <p style="margin: 8px 0 0; font-size: 15px;">Scorri lateralmente per navigare</p>
+  </header>
+
+  <div class="carousel-container" id="carousel"></div>
+
+  <script>
+    // 1. I DATI OTTIMIZZATI CON SCHEMA.ORG
+    // Strutturiamo i dati come un ItemList di spiagge/luoghi (Beach)
+    const schemaData = {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "Mappa Linea Mare Ostia",
+      "description": "Fermate e distanze degli stabilimenti balneari di Ostia.",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "item": { "@type": "Beach", "name": "Porto Turistico di Roma", "description": "Capolinea Nord", "url": "https://www.google.com/maps/search/Porto+Turistico+di+Roma+Ostia" } },
+        { "@type": "ListItem", "position": 2, "item": { "@type": "Beach", "name": "Il Gabbiano", "description": "850 m", "url": "https://www.google.com/maps/search/Stabilimento+Il+Gabbiano+Ostia" } },
+        { "@type": "ListItem", "position": 3, "item": { "@type": "Beach", "name": "La Rotonda", "description": "1.2 km", "url": "https://www.google.com/maps/search/La+Rotonda+Ostia" } },
+        { "@type": "ListItem", "position": 4, "item": { "@type": "Beach", "name": "L'Oasi", "description": "600 m", "url": "https://www.google.com/maps/search/L'Oasi+Ostia" } },
+        { "@type": "ListItem", "position": 5, "item": { "@type": "Beach", "name": "Plinius", "description": "800 m", "url": "https://www.google.com/maps/search/Plinius+Ostia" } },
+        { "@type": "ListItem", "position": 6, "item": { "@type": "Beach", "name": "Kursaal", "description": "1.5 km", "url": "https://www.google.com/maps/search/Kursaal+Ostia" } },
+        { "@type": "ListItem", "position": 7, "item": { "@type": "Beach", "name": "Spiaggia Libera Cancello 1", "description": "2.5 km", "url": "https://www.google.com/maps/search/Cancello+1+Castelporziano" } },
+        { "@type": "ListItem", "position": 8, "item": { "@type": "Beach", "name": "Torvaianica (Confine)", "description": "Capolinea Sud", "url": "https://www.google.com/maps/search/Torvaianica+Mare" } }
+      ]
+    };
+
+    // 2. INIEZIONE SEO DEL JSON-LD NELL'HEAD DEL BROWSER
+    const scriptTag = document.createElement('script');
+    scriptTag.type = 'application/ld+json';
+    scriptTag.text = JSON.stringify(schemaData);
+    document.head.appendChild(scriptTag);
+
+    // 3. GENERAZIONE DELL'INTERFACCIA DINAMICA (UI)
+    const carousel = document.getElementById('carousel');
+
+    schemaData.itemListElement.forEach((element) => {
+      const beach = element.item;
+      const isFirst = element.position === 1;
+      const isLast = element.position === schemaData.itemListElement.length;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'station-wrapper';
+      
+      wrapper.innerHTML = `
+        <div class="node"></div>
+        <div class="card">
+          <h3 class="station-name">${beach.name}</h3>
+          <div class="distance">
+            <span class="icon" style="font-size: 18px;">${isFirst || isLast ? 'trip_origin' : 'directions_walk'}</span>
+            ${isFirst || isLast ? `<strong>${beach.description}</strong>` : `Distanza: <strong>${beach.description}</strong>`}
+          </div>
+          <a href="${beach.url}" target="_blank" class="map-btn">
+            <span class="icon">map</span> Apri Maps
+          </a>
+        </div>
+      `;
+      
+      carousel.appendChild(wrapper);
+    });
+
+    // 4. OBSERVER PER L'EFFETTO "FOCUS" SULLA CARD AL CENTRO
+    // Utilizziamo IntersectionObserver per rilevare quale card è visibile al centro dello scroll
+    const observerOptions = {
+      root: carousel,
+      rootMargin: '0px -10% 0px -10%', // Ristringe l'area di focus al centro
+      threshold: 0.6 // La card deve essere visibile almeno al 60% per attivarsi
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        } else {
+          entry.target.classList.remove('active');
+        }
+      });
+    }, observerOptions);
+
+    // Collega l'observer a tutte le stazioni create
+    document.querySelectorAll('.station-wrapper').forEach(station => {
+      observer.observe(station);
+    });
+
+  </script>
+</body>
+</html>

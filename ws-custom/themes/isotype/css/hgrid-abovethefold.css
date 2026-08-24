@@ -1,0 +1,32 @@
+/*
+ Align container
+ $horizontal: 'left' | 'center' | 'right' | 'justify' (stretch);
+ $vertical: 'top' | 'baseline' | 'middle' (center) | 'bottom' | 'justify' (stretch);
+ $method: text | flex | position | float;
+ @if $height != null {
+ height: $height;
+ }
+ */
+/*
+ $distribute: 'vertical' | 'horizontal';
+ $align: 'top' | 'middle' | 'bottom' | 'left' | 'center' | 'right';
+ $space: 'space-between' | 'space-around' | 'space-evenly';
+ $method: 'flex';
+ */
+.vgrid, .maxgrid, .print {
+  display: none !important; }
+
+.nav.hgrid-horizontal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; }
+  .nav.hgrid-horizontal > div > ul, .nav.hgrid-horizontal > div > ol {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; }
+    .nav.hgrid-horizontal > div > ul > li, .nav.hgrid-horizontal > div > ol > li {
+      display: inline-block;
+      margin: 0 1rem; }
+
+#header1-nav1 {
+  overflow-x: auto; }

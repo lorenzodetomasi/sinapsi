@@ -1,0 +1,73 @@
+// Modified on 2016-10-25
+p, .p {
+  margin: 0 0 .5em 0;
+  padding: 0;
+}
+.p {
+  color: $text-color;
+  font-size: $text-font-size;
+  font-weight: $text-font-weight;
+  line-height: $text-line-height;
+}
+address {
+        font-style: normal;
+        margin-bottom: 0;
+}
+blockquote {
+  border: 0 none;
+  margin: 0 0 $gutter 0;
+  padding: 0;
+  &.box {
+    position: relative;
+    padding: $gutter $gutter $gutter $gutter*4;
+    background-color: $color1-lighter;
+    margin-bottom: $gutter;
+    &:before {
+      content: "\201C";
+      font-family: Georgia, serif;
+      font-size: 4em;
+      color: $color1;
+      position: absolute;
+      left: $gutter;
+      top: 0;
+    }
+    &:after{
+      content: "";
+    }
+  }
+}
+/* Lists */
+ul,
+ol {
+  margin: 0 0 $gutter $gutter;
+  padding: 0;
+  &.list-style-none {
+    list-style: none;
+    margin-left: 0;
+  }
+}
+ul {
+  list-style-type: square;
+  ul {
+    list-style-type: circle;
+  }
+}
+ol {
+
+}
+ul,
+ol {
+  &.list-style-none {
+    list-style: none;
+    margin-left: 0;
+  }
+}
+.square {
+  box-sizing: border-box;
+}
+.border-top-d2 {
+  border-top: $gutter/2 solid $border-color;
+}
+.border-bottom-d2 {
+  border-bottom: $gutter/2 solid $border-color;
+}

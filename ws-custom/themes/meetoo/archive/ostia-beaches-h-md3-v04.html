@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Mare Ostia - UI Avanzata</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  
+  <style>
+    :root {
+      --metro-line: #F5A623;
+      --metro-dark: #14213D;
+      --metro-node: #FFFFFF;
+      --md-sys-color-surface: #FEF7FF;
+      --md-sys-color-on-surface: #1D1B20;
+      --md-sys-color-on-surface-variant: #49454F;
+      --md-sys-color-background: #F4F5F7;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--md-sys-color-background);
+      color: var(--md-sys-color-on-surface);
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: var(--metro-line);
+      color: var(--metro-dark);
+      padding: 24px 16px;
+      text-align: center;
+      border-bottom-left-radius: 32px;
+      border-bottom-right-radius: 32px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    /* Carosello orizzontale magnetico */
+    .carousel-container {
+      display: flex;
+      flex: 1;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      align-items: center;
+      /* Padding per permettere lo scroll fino al centro anche ai bordi */
+      padding: 0 calc(50vw - 16.66vw); 
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .carousel-container::-webkit-scrollbar { display: none; }
+    .carousel-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Struttura della singola stazione (Grid a 3 righe) */
+    .station-wrapper {
+      scroll-snap-align: center;
+      display: grid;
+      grid-template-rows: 240px 60px 240px;
+      align-items: center;
+      position: relative;
+      cursor: pointer;
+      /* Larghezza dinamica: 33.33vw + gap proporzionale calcolato in JS */
+      flex-shrink: 0;
+      transition: opacity 0.3s;
+    }
+
+    /* Container Card Top (Waterfront) & Bottom (WaterfrontStreet) */
+    .card-slot {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 12px 16px;
+      box-sizing: border-box;
+    }
+    .slot-top { align-items: flex-end; }
+    .slot-bottom { align-items: flex-start; }
+
+    /* Tracciato della Metro e Nodo */
+    .line-track {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* La linea continua */
+    .line-track::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background-color: var(--metro-line);
+      z-index: 0;
+    }
+    .station-wrapper:first-child .line-track::before { left: 50%; border-top-left-radius: 6px; border-bottom-left-radius: 6px;}
+    .station-wrapper:last-child .line-track::before { right: 50%; border-top-right-radius: 6px; border-bottom-right-radius: 6px;}
+
+    .node {
+      width: 20px;
+      height: 20px;
+      background-color: var(--metro-node);
+      border: 6px solid var(--metro-dark);
+      border-radius: 50%;
+      position: relative;
+      z-index: 1;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Stile della Card Uniforme */
+    .card {
+      width: 100%;
+      max-width: 280px;
+      height: 100%; /* Altezza forzata uniforme (240px via slot) */
+      background-color: var(--md-sys-color-surface);
+      border-radius: 24px;
+      padding: 20px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      border: 2px solid transparent;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: scale(0.92);
+      opacity: 0.6;
+    }
+
+    .station-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      line-height: 1.2;
+    }
+
+    .distance {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--md-sys-color-on-surface-variant);
+      margin-bottom: 8px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-primary { background-color: #3498db; }
+    .badge-poi { background-color: #9b59b6; }
+    .badge-alert { background-color: #e74c3c; }
+
+    /* Spacer spinge il bottone in basso */
+    .spacer {
+      flex: 1;
+    }
+
+    .map-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background-color: var(--metro-dark);
+      color: white;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 100px;
+      font-weight: 500;
+      font-size: 14px;
+      transition: transform 0.1s;
+    }
+    .map-btn:active { transform: scale(0.97); }
+    .icon { font-family: 'Material Icons Round'; font-size: 20px; }
+
+    /* STATO ATTIVO: Elemento al centro */
+    .station-wrapper.active .node {
+      background-color: var(--metro-line);
+      transform: scale(1.5);
+      box-shadow: 0 0 0 4px rgba(245, 166, 35, 0.3);
+    }
+    
+    .station-wrapper.active .card {
+      transform: scale(1);
+      opacity: 1;
+      border-color: var(--metro-line);
+      box-shadow: 0 8px 24px rgba(20, 33, 61, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1><span class="icon" style="font-size: 28px;">subway</span> Linea Mare M3</h1>
+    <p style="margin: 4px 0 0; font-size: 14px;">Swipe o Clicca sui nodi per navigare</p>
+  </header>
+
+  <div class="carousel-container" id="carousel">
+    <!-- Nodi generati in JS -->
+  </div>
+
+  <!-- JSON INTEGRATO DI TEST -->
+  <script id="data-json" type="application/json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@type": "Beach",
+          "identifier": "idroscalo",
+          "name": "Spiaggia Libera Idroscalo",
+          "meetoo:coastalPosition": "waterfront",
+          "distanza_m": 0,
+          "tipo": "libero",
+          "stato": "aperto",
+          "url": "https://goo.gl/maps/idroscalo"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "item": {
+          "@type": "TouristAttraction",
+          "identifier": "porto-turistico",
+          "name": "Porto Turistico di Roma",
+          "meetoo:coastalPosition": "waterfrontStreet",
+          "distanza_m": 850,
+          "tipo": "infrastruttura",
+          "stato": "aperto",
+          "url": "https://goo.gl/maps/porto"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "item": {
+          "@type": "Beach",
+          "identifier": "battistini",
+          "name": "Battistini",
+          "meetoo:coastalPosition": "waterfront",
+          "distanza_m": 1200,
+          "tipo": "privato",
+          "stato": "aperto",
+          "url": "https://goo.gl/maps/battistini"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "item": {
+          "@type": "TouristAttraction",
+          "identifier": "pontile-ostia",
+          "name": "Il Pontile di Ostia",
+          "meetoo:coastalPosition": "waterfront",
+          "distanza_m": 400,
+          "tipo": "monumento",
+          "stato": "aperto",
+          "url": "https://goo.gl/maps/pontile"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 5,
+        "item": {
+          "@type": "Beach",
+          "identifier": "elmi",
+          "name": "Stabilimento Elmi",
+          "meetoo:coastalPosition": "waterfront",
+          "distanza_m": 350,
+          "tipo": "privato",
+          "stato": "aperto",
+          "url": "https://goo.gl/maps/elmi"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 6,
+        "item": {
+          "@type": "TouristAttraction",
+          "identifier": "rotonda-zodiaco",
+          "name": "Rotonda dello Zodiaco",
+          "meetoo:coastalPosition": "waterfrontStreet",
+          "distanza_m": 900,
+          "tipo": "piazza",
+          "stato": "aperto",
+          "url": "https://goo.gl/maps/rotonda"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <script>
+    const carousel = document.getElementById('carousel');
+    const schemaData = JSON.parse(document.getElementById('data-json').textContent);
+
+    // 1. INIEZIONE SEO DEL JSON-LD
+    const scriptTag = document.createElement('script');
+    scriptTag.type = 'application/ld+json';
+    scriptTag.text = JSON.stringify(schemaData);
+    document.head.appendChild(scriptTag);
+
+    let pontileElement = null;
+
+    // 2. GENERAZIONE STRUTTURA
+    schemaData.itemListElement.forEach((element) => {
+      const poi = element.item;
+      const isFirst = element.position === 1;
+      
+      // Calcolo Larghezza Proporzionale (33.33vw di base per averne 3 su schermo, + proporzione su distanza)
+      // Limitiamo il max-width per evitare buchi enormi su mobile
+      const baseWidth = `33.33vw`;
+      const proportionalSpacing = poi.distanza_m * 0.15; 
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'station-wrapper';
+      wrapper.id = poi.identifier;
+      wrapper.style.width = `calc(${baseWidth} + ${proportionalSpacing}px)`;
+
+      // Generazione Badges
+      let badgeHtml = '';
+      if(poi['@type'] === 'TouristAttraction') badgeHtml += `<span class="badge badge-poi">Punto d'Interesse</span>`;
+      if(poi.tipo) badgeHtml += `<span class="badge badge-primary">${poi.tipo}</span>`;
+      if(poi.stato === 'sequestrato' || poi.stato === 'chiuso') badgeHtml += `<span class="badge badge-alert">${poi.stato}</span>`;
+
+      // Costruzione della Card
+      const cardHtml = `
+        <div class="card">
+          <h3 class="station-name">${poi.name}</h3>
+          
+          <div class="distance">
+            <span class="icon">${isFirst ? 'trip_origin' : 'directions_walk'}</span>
+            ${isFirst ? `<strong>Partenza</strong>` : `Distanza: <strong>${poi.distanza_m} m</strong>`}
+          </div>
+          
+          <div class="badges">${badgeHtml}</div>
+          
+          <div class="spacer"></div>
+          
+          <a href="${poi.url}" target="_blank" class="map-btn" onclick="event.stopPropagation()">
+            <span class="icon">map</span> Apri Maps
+          </a>
+        </div>
+      `;
+
+      // Posizionamento Sopra/Sotto la linea
+      const isWaterfront = poi["meetoo:coastalPosition"] === "waterfront";
+      
+      wrapper.innerHTML = `
+        <div class="card-slot slot-top">
+          ${isWaterfront ? cardHtml : ''}
+        </div>
+        
+        <div class="line-track">
+          <div class="node"></div>
+        </div>
+        
+        <div class="card-slot slot-bottom">
+          ${!isWaterfront ? cardHtml : ''}
+        </div>
+      `;
+      
+      // Click per scorrere dolcemente sulla stazione
+      wrapper.addEventListener('click', () => {
+        wrapper.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      });
+
+      carousel.appendChild(wrapper);
+
+      // Salva il riferimento al Pontile per il focus iniziale
+      if (poi.identifier === "pontile-ostia") {
+        pontileElement = wrapper;
+      }
+    });
+
+    // 3. OBSERVER PER SCORRIMENTO MAGNETICO (Focus)
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        } else {
+          entry.target.classList.remove('active');
+        }
+      });
+    }, { 
+      root: carousel, 
+      threshold: 0.5, 
+      rootMargin: "0px -30% 0px -30%" // Ristringe il calcolo al 40% centrale dello schermo
+    });
+
+    document.querySelectorAll('.station-wrapper').forEach(station => observer.observe(station));
+
+    // 4. FOCUS INIZIALE SUL PONTILE
+    window.addEventListener('load', () => {
+      if (pontileElement) {
+        // Usa un leggero ritardo per assicurarsi che il layout flexbox sia stato renderizzato
+        setTimeout(() => {
+          pontileElement.scrollIntoView({ behavior: 'auto', inline: 'center' });
+        }, 100);
+      }
+    });
+  </script>
+</body>
+</html>

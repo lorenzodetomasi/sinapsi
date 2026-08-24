@@ -1,0 +1,54 @@
+// define the "system" font family
+@font-face {
+  font-family: system;
+  font-style: normal;
+  font-weight: 300;
+  src: local(".SFNSText-Light"), local(".HelveticaNeueDeskInterface-Light"), local(".LucidaGrandeUI"), local("Ubuntu Light"), local("Segoe UI Light"), local("Roboto-Light"), local("DroidSans"), local("Tahoma");
+}
+html {
+  font-family: $text-font-family;
+  line-height: $text-line-height;
+  color: $text-color;
+  font-size: $text-font-size;
+  font-weight: $text-font-weight;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+}
+// Layout
+// Basic structure
+#page,
+#header,
+#main,
+.content-container,
+#footer,
+body > footer {
+  @include box-sizing(border-box);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  clear: both;
+}
+#page,
+body:not(.header-fixed) #header,
+#main,
+.content-container,
+#footer,
+body > footer {
+  position: relative;
+}
+#page,
+#header,
+#main,
+#footer,
+body > footer {
+  max-width: $page-max-width;
+}
+.content-container {
+  max-width: $content-max-width;
+}
+#footer {
+  max-width: $footer-max-width;
+}

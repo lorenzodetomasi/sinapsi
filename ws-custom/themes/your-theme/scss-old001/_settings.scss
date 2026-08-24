@@ -1,0 +1,265 @@
+@import
+  "../../../../ws-core/scss/core/functions",
+  "../../../../ws-core/scss/core/colors",
+  "../../../../ws-core/scss/core/mixins";
+// COLORS
+// Colors
+$color1: $rosso;
+$color1-lighter: lighten($color1, 50%);//default: lighten($color1, 50%);
+$color1-darker: darken($color1, 50%);//default: darken($color1, 50%);
+$color2: $tortora_scuro;
+$color2-lighter: $tortora;//default: lighten($color2, 50%);
+$color2-darker: darken($color2, 50%);//default: darken($color2, 50%);
+$color3: #0190e2;
+$color3-lighter: lighten($color3, 50%);//default: lighten($color3, 50%);
+$color3-darker: #0073aa;//default: darken($color3, 50%);
+
+$light_gray: lighten($nero, 50%);
+
+// On dark backgrounds
+$color-on-black: $bianco;
+
+// TYPOGRAPHY
+// Text paragraphs
+$text-font-family: "system-ui","system";
+$text-font-size: 1rem;//reset: 16px
+$text-font-weight: 400;
+$text-line-height: 1.5em;
+$blank-space-width: .2em;
+
+$margin: $text-line-height;
+$p-margin: $margin/2;
+
+$gutter: rem-calc(16px);
+
+$text-color: #444;
+$text-link-color: $color1;
+$text-link-hover-color: $color1-darker;
+
+$text-strong-font-weight: bold;
+
+$text-selection-background: $giallo_cadmio;
+$text-selection-color: $nero;
+
+// Borders
+$border-color: $color2;
+
+// Headings
+$headings-font-family: 'Titillium Web','ambroise-std','Trebuchet MS',Georgia,serif;
+$headings-color: $color1;//Default: $color1
+$headings-font-weight: 300;
+$headings-line-height: 1.2em;
+$headings-font-style: normal;
+
+$headings-strong-font-weight: bold;
+$headings-strong-color: inherit;
+//$headings-text-transform: uppercase;
+$headings-padding: 0;
+//$headings-margin: 0 0 $gutter*2 0;
+
+// Small text
+$text-small-font-size: .8rem;//Reset: 80%
+$text-small-line-height: 1.2rem;
+$text-small-font-weight: normal;
+$text-small-color: inherit;
+
+// Meta
+$meta-color: $grigio_scuro;
+$meta-background-color: lighten($nero, 90%);;
+
+// Quotes
+$quotes-font-family: $text-font-family;
+$quotes-font-size: inherit;//reset: 19px;
+$quotes-font-style: inherit;//reset: italic;
+$quotes-font-weight: inherit;//reset: 300;
+$quotes-line-height: inherit;//reset: 1.2631578947;
+$quotes-margin-bottom: $gutter;//reset: 24px;
+$quotes-color: #767676;//reset: #767676;
+
+// Code
+$code-font-family: Hack, monospace;
+$code-font-size: 1em;
+
+// Navs (.nav, .button, .link)
+$navs-font-family: $text-font-family;
+$navs-font-size: 1rem;
+//$navs-text-transform: uppercase;
+//$navs-font-weight: 300;
+$icon-size: 1.3rem;
+$icon-offset: rem-calc(-3px);// Based on position: relative; bottom: $icon-offset;
+$navs-line-height: $text-line-height;
+
+$navs-padding-top: rem-calc(6px);
+$navs-padding-right: $navs-padding-top;
+$navs-padding-bottom: $navs-padding-top;
+$navs-padding-left: $navs-padding-top;
+$navs-padding: $navs-padding-top $navs-padding-right $navs-padding-bottom $navs-padding-left;// If $navs-font-size is changed, adjust to get 36px button height
+
+$navs48-padding: 0.875em;// If $navs-font-size is changed, adjust to get 48px button height
+
+// Links
+$link-color: $text-link-color;// Default: $text-link-color
+$link-hover-color: $text-link-hover-color;// Default: $text-link-hover-color
+
+// Buttons
+$buttons-background: $color1;
+$buttons-color: $color-on-black;
+$buttons-hover-background: $color1;
+$buttons-hover-color: $color-on-black;
+$buttons-active-color: lighten($buttons-background, 50%);
+$buttons-disabled-color: $color2-lighter;
+$button-secondary-border-width: 2px;
+//$buttons-margin: .25em .25em .25em 0;
+$buttons-border-radius: .2em;
+//$buttons48-line-height: $button-line-height;
+//$buttons48-margin: $button-margin;
+
+//Call-to-action (CTA)
+$cta-margin: 0 0 0 2em;
+$cta-padding: 0.5em 1em;
+$cta-background: $color1;
+$cta-color: $bianco;
+$cta-border-radius: 1em;
+$cta-hover-background: $color2;
+$cta-hover-color: $bianco;
+
+// FORMS
+$forms-font-family: $text-font-family;
+
+$highlight-color: $giallo_cadmio;
+$placeholder-background: #eee;// default: #eee; use for maps or image background, before loading
+@mixin navs-label-style(){
+  &,
+  & .text {
+    color: $nero;
+  }
+}
+$question-margin: 0 0 $gutter 0;
+$field-margin: 0;
+$field-background: transparent;
+$field-border-color: $buttons-background;
+$field-border-width: 2px;
+$field-border-radius: 0;
+$field-hover-border-color: $buttons-hover-background;
+$field-focus-border-color: $buttons-hover-background;
+$placeholder-color: $meta-color;
+$selected-option-background-color: $color1;
+// Fieldsets
+$fieldset-border: 2px solid $headings-color;
+$fieldset-legend-color: $headings-color;
+$fieldset-legend-padding: $gutter/2;
+
+// Archive
+$archive-item-border-top: 2px solid $color1;
+
+// Touch sizes
+$touch-min-size: rem-calc(36px);
+$touch-size: rem-calc(48px);
+
+// Layout widths
+// Page width strictly depends on images resolution availability.
+// Evaluate your image sources and set the value.
+$vgrid-max-width: 650px;// Set the max-window width for vertical layout, optimized for portrait orientation. Round up, default: 1024px
+$page-max-width: 1280px;
+$header-max-width: $page-max-width;
+$body-max-width: $page-max-width;
+$content-max-width: 1000px;
+$footer-max-width: $page-max-width;
+
+// Layout heights
+// Header tall: the header starting height, decreases when the user scrolls the page
+// Header minified: increases when the user scrolls the page to the top
+$vgrid-header-top-height: $touch-min-size;// default: $touch-min-size
+$hgrid-header-top-height: $vgrid-header-top-height;// default: $vgrid-header-top-height
+$maxgrid-header-top-height: $vgrid-header-top-height;// default: $vgrid-header-top-height
+$vgrid-header1-height: $touch-size;// default: $touch-size
+$hgrid-header1-height: $touch-size*2;// default: $touch-size
+$maxgrid-header1-height: $hgrid-header1-height;// default: $hgrid-header1-height
+$vgrid-header-height: $vgrid-header-top-height + $vgrid-header1-height;// default: $vgrid-header-top-height + $vgrid-header1-height
+$hgrid-header-height: $hgrid-header-top-height + $hgrid-header1-height;// default: $hgrid-header-top-height + $hgrid-header1-height
+$maxgrid-header-height: $maxgrid-header-top-height + $maxgrid-header1-height;// default: $maxgrid-header-top-height + $maxgrid-header1-height
+
+$vgrid-header-tall-height: $vgrid-header-height;
+$hgrid-header-tall-height: $hgrid-header-height;
+$maxgrid-header-tall-height: $hgrid-header-tall-height;// default: $hgrid-header-tall-height
+
+// HEADER
+$header-background: $bianco;
+$header-link-color: $bianco;
+$header-link-hover-color: $color2;
+$header-top-link-color: $text-link-color;
+$header-top-link-hover-color: $text-link-hover-color;
+$header-top-border-bottom: 1px solid $grigio-chiaro;
+$name-font-size: 1.2em;
+$headline-font-size: $navs-font-size;
+// Logo
+$vgrid-logo-height: $touch-min-size;// default: $touch-min-size
+$hgrid-logo-height: $touch-size;
+$maxgrid-logo-height: $touch-size;
+$headline-height: rem-calc(22px);
+// Modals
+$modal-background: $color2;// Default: silver
+$vgrid-header-modal-background: $color1;// Default: $modal-background
+// Content start top
+$vgrid-content-start-top: $vgrid-header-height;
+$hgrid-content-start-top: $hgrid-header-height;
+$maxgrid-content-start-top: $maxgrid-header-height;
+$vgrid-content-start-top-header-tall: $vgrid-header-height;
+$hgrid-content-start-top-header-tall: $hgrid-header-height;
+// Cover
+$cover-background-color: $light_gray;
+$vgrid-cover-height: calc(100vh - #{$vgrid-header-height});// default: calc(100vh - #{$vgrid-header-height});
+$hgrid-cover-height: calc(100vh - #{$hgrid-header-height});// default: calc(100vh - #{$hgrid-header-height});
+$maxgrid-cover-height: calc(100vh - #{$maxgrid-header-height});// default: calc(100vh - #{$maxgrid-header-height});
+
+// SHADOWS
+$shadow-large: rem-calc(0 0 20px 15px) rgba(0, 0, 0, 0.2);
+$shadow-bottom: rem-calc(-1px 1px 3px) rgba(0,0,0,0.14);
+$shadow: rem-calc(0 2px 5px 0) rgba(0,0,0,0.16), rem-calc(0 2px 10px 0) rgba(0,0,0,0.12);
+$shadow-hover: rem-calc(0 5px 11px 0) rgba(0,0,0,0.18), rem-calc(0 4px 15px 0) rgba(0,0,0,0.15);
+//  rem-calc(0px 0px 8px -2px) rgba(0, 0, 0, 0.75);
+
+// FOOTER
+$footer-background: $meta-background-color;
+
+// MEDIA
+$figure-margin: $gutter;
+
+// TABLES
+$thead-th-color: $color1;
+$thead-th-font-weight: bold;
+$thead-tr-border-bottom: 1px solid $color1;
+$table-caption-color: $color2;
+$table-caption-border-bottom: 2px solid $color1;
+$tbody-th-color: $color1;
+$tbody-th-font-weight: normal;
+$tbody-tr-border-bottom: 1px solid $color1;
+$tfoot-tr-border-bottom: 1px solid $color1;
+
+// NEGATIVE COLORS
+// Black or dark colours
+$headings-color-on-black: $color2;
+$headings-link-color-on-black: $color2-lighter;
+$headings-link-hover-color-on-black: $bianco;
+
+$text-link-color-on-black: $color2;
+$text-link-hover-color-on-black: $bianco;
+
+$highlight-color-on-black: $giallo_cadmio;
+
+$text-selection-background-on-black: $highlight-color-on-black;
+$text-selection-color-on-black: $nero;
+
+$unique_selling_proposition-color-on-black: $highlight-color-on-black;
+// Buttons
+$buttons-background-on-black: $text-link-color-on-black;
+$buttons-color-on-black: $text-link-color;
+$buttons-hover-background-on-black: $color1;
+$buttons-hover-color: $color-on-black;
+$buttons-active-color-on-black: lighten($buttons-background, 50%);
+$buttons-disabled-color-on-black: $color2-lighter;
+//Call-to-action (CTA)
+$cta-background-on-black: $color2;
+$cta-color-on-black: $color1;
+$cta-hover-background-on-black: $color1-lighter;
+$cta-hover-color-on-black: $color1;

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ws_theme>
+	<name>Il Matriciano (Localbiz Child)</name>
+	<id>ilmatriciano</id>
+	<parent_theme_id>localbiz</parent_theme_id>
+	<text_domain>ilmatriciano</text_domain>
+	<version>0.1</version>
+	<description>Official child theme of ilmatriciano.it 2019</description>
+	<url>https://localbiz.it/themes/ilmatriciano/</url>
+	<author_name>Localbiz.it</author_name>
+	<author_uri>https://localbiz.it</author_uri>
+	<tags>scss; microdata</tags>
+</ws_theme>

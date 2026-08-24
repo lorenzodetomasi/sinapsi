@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ws_theme>
+	<name>Localbiz</name>
+	<id>localbiz</id>
+	<text_domain>localbiz</text_domain>
+	<version>0.1</version>
+	<description>Official theme of localbiz.it 2017</description>
+	<url>https://localbiz.it/themes/localbiz/</url>
+	<author_name>Localbiz.it</author_name>
+	<author_uri>https://localbiz.it</author_uri>
+	<tags>scss; microdata</tags>
+</ws_theme>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lido di Ostia — Meetoo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" />
+  <link rel="stylesheet" href="meetoo.css" />
+  <style>
+    /* Ancore delle sezioni: l'header è sticky, lo stacco evita che il titolo ci finisca sotto. */
+    section { scroll-margin-top: 100px; }
+    /* Dentro l'hero la colonna non ha stacco proprio: lo dà l'hero stesso. */
+    .hero .wrap { padding-top: 0; }
+
+    .hero { background: linear-gradient(160deg, var(--color-sea), var(--color-sand)); border-radius: 0 0 24px 24px; padding: 34px 20px 30px; margin-bottom: 8px; }
+    .hero h1 { font-family: var(--font-family1); font-weight: 700; font-size: 2.1rem; color: var(--color1); margin: 0 0 6px; }
+    .hero p { margin: 0; color: light-dark(#2b2b33, #e6e0e9); }
+
+    .explore { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 18px; }
+    .exp { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit; background: var(--color-background-section1); border: 1px solid var(--color-line); border-radius: var(--border-radius); padding: 16px; transition: border-color .15s, transform .15s; }
+    .exp:hover { border-color: var(--color-link); transform: translateY(-2px); }
+    .exp .material-symbols-outlined { font-size: 2rem; color: var(--color1); }
+    .exp b { font-family: var(--font-family1); font-weight: 600; }
+    .exp span { color: var(--color-hint); font-size: .85rem; }
+
+/*    .lungomare { background: linear-gradient(120deg, var(--color-sea)); }*/
+
+  
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="wrap" style="padding-bottom:0">
+      <h1>Lido di Ostia</h1>
+      <p>Il mare di Roma: scopri i luoghi del lungomare, gli eventi, i gruppi sul territorio e le iniziative per categoria/tematica.</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="grid">
+      <a class="card" href="#eventi">
+        <div class="card-icon"><span class="material-symbols-outlined">event</span></div>
+        <div class="card-body">
+          <h3 class="card-title">Eventi</h3>
+          <div class="card-meta"><span>Cosa fare a Ostia</span></div>
+        </div>
+        <div class="card-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
+      </a>
+      <a class="card" href="#gruppi">
+        <div class="card-icon"><span class="material-symbols-outlined">groups</span></div>
+        <div class="card-body">
+          <h3 class="card-title">Gruppi</h3>
+          <div class="card-meta"><span>Chi anima il territorio</span></div>
+        </div>
+        <div class="card-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
+      </a>
+      <a class="card" href="#luoghi">
+        <div class="card-icon"><span class="material-symbols-outlined">place</span></div>
+        <div class="card-body">
+          <h3 class="card-title">Luoghi</h3>
+          <div class="card-meta"><span>Il lungomare e oltre</span></div>
+        </div>
+        <div class="card-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
+      </a>
+    </section>
+    <section>
+        <h2 class="sec-head"><span class="material-symbols-outlined">category</span>Categorie</h2>
+        <div class="grid" id="types">
+          <a class="card" href="#letterarie">
+            <div class="card-icon"><span class="material-symbols-outlined">menu_book</span></div>
+            <div class="card-body">
+              <h3 class="card-title">Libri e letture</h3>
+              <div class="card-meta"><span>Iniziative letterarie</span></div>
+            </div>
+            <div class="card-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
+          </a>
+        </div>
+    </section>
+
+    <section id="eventi">
+      <h2 class="sec-head"><span class="material-symbols-outlined">event</span>Prossimi eventi <span class="count" id="ev-count"></span></h2>
+      <div class="cards" id="ev-list"><div class="empty">Carico…</div></div>
+    </section>
+
+    <section id="gruppi">
+      <h2 class="sec-head"><span class="material-symbols-outlined">groups</span>Gruppi <span class="count" id="grp-count"></span></h2>
+      <div class="grid" id="grp-list"><div class="empty">Carico…</div></div>
+    </section>
+
+    <section id="luoghi">
+      <h2 class="sec-head"><span class="material-symbols-outlined">place</span>Luoghi</h2>
+      <div class="cards" id="places-list">
+        <a class="card lungomare" href="waterfront.html">
+          <div class="card-icon"><span class="material-symbols-outlined">water</span></div>
+          <div class="card-body">
+            <h3 class="card-title">Il Lungomare</h3>
+            <div class="card-meta"><span>Le fermate del lungomare di Ostia come una linea: spiagge, servizi, accessi.</span></div>
+          </div>
+          <div class="card-arrow"><span class="material-symbols-outlined">arrow_forward</span></div>
+        </a>
+      </div>
+    </section>
+
+    <section id="letterarie"><h2 class="sec-head"><span class="material-symbols-outlined">menu_book</span>Libri e letture <span class="count" id="coll-count"></span></h2><div class="grid" id="coll-list"><div class="empty">Carico…</div></div></section>
+
+  </div>
+
+  <!-- Moduli condivisi: template delle card + header (devono precedere lo script di pagina). -->
+  <script src="cards.js"></script>
+  <script src="header.js"></script>
+
+  <script>
+  (function () {
+    const params = new URLSearchParams(location.search);
+    // Dove stanno i contenuti lo dice l'header condiviso: dichiarato con un <meta>
+    // se c'è, altrimenti dedotto. Prima ogni pagina se lo ricavava per conto suo,
+    // con un ripiego su '/sinapsi/…' che sarebbe scattato proprio al trasloco.
+    const CONTENT_BASE = Meetoo.contentBase();
+    const BASE_Q = params.get('base') ? '&base=' + encodeURIComponent(params.get('base')) : '';
+    const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+    // Riga 2: a sinistra dove sei, a destra il contesto amministrativo (come waterfront).
+    (function crumb() {
+      if (!window.Meetoo) { setTimeout(crumb, 100); return; }
+      Meetoo.setBreadcrumb(
+        [{ label: 'Lido di Ostia', current: true }],
+        [{ label: 'Roma' }, { label: 'Municipio 10' }]
+      );
+    })();
+
+    // I template delle card stanno in cards.js (Meetoo.eventCard / tileCard).
+    const eventCard = (e) => Meetoo.eventCard(e, { base: BASE_Q });
+    const setEmpty = (id, msg) => { document.getElementById(id).innerHTML = '<div class="empty">' + esc(msg) + '</div>'; };
+
+    fetch(CONTENT_BASE + 'events/_index/events.json', { headers: { Accept: 'application/json' } })
+      .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(); })
+      .then((list) => {
+        const all = Array.isArray(list) ? list : [];
+        const now = Date.now(); const endOf = (e) => new Date(e.endDate || e.startDate || 0).getTime();
+
+        // Prossimi eventi (singoli, futuri)
+        const up = all.filter((e) => e.kind !== 'series' && endOf(e) >= now).sort((a, b) => new Date(a.startDate) - new Date(b.startDate)).slice(0, 8);
+        document.getElementById('ev-list').innerHTML = up.length ? up.map(eventCard).join('') : '<div class="empty">Nessun evento in programma al momento.</div>';
+        document.getElementById('ev-count').textContent = up.length || '';
+
+        // Libri e letture = collezioni (serie)
+        const colls = all.filter((e) => e.kind === 'series').sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        // BookCrossing = collezione di LUOGHI (iniziativa letteraria diffusa), fissa in testa.
+        const bookX = Meetoo.tileCard({ href: 'placecollection.html?id=places/lido-di-ostia/bookcrossing' + BASE_Q, icon: 'menu_book', accent: true, title: 'BookCrossing', meta: 'Scambio libri diffuso — collezione di luoghi' });
+        document.getElementById('coll-list').innerHTML = bookX + (colls.length ? colls.map((c) => Meetoo.tileCard({ href: 'collection.html?id=' + encodeURIComponent(c.path) + BASE_Q, icon: 'collections_bookmark', accent: true, title: c.name || c.path, meta: c.organizer || 'Collezione di eventi', metaIcon: c.organizer ? Meetoo.orgIcon(c.organizerType, c.organizer) : '' })).join('') : '');
+        document.getElementById('coll-count').textContent = (colls.length + 1) || '';
+
+      })
+      .catch(() => { ['ev-list', 'coll-list'].forEach((id) => setEmpty(id, 'Indice non disponibile: apri l\'editor e usa Rebuild index.')); });
+
+    // Gruppi = Organizations + LocalBusiness con esperienze collettive (indice gruppi.json).
+    // Icona: regola condivisa (cards.js), la stessa di collezioni ed eventi.
+    function groupTile(g) {
+      const isOrg = g.kind === 'org';
+      return Meetoo.tileCard({
+        href: isOrg ? ('organizer.html?org=' + encodeURIComponent(g.key) + BASE_Q) : (g.url || g.map || '#'),
+        icon: Meetoo.orgIcon(g['@type'], g.name),
+        title: g.name,
+        meta: isOrg ? 'Eventi e collezioni' : 'Progetti ed eventi collettivi',
+        external: !isOrg,   // i luoghi rimandano al loro sito
+      });
+    }
+    fetch(CONTENT_BASE + '_index/gruppi.json', { headers: { Accept: 'application/json' } })
+      .then((r) => { const ct = r.headers.get('content-type') || ''; return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(); })
+      .then((list) => {
+        const gs = Array.isArray(list) ? list : [];
+        document.getElementById('grp-list').innerHTML = gs.length ? gs.map(groupTile).join('') : '<div class="empty">Nessun gruppo.</div>';
+        document.getElementById('grp-count').textContent = gs.length || '';
+      })
+      .catch(() => setEmpty('grp-list', 'Indice gruppi non disponibile: rilancia rebuild-index.'));
+  })();
+  </script>
+</body>
+</html>

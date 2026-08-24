@@ -1,0 +1,450 @@
+@import "settings";
+@font-face {
+  font-family: system;
+  font-style: normal;
+  font-weight: 300;
+  src: local(".SFNSText-Light"), local(".HelveticaNeueDeskInterface-Light"), local(".LucidaGrandeUI"), local("Ubuntu Light"), local("Segoe UI Light"), local("Roboto-Light"), local("DroidSans"), local("Tahoma");
+}
+.material-symbols-outlined {
+  font-variation-settings:
+  'FILL' 0,
+  'wght' 400,
+  'GRAD' 0,
+  'opsz' 48;
+}
+img.svg-symbols {
+  width: 24px;
+  height: auto;
+}
+html {
+  font-family: $text-font-family;
+  line-height: $text-line-height;
+  color: $text-color;
+  font-size: $text-font-size;
+  font-weight: $text-font-weight;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+}
+.all-no {
+  display: none !important;
+}
+// Padding
+#main section {
+  padding-top: $gutter*2;
+  padding-bottom: $gutter*2;
+}
+.padding-x2 {
+  padding: $gutter*2;
+}
+.padding-d2 {
+  padding: $gutter/2;
+}
+.padding-h-d2 {
+  padding-right: $gutter/2;
+  padding-left: $gutter/2;
+}
+.padding-v-d2 {
+  padding-top: $gutter/2;
+  padding-bottom: $gutter/2;
+}
+.center,
+.content-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+.content-container {
+  max-width: $content-max-width;
+}
+#page {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  gap: 0px 0px;
+  grid-template-areas:
+    "header"
+    "main-container";
+  width: 100%;
+}
+#header,
+#main,
+#footer,
+aside.meta {
+  box-sizing: border-box;
+  width: 100%;
+}
+#header {
+  grid-area: header;
+  position: sticky;
+  top: 0;
+}
+#header-top {
+  border-bottom: 1px solid $meta-background-color;
+}
+#header1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  & > div {
+    display: flex;
+    & > [itemprop="logo"] {
+      & > img {
+        height: 4em;
+        margin-top: 1.5em;
+        margin-right: 1em;
+      }
+    }
+  }
+}
+#main-container {
+  grid-area: main-container;
+  overflow-y: auto;
+}
+main {
+  grid-area: main;
+}
+.cover {
+  width: 100%;
+  @if variable-exists(cover-background-color) {
+    background-color: $cover-background-color;
+  }
+  background-size: cover;
+  background-position-x: center;
+  background-position-y: center;
+  background-repeat: no-repeat;
+  h1 {
+    margin: 0;
+  }
+}
+img[itemprop="primaryImageOfPage"] {
+  width: 100%;
+}
+
+// Typography
+a {
+  color: $text-link-color;
+  &:hover {
+    color: $text-link-hover-color;
+  }
+}
+h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
+  font-family: $headings-font-family;
+  color: $headings-color;
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  strong {
+    color: $headings-strong-color;
+    font-size: 1em;
+    font-weight: $headings-strong-font-weight;
+  }
+  &.monochrome {
+    strong {
+      color: inherit;
+    }
+  }
+}
+.uppercase {
+  text-transform: uppercase;
+}
+ul, ol, dl {
+  padding-left: 1em;
+}
+// Flex
+.flex {
+  display: flex;
+  .flex1 {
+    flex: 1;
+  }
+}
+.width-full {
+  width: 100%;
+}
+// Boxes
+.box {
+  padding: $gutter;
+}
+// Navs
+.nav .material-symbols-outlined {
+  vertical-align: middle;
+}
+#header,
+#footer,
+.nav {
+  a {
+    color: $headings-color;
+    box-sizing: border-box;
+    text-decoration: none;
+  }
+  li a {
+    border-bottom: 2px solid transparent;
+  }
+  li a:hover {
+    color: $text-color;
+    border-bottom: 2px solid $text-color;
+  }
+  li.current-menu-item a {
+    color: $headings-color;
+    border-bottom: 2px solid $headings-color;
+  }
+}
+.nav {
+   abbr[title] {
+    	text-decoration: none;
+  }
+  .material-symbols-outlined ~ .text {
+    vertical-align: middle;
+    margin-left: $gutter/2;
+  }
+  & > div {
+    display: flex;
+    & > ul,
+    & > ol {
+      display: flex;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      & > li {
+        margin: 0;
+        a {
+          padding: $gutter/2 0;
+          text-decoration: none;
+        }
+      }
+    }
+  }
+  &.padding-h-d2 {
+  padding: 0;
+    & > div > ul > li a,
+    & > div > ol > li a {
+      padding: $gutter/2;
+    }
+  }
+  &.vertical {
+    & > div {
+      align-items: flex-end;
+      & > ul,
+      & > ol {
+        flex-direction: column;
+        align-items: flex-start;
+        li,
+        li a {
+          display: flex;
+          align-items: center;
+        }
+      }
+      &.fullwidth {
+        & > div {
+          & > ul,
+          & > ol {
+            & > li {
+              width: 100%;
+              a {
+               width: 100%;
+              }            
+            }
+          }
+        }
+      }
+    }
+  }
+  &.horizontal {
+    & > div {
+      justify-content: space-between;
+      align-items: center;
+      & > ul,
+      & > ol {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        & > li {
+          display: inline-block;
+        }
+      }
+    }
+  }
+}
+// Labels
+.label,
+legend.label {
+  padding: .5rem .5rem .5rem 0;
+  margin-bottom: $field-border-width;
+  position: relative;
+  top: -0.05rem;
+  &.background {
+    padding: .5rem;
+  }
+  &.material-icons,
+  .material-icons {
+    padding: .25rem;
+    line-height: 1.2;
+  }
+  .help {
+    display: block;
+    font-size: .8em;
+  }
+}
+// Inputs
+input:not([type]),
+input[type="color"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"],
+input[type="week"],
+input[type="email"],
+input[type="month"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="text"],
+input[type="url"],
+textarea,
+select {
+  box-sizing: border-box;
+  min-width: 100px;
+  min-height: 2.5rem;
+  font-size: 1rem;
+  border: none;
+  border-bottom: $field-border-width solid $field-border-color;
+  border-radius: $field-border-radius;
+  padding: .5em;
+  outline: none;
+  background: $field-background;
+  box-shadow: none;
+  transition: all .3s;
+  &:hover,
+  &:focus,
+  &:active {
+    border-color: $field-hover-border-color;
+  }
+}
+[type="checkbox"] { 
+    appearance: none;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+  display: inline-block; 
+  position: relative; 
+  top: .13em; 
+  width: 1.5em; 
+  height: 1.5em; 
+  z-index: 0; 
+  border: $field-border-width solid $field-border-color;
+  border-radius: $field-border-radius;
+  transition: .2s; 
+  margin-right: 0.5em; 
+  border-radius: 1px; 
+}
+[type="checkbox"]:checked { 
+  top: 0px; 
+  left: -5px; 
+  width: .5em; 
+  height: 1em; 
+  border-top: 2px solid transparent; 
+  border-left: 2px solid transparent; 
+  border-right: 2px solid $text-color; 
+  border-bottom: 2px solid $text-color; 
+  -webkit-transform: rotate(40deg); 
+  transform: rotate(40deg); 
+  -webkit-backface-visibility: hidden; 
+  backface-visibility: hidden; 
+  -webkit-transform-origin: 100% 100%; 
+  transform-origin: 100% 100%;
+}
+// Buttons
+.button {
+  display: flex;
+  align-items: center;
+  border: $buttons-border;
+  border-radius: $buttons-border-radius;
+  padding: .5em 1em;
+  background: $buttons-background;
+  color: $buttons-color;
+  font-size: 1rem;
+  &:hover {
+    background: $buttons-hover-background;
+    color: $buttons-hover-color;
+  }
+  .material-symbols-outlined.right {
+    margin-left: .25em;
+  }
+  .material-symbols-outlined.left {
+    margin-right: .25em;
+  }
+}
+a.button {
+  text-decoration: none;
+}
+// Grids
+.grid-container,
+.grid-container * {
+    box-sizing: border-box; /* Fondamentale: include il bordo nel calcolo della larghezza */
+    margin: 0;
+    padding: 0;
+}
+
+/* CONTENITORE: Chiude il perimetro in basso e a destra */
+.grid-container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    
+    container-type: inline-size;
+    container-name: myGrid;
+
+    border: 1px solid $meta-background-color;
+    
+    /* Colore di sfondo opzionale per evitare pixel vuoti nel rendering sub-pixel */
+    background-color: white; 
+}
+
+/* CELLA: Disegna i bordi in alto e a sinistra */
+.grid-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    border: 1px solid $meta-background-color;
+    
+    aspect-ratio: 1 / 1;
+    text-decoration: none;
+    overflow: hidden;
+    transition: background-color 0.2s;
+}
+
+.grid-cell:hover {
+    background-color: $meta-background-color;;
+    cursor: pointer;
+    /* Per evidenziare il bordo attivo sopra gli altri (opzionale):
+    z-index: 1;
+    outline: 1px solid #999; 
+    */
+}
+
+.grid-cell img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: #555;
+}
+
+/* RESPONSIVITÀ (Container Queries) */
+
+/* < 1000px: 2 colonne */
+.grid-cell {
+    flex: 0 0 50%;
+    max-width: 50%;
+}
+
+/* >= 1000px: 4 colonne */
+@container myGrid (min-width: 998px) {
+    .grid-cell {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+}

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="//localbiz.it/wp-content/plugins/wordpress-seo/css/main-sitemap.xsl"?>
+<social_media>
+	<instagram>
+		<imagesize>
+			<name>Square Image</name>
+			<width>1080px</width>
+			<height>1080px</width>
+			<res>72dpi</res>
+			<ratio>1:1</ratio>
+		</imagesize>
+		<imagesize>
+			<name>Horizontal Image</name>
+			<width>1080px</width>
+			<height>566px</height>
+			<res>72dpi</res>
+			<ratio></ratio>
+		</imagesize>
+		<imagesize>
+			<name>Vertical Image</name>
+			<width>1080px</width>
+			<height>1350px</height>
+			<res>72dpi</res>
+			<ratio></ratio>
+		</imagesize>
+	</instagram>
+	<facebook>
+		<imagesize>
+			<name>Profile Image</name>
+			<width>360px</width>
+			<height>360px</height>
+			<min_width>180px</min_width>
+			<min_height>180px</min_height>
+			<res>72dpi</res>
+			<ratio>1:1</ratio>
+			<url>https://www.facebook.com/help/125379114252045</url>
+		</imagesize>
+		<imagesize>
+			<name>Cover Image</name>
+			<width>1920px</width>
+			<height>1080px</height>
+			<min_width></min_width>
+			<min_height></min_height>
+			<res>72dpi</res>
+			<ratio>16:9</ratio>
+			<url>https://www.facebook.com/help/125379114252045</url>
+		</imagesize>
+	</facebook>
+</social_media>

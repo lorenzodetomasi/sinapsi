@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Linea Mare Ostia - UI Proporzionale</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  
+  <style>
+:root {
+  color-scheme: light dark;
+  --font-family1: 'Roboto', serif;
+  --font-family2: 'Roboto', sans-serif;
+  --font-size: 1em;
+  --font-size-small: 0.8em;
+  --gutter: calc(var(--font-size)*1.2);
+  --gutter-d2: calc(var(--gutter)/2);
+  --gutter-d4: calc(var(--gutter)/4);
+
+  --color1: light-dark(red, orange);
+  --color2: light-dark(black, white);
+  --color3: #a8c7fa;
+  --color4: #062e6f;
+  --color-background-main: light-dark(#ffffff, #333333);
+  --color-background-section: #1e1f20;
+  --color-text: light-dark(#333333, #c4c7c5);
+  --color-link: var(--color3);
+  --color-active: var(--color1);
+  --color-hover: var(--color1);
+  --color-danger: red;
+  --color-hint: gray;
+  --color-line-track: #F5A623;
+  --color-line-track-over: #ffffff;
+
+  --md-sys-color-surface: #FEF7FF;
+  --md-sys-color-on-surface: #1D1B20;
+  --md-sys-color-on-surface-variant: #49454F;
+  --md-sys-color-background: #F4F5F7;
+  --border-radius: var(--gutter-d2);
+  --icon-size: calc(var(--font-size)*1.5);
+
+  --button-background: var(--color-link);
+  --button-color: var(--color4);
+  --button-font-size: var(--font-size);
+  --button-icon-size: var(--icon-size);
+  --button-padding: var(--gutter-d4) var(--gutter-d2);
+  --button-large-padding: var(--gutter-d2) var(--gutter);
+  --button-border-radius: var(--border-radius);
+
+  --card-background: light-dark(#ffffff, #1e1f20);
+  --card-border-color: var(--card-background);
+  --card-focus-border-color: var(--color1);
+
+  --base-vw: 33.33;   /* larghezza fermata (vw); più grande su mobile */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family2);
+  background-color: var(--color-background-main);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.carousel-container {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  align-items: center;
+  padding: 0 calc(50vw - var(--base-vw) * 0.5vw);
+  -webkit-overflow-scrolling: touch;
+}
+
+.carousel-container::-webkit-scrollbar { display: none; }
+.carousel-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+.station-wrapper {
+  scroll-snap-align: center;
+  display: grid;
+  grid-template-rows: 264px 60px 264px;
+  grid-template-columns: minmax(0, 1fr); /* colonna vincolata alla larghezza del wrapper (niente crescita da contenuto) */
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.3s;
+}
+
+.card-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 12px 10px;
+  box-sizing: border-box;
+}
+.slot-top { align-items: flex-end; }
+.slot-bottom { align-items: flex-start; }
+
+.line-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.line-track::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(var(--font-size)*4);
+  background-color: var(--color-line-track);
+  z-index: 0;
+}
+.station-wrapper:first-child .line-track::before { left: 50%; border-top-left-radius: 6px; border-bottom-left-radius: 6px;}
+.station-wrapper:last-child .line-track::before { right: 50%; border-top-right-radius: 6px; border-bottom-right-radius: 6px;}
+
+.node {
+  width: 20px;
+  height: 20px;
+  background-color: var(--color-line-track-over);
+  border: 6px solid var(--color-line-track);
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Etichetta della distanza posizionata perfettamente al centro tra i due nodi */
+.line-distance-label {
+  position: absolute;
+  top: calc(50% - 0.7rem);
+  /* La proprietà 'left' viene calcolata e iniettata tramite Javascript per ogni nodo */
+  transform: translateX(-50%);
+  font-size: var(--font-size);
+  color: var(--color-line-track-over);
+  padding: 2px 8px;
+  white-space: nowrap;
+  z-index: 2;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.card {
+  width: 100%;
+  min-width: 0;
+  /* La card non eredita lo scarto-distanza del wrapper: resta a larghezza "base"
+     e centrata (lo scarto è solo spazio/linea). Evita card enormi e non centrate. */
+  max-width: calc(var(--base-vw, 33.33) * 1vw);
+  max-height: 100%;              /* non superare lo slot: il contenuto extra scorre */
+  background-color: var(--card-background);
+  border-radius: 20px;
+  padding: 18px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.92);
+  opacity: 0.6;
+  position: relative;
+}
+/* Contenuto scrollabile verticalmente quando è troppo (es. molti containsPlace) */
+.card-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+/* I figli non si comprimono verticalmente: il contenuto extra scorre (niente chip schiacciate) */
+.card-scroll > * { flex-shrink: 0; }
+
+/* Indicatore di scroll verticale: sfumatura + chevron, visibile SOLO quando c'è
+   contenuto nascosto sotto (classe .scroll-more sul contenitore .card / .modal). */
+.scroll-hint {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 36px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;
+  background: linear-gradient(to bottom, transparent, var(--card-background) 78%);
+  color: var(--color-line-track);
+  pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+  z-index: 3;
+  border-radius: 0 0 18px 18px;
+}
+.scroll-more > .scroll-hint { opacity: 1; }
+.scroll-hint .icon { font-size: 1.4em; animation: scrollhint-bob 1.5s ease-in-out infinite; }
+@keyframes scrollhint-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+.card-scroll::-webkit-scrollbar { width: 6px; }
+.card-scroll::-webkit-scrollbar-thumb { background: var(--color-hint); border-radius: 3px; }
+
+.station-name {
+  font-size: var(--font-size);
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+  color: var(--color-line-track);
+}
+
+.additional-type {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.description {
+  font-size: var(--font-size);
+  color: var(--color-text);
+  margin-bottom: 12px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.address {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 4px 0 8px 0;
+}
+
+.badge {
+  display: flex; 
+  flex-flow: row;
+  align-items: center;
+  padding: var(--button-padding);
+  border-radius: var(--gutter-d2);
+  color: white; font-weight: 700;
+  text-transform: uppercase;
+}
+.badge-rating { background-color: var(--color-line-track); color: #14213D; }
+
+.spacer { flex: 1; }
+
+.actions { display: flex; flex-direction: row; gap: 8px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: var(--button-padding);
+  border-radius: var(--button-border-radius);
+  font-weight: 600;
+  font-size: var(--button-font-size);
+  transition: transform 0.1s, background-color 0.2s;
+  background-color: var(--button-background); color: var(--button-color);
+}
+.btn:hover { background-color: #0d1629; }
+.btn:active { transform: scale(0.97); }
+
+.station-wrapper.active .node {
+  background-color: var(--color-line-track-over);
+  transform: scale(1.5);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.3);
+}
+
+.station-wrapper.active .card {
+  transform: scale(1);
+  opacity: 1;
+  border-color: var(--card-focus-border-color);
+  box-shadow: 0 8px 24px rgba(20, 33, 61, 0.15);
+}
+
+/* Struttura invisibile dei triangoli per il focus */
+.slot-top .card::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-style: solid;
+  border-color: var(--card-border-color) transparent transparent transparent;
+  transition: border-color 0.3s;
+}
+
+.slot-bottom .card::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 8px 8px 8px;
+  border-style: solid;
+  border-color: var(--card-border-color);
+  transition: border-color 0.3s;
+}
+
+/* Triangoli colorati quando la card è attiva (selezionata) */
+.station-wrapper.active .slot-top .card::after {
+  border-color: var(--card-focus-border-color) transparent transparent transparent;
+}
+
+.station-wrapper.active .slot-bottom .card::after {
+  border-color: transparent transparent var(--card-focus-border-color) transparent;
+}
+
+.icon {
+  font-family: 'Material Icons Round';
+  font-weight: normal;
+  font-style: normal;
+  font-size: var(--icon-size);
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+#loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; color: var(--md-sys-color-on-surface-variant); }
+
+/* Categoria (tipo tradotto + additionalType) sopra al nome della spiaggia */
+/* Chip UNICA: tipo (icona) + tipologia (Comune). Colorata per tipologia. */
+.cat { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; font-size: var(--font-size-small); font-weight: 700; letter-spacing: .01em; padding: 3px 10px; border-radius: 999px; margin-bottom: 8px; max-width: 100%; }
+.cat .icon { font-size: 1.05em; }
+.cat-neutral { background: rgba(245,166,35,.14); color: var(--color-line-track); }
+.tip-libera { background: #1b5e20; color: #c8e6c9; }
+.tip-attrezzata { background: #00695c; color: #b2dfdb; }
+.tip-concessione { background: #e65100; color: #ffe0b2; }
+.tip-riservato { background: #37474f; color: #cfd8dc; }
+.tip-dog { background: #4e342e; color: #d7ccc8; }
+
+/* Stato della fermata (badge in alto): libera / concessione / non accessibile / chiuso */
+.beach-status { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-size-small); font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 8px; align-self: flex-start; }
+.beach-status .icon { font-size: 1.05em; }
+.status-chiusa { background: #b71c1c; color: #ffcdd2; }
+
+/* Stabilimento precedente (managementHistory) */
+.ex-operator { font-size: var(--font-size-small); font-style: italic; color: var(--color-hint); margin: 0 0 10px; }
+
+/* --- Attività contenute nella spiaggia (containsPlace) --- */
+.contained { margin-top: 10px; }
+.contained-line { height: 1px; background: var(--color-line-track); opacity: .4; margin: 12px 0 12px; }
+/* Luogo che contiene la fermata (containedInPlace), prima dell'indirizzo */
+.contained-in { display: flex; align-items: center; gap: 6px; font-size: var(--font-size-small); color: var(--color-hint); margin-bottom: 6px; }
+.contained-in .icon { font-size: 1.05em; }
+/* Rating del contenitore + Maps, prima della linea dei containsPlace */
+.container-actions { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; }
+.biz { display: flex; flex-direction: column; gap: 6px; padding: 7px 0; }
+.biz-head { display: flex; align-items: center; gap: 8px; }
+.biz-name { font-size: var(--font-size); font-weight: 600; color: var(--color-line-track); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.biz-rating { flex: 0 0 auto; }
+.biz-info { flex: 0 0 auto; }
+/* Servizi: strip a tutta larghezza card, scrollabile orizzontalmente se molti */
+.biz-amenities { display: flex; align-items: center; gap: 12px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -ms-overflow-style: none; overscroll-behavior-x: contain; }
+.biz-amenities:empty { display: none; }
+.biz-amenities::-webkit-scrollbar { display: none; }
+.biz-amen { flex: 0 0 auto; font-size: 1.05em; color: var(--color-hint); cursor: default; }
+.biz-rating { display: inline-flex; align-items: center; gap: 2px; font-size: var(--font-size-small); font-weight: 700; color: #14213D; background: var(--color-line-track); padding: 1px 6px; border-radius: 8px; }
+.biz-rating .icon { font-size: 1em; }
+.biz-info { display: inline-flex; align-items: center; justify-content: center; border: none; background: var(--button-background); color: var(--button-color); border-radius: 50%; width: 26px; height: 26px; cursor: pointer; padding: 0; flex-shrink: 0; }
+.biz-info .icon { font-size: 1.05em; }
+.biz-info:hover { background: #0d1629; color: #fff; }
+
+/* --- Scheda dettagli in sovrimpressione (modale) --- */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card-background); color: var(--color-text); border-radius: 20px; padding: 0; max-width: 440px; width: 100%; max-height: 82vh; overflow: hidden; position: relative; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+.modal-scroll { padding: 26px; max-height: 82vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.modal-scroll::-webkit-scrollbar { width: 6px; }
+.modal-scroll::-webkit-scrollbar-thumb { background: var(--color-hint); border-radius: 3px; }
+.modal-close { position: absolute; top: 10px; right: 10px; border: none; background: transparent; color: var(--color-text); cursor: pointer; padding: 4px; }
+.modal-title { margin: 0 28px 8px 0; color: var(--color-line-track); font-size: 1.3em; line-height: 1.25; }
+.modal-sub { font-size: var(--font-size-small); font-weight: 600; margin-bottom: 14px; color: var(--color-text); }
+.modal-rating { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: #14213D; background: var(--color-line-track); padding: 2px 8px; border-radius: 8px; margin-bottom: 16px; }
+.modal-desc { line-height: 1.55; margin: 16px 0; }
+.modal-line { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-small); margin: 12px 0; }
+.modal-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+.modal-loading { padding: 24px; text-align: center; color: var(--color-hint); }
+.modal-services { margin-top: 22px; }
+.modal-services-label { font-size: var(--font-size-small); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-hint); margin-bottom: 10px; }
+.modal-amenities { display: flex; flex-wrap: wrap; gap: 12px 22px; }
+.amenity { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-size-small); color: var(--color-text); }
+.amenity .icon { font-size: 1.15em; color: var(--color-line-track); }
+.amenity.amenity-no { color: var(--color-hint); text-decoration: line-through; }
+.amenity.amenity-no .icon { color: var(--color-hint); }
+
+/* La chip non deve sforare su card strette */
+.cat { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Header (96px) con titolo breadcrumb + pulsante Legenda --- */
+.app-header { height: 96px; flex-shrink: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 28px; background: var(--card-background); border-bottom: 1px solid rgba(255,255,255,.08); }
+.app-title { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 1em; line-height: 1.1; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; min-width: 0; }
+.app-title .crumb { color: #e0554b; }                 /* livello corrente in rosso */
+.app-admin { font-family: Georgia, 'Times New Roman', serif; font-size: 1em; color: var(--color-hint); display: flex; align-items: baseline; gap: 10px; }
+.app-admin .crumb { color: var(--color-hint); }
+.crumb { white-space: nowrap; text-decoration: none; }
+a.crumb { cursor: pointer; }                           /* ancestor = link navigabile */
+a.crumb:hover { text-decoration: underline; }
+.sep { color: var(--color-hint); opacity: .5; font-weight: 400; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border: none; border-radius: 999px; background: transparent; color: var(--color-text); cursor: pointer; }
+.icon-btn:hover { background: rgba(255,255,255,.08); }
+.legend-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 16px; border: none; border-radius: 999px; background: var(--button-background); color: var(--button-color); font-weight: 700; font-size: var(--font-size-small); cursor: pointer; white-space: nowrap; }
+.legend-btn:hover { background: #0d1629; color: #fff; }
+
+/* Legenda (contenuti nella modale) */
+.legend-list { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.legend-row { display: flex; align-items: flex-start; gap: 12px; }
+.legend-swatch { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
+.legend-swatch .icon { font-size: 1.15em; }
+.legend-row b { display: block; font-size: var(--font-size); margin-bottom: 2px; }
+.legend-row > div > span { display: block; font-size: var(--font-size-small); color: var(--color-hint); line-height: 1.4; }
+.legend-note { margin-top: 20px; font-size: var(--font-size-small); color: var(--color-hint); font-style: italic; }
+
+/* --- Mobile: card con margine, così si vedono le distanze verso i vicini --- */
+@media (max-width: 768px) {
+  :root { --base-vw: 66; }
+  .app-title { gap: 8px; }
+  .app-header { padding: 0 16px; gap: 10px; }
+  .header-right { gap: 10px; }
+}
+@media (max-width: 560px) {
+  .app-admin { display: none; }               /* schermi piccoli: solo titolo + azioni */
+  .legend-btn-label { display: none; }         /* pulsante Legenda solo icona */
+  .legend-btn { padding: 9px; }
+  /* il titolo va a capo: niente | e livelli superiori in azzurro (link) */
+  .app-title .sep { display: none; }
+  .app-title a.ancestor { color: var(--color3); }
+}
+@media (max-width: 480px) {
+  :root { --base-vw: 66; }
+  .modal { max-width: 92vw; }
+}
+  </style>
+</head>
+<body>
+
+  <header class="app-header">
+    <!-- Titolo breadcrumb: gli span diventeranno link navigabili quando Meetoo crescerà -->
+    <h1 class="app-title">
+      <!-- Livelli superiori = link (saliranno di livello quando Meetoo crescerà). href placeholder. -->
+      <a href="#" class="crumb ancestor" title="Sali a: Lido di Ostia" onclick="return false">Lido di Ostia</a>
+      <span class="sep">|</span>
+      <span class="crumb current">Il lungomare</span>
+    </h1>
+    <div class="header-right">
+      <div class="app-admin">
+        <a href="#" class="crumb ancestor" title="Sali a: Roma" onclick="return false">Roma</a>
+        <span class="sep">|</span>
+        <a href="#" class="crumb ancestor" title="Sali a: Municipio X" onclick="return false">Municipio 10</a>
+      </div>
+      <button id="legend-btn" class="legend-btn" title="Legenda delle tipologie di spiaggia">
+        <span class="icon">palette</span><span class="legend-btn-label">Legenda</span>
+      </button>
+      <button id="menu-btn" class="icon-btn" title="Menu (in arrivo)"><span class="icon">menu</span></button>
+    </div>
+  </header>
+
+  <div class="carousel-container" id="carousel">
+    <div id="loader">
+      <span class="icon" style="font-size: 40px; animation: spin 2s linear infinite;">sync</span>
+      Caricamento in corso...
+    </div>
+  </div>
+
+  <div id="place-modal" class="modal-overlay" onclick="if(event.target===this) closePlaceModal()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" title="Chiudi" onclick="closePlaceModal()"><span class="icon">close</span></button>
+      <div class="modal-scroll"><div id="place-modal-body"></div></div>
+      <div class="scroll-hint"><span class="icon">keyboard_arrow_down</span></div>
+    </div>
+  </div>
+
+  <div id="legend-modal" class="modal-overlay" onclick="if(event.target===this) closeLegend()">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" title="Chiudi" onclick="closeLegend()"><span class="icon">close</span></button>
+      <div class="modal-scroll">
+      <h2 class="modal-title">Tipologie di spiaggia</h2>
+      <div class="modal-sub" style="text-transform:none">Classificazione di Roma Capitale</div>
+      <div class="legend-list">
+        <div class="legend-row"><span class="legend-swatch tip-libera"><span class="icon">beach_access</span></span><div><strong>Spiaggia libera</strong><span>Arenile accessibile gratuitamente a tutti, senza servizi aggiuntivi.</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-attrezzata"><span class="icon">deck</span></span><div><strong>Spiaggia libera attrezzata</strong><span>Accesso gratuito con servizi facoltativi a pagamento (chioschi, docce, wc, spogliatoi).</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-concessione"><span class="icon">holiday_village</span></span><div><strong>Stabilimento balneare (in concessione)</strong><span>Arenile dato in concessione a privati o associazioni, con servizi a pagamento.</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-riservato"><span class="icon">block</span></span><div><strong>Accesso riservato</strong><span>Riservata a categorie specifiche (forze armate, circoli privati).</span></div></div>
+        <div class="legend-row"><span class="legend-swatch tip-dog"><span class="icon">pets</span></span><div><strong>Spiaggia per cani — BauBeach</strong><span>Aree, libere o attrezzate, dove è consentito l'accesso ai cani.</span></div></div>
+        <div class="legend-row"><span class="legend-swatch status-chiusa"><span class="icon">dangerous</span></span><div><strong>Area chiusa</strong><span> per questioni legali o altri motivi.</span></div></div>
+      </div>
+      <div class="legend-note">La classificazione può variare di anno in anno in base alle ordinanze del Comune di Roma.</div>
+      </div>
+      <div class="scroll-hint"><span class="icon">keyboard_arrow_down</span></div>
+    </div>
+  </div>
+
+  <script>
+    const carousel = document.getElementById('carousel');
+    const jsonPath = '../../contents/meetoo/it_IT/places/lido-di-ostia/lungomare/index.json';
+
+    // --- Dati dei place contenuti (containsPlace) con cache condivisa ---
+    // Il JSON del lungomare tiene solo il rimando {@type,@id,name}; i dati ricchi
+    // (rating, tipo, descrizione, sito) stanno nell'index.json di ciascun place.
+    const PLACE_BASE = '../../contents/meetoo/it_IT/';
+    const placeCache = new Map(); // pid -> Promise<doc|null> (deduplica le richieste)
+
+    function fetchPlace(pid) {
+      if (placeCache.has(pid)) return placeCache.get(pid);
+      const p = fetch(`${PLACE_BASE}${pid}/index.json`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null);
+      placeCache.set(pid, p);
+      return p;
+    }
+
+    // --- Traduzioni e icone (schema.org @type → IT + Material Icons) ---
+    const TYPE_LABELS = {
+      Beach: 'Spiaggia', Restaurant: 'Ristorante', Park: 'Parco', Playground: 'Area giochi',
+      BoatTerminal: 'Approdo', NGO: 'No-profit', TouristAttraction: 'Attrazione turistica',
+      CivicStructure: 'Struttura pubblica'
+    };
+    // Tipi generici che non mostriamo (es. LocalBusiness).
+    const HIDDEN_TYPES = new Set(['LocalBusiness', 'Place', 'Organization', 'Thing', 'ItemList']);
+
+    function translateTypes(t) {
+      const arr = Array.isArray(t) ? t : (t ? [t] : []);
+      return arr.filter(x => x && !HIDDEN_TYPES.has(x)).map(x => TYPE_LABELS[x] || x);
+    }
+
+    const RestrictedDiet = [
+      "DiabeticDiet",
+      "GlutenFreeDiet",
+      "HalalDiet",
+      "HinduDiet",
+      "KosherDiet",
+      "LowCalorieDiet",
+      "LowFatDiet",
+      "LowLactoseDiet",
+      "LowSaltDiet",
+      "VeganDiet",
+      "VegetarianDiet"
+    ];
+    const servesCuisine = [
+      "Pizza",
+      "Meat",
+      "Fish"
+    ];
+    const FoodEstablishment = [
+      "Bakery",
+      "BarOrPub",
+      "Brewery",
+      "CafeOrCoffeeShop",
+      "Distillery",
+      "FastFoodRestaurant",
+      "IceCreamShop",
+      "Restaurant",
+      "Winery"
+    ];
+    
+    // Icona Material per una categoria (tipo tradotto o additionalType, in IT).
+    function iconForCategory(label) {
+      const s = String(label).toLowerCase();
+      if (s.includes('spiaggia')) return 'beach_access';
+      if (s.includes('ristorante')) return 'restaurant';
+      if (s.includes('piscina')) return 'pool';
+      if (s.includes('parco') || s.includes('naturale') || s.includes('riserva')) return 'park';
+      if (s.includes('pontile') || s.includes('approdo') || s.includes('barche')) return 'directions_boat';
+      if (s.includes('pedonale')) return 'directions_walk';
+      if (s.includes('fontana')) return 'water_drop';
+      if (s.includes('panoramico') || s.includes('borgo') || s.includes('attrazione')) return 'photo_camera';
+      if (s.includes('ludico') || s.includes('giochi')) return 'attractions';
+      if (s.includes('formazione')) return 'school';
+      if (s.includes('associazione') || s.includes('no-profit')) return 'volunteer_activism';
+      if (s.includes('struttura pubblica')) return 'account_balance';
+      return '';
+    }
+
+    // Icona Material per un servizio (amenityFeature, nome in IT).
+    function iconForAmenity(name) {
+      const s = String(name).toLowerCase();
+      if (s.includes('parcheggio')) return 'local_parking';
+      if (s.includes('bagn')) return 'wc';
+      if (s.includes('bambin')) return 'child_friendly';
+      if (s.includes('gruppi')) return 'groups';
+      if (s.includes('contactless')) return 'contactless';
+      if (s.includes('carte') || s.includes('credito') || s.includes('debito') || s.includes('pagament')) return 'credit_card';
+      if (s.includes('wi-fi') || s.includes('wifi')) return 'wifi';
+      if (s.includes('cani') || s.includes('animal')) return 'pets';
+      if (s.includes('asporto')) return 'takeout_dining';
+      if (s.includes('consumo')) return 'restaurant';
+      if (s.includes('prenot')) return 'event_available';
+      if (s.includes('colazione')) return 'free_breakfast';
+      if (s.includes('pranzo')) return 'lunch_dining';
+      if (s.includes('cena')) return 'dinner_dining';
+      if (s.includes('caff')) return 'local_cafe';
+      if (s.includes('birra')) return 'sports_bar';
+      if (s.includes('vino')) return 'wine_bar';
+      if (s.includes('cocktail')) return 'local_bar';
+      if (s.includes('dolci')) return 'cake';
+      if (s.includes('aperto')) return 'deck';
+      return 'check_circle';
+    }
+
+    // A. TIPO (schema.org @type) → icona. Beach = ombrellone.
+    function iconForType(t) {
+      const arr = Array.isArray(t) ? t : (t ? [t] : []);
+      const map = {
+        Beach: 'beach_access', Park: 'park', Playground: 'attractions',
+        BoatTerminal: 'directions_boat', Restaurant: 'restaurant', NGO: 'volunteer_activism',
+        TouristAttraction: 'photo_camera', CivicStructure: 'account_balance'
+      };
+      for (const x of arr) if (map[x]) return map[x];
+      return 'place';
+    }
+
+    // B. TIPOLOGIA = prima voce di additionalType (classificazione Comune),
+    // mostrata verbatim. Il colore deriva dalla categoria riconosciuta.
+    function tipoClass(label) {
+      const s = String(label).toLowerCase();
+      if (s.includes('cani')) return 'tip-dog';
+      if (s.includes('riservat')) return 'tip-riservato';
+      if (s.includes('concessione') || s.includes('stabilimento')) return 'tip-concessione';
+      if (s.includes('attrezzat')) return 'tip-attrezzata';
+      if (s.includes('libera')) return 'tip-libera';
+      return 'cat-neutral'; // non-beach o non classificato
+    }
+    // Icona Material per la tipologia della spiaggia.
+    function iconForTipologia(label) {
+      const s = String(label).toLowerCase();
+      if (s.includes('attrezzat')) return 'deck';
+      if (s.includes('concessione') || s.includes('stabilimento')) return 'holiday_village';
+      if (s.includes('riservat')) return 'block';
+      if (s.includes('cani')) return 'pets';
+      if (s.includes('libera')) return 'beach_access';
+      return ''; // non-beach
+    }
+
+    // C. STATO LEGALE: "chiusa" è l'unica eccezione mostrata come badge.
+    function legalStatusOf(item) {
+      const s = String(item['meetoo:legalStatus'] || '').toLowerCase();
+      if (s.includes('chius') || s.includes('closed')) return 'chiusa';
+      return ''; // aperta / non specificato → nessun badge
+    }
+
+    // Nome dello stabilimento precedente (meetoo:managementHistory): operatore con
+    // endDate più alta (a parità, l'ultimo elencato). Preferisce alternateName.
+    function previousOperatorName(mh) {
+      if (!Array.isArray(mh) || !mh.length) return '';
+      let best = null, bestYear = -Infinity;
+      mh.forEach(role => {
+        const ed = role && role.endDate;
+        const y = ed ? parseInt((String(ed).match(/\d{4}/) || [])[0], 10) : NaN;
+        const key = isNaN(y) ? -1 : y;
+        if (key >= bestYear) { bestYear = key; best = role; }
+      });
+      const op = best && best['meetoo:operator'];
+      return op ? (op.alternateName || op.name || '') : '';
+    }
+
+    // Indicatore di scroll: mostra l'hint sul contenitore (.card/.modal) solo se
+    // c'è ancora contenuto sotto la parte visibile dello scroller.
+    function updateScrollHint(scrollEl) {
+      if (!scrollEl) return;
+      const host = scrollEl.closest('.card, .modal');
+      if (!host) return;
+      const more = (scrollEl.scrollHeight - scrollEl.clientHeight - scrollEl.scrollTop) > 4;
+      host.classList.toggle('scroll-more', more);
+    }
+    // Un solo listener in cattura: intercetta lo scroll di qualsiasi scroller (lo
+    // scroll non fa bubbling, quindi serve la fase di capture).
+    document.addEventListener('scroll', (e) => {
+      const sc = e.target && e.target.closest && e.target.closest('.card-scroll, .modal-scroll');
+      if (sc) updateScrollHint(sc);
+    }, true);
+    window.addEventListener('resize', () =>
+      document.querySelectorAll('.card-scroll, .modal-scroll').forEach(updateScrollHint));
+
+    // Centra un wrapper con uno scrollTo CALCOLATO: scrollIntoView({inline:'center'})
+    // con scroll-snap mandatory non aggancia i wrapper stretti tra wrapper larghi.
+    function centerWrapper(w, smooth) {
+      if (!w) return;
+      const left = w.offsetLeft + w.offsetWidth / 2 - carousel.clientWidth / 2;
+      // 'instant' (non 'auto') per NON ereditare scroll-behavior:smooth del CSS:
+      // su distanze lunghe lo smooth + snap-mandatory si blocca a metà.
+      carousel.scrollTo({ left, behavior: smooth ? 'smooth' : 'instant' });
+    }
+
+    // Riempie la riga attività con il rating (le altre info sono nel modale).
+    function fillBiz(bizEl) {
+      const pid = bizEl.dataset.placeId;
+      if (!pid || bizEl.dataset.filled) return;
+      bizEl.dataset.filled = '1';
+      fetchPlace(pid).then(doc => {
+        if (!doc) return; // place non ancora creato: resta il solo nome
+        const pe = doc.mainEntity || doc;
+        // Nome mancante (era solo un @id): completalo dal place.
+        if (bizEl.dataset.nameMissing && pe.name) {
+          const nameEl = bizEl.querySelector('.biz-name');
+          if (nameEl) nameEl.textContent = pe.name;
+        }
+        const rv = pe.aggregateRating && pe.aggregateRating.ratingValue;
+        const ratingSlot = bizEl.querySelector('.biz-rating-slot');
+        if (rv && ratingSlot) ratingSlot.innerHTML = `<span class="biz-rating"><span class="icon">star</span>${rv}</span>`;
+        // Servizi come icone minimali (solo disponibili), title = nome, strip scrollabile.
+        const amen = Array.isArray(pe.amenityFeature)
+          ? pe.amenityFeature.filter(x => x && x.name && x.value !== false) : [];
+        const strip = bizEl.querySelector('.biz-amenities');
+        if (strip && amen.length) {
+          strip.innerHTML = amen.map(x =>
+            `<span class="biz-amen icon" title="${String(x.name).replace(/"/g, '&quot;')}">${iconForAmenity(x.name)}</span>`
+          ).join('');
+        }
+        updateScrollHint(bizEl.closest('.card-scroll'));
+      });
+    }
+
+    // Carica il nome del containedInPlace (quando è solo un @id) dal place.
+    function fillContainedIn(el) {
+      const pid = el.dataset.cip;
+      if (!pid || el.dataset.filled) return;
+      el.dataset.filled = '1';
+      fetchPlace(pid).then(doc => {
+        if (!doc) return;
+        const pe = doc.mainEntity || doc;
+        const nameEl = el.querySelector('.cip-name');
+        if (nameEl && pe.name) nameEl.textContent = pe.name;
+        updateScrollHint(el.closest('.card-scroll'));
+      });
+    }
+
+    // Carica le attività della fermata corrente e delle due adiacenti (i 3 a video).
+    function loadWindow(wrapper) {
+      [wrapper.previousElementSibling, wrapper, wrapper.nextElementSibling].forEach(w => {
+        if (w && w.classList && w.classList.contains('station-wrapper')) {
+          w.querySelectorAll('.biz[data-place-id]').forEach(fillBiz);
+          w.querySelectorAll('.contained-in[data-cip]').forEach(fillContainedIn);
+        }
+      });
+    }
+
+    // Scheda dettagli in sovrimpressione per un'attività.
+    function openPlaceModal(pid) {
+      const modal = document.getElementById('place-modal');
+      const body = document.getElementById('place-modal-body');
+      body.innerHTML = '<div class="modal-loading">Caricamento…</div>';
+      modal.classList.add('open');
+      fetchPlace(pid).then(doc => {
+        const pe = doc && (doc.mainEntity || doc);
+        if (!pe) { body.innerHTML = '<div class="modal-loading">Dettagli non ancora disponibili per questo luogo.</div>'; return; }
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        const name = pe.name || pid.split('/').pop();
+        // Tipi: tradotti in IT, generici (LocalBusiness…) esclusi, più additionalType.
+        const addTypeArr = Array.isArray(pe.additionalType) ? pe.additionalType : (pe.additionalType ? [pe.additionalType] : []);
+        const cats = [...translateTypes(pe['@type']), ...addTypeArr].filter(Boolean);
+        const desc = pe.description || '';
+        const rv = pe.aggregateRating && pe.aggregateRating.ratingValue;
+        const rc = pe.aggregateRating && (pe.aggregateRating.reviewCount || pe.aggregateRating.ratingCount);
+        const a = pe.address || {};
+        const addr = a.streetAddress ? (a.streetAddress + (a.addressLocality ? ', ' + a.addressLocality : '')) : '';
+        const url = pe.url || '';
+        const amen = Array.isArray(pe.amenityFeature)
+          ? pe.amenityFeature.filter(x => x && x.name) : [];
+
+        let html = `<h2 class="modal-title">${esc(name)}</h2>`;
+        if (cats.length) html += `<div class="modal-sub">${esc(cats.join(' · '))}</div>`;
+        if (rv) html += `<div class="modal-rating"><span class="icon">star</span> ${esc(rv)}${rc ? ` (${esc(rc)} recensioni)` : ''}</div>`;
+        if (desc) html += `<p class="modal-desc">${esc(desc)}</p>`;
+        if (addr) html += `<div class="modal-line"><span class="icon">place</span> ${esc(addr)}</div>`;
+        if (amen.length) {
+          // Servizi: semplice icona + testo (niente pill/spunta); il non disponibile è barrato.
+          const items = amen.map(x => {
+            const no = x.value === false;
+            return `<span class="amenity${no ? ' amenity-no' : ''}"><span class="icon">${iconForAmenity(x.name)}</span>${esc(x.name)}</span>`;
+          }).join('');
+          html += `<div class="modal-services"><div class="modal-services-label">Servizi</div><div class="modal-amenities">${items}</div></div>`;
+        }
+        if (url) {
+          html += `<div class="modal-actions"><a class="btn" href="${esc(url)}" target="_blank" rel="noopener"><span class="icon">public</span> Sito</a></div>`;
+        }
+        body.innerHTML = html;
+        updateScrollHint(document.querySelector('#place-modal .modal-scroll'));
+      });
+    }
+    function closePlaceModal() { document.getElementById('place-modal').classList.remove('open'); }
+
+    // Legenda delle tipologie (header)
+    function closeLegend() { document.getElementById('legend-modal').classList.remove('open'); }
+    document.getElementById('legend-btn').addEventListener('click', () => {
+      document.getElementById('legend-modal').classList.add('open');
+      requestAnimationFrame(() => updateScrollHint(document.querySelector('#legend-modal .modal-scroll')));
+    });
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePlaceModal(); closeLegend(); } });
+
+    async function initApp() {
+      try {
+        const response = await fetch(jsonPath);
+        if (!response.ok) throw new Error("Errore nel caricamento del JSON");
+        
+        const schemaData = await response.json();
+        
+        const scriptTag = document.createElement('script');
+        scriptTag.type = 'application/ld+json';
+        scriptTag.text = JSON.stringify(schemaData);
+        document.head.appendChild(scriptTag);
+
+        carousel.innerHTML = '';
+        let pontileElement = null;
+
+        // Raggruppamento degli item per distanza in metri da sud.
+        // itemListElement può stare al primo livello (vecchio formato) o dentro
+        // mainEntity (envelope ItemPage, come gli altri file del CMS).
+        const itemList = (schemaData.mainEntity && schemaData.mainEntity.itemListElement)
+                         || schemaData.itemListElement || [];
+
+        // Item-riferimento: se un item ha SOLO un @id (a una cartella place/organization)
+        // e nessun dato proprio (name), carica il place dalla relativa cartella e ne
+        // fonde i campi mancanti (i campi già presenti sull'item vincono).
+        const isPlaceRef = id => /^(places\/[^/]+\/[^/]+|organizations\/[^/]+)$/.test(String(id || ''));
+        const refItems = itemList
+          .map(el => el && el.item)
+          .filter(it => it && isPlaceRef(it['@id']) && !it.name);
+        if (refItems.length) {
+          await Promise.all(refItems.map(it => fetchPlace(it['@id']).then(doc => {
+            if (!doc) return; // cartella assente: resta il fallback dal nome dell'@id
+            const pe = doc.mainEntity || doc;
+            for (const k in pe) if (!(k in it)) it[k] = pe[k];
+          })));
+        }
+
+        const groupsMap = new Map();
+        itemList.forEach((element) => {
+          const item = element.item;
+          const dist = item["meetoo:m_from_border_south"] !== undefined && item["meetoo:m_from_border_south"] !== null 
+                       ? item["meetoo:m_from_border_south"] 
+                       : 0;
+          
+          if (!groupsMap.has(dist)) {
+            groupsMap.set(dist, { distance: dist, items: [] });
+          }
+          groupsMap.get(dist).items.push(item);
+        });
+
+        const sortedGroups = Array.from(groupsMap.values()).sort((a, b) => a.distance - b.distance);
+
+        let prevDistanceGapPx = 0; // Traccia la distanza in pixel del blocco precedente per calcolare la mezzeria esatta
+
+        sortedGroups.forEach((group, index) => {
+          const currentDistance = group.distance;
+          
+          let prevDistance = index > 0 ? sortedGroups[index - 1].distance : 0;
+          let distanceDiff = Math.abs(currentDistance - prevDistance);
+
+          let diffLabel = "";
+          if (index > 0) {
+            // Rimosso il "+" e mantenuto solo il valore
+            if (distanceDiff >= 1000) diffLabel = `${(distanceDiff / 1000).toFixed(1)} km`;
+            else diffLabel = `${distanceDiff} m`;
+          }
+
+          let topCardHtml = '';
+          let bottomCardHtml = '';
+          let mainItemForId = group.items[0];
+
+          group.items.forEach(item => {
+            // --- Identità della SPIAGGIA (fermata) ---
+            let displayName = item.name;
+            if (!displayName && item.address && item.address.streetAddress) displayName = item.address.streetAddress;
+            if (!displayName && item["@id"]) {
+              let idParts = item["@id"].split('/');
+              let rawName = idParts[idParts.length - 1].replace(/[-_]/g, ' ');
+              displayName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+            }
+            if (!displayName) displayName = "Fermata";
+
+            // CHIP UNICA (niente ridondanza): icona del TIPO (Beach = ombrellone) +
+            // la TIPOLOGIA = additionalType[0] verbatim, colorata per categoria.
+            // Per i non-beach mostra il descrittore neutro (es. "Pontile").
+            const typeIcon = iconForType(item['@type']);
+            const addTypeArr = Array.isArray(item.additionalType)
+              ? item.additionalType : (item.additionalType ? [item.additionalType] : []);
+            let tipoLabel = addTypeArr[0] || translateTypes(item['@type'])[0] || '';
+            // Etichetta uniforme con la legenda (senza mutare i dati).
+            if (/concessione/i.test(tipoLabel) && !/stabilimento/i.test(tipoLabel)) {
+              tipoLabel = 'Stabilimento balneare';
+            }
+            let catHtml = '';
+            if (tipoLabel) {
+              const cls = tipoClass(tipoLabel);
+              const ic = cls === 'cat-neutral'
+                ? (iconForCategory(tipoLabel) || typeIcon)
+                : (iconForTipologia(tipoLabel) || typeIcon);
+              catHtml = `<div class="cat ${cls}"><span class="icon">${ic}</span>${tipoLabel}</div>`;
+            }
+
+            // Descrizione: solo spiaggia
+            let descRaw = item.description || "";
+            let descHtml = descRaw ? `<div class="description">${descRaw}</div>` : "";
+
+            // Indirizzo: mostrato solo se la spiaggia ha un nome proprio (altrimenti
+            // il titolo È già l'indirizzo → niente doppione).
+            const showAddress = !!(item.address && item.address.streetAddress) && !!item.name;
+            const addressHtml = showAddress
+              ? `<div class="address"><span class="icon">place</span>${item.address.streetAddress}</div>` : '';
+
+            // containedInPlace: luogo che contiene la fermata, mostrato prima
+            // dell'indirizzo. Se è solo un @id, il nome arriva in lazyload.
+            const cip = item.containedInPlace;
+            const cipName = (cip && cip.name) ? cip.name : '';
+            const cipId = (cip && cip['@id']) ? cip['@id'] : '';
+            const cipHtml = (cipName || (cipId && isPlaceRef(cipId)))
+              ? `<div class="contained-in"${cipId ? ` data-cip="${cipId}"` : ''}><span class="icon">location_city</span><span class="cip-name">${cipName || '…'}</span></div>`
+              : '';
+
+            let locality = (item.address && item.address.addressLocality) ? item.address.addressLocality : '';
+            let region = (item.address && item.address.addressRegion) ? item.address.addressRegion : '';
+            let mapsQuery = locality ? `${displayName}, ${locality} ${region}` : displayName;
+            let mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery).replace(/%20/g, '+')}`;
+
+            // Rating proprio della spiaggia (raro; i rating delle attività vanno sotto)
+            let ratingObj = item.aggregateRating;
+            let badgeHtml = (ratingObj && ratingObj.ratingValue)
+              ? `<span class="badge badge-rating"><span class="icon">star</span> ${ratingObj.ratingValue}</span>` : '';
+
+            // --- Attività contenute (containsPlace: 0, 1 o più) ---
+            const cpRaw = item.containsPlace;
+            const businesses = cpRaw ? (Array.isArray(cpRaw) ? cpRaw : [cpRaw]) : [];
+            let containedHtml = '';
+            if (businesses.length) {
+              const rows = businesses.map(b => {
+                const bid = b["@id"] || '';
+                let bname = b.name;
+                const nameMissing = !bname; // il name verrà caricato in lazyload dal place
+                if (!bname && bid) {
+                  const s = bid.split('/').pop().replace(/[-_]/g, ' ');
+                  bname = s.charAt(0).toUpperCase() + s.slice(1);
+                }
+                return `
+                    <div class="biz" data-place-id="${bid}"${nameMissing ? ' data-name-missing="1"' : ''}>
+                      <div class="biz-head">
+                        <span class="biz-name">${bname || 'Attività'}</span>
+                        <span class="biz-rating-slot"></span>
+                        <button class="biz-info" data-place-id="${bid}" title="Dettagli"
+                                onclick="event.stopPropagation(); openPlaceModal(this.dataset.placeId)">
+                          <span class="icon">info</span>
+                        </button>
+                      </div>
+                      <div class="biz-amenities"></div>
+                    </div>`;
+              }).join('');
+              containedHtml = `<div class="contained"><div class="contained-line"></div>${rows}</div>`;
+            }
+
+            // Stabilimento precedente (managementHistory): "ex <nome>" sotto al name.
+            const exName = previousOperatorName(item['meetoo:managementHistory']);
+            const exHtml = exName ? `<div class="ex-operator">ex ${exName}</div>` : '';
+
+            // Stato legale: badge SOLO per l'eccezione "chiusa" (motivo nella modale).
+            const statusHtml = legalStatusOf(item) === 'chiusa'
+              ? `<div class="beach-status status-chiusa"><span class="icon">dangerous</span>Chiusa</div>`
+              : '';
+
+            const cardContent = `
+              <div class="card"${item['@id'] ? ` id="${item['@id']}"` : ''}>
+                <div class="card-scroll">
+                  ${statusHtml}
+                  ${catHtml}
+                  <h3 class="station-name">${displayName}</h3>
+                  ${exHtml}
+                  ${descHtml}
+                  ${cipHtml}
+                  ${addressHtml}
+                  <div class="container-actions">
+                    ${badgeHtml}
+                    <a href="${mapsLink}" title="Apri in Google Maps" target="_blank" class="btn btn-maps" onclick="event.stopPropagation()">
+                      <span class="icon">map</span>
+                    </a>
+                    <a href="#${item['@id']}" title="Condividi l'url" target="_blank" class="btn btn-share" onclick="event.stopPropagation()">
+                      <span class="icon">share</span>
+                    </a>
+                  </div>
+                  ${containedHtml}
+                </div>
+                <div class="scroll-hint"><span class="icon">keyboard_arrow_down</span></div>
+              </div>
+            `;
+
+            if (item["meetoo:coastalPosition"] === "waterfrontStreet") {
+              bottomCardHtml = cardContent;
+            } else {
+              topCardHtml = cardContent;
+            }
+
+            if (item["@id"] && item["@id"].includes("pontile")) {
+              mainItemForId = item;
+            }
+          });
+
+          const baseWidth = 33.33; 
+          const distanceGapPx = distanceDiff * 0.1; 
+          
+          const wrapper = document.createElement('div');
+          wrapper.className = 'station-wrapper';
+          wrapper.dataset.station = mainItemForId["@id"] || ''; // id vero è sulle card
+          // Larghezza da --base-vw (responsive: più grande su mobile) + scarto distanza.
+          wrapper.style.width = `calc(var(--base-vw, ${baseWidth}) * 1vw + ${distanceGapPx}px)`;
+
+          // Calcolo della posizione esattamente a metà tra i due nodi.
+          // Ogni nodo è situato al 50% della propria card.
+          // Spostando l'etichetta al 50% e decurtando metà della larghezza base e lo scarto proporzionale, troviamo il punto mediano geometrico perfetto.
+          let distanceLabelHtml = '';
+          if (diffLabel) {
+            const offsetPx = (distanceGapPx + prevDistanceGapPx) / 4;
+            distanceLabelHtml = `<div class="line-distance-label" style="left: calc(50% - var(--base-vw, 33.33) * 0.5vw - ${offsetPx}px);">${diffLabel}</div>`;
+          }
+
+          wrapper.innerHTML = `
+            <div class="card-slot slot-top">${topCardHtml}</div>
+            <div class="line-track">
+              <div class="node"></div>
+              ${distanceLabelHtml}
+            </div>
+            <div class="card-slot slot-bottom">${bottomCardHtml}</div>
+          `;
+          
+          wrapper.addEventListener('click', () => {
+            centerWrapper(wrapper, false);
+            // Aggiorna l'URL con /#<@id> (link condivisibile), senza far saltare la pagina.
+            if (wrapper.dataset.station) history.replaceState(null, '', '#' + wrapper.dataset.station);
+          });
+
+          carousel.appendChild(wrapper);
+
+          if (mainItemForId["@id"] && mainItemForId["@id"].includes("pontile")) {
+            pontileElement = wrapper;
+          }
+
+          prevDistanceGapPx = distanceGapPx; // Salva la distanza per l'iterazione successiva
+        });
+
+        // --- Prefetch/lazy dei dati delle attività (containsPlace) ---
+        // I rating compaiono nelle righe attività: precarico la finestra visibile e
+        // poi, in idle, tutte le altre → nessuna attesa percepibile scorrendo.
+        // Wrapper ATTIVO = quello col centro più vicino al centro del carosello.
+        // Robusto anche con wrapper molto più larghi del viewport (scarti-distanza
+        // grandi), dove l'IntersectionObserver a soglia non attivava mai.
+        function updateActive() {
+          const cx = carousel.scrollLeft + carousel.clientWidth / 2;
+          let best = null, bestD = Infinity;
+          for (const w of carousel.children) {
+            if (!(w.classList && w.classList.contains('station-wrapper'))) continue;
+            const d = Math.abs((w.offsetLeft + w.offsetWidth / 2) - cx);
+            if (d < bestD) { bestD = d; best = w; }
+          }
+          if (!best) return;
+          carousel.querySelectorAll('.station-wrapper.active').forEach(w => { if (w !== best) w.classList.remove('active'); });
+          best.classList.add('active');
+          loadWindow(best);
+        }
+        let activeRAF = null;
+        carousel.addEventListener('scroll', () => {
+          if (activeRAF) return;
+          activeRAF = requestAnimationFrame(() => { activeRAF = null; updateActive(); });
+        });
+
+        // Observer solo per il lazy-load anticipato dei vicini che entrano in vista.
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => { if (entry.isIntersecting) loadWindow(entry.target); });
+        }, { root: carousel, threshold: 0.01, rootMargin: "0px 30% 0px 30%" });
+
+        document.querySelectorAll('.station-wrapper').forEach(station => observer.observe(station));
+        document.querySelectorAll('.card-scroll').forEach(updateScrollHint); // stato iniziale hint
+        updateActive(); // stato attivo iniziale
+
+        // Prefetch di TUTTO in background (idle): attività + containedInPlace.
+        const prefetchAll = () => {
+          document.querySelectorAll('.biz[data-place-id]').forEach(fillBiz);
+          document.querySelectorAll('.contained-in[data-cip]').forEach(fillContainedIn);
+        };
+        if ('requestIdleCallback' in window) requestIdleCallback(prefetchAll, { timeout: 1500 });
+        else setTimeout(prefetchAll, 300);
+
+        // Centraggio da URL: /#<@id> porta quella card al centro (priorità sul pontile).
+        function centerFromHash() {
+          const id = decodeURIComponent((location.hash || '').slice(1));
+          if (!id) return false;
+          const card = document.getElementById(id);
+          const w = card && card.closest('.station-wrapper');
+          if (!w) return false;
+          centerWrapper(w, false);
+          updateActive();
+          return true;
+        }
+        const hasHash = !!(location.hash || '').slice(1);
+
+        if (pontileElement && !hasHash) {
+          // Centra il pontile solo se l'URL non chiede già una card specifica.
+          setTimeout(() => {
+            centerWrapper(pontileElement, false);
+            updateActive();
+          }, 100);
+        }
+        // Più tentativi: il layout/scroll-snap si assesta dopo il primo frame.
+        [150, 450, 900].forEach(d => setTimeout(centerFromHash, d));
+        window.addEventListener('hashchange', centerFromHash);
+
+      } catch (error) {
+        carousel.innerHTML = `<div id="loader" style="color: #e74c3c;"><span class="icon" style="font-size: 40px;">error</span> Errore di caricamento. Verifica il file JSON.</div>`;
+        console.error(error);
+      }
+    }
+
+    initApp();
+  </script>
+</body>
+</html>

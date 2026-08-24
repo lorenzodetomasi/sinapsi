@@ -1,14 +1,37 @@
+# Repository di isotype.org: il CMS (WS) e i progetti che ci vivono dentro —
+# Meetoo su tutti. La radice del repository è la radice del sito.
+
 .DS_Store
 .claude/
 
-# Contenuti reali con dati personali — NON pubblicare sul repo pubblico
-ws-custom/
-
-# File caricati dal PoC (sandbox di upload)
-ws-admin/json-xml/uploads/
-
-# Config con le API key (non committare le chiavi in chiaro)
+# ---------------------------------------------------------------------------
+# SEGRETI — per primi, perché contano più di tutto il resto.
+# Una chiave finita in un repository pubblico va considerata compromessa e
+# rigenerata: toglierla con un commit non basta, resta nella storia.
+# ---------------------------------------------------------------------------
+ws-custom/ws-config.php
+ws-custom/client_secret_*.json
 ws-admin/places/config.php
-
-# Dati personali: mai versionati.
+# Dati personali (nome, email): mai versionati, mai pubblicati.
 ws-admin/_private/
+
+# ---------------------------------------------------------------------------
+# CONTENUTI — dati reali, spesso personali, e 1,5 GB di media.
+# Sono gestiti a parte e sincronizzati col server; il repository tiene il CODICE
+# che li manipola, non i dati. Per questo restano fuori tutti, meetoo compreso.
+# ---------------------------------------------------------------------------
+ws-custom/contents/
+
+# ---------------------------------------------------------------------------
+# Generato, scaricato o pesante: si ricostruisce, non si versiona.
+# ---------------------------------------------------------------------------
+**/node_modules/
+ws-admin/json-xml/uploads/
+*.tgz
+
+# Plugin del CMS: 83 MB, in buona parte di terze parti. Se un giorno ne scrivi
+# di tuoi, togli questa riga e ignora i singoli plugin esterni.
+ws-custom/plugins/
+
+# Cartella di lavoro rimasta dal trasloco di Meetoo verso la radice.
+sinapsi/

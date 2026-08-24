@@ -1,0 +1,16 @@
+@import "settings",
+  "../../../../ws-core/scss/core/media_maxgrid";
+.slideshow,
+.slideshow .slide {
+  width: 1000px;
+  height: 500px;
+}
+.slideshow .slide img {
+  width: 500px;
+  height: 500px;
+}
+#intro {
+  .tagline {
+    font-size: 100%;
+  }
+}
