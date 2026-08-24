@@ -138,7 +138,7 @@ export default function EntityPicker({
   const mostra = aperto && (voci.length > 0 || attesa);
 
   return (
-    <div className="picker">
+    <div className="ent-picker">
       <input
         type="text"
         value={testo}
@@ -162,25 +162,25 @@ export default function EntityPicker({
       />
 
       {mostra && (
-        <ul className="picker-menu" role="listbox">
-          {daSito.length > 0 && <li className="picker-group">Sul sito</li>}
+        <ul className="ent-menu" role="listbox">
+          {daSito.length > 0 && <li className="ent-group">Sul sito</li>}
           {voci.map((v, i) => (
             <Fragment key={v.chiave}>
-              {i === daSito.length && <li className="picker-group">Su Google</li>}
+              {i === daSito.length && <li className="ent-group">Su Google</li>}
               <li
                 role="option"
                 aria-selected={i === sel}
-                className={'picker-item' + (i === sel ? ' sel' : '')}
+                className={'ent-item' + (i === sel ? ' sel' : '')}
                 onMouseDown={(e) => e.preventDefault()}
                 onMouseEnter={() => setSel(i)}
                 onClick={() => scegli(v)}
               >
-                <span className="picker-name">
+                <span className="ent-name">
                   {v.tipo === 'sito'
                     ? v.e.name
                     : v.p.structured_formatting?.main_text || v.p.description}
                 </span>
-                <span className="picker-note">
+                <span className="ent-note">
                   {v.tipo === 'sito'
                     ? descrizioneEntita(v.e)
                     : v.p.structured_formatting?.secondary_text || ''}
@@ -188,7 +188,7 @@ export default function EntityPicker({
               </li>
             </Fragment>
           ))}
-          {attesa && <li className="picker-group">Cerco su Google…</li>}
+          {attesa && <li className="ent-group">Cerco su Google…</li>}
         </ul>
       )}
     </div>

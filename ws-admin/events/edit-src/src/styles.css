@@ -427,9 +427,9 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 
 /* Google Place ID mostrato sotto il luogo */
 /* ---------- Campo con elenco (sito + Google) ---------- */
-.picker { position: relative; }
-.picker > input { width: 100%; box-sizing: border-box; }
-.picker-menu {
+.ent-picker { position: relative; }
+.ent-picker > input { width: 100%; box-sizing: border-box; }
+.ent-menu {
   /* Il campo Luogo vive in una colonna da un terzo: largo quanto l'input, il menu
      manderebbe a capo ogni nome. Può debordare, è un menu. */
   position: absolute; z-index: 40; left: 0; top: calc(100% + 2px);
@@ -439,18 +439,18 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   background: var(--surface-2); border: 1px solid var(--border);
   border-radius: var(--r-md); box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
 }
-.picker-group {
+.ent-group {
   padding: var(--sp-xs) var(--sp-md);
   font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.04em;
   text-transform: uppercase; color: var(--text-dim);
 }
-.picker-item {
+.ent-item {
   display: flex; flex-direction: column;
   padding: var(--sp-xs) var(--sp-md); cursor: pointer;
 }
-.picker-item.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-.picker-name { font-size: var(--fs-label); }
-.picker-note { font-size: var(--fs-sm); color: var(--text-dim); }
+.ent-item.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.ent-name { font-size: var(--fs-label); }
+.ent-note { font-size: var(--fs-sm); color: var(--text-dim); }
 
 .place-gid { display: block; margin-top: var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim); }
 /* Stato @id: collegato (ok) o avviso (esiste già / regione mancante) */
@@ -811,6 +811,56 @@ button.primary { margin-top: var(--sp-md); }
   box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .xhtml-editor ul { margin: var(--sp-xs) 0 var(--sp-xs) var(--sp-xl); }
+
+/* I due menu della barra (blocco e marcatura). Vanno rivestiti a mano: le regole
+   generali dei campi (.pane select) li vorrebbero larghi quanto la colonna. */
+.xhtml-toolbar select,
+.pane .xhtml-toolbar select {
+  width: auto; height: var(--control-h); margin: 0;
+  padding: 0 var(--sp-sm);
+  background: var(--field-bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  font: inherit; font-size: var(--fs-label);
+}
+/* La barra può andare a capo: con due menu in più non ci sta sempre in una riga,
+   e overflow:hidden la taglierebbe invece di mostrarla. */
+.xhtml-toolbar { flex-wrap: wrap; }
+.xhtml-control.focused .xhtml-toolbar {
+  max-height: calc((var(--control-h) + var(--sp-xs)) * 2 + var(--sp-xs));
+}
+
+/* Come si vedono i tag semantici MENTRE si scrive. Senza queste righe un titolo
+   sarebbe alto il doppio del campo e una <section> non si vedrebbe affatto. */
+.xhtml-editor h1, .xhtml-editor h2, .xhtml-editor h3,
+.xhtml-editor h4, .xhtml-editor h5, .xhtml-editor h6 {
+  margin: var(--sp-sm) 0 var(--sp-xs); line-height: 1.25; font-weight: 700;
+}
+.xhtml-editor h1 { font-size: 1.35rem; }
+.xhtml-editor h2 { font-size: 1.2rem; }
+.xhtml-editor h3 { font-size: 1.1rem; }
+.xhtml-editor h4, .xhtml-editor h5, .xhtml-editor h6 { font-size: 1rem; }
+.xhtml-editor p { margin: var(--sp-xs) 0; }
+.xhtml-editor blockquote {
+  margin: var(--sp-sm) 0; padding-left: var(--sp-md);
+  border-left: 3px solid var(--border); color: var(--text-dim);
+}
+.xhtml-editor pre {
+  margin: var(--sp-sm) 0; padding: var(--sp-sm);
+  background: var(--code-bg); border-radius: var(--r-sm);
+  font-family: var(--font-mono); font-size: var(--fs-label); white-space: pre-wrap;
+}
+.xhtml-editor code, .xhtml-editor kbd, .xhtml-editor samp, .xhtml-editor var {
+  font-family: var(--font-mono); font-size: 0.9em;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  padding: 0 0.2em; border-radius: 0.25rem;
+}
+.xhtml-editor mark { background: color-mix(in srgb, var(--warning) 45%, transparent); color: inherit; }
+.xhtml-editor abbr[title] { text-decoration: underline dotted; cursor: help; }
+/* Una <section> non ha resa propria: senza un segno, chi scrive non sa che c'è. */
+.xhtml-editor section {
+  margin: var(--sp-sm) 0; padding: var(--sp-xs) var(--sp-sm);
+  border: 1px dashed var(--border); border-radius: var(--r-sm);
+}
 
 /* ---------- Immagini ---------- */
 .image-upload { margin: var(--sp-xs) 0 var(--sp-md); }
