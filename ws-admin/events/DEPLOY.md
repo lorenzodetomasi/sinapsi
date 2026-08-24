@@ -644,6 +644,23 @@ stanno sotto `places/` ma non sono né un posto dove si va né qualcuno che orga
 
 Richiede `_index/entities.json` aggiornato (manutenzione «Rigenera indice luoghi e Gruppi»).
 
+## Dopo ogni deploy dell'editor: la cache di `index.html`
+
+`edit/index.html` è l'unico file che dice **quale** pacchetto caricare (gli asset hanno
+l'hash nel nome). Se il browser se lo tiene, dopo il deploy continua a far girare la
+versione vecchia, e un difetto già corretto sembra ancora lì. `ws-admin/events/.htaccess`
+lo impedisce alla radice (`no-cache` su index.html, cache eterna sugli asset), ma la prima
+volta serve ancora un ricaricamento forzato: **⌘⇧R** (Chrome/macOS) o Ctrl+F5.
+
+Per sapere quale pacchetto sta girando davvero:
+
+```bash
+curl -s https://isotype.org/ws-admin/events/edit/ | grep -o 'assets/index-[^"]*\.js'
+```
+
+e confrontalo con il nome dell'ultimo build. Se in DevTools → Network il file caricato ha
+un nome diverso da quello, il browser sta usando la sua copia.
+
 ## Editor: modificare il JSON dal riquadro di validazione
 
 Il riquadro «JSON-LD» ha un pulsante **Modifica**: il codice diventa scrivibile e **Applica**
