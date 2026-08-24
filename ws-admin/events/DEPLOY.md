@@ -295,6 +295,14 @@ residuo intatto. Origine ignota (nessun percorso del codice attuale ci arriva); 
 duplicato dentro i contenuti serviti, quindi **da cancellare anche sul server**, dove è arrivato con
 l'ultimo allineamento.
 
+⚠ **Sotto il CMS, un file mancante NON dà 404**: la regola di riscrittura manda a `index.php` tutto
+ciò che non esiste, e la pagina torna con **stato 200 e content-type HTML**. Quindi `res.ok` è vero e
+il parse fallisce con l'oscuro «Unexpected token '<', "<!DOCTYPE"…». Chi scarica un contenuto deve
+guardare il **tipo**, non solo lo stato. Le pagine del tema lo facevano già (`ct.includes('json')`);
+ora lo fanno anche l'editor (apertura e confronto col web) e `waterfront.html` (`fetchPlace`).
+Altrimenti l'errore che l'utente legge non parla del problema vero, che è: **a quel percorso non c'è
+niente**.
+
 ## Trasloco verso la radice di isotype.org: cosa regge e cosa no
 
 `sinapsi/ws-admin/` → `ws-admin/` e `sinapsi/ws-custom/` → `ws-custom/`. Verificato sul posto:

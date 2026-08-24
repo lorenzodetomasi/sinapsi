@@ -616,8 +616,10 @@ body {
 
     function fetchPlace(pid) {
       if (placeCache.has(pid)) return placeCache.get(pid);
+      // Il tipo va controllato, non solo lo stato: un file mancante non dà 404
+      // ma la pagina del CMS con stato 200, e `r.json()` esploderebbe sull'HTML.
       const p = fetch(`${PLACE_BASE}${pid}/index.json`)
-        .then(r => r.ok ? r.json() : null)
+        .then(r => (r.ok && (r.headers.get('content-type') || '').includes('json')) ? r.json() : null)
         .catch(() => null);
       placeCache.set(pid, p);
       return p;

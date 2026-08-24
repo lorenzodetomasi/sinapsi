@@ -299,7 +299,9 @@ export default function App() {
     let stored = null;
     try {
       const res = await fetch(resolveEventUrl(rel), { headers: { Accept: 'application/json' } });
-      if (res.ok) {
+      // Come sopra: senza controllare il tipo, la pagina HTML del CMS verrebbe
+      // scambiata per un evento esistente e il confronto direbbe sciocchezze.
+      if (res.ok && (res.headers.get('content-type') || '').includes('json')) {
         const parsed = await res.json();
         stored = parsed?.mainEntity && typeof parsed.mainEntity === 'object' ? parsed.mainEntity : parsed;
       }
@@ -418,6 +420,14 @@ export default function App() {
     try {
       const res = await fetch(url, { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error('HTTP ' + res.status);
+      // Un file che non c'è NON dà 404: il CMS risponde con la propria pagina e
+      // stato 200, quindi `res.ok` è vero e il parse fallisce con un oscuro
+      // «Unexpected token '<'». Si guarda il tipo del contenuto e si dice la cosa
+      // vera: a quel percorso non c'è un evento.
+      const tipo = res.headers.get('content-type') || '';
+      if (!tipo.includes('json')) {
+        throw new Error('a questo percorso non c\'è un evento (il server ha risposto con una pagina HTML)');
+      }
       const parsed = await res.json();
       let doc = parsed && typeof parsed === 'object' && parsed.mainEntity && typeof parsed.mainEntity === 'object'
         ? parsed.mainEntity : parsed;
