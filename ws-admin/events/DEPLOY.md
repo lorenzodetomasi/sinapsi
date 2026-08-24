@@ -644,22 +644,26 @@ stanno sotto `places/` ma non sono né un posto dove si va né qualcuno che orga
 
 Richiede `_index/entities.json` aggiornato (manutenzione «Rigenera indice luoghi e Gruppi»).
 
-## Dopo ogni deploy dell'editor: la cache di `index.html`
+## ⚠ La copia vecchia in `/sinapsi/` è una trappola
 
-`edit/index.html` è l'unico file che dice **quale** pacchetto caricare (gli asset hanno
-l'hash nel nome). Se il browser se lo tiene, dopo il deploy continua a far girare la
-versione vecchia, e un difetto già corretto sembra ancora lì. `ws-admin/events/.htaccess`
-lo impedisce alla radice (`no-cache` su index.html, cache eterna sugli asset), ma la prima
-volta serve ancora un ricaricamento forzato: **⌘⇧R** (Chrome/macOS) o Ctrl+F5.
+Finché sul server resta `/sinapsi/ws-admin/`, esistono **due editor**: quello nuovo in
+`/ws-admin/` e una copia ferma al trasloco. Aprire l'indirizzo sbagliato fa girare codice
+vecchio — un difetto già corretto sembra ancora lì, e un'ora di diagnosi va a vuoto
+cercando nel posto giusto un difetto che sta in un altro. Peggio: quella copia salva in
+`/sinapsi/ws-custom/contents/`, cioè in un albero di contenuti morto, e le modifiche non
+compaiono sul sito.
 
-Per sapere quale pacchetto sta girando davvero:
+**Da fare una volta sola: cancellare `/sinapsi/` dal server.** Finché è lì, prima di
+diagnosticare qualsiasi cosa nell'editor, controlla l'indirizzo nella barra.
+
+Per sapere quale pacchetto sta girando davvero (confrontalo con il nome dell'ultimo build):
 
 ```bash
 curl -s https://isotype.org/ws-admin/events/edit/ | grep -o 'assets/index-[^"]*\.js'
 ```
 
-e confrontalo con il nome dell'ultimo build. Se in DevTools → Network il file caricato ha
-un nome diverso da quello, il browser sta usando la sua copia.
+Se in DevTools → Network il file caricato ha un nome diverso, o sei su un altro indirizzo
+o il browser sta usando la sua copia in cache (⌘⇧R).
 
 ## Editor: modificare il JSON dal riquadro di validazione
 
