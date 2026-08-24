@@ -1,56 +1,71 @@
-import { useEffect, useId, useState } from 'react';
-import { loadEntities, findEntityById, findEntityByName } from './entities.js';
+import { useEffect, useState } from 'react';
+import { loadEntities, findEntityById } from './entities.js';
+import EntityPicker, { descrizioneEntita as descrizione } from './EntityPicker.jsx';
+import { detectPrimaryType, regionFromComponents, slugify, buildPlaceId, lookupPlaceId } from './placeId.js';
 
-// Campo per un'entità del sito (oggi: gli organizzatori). Due modi, entrambi
-// necessari perché il redattore arriva da due strade diverse:
+// Campo per un'entità del sito (oggi: gli organizzatori). Tre strade, perché il
+// redattore ci arriva da tre situazioni diverse:
 //
-//   • dal NOME  → si sceglie dall'elenco del server (datalist: filtra scrivendo,
-//     ma accetta anche un nome che sul server non c'è ancora);
+//   • dal NOME  → si sceglie dall'elenco del server (filtra scrivendo, ma accetta
+//     anche un nome che sul server non c'è ancora);
+//   • da GOOGLE → se sul sito non c'è, si cerca fra i luoghi di Google: la
+//     verifica per Google Place ID dice se in realtà c'è già (con un altro nome);
 //   • dall'@id  → incollandolo, il nome si compila da solo.
 //
-// In entrambi i casi si scrivono ENTRAMBI i campi insieme (`onPatch`): un
+// In tutti i casi si scrivono ENTRAMBI i campi insieme (`onPatch`): un
 // organizzatore con il nome giusto e l'@id di un altro è il modo più semplice per
 // rompere gli indici, e prima era la cosa più facile da fare.
 
-/** Etichetta di riconoscimento: distingue omonimi e dice che cosa si sta scegliendo. */
-const descrizione = (e) =>
-  [e.kind === 'org' ? 'Organizzazione' : e['@type'], e.locality].filter(Boolean).join(' · ');
-
 export function EntityNameInput({ label, value, onChange, onPatch }) {
-  const listId = useId();
-  const [lista, setLista] = useState([]);
-  useEffect(() => {
-    loadEntities().then(setLista);
-  }, []);
+  const [nota, setNota] = useState(null); // { type: 'ok' | 'warn', msg }
 
-  // Il datalist restituisce il testo scelto: se coincide con un'entità nota,
-  // si porta dietro il suo @id; altrimenti resta un nome libero.
-  const scrivi = (testo) => {
-    const e = findEntityByName(lista, testo);
-    if (e) onPatch({ name: e.name, id: e['@id'] });
-    else onChange(testo);
+  // Scelto un suggerimento di Google, la prima domanda è: quel soggetto è già sul
+  // sito? Si chiede per Google Place ID, che è l'identità del luogo — l'@id
+  // costruito da nome e CAP cambia se il nome è scritto diversamente. Se c'è, si
+  // prendono @id e nome DAL SITO: il nome buono è quello redazionale.
+  const daGoogle = async ({ placeId, name, types, addressComponents }) => {
+    const noto = await lookupPlaceId(placeId);
+    if (noto) {
+      onPatch({ name: noto.name, id: noto.id, googlePlaceId: placeId });
+      setNota({ type: 'ok', msg: `Già sul sito: collegato a ${noto.id}.` });
+      return;
+    }
+    // Non c'è: si propone l'@id che avrà quando verrà creato (stesso algoritmo di
+    // places/edit, così i due combaciano) e lo si dice a chiare lettere — finché
+    // quel file non esiste, il riferimento punta nel vuoto.
+    const region = regionFromComponents(addressComponents);
+    const slug = slugify(name);
+    const id = region && slug ? buildPlaceId(detectPrimaryType(types), region, slug) : '';
+    onPatch({ name, id, googlePlaceId: placeId });
+    setNota({
+      type: 'warn',
+      msg: id
+        ? `Non è ancora sul sito: creane la scheda in Luoghi e organizzazioni con l'@id ${id}.`
+        : 'Non è ancora sul sito e il CAP non è noto: scrivi l’@id a mano, poi crea la scheda.',
+    });
   };
 
   return (
     <div className="rf rf-text">
       <label className="field-label">{label}</label>
-      <input
-        type="text"
-        list={listId}
-        value={value ?? ''}
-        placeholder={lista.length ? 'Scegli o scrivi un nome…' : 'Nome…'}
-        onChange={(e) => scrivi(e.target.value)}
+      <EntityPicker
+        value={value}
+        ambito="organizer"
+        onChange={(t) => {
+          setNota(null);
+          onChange(t);
+        }}
+        onPickSite={(e) => {
+          onPatch({ name: e.name, id: e['@id'] });
+          setNota({ type: 'ok', msg: `Dal sito: ${e['@id']}${descrizione(e) ? ' — ' + descrizione(e) : ''}` });
+        }}
+        onPickGoogle={daGoogle}
       />
-      <datalist id={listId}>
-        {/* La chiave include l'indice: due voci con lo stesso @id sono un difetto
-            dei contenuti (è successo: due cartelle per la stessa attività), ma non
-            deve essere il campo a rompersi. */}
-        {lista.map((e, i) => (
-          <option key={e['@id'] + '#' + i} value={e.name}>
-            {descrizione(e)}
-          </option>
-        ))}
-      </datalist>
+      {nota ? (
+        <span className={'place-status place-' + nota.type}>
+          {nota.type === 'ok' ? '✓' : '⚠️'} {nota.msg}
+        </span>
+      ) : null}
     </div>
   );
 }

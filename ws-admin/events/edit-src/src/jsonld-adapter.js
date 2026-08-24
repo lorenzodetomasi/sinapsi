@@ -6,6 +6,14 @@ const CONTEXT = ['https://schema.org', { meetoo: 'https://meetoo.eu#' }];
 
 const asArray = (v) => (Array.isArray(v) ? v : v == null ? [] : [v]);
 
+// Nei file veri un sì/no può essere arrivato come STRINGA ("true", "false"), da
+// un'importazione o da una modifica a mano. Il form vuole un booleano: senza
+// conversione JSON Forms non disegna proprio la casella e al suo posto lascia un
+// «must be boolean» — il campo diventa illeggibile e non modificabile. `!!` non
+// basta: la stringa "false" è vera.
+const asBool = (v) =>
+  typeof v === 'string' ? /^(true|1|s[iì]|yes|on)$/i.test(v.trim()) : !!v;
+
 // Riferimento a un evento in forma canonica `events/{slug}` (lo slug nudo è la forma
 // self-@id, NON un riferimento). Se già qualificato (contiene "/") resta invariato.
 const toEventRef = (id) => {
@@ -105,7 +113,7 @@ export function fromJsonLd(doc) {
     maximumAttendeeCapacity: maxTotal,
     bookedAttendeeCapacity: Math.max(0, maxTotal - remaining),
     remainingAttendeeCapacity: remaining,
-    isAccessibleForFree: doc.isAccessibleForFree ?? false,
+    isAccessibleForFree: asBool(doc.isAccessibleForFree),
     offers: {
       availability: o.availability ?? '',
       price: o.price ?? 0,
@@ -142,9 +150,9 @@ export function fromJsonLd(doc) {
       bestRating: rating.bestRating ?? '',
     },
     // Flag pubblico (booleani meetoo dedicati)
-    isChildrensEvent: !!doc['meetoo:isChildrensEvent'],
-    childrenMustBeAccompanied: !!doc['meetoo:childrenMustBeAccompanied'],
-    forSeparatedParents: !!doc['meetoo:forSeparatedParents'],
+    isChildrensEvent: asBool(doc['meetoo:isChildrensEvent']),
+    childrenMustBeAccompanied: asBool(doc['meetoo:childrenMustBeAccompanied']),
+    forSeparatedParents: asBool(doc['meetoo:forSeparatedParents']),
   };
 }
 

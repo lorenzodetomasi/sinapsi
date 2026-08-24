@@ -1,7 +1,9 @@
 # Deploy — Editor eventi, backend e pagine tema
 
-Runbook per portare in produzione (isotype.org/**sinapsi**/) l'editor eventi, il backend PHP
-e le pagine tema. `ROOT` = radice `sinapsi/` sul server; `SRC` = questa working copy.
+Runbook per portare in produzione l'editor eventi, il backend PHP e le pagine tema.
+`ROOT` = radice del sito sul server (oggi `isotype.org/`, prima `isotype.org/sinapsi/`);
+`SRC` = questa working copy. L'editor non ha percorsi assoluti: funziona da dovunque
+sia montato (vedi § «L'editor non ha più percorsi assoluti»).
 
 > I contenuti (`ws-custom/contents/…`) NON si toccano qui: sono dati, gestiti a parte.
 > Le pagine tema (`ws-custom/themes/…`) NON sono versionate → vanno caricate a mano.
@@ -619,6 +621,38 @@ rsync -avz ws-custom/themes/meetoo/organizer.html ws-custom/themes/meetoo/collec
           ws-custom/themes/meetoo/event.html  USER@HOST:ROOT/ws-custom/themes/meetoo/
 ```
 
+## Editor: il campo che cerca prima sul sito e poi su Google
+
+`Dove` e `Organizzatori` sono ora lo stesso campo (`EntityPicker`), con due ambiti:
+
+| campo | cerca fra |
+|---|---|
+| Dove | luoghi e attività del sito (`places/`), poi Google Places |
+| Organizzatori | organizzazioni + luoghi e attività del sito, poi Google Places |
+
+L'ordine è l'ordine delle domande: **prima il sito** — è lì che vivono gli `@id` — e Google
+solo se sul sito non c'è già la risposta (da tre caratteri, dopo una pausa nella digitazione,
+mai se il nome scritto coincide con un'entità del sito). Scegliendo un suggerimento di Google
+si interroga l'indice per **Google Place ID**: se quel luogo è già sul sito si adottano `@id` e
+nome **del sito** (il nome buono è quello redazionale, non l'insegna); se non c'è, si propone
+l'`@id` che avrà una volta creato, dicendo che va creato.
+
+Da sapere: la ricerca su Google **non funziona in locale** — la chiave è ristretta ai referrer
+`*.isotype.org`, quindi in sviluppo resta solo l'elenco del sito (nessun errore, solo un elenco
+più corto). Le liste (`ItemList`: Lungomare, BookCrossing) sono escluse da entrambi gli ambiti:
+stanno sotto `places/` ma non sono né un posto dove si va né qualcuno che organizza.
+
+Richiede `_index/entities.json` aggiornato (manutenzione «Rigenera indice luoghi e Gruppi»).
+
+## Editor: modificare il JSON dal riquadro di validazione
+
+Il riquadro «JSON-LD» ha un pulsante **Modifica**: il codice diventa scrivibile e **Applica**
+lo rilegge nel form (⌘/Ctrl+Invio applica, Esc annulla). Accetta sia il documento nudo sia il
+guscio `ItemPage` + `mainEntity`. È una porta di servizio, non una seconda fonte di verità: il
+form resta un imbuto e i campi che non conosce non tornano indietro — quando succede lo dice
+per nome («il form non gestisce X: quei campi non sono stati ripresi»). Se il testo non è JSON,
+lo segnala e **non** tocca il form.
+
 ## 3) Una-tantum sul server (dopo il primo deploy di questo ciclo)
 
 ### Il registro della manutenzione (`ws-admin/lib/ws-maintenance.php`)
@@ -674,5 +708,6 @@ php ws-admin/events/check-refs.php                   # elenca i riferimenti rott
 ## Note
 
 - `save-event.php` richiede login Google + ruolo `user/client/admin/super-admin` (verifica `users.xml`).
-- La dist porta i valori di produzione (`SAVE_EVENT_URL=../save-event.php`, `CONTENT_BASE=/sinapsi/…`).
+- La dist non porta percorsi assoluti: la radice si ricava a runtime da `location.pathname`
+  (`config.js`), quindi lo stesso pacchetto vale sotto `/`, sotto `/sinapsi/` o altrove.
 - Le pagine tema sono robuste all'indice mancante (mostrano un messaggio con "Rebuild index").

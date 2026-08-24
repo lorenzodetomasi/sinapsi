@@ -426,6 +426,32 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .grid-spacer { min-width: 0; } /* cella vuota per allineare la griglia */
 
 /* Google Place ID mostrato sotto il luogo */
+/* ---------- Campo con elenco (sito + Google) ---------- */
+.picker { position: relative; }
+.picker > input { width: 100%; box-sizing: border-box; }
+.picker-menu {
+  /* Il campo Luogo vive in una colonna da un terzo: largo quanto l'input, il menu
+     manderebbe a capo ogni nome. Può debordare, è un menu. */
+  position: absolute; z-index: 40; left: 0; top: calc(100% + 2px);
+  min-width: 100%; width: max-content; max-width: min(24rem, 80vw);
+  margin: 0; padding: var(--sp-xs) 0; list-style: none;
+  max-height: 17rem; overflow-y: auto;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--r-md); box-shadow: 0 8px 24px rgb(0 0 0 / 0.28);
+}
+.picker-group {
+  padding: var(--sp-xs) var(--sp-md);
+  font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.picker-item {
+  display: flex; flex-direction: column;
+  padding: var(--sp-xs) var(--sp-md); cursor: pointer;
+}
+.picker-item.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.picker-name { font-size: var(--fs-label); }
+.picker-note { font-size: var(--fs-sm); color: var(--text-dim); }
+
 .place-gid { display: block; margin-top: var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim); }
 /* Stato @id: collegato (ok) o avviso (esiste già / regione mancante) */
 .place-status { display: block; margin-top: var(--sp-xs); font-size: var(--fs-label); }
@@ -840,6 +866,19 @@ button.primary { margin-top: var(--sp-md); }
 .line-numbers span.line-error { color: var(--danger); font-weight: 700; }
 .code-content { flex: 1; padding-left: var(--sp-md); padding-right: var(--sp-md); white-space: pre; }
 .code-content .line-error { display: block; background: color-mix(in srgb, var(--danger) 15%, transparent); }
+
+/* Modifica diretta del JSON: stessa area, ma scrivibile. */
+.code-header .head-actions { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+.code-header .head-actions button { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+.code-header .head-actions .material-symbols-outlined { font-size: 1rem; }
+.code-edit {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: var(--sp-md); border: 0; resize: vertical;
+  background: var(--code-bg); color: var(--text);
+  white-space: pre; overflow: auto; min-height: 24rem;
+}
+.code-edit:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.code-esito { margin: 0; padding: var(--sp-sm) var(--sp-md); font-size: var(--fs-label); border-bottom: 1px solid var(--border); }
 
 .debug-panel {
   background: color-mix(in srgb, var(--danger) 12%, transparent);

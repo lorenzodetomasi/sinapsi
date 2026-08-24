@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
-import PlaceInput from './PlaceInput.jsx';
+import EntityPicker, { descrizioneEntita } from './EntityPicker.jsx';
 import {
   detectPrimaryType,
   regionFromComponents,
@@ -13,10 +13,12 @@ import {
   lightPlaceDiff,
 } from './placeId.js';
 
-// Luogo con Google Places: scegliendo un risultato compila Nome, @type primario
-// (LocalBusiness|Place), l'@id (<cartella>/<IT+CAP>/<slug>) e il Google Place ID.
-// Se l'@id esiste già, confronta i Google ID: stesso luogo → si collega (e segnala
-// eventuali aggiornamenti Google); Google ID diverso → collisione (cambia id).
+// Luogo: si sceglie prima dall'elenco del sito (luoghi e attività), e solo se lì
+// non c'è si guarda fra i suggerimenti di Google. Scegliendo un risultato di
+// Google si compila Nome, @type primario (LocalBusiness|Place), l'@id
+// (<cartella>/<IT+CAP>/<slug>) e il Google Place ID. Se l'@id esiste già,
+// confronta i Google ID: stesso luogo → si collega (e segnala eventuali
+// aggiornamenti Google); Google ID diverso → collisione (cambia id).
 const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
   if (visible === false) return null;
   const d = data || {};
@@ -72,6 +74,14 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
     evaluate(id, !region, { placeId, name, addressComponents });
   };
 
+  // Scelto dall'elenco del sito: @id e nome sono già quelli buoni, non c'è niente
+  // da verificare. Il Google Place ID si azzera: quello dell'evento precedente
+  // apparterrebbe a un altro luogo, e quello vero sta nella scheda del luogo.
+  const onSito = (e) => {
+    set({ name: e.name, type: e['@type'] || 'Place', id: e['@id'], googlePlaceId: '' });
+    setStatus({ type: 'ok', msg: `Dal sito: ${e['@id']}${descrizioneEntita(e) ? ' — ' + descrizioneEntita(e) : ''}` });
+  };
+
   const onType = (type) => {
     const id = swapIdPrefix(d.id, type);
     set({ type, id });
@@ -87,16 +97,27 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
       <div className="field-row-grid" style={{ '--cols': 3 }}>
         <div className="rf rf-text">
           <label className="field-label">Nome</label>
-          <PlaceInput value={d.name} placeholder="Cerca un luogo…" onChange={(v) => set({ name: v })} onPick={onPick} />
+          <EntityPicker
+            value={d.name}
+            ambito="venue"
+            placeholder="Scegli o cerca un luogo…"
+            onChange={(v) => { setStatus(null); set({ name: v }); }}
+            onPickSite={onSito}
+            onPickGoogle={onPick}
+          />
         </div>
         <div className="rf rf-text">
           <label className="field-label">@type</label>
-          {/* Un luogo preso dal sito può avere un tipo più specifico (Restaurant,
-              Museum…): nel menu vale LocalBusiness, ma il valore salvato resta
-              quello preciso finché non si sceglie esplicitamente altro. */}
-          <select value={d.type && d.type !== 'Place' ? 'LocalBusiness' : 'Place'} onChange={(e) => onType(e.target.value)}>
+          {/* Un luogo preso dal sito può avere un tipo più preciso (Beach,
+              Restaurant, Museum…): si mostra com'è, perché ricondurlo a
+              «LocalBusiness» diceva il falso — una spiaggia è un Place — e al
+              primo tocco del menu quel tipo preciso sarebbe andato perso. */}
+          <select value={d.type || 'Place'} onChange={(e) => onType(e.target.value)}>
             <option value="Place">Place</option>
             <option value="LocalBusiness">LocalBusiness</option>
+            {d.type && d.type !== 'Place' && d.type !== 'LocalBusiness' && (
+              <option value={d.type}>{d.type}</option>
+            )}
           </select>
         </div>
         <div className="rf rf-text">

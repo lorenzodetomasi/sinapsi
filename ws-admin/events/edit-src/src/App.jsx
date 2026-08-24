@@ -222,6 +222,24 @@ export default function App() {
     };
   }, [data?.organizer]);
 
+  // Rilegge nel form il JSON riscritto a mano nel riquadro di validazione.
+  // Lancia se il testo non è JSON (lo mostra il riquadro) e ritorna i campi di
+  // primo livello che il form non sa gestire: il form è un imbuto (fromJsonLd
+  // legge un elenco chiuso di campi), quindi quello che non passa va detto
+  // subito, non scoperto dopo il salvataggio.
+  function applyJson(text) {
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('serve un oggetto JSON');
+    }
+    const doc =
+      parsed.mainEntity && typeof parsed.mainEntity === 'object' ? parsed.mainEntity : parsed;
+    const dati = deriveCapacities(fromJsonLd(doc));
+    const dopo = toJsonLd(dati);
+    setData(dati);
+    return Object.keys(doc).filter((k) => !(k in dopo));
+  }
+
   // Applica la correzione XHTML suggerita (fix_xhtml) e re-idrata il form.
   async function fixXhtml() {
     try {
@@ -611,6 +629,7 @@ export default function App() {
             onRevalidate={revalidate}
             onFix={fixXhtml}
             onGenerateXml={generateXml}
+            onApply={applyJson}
             xml={xml}
             xmlError={xmlError}
           />
