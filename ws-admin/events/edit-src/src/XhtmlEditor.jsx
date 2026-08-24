@@ -25,9 +25,15 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
   const ref = useRef(null);
   const [focused, setFocused] = useState(false);
 
+  /* Riscrivere il contenuto rimette il cursore all'inizio, quindi si fa SOLO se
+   * il testo è davvero cambiato da fuori. Il confronto va fatto sulla stessa
+   * forma normalizzata che esce da `emit()`: il browser tiene `<br>`, noi
+   * salviamo `<br />`, e confrontando le due grafie risultavano SEMPRE diverse —
+   * così ogni tasto riscriveva tutto e il cursore tornava in cima. Bastava un a
+   * capo nel testo perché il campo diventasse inutilizzabile. */
   useEffect(() => {
     const el = ref.current;
-    if (el && el.innerHTML !== (value ?? '')) el.innerHTML = value ?? '';
+    if (el && toXhtml(el.innerHTML) !== (value ?? '')) el.innerHTML = value ?? '';
   }, [value]);
 
   // Un contenteditable "svuotato" resta con un <br>: lo trattiamo come vuoto (''),
