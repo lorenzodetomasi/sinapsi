@@ -23,7 +23,7 @@ function the_header(){
 function the_footer(){
 	include_template( 'footer' );
 }
-function the_content( string $more_link_text = null, bool $strip_teaser = false ){
+function the_content( ?string $more_link_text = null, bool $strip_teaser = false ){
 	
 }
 ?>

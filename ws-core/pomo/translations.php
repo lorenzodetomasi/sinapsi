@@ -162,6 +162,12 @@ class Translations {
 }
 
 class Gettext_Translations extends Translations {
+
+	/* Vedi POMO_FileReader: da PHP 8.2 una proprietà creata al volo è deprecata.
+	 * Qui ci finisce la funzione che sceglie la forma plurale, calcolata una
+	 * volta e poi riusata. */
+	public $_gettext_select_plural_form;
+
 	/**
 	 * The gettext implementation of select_plural_form.
 	 *

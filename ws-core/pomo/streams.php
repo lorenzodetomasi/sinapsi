@@ -137,6 +137,13 @@ endif;
 if ( ! class_exists( 'POMO_FileReader', false ) ):
 class POMO_FileReader extends POMO_Reader {
 
+	/* Dichiarate perché da PHP 8.2 crearle al volo è deprecato. Erano già usate
+	 * — solo, nascoste: il costruttore le inventava e nessuno sapeva che
+	 * esistessero se non leggendo tutto il file. */
+	public $_f;
+	public $_pos;
+	public $is_overloaded;
+
 	/**
 	 * @param string $filename
 	 */
