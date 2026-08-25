@@ -546,7 +546,7 @@ export default function App() {
             <span className="sep">|</span>
             <a href={ADMIN_ROOT + 'events/index.php'} title="Elenco degli eventi">Eventi</a>
             <span className="sep">|</span>
-            <span className="cur">Editor</span>
+            <span className="cur">Modifica</span>
           </nav>
           <button type="button" className="btn-ghost" onClick={newEvent} title="Nuovo evento: svuota il form (configurazione base)">
             <span className="material-symbols-outlined">note_add</span> Nuovo

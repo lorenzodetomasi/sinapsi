@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { applicaCaso } from './testoCaso.js';
 
 // Editor rich-text XHTML riutilizzabile (presentazionale): value + onChange.
 const VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr';
@@ -69,10 +70,34 @@ const INLINE = [
 ];
 const TAG_INLINE = INLINE.map(([t]) => t);
 
+const CASI = [
+  ['alto', 'MAIUSCOLO'],
+  ['basso', 'minuscolo'],
+  ['altobasso', 'Alto e Basso'],
+  ['frase', 'Iniziale maiuscola'],
+];
+
+/** I nodi di testo toccati da un intervallo, con il tratto che ne è compreso. */
+function pezziDiTesto(r) {
+  const dentro = r.commonAncestorContainer;
+  const radice = dentro.nodeType === 1 ? dentro : dentro.parentNode;
+  const passo = document.createTreeWalker(radice, NodeFilter.SHOW_TEXT);
+  const out = [];
+  let n;
+  while ((n = passo.nextNode())) {
+    if (!r.intersectsNode(n)) continue;
+    const da = n === r.startContainer ? r.startOffset : 0;
+    const a = n === r.endContainer ? r.endOffset : n.nodeValue.length;
+    if (a > da) out.push({ nodo: n, da, a });
+  }
+  return out;
+}
+
 export default function XhtmlEditor({ value, onChange, enabled = true, compact = false }) {
   const ref = useRef(null);
   const [focused, setFocused] = useState(false);
   const [blocco, setBlocco] = useState('p');
+  const [vista, setVista] = useState('anteprima'); // 'anteprima' | 'codice'
 
   /* Riscrivere il contenuto di un contenteditable butta via il cursore: i nodi su
    * cui poggiava non esistono più e il punto d'inserimento torna in cima. Quindi si
@@ -231,6 +256,58 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
     avvolgi(tag);
   };
 
+  /** Il blocco in cui sta il cursore: serve quando non c'è niente di selezionato. */
+  const bloccoDelCursore = (nodo, el) => {
+    let n = nodo;
+    while (n && n !== el) {
+      if (n.nodeType === 1 && getComputedStyle(n).display !== 'inline') return n;
+      n = n.parentNode;
+    }
+    return el;
+  };
+
+  /* Maiuscole e minuscole sulla selezione — o, se non c'è selezione, sul blocco in
+   * cui sta il cursore (il caso vero: un titolo battuto tutto maiuscolo che si
+   * vuole rimettere in ordine, senza doverlo selezionare).
+   *
+   * Il testo si trasforma INTERO e poi si ridistribuisce nei nodi: «Alto e Basso» e
+   * «Iniziale maiuscola» hanno bisogno di vedere la frase per sapere dove comincia
+   * una parola o una frase, e pezzo per pezzo non lo saprebbero. I tag restano dove
+   * sono, perché si riscrive solo il testo dentro di essi. */
+  const cambiaCaso = (caso) => {
+    ripristina();
+    const el = ref.current;
+    const s = document.getSelection();
+    if (!s || !s.rangeCount) return;
+    let r = s.getRangeAt(0);
+    if (!el.contains(r.commonAncestorContainer)) return;
+    if (r.collapsed) {
+      const blocco = bloccoDelCursore(r.startContainer, el);
+      r = document.createRange();
+      r.selectNodeContents(blocco);
+    }
+    const pezzi = pezziDiTesto(r);
+    if (!pezzi.length) return;
+    const intero = pezzi.map(({ nodo, da, a }) => nodo.nodeValue.slice(da, a)).join('');
+    const nuovo = applicaCaso(intero, caso);
+    // Le quattro trasformazioni non cambiano la lunghezza (in italiano): se per
+    // qualche carattere esotico succedesse, si ripiega sul pezzo per pezzo invece
+    // di sfasare tutto il testo.
+    const stessaLunghezza = nuovo.length === intero.length;
+    let pos = 0;
+    for (const { nodo, da, a } of pezzi) {
+      const pezzo = nodo.nodeValue.slice(da, a);
+      const fatto = stessaLunghezza ? nuovo.slice(pos, pos + pezzo.length) : applicaCaso(pezzo, caso);
+      nodo.nodeValue = nodo.nodeValue.slice(0, da) + fatto + nodo.nodeValue.slice(a);
+      pos += pezzo.length;
+    }
+    s.removeAllRanges();
+    s.addRange(r);
+    el.focus();
+    el.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    seguiCursore();
+  };
+
   const applicaBlocco = (tag) => {
     if (tag === 'section') return avvolgi('section');
     cmd('formatBlock', '<' + tag + '>');
@@ -273,6 +350,7 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
           quindi la toolbar non sparisce a metà interazione. I menu a tendina sono
           esclusi: con il mousedown annullato non si aprirebbero — per loro c'è la
           selezione ricordata. */}
+      {vista === 'anteprima' && (
       <div
         className="xhtml-toolbar"
         onMouseDown={(e) => {
@@ -320,21 +398,70 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
             </option>
           ))}
         </select>
+        <select
+          className="xhtml-caso"
+          title="Maiuscole e minuscole"
+          tabIndex={-1}
+          value=""
+          onChange={(e) => {
+            cambiaCaso(e.target.value);
+            e.target.value = '';
+          }}
+        >
+          <option value="" disabled>
+            Aa…
+          </option>
+          {CASI.map(([k, etichetta]) => (
+            <option key={k} value={k}>
+              {etichetta}
+            </option>
+          ))}
+        </select>
         <Btn title="Link" name="link" onClick={addLink} />
         <Btn title="Rimuovi formattazione e marcature" name="format_clear" onClick={smarca} />
       </div>
-      {value ? (
-        <button
-          type="button"
-          className="xhtml-clear"
-          title="Svuota"
-          tabIndex={-1}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={clearAll}
-        >
-          <Icon name="close" />
-        </button>
-      ) : null}
+      )}
+      {/* Anteprima | Codice, come Visuale/Testo di WordPress. Sempre visibili: da
+          «Codice» il campo di scrittura non c'è, e se le tab vivessero nella barra
+          (che compare col fuoco) non si potrebbe più tornare indietro. */}
+      <div className="xhtml-corner">
+        <div className="xhtml-viste" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={vista === 'anteprima'}
+            className={vista === 'anteprima' ? 'attiva' : ''}
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setVista('anteprima')}
+          >
+            Anteprima
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={vista === 'codice'}
+            className={vista === 'codice' ? 'attiva' : ''}
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setVista('codice')}
+          >
+            Codice
+          </button>
+        </div>
+        {value ? (
+          <button
+            type="button"
+            className="xhtml-clear"
+            title="Svuota"
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={clearAll}
+          >
+            <Icon name="close" />
+          </button>
+        ) : null}
+      </div>
       <div
         ref={ref}
         className={'xhtml-editor' + (compact ? ' compact' : '')}
@@ -346,7 +473,19 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
         }}
         onBlur={() => setFocused(false)}
         suppressContentEditableWarning
+        hidden={vista !== 'anteprima'}
       />
+      {vista === 'codice' && (
+        /* Il codice si scrive com'è e si salva com'è: normalizzarlo mentre si
+           digita significherebbe togliere sotto le dita il tag ancora a metà. */
+        <textarea
+          className={'xhtml-codice code-font' + (compact ? ' compact' : '')}
+          value={value ?? ''}
+          spellCheck={false}
+          disabled={!enabled}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
     </div>
   );
 }

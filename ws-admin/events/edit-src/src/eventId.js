@@ -12,6 +12,10 @@
 //
 // Le parole del nome si legano con `_`, i pezzi fra loro con `-`: così si vede a
 // colpo d'occhio dove finisce una parte e comincia l'altra.
+//
+// L'@id porta SEMPRE la cartella (`events/…`), come i file già scritti e come i
+// riferimenti che li citano (`superEvent: "events/clubdellibro-ostia-junior"`): un
+// @id è un riferimento, e senza la cartella non si risolve.
 
 /** Una parola per volta: senza accenti, minuscola, solo lettere e numeri. */
 const parole = (testo) =>
@@ -83,7 +87,7 @@ export function proponiId(d) {
   if (serie) {
     const chi = ultimoSegmento(d?.organizer?.[0]?.id);
     if (!chi) return '';
-    return `${chi}-${codaSerie(d.name, d.organizer[0].id)}`;
+    return `events/${chi}-${codaSerie(d.name, d.organizer[0].id)}`;
   }
 
   const quando = dataCompatta(d?.startDate);
@@ -92,7 +96,7 @@ export function proponiId(d) {
   // Un'occorrenza di una serie porta il nome della serie, non il proprio: così le
   // occorrenze della stessa serie si riconoscono in ordine alfabetico.
   const coda = ultimoSegmento(d?.superEvent) || nome;
-  return `${quando}-${dove}-${coda}`;
+  return `events/${quando}-${dove}-${coda}`;
 }
 
 /** Che cosa non va in un @id. Ritorna '' se va bene.

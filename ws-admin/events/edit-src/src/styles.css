@@ -412,14 +412,16 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   display: grid; gap: var(--sp-md); align-items: flex-start;
   grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
 }
-.field-row-sep { display: flex; gap: var(--sp-sm); align-items: flex-start; }
+.field-row-sep { display: flex; gap: var(--sp-sm); align-items: stretch; }
 .field-row-sep > .control:not(.pair-sep-control) { flex: 1; min-width: 0; }
 /* Colonnina del separatore: etichetta-segnaposto (vuota) + carattere allineato
    all'input, così "–" / "/" cadono sulla riga del campo, non su quella del label */
-.pair-sep-control { flex: none; }
-.pair-sep-control .field-label { visibility: hidden; }
+/* Il trattino sta in mezzo ai due campi, non appeso in cima: i campi data hanno
+   sopra il selettore di formato, e un separatore allineato alla prima riga
+   finirebbe accanto a quello invece che accanto alla data. */
+.pair-sep-control { flex: none; display: flex; flex-direction: column; justify-content: center; }
+.pair-sep-control .field-label { display: none; }
 .pair-sep {
-  height: var(--control-h); margin-top: var(--label-gap);
   display: flex; align-items: center; justify-content: center;
   color: var(--text-dim); font-size: var(--fs-base);
 }
@@ -780,9 +782,28 @@ button.primary { margin-top: var(--sp-md); }
 
 /* ---------- Editor XHTML ---------- */
 .xhtml-control { position: relative; margin: var(--label-gap) 0 var(--sp-md); }
-/* Pulsante "svuota" in alto a destra del campo */
-.xhtml-clear {
+/* Angolo in alto a destra del campo: tab Anteprima/Codice + "svuota" */
+.xhtml-corner {
   position: absolute; top: var(--sp-xs); right: var(--sp-xs); z-index: 2;
+  display: flex; align-items: center; gap: var(--sp-xs);
+}
+.xhtml-viste { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-pill); overflow: hidden; }
+.xhtml-viste button {
+  border: 0; background: transparent; color: var(--text-dim); cursor: pointer;
+  padding: 0.125rem var(--sp-sm); font: inherit; font-size: var(--fs-sm); font-weight: 600;
+}
+.xhtml-viste button.attiva { background: var(--surface-2); color: var(--text); }
+.xhtml-codice {
+  display: block; width: 100%; min-height: 8rem;
+  padding: var(--sp-sm) var(--field-pad-x);
+  background: var(--code-bg); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  font-size: var(--fs-label); line-height: 1.5; resize: vertical; white-space: pre-wrap;
+}
+.xhtml-codice.compact { min-height: 5rem; }
+.xhtml-codice:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--accent) 25%, transparent); }
+.xhtml-clear {
+  z-index: 2;
   width: 1.5rem; height: 1.5rem; padding: 0; border: none; border-radius: var(--r-sm);
   background: transparent; color: var(--text-dim); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
