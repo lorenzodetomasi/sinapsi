@@ -6,11 +6,13 @@ const XhtmlControl = ({ data, handleChange, path, label, uischema, enabled }) =>
   const icon = uischema?.options?.icon;
   return (
     <div className="control">
-      <label className="field-label">
-        {icon && <span className="material-symbols-outlined">{icon}</span>}
-        {label}
-      </label>
-      <XhtmlEditor value={data} onChange={(v) => handleChange(path, v)} enabled={enabled !== false} />
+      <XhtmlEditor
+        value={data}
+        onChange={(v) => handleChange(path, v)}
+        enabled={enabled !== false}
+        label={label}
+        icona={icon}
+      />
     </div>
   );
 };

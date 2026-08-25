@@ -36,7 +36,9 @@ function caricaIndice() {
       const mappa = {};
       for (const v of [...prossimi, ...archivio]) {
         const id = v['@id'] || v.path || '';
-        if (id) mappa[id] = v.startDate || '';
+        // Anche la collezione dichiarata dall'evento: serve a controllare il legame
+        // dalle DUE parti, non solo dall'elenco della collezione.
+        if (id) mappa[id] = { startDate: v.startDate || '', collection: v.collection || '' };
       }
       return mappa;
     });

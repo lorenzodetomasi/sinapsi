@@ -1,4 +1,4 @@
-import { conOffset, senzaOffset, fusoDelBrowser } from './quando.js';
+import { conOffset, senzaOffset, fusoPer } from './quando.js';
 
 // Adapter tra il modello "piatto" del form e la forma JSON-LD reale (index.json).
 // Tutte le chiavi @-prefissate, i @type (anche array) e i namespace (meetoo:…)
@@ -52,9 +52,10 @@ function fromSchedule(sched) {
    * di lui erano la stessa cosa: il form parte da valori di comodo (settimanale,
    * ogni 1) e salvando li scriveva nel file anche per una collezione che una
    * ricorrenza non l'aveva mai avuta — inventandogliela. */
-  const d = { presente: false, frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10 };
+  const d = { presente: false, aderenza: 'fissa', frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10 };
   if (!sched) return d;
   d.presente = true;
+  if (sched['meetoo:aderenza'] === 'indicativa') d.aderenza = 'indicativa';
   const m = /^P(\d+)([DWMY])$/.exec(sched.repeatFrequency || '');
   if (m) {
     d.frequency = { D: 'daily', W: 'weekly', M: 'monthly', Y: 'yearly' }[m[2]];
@@ -75,6 +76,8 @@ function toSchedule(s, fuso) {
   if (s.endMode === 'count' && s.count) out.repeatCount = Number(s.count);
   // Il fuso è quello dell'evento: la ricorrenza non ne ha uno suo.
   if (fuso) out.scheduleTimezone = fuso;
+  // «Indicativa» si scrive; «fissa» è la regola normale e non serve dirla.
+  if (s.aderenza === 'indicativa') out['meetoo:aderenza'] = 'indicativa';
   return out;
 }
 
@@ -224,7 +227,7 @@ export function toJsonLd(d) {
 
   // Il fuso da usare per lo scarto: quello scelto, o quello del computer che sta
   // redigendo (il campo vuoto significa proprio quello, non «nessun fuso»).
-  const fuso = d.timezone || fusoDelBrowser();
+  const fuso = fusoPer(d);
 
   // Nodi figli con i soli campi valorizzati (niente stringhe/valori vuoti).
   const program = (d.subEvent ?? [])

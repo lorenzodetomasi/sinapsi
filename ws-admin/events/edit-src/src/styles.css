@@ -412,16 +412,19 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   display: grid; gap: var(--sp-md); align-items: flex-start;
   grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
 }
-.field-row-sep { display: flex; gap: var(--sp-sm); align-items: stretch; }
+.field-row-sep { display: flex; gap: var(--sp-sm); align-items: flex-start; }
 .field-row-sep > .control:not(.pair-sep-control) { flex: 1; min-width: 0; }
 /* Colonnina del separatore: etichetta-segnaposto (vuota) + carattere allineato
    all'input, così "–" / "/" cadono sulla riga del campo, non su quella del label */
-/* Il trattino sta in mezzo ai due campi, non appeso in cima: i campi data hanno
-   sopra il selettore di formato, e un separatore allineato alla prima riga
-   finirebbe accanto a quello invece che accanto alla data. */
-.pair-sep-control { flex: none; display: flex; flex-direction: column; justify-content: center; }
-.pair-sep-control .field-label { display: none; }
+/* Il trattino cade sulla riga dei campi, non su quella delle etichette. Ci arriva
+   con la stessa impalcatura di un campo — un'etichetta segnaposto invisibile, poi
+   un box alto quanto un controllo — invece che centrandosi nella riga: la riga è
+   alta quanto il campo più alto dei due, e centrarsi lì vuol dire finire in mezzo
+   al nulla quando uno dei due porta una nota sotto. */
+.pair-sep-control { flex: none; }
+.pair-sep-control .field-label { visibility: hidden; }
 .pair-sep {
+  height: var(--control-h); margin-top: var(--label-gap);
   display: flex; align-items: center; justify-content: center;
   color: var(--text-dim); font-size: var(--fs-base);
 }
@@ -798,17 +801,18 @@ button.primary { margin-top: var(--sp-md); }
 
 /* ---------- Editor XHTML ---------- */
 .xhtml-control { position: relative; margin: var(--label-gap) 0 var(--sp-md); }
-/* Angolo in alto a destra del campo: tab Anteprima/Codice + "svuota" */
-.xhtml-corner {
-  position: absolute; top: var(--sp-xs); right: var(--sp-xs); z-index: 2;
-  display: flex; align-items: center; gap: var(--sp-xs);
-}
+/* Intestazione del campo: etichetta a sinistra, viste all'estrema destra. */
+.xhtml-intestazione { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-sm); }
+.xhtml-intestazione .field-label { display: inline-flex; align-items: center; gap: var(--sp-xs); }
 .xhtml-viste { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-pill); overflow: hidden; }
 .xhtml-viste button {
+  display: inline-flex; align-items: center; justify-content: center;
   border: 0; background: transparent; color: var(--text-dim); cursor: pointer;
-  padding: 0.125rem var(--sp-sm); font: inherit; font-size: var(--fs-sm); font-weight: 600;
+  padding: 0.125rem var(--sp-sm); line-height: 1;
 }
+.xhtml-viste button .material-symbols-outlined { font-size: 1.125rem; }
 .xhtml-viste button.attiva { background: var(--surface-2); color: var(--text); }
+.xhtml-clear { position: absolute; top: 2rem; right: var(--sp-xs); }
 .xhtml-codice {
   display: block; width: 100%; min-height: 8rem;
   padding: var(--sp-sm) var(--field-pad-x);

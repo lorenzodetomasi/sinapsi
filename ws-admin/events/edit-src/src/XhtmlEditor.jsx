@@ -93,7 +93,7 @@ function pezziDiTesto(r) {
   return out;
 }
 
-export default function XhtmlEditor({ value, onChange, enabled = true, compact = false }) {
+export default function XhtmlEditor({ value, onChange, enabled = true, compact = false, label = '', icona = '' }) {
   const ref = useRef(null);
   const [focused, setFocused] = useState(false);
   const [blocco, setBlocco] = useState('p');
@@ -421,47 +421,57 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
         <Btn title="Rimuovi formattazione e marcature" name="format_clear" onClick={smarca} />
       </div>
       )}
-      {/* Anteprima | Codice, come Visuale/Testo di WordPress. Sempre visibili: da
-          «Codice» il campo di scrittura non c'è, e se le tab vivessero nella barra
-          (che compare col fuoco) non si potrebbe più tornare indietro. */}
-      <div className="xhtml-corner">
+      {/* Etichetta a sinistra, le due viste all'estrema destra, sulla stessa riga:
+          il campo si prende la sua intestazione invece di lasciarla a chi lo usa,
+          così le due viste stanno dove si guarda per capire di che campo si tratta.
+          Sempre visibili: da «Codice» il campo di scrittura non c'è, e se stessero
+          nella barra (che compare col fuoco) non si potrebbe tornare indietro. */}
+      <div className="xhtml-intestazione">
+        <label className="field-label">
+          {icona && <Icon name={icona} />}
+          {label}
+        </label>
         <div className="xhtml-viste" role="tablist">
           <button
             type="button"
             role="tab"
+            title="Anteprima"
+            aria-label="Anteprima"
             aria-selected={vista === 'anteprima'}
             className={vista === 'anteprima' ? 'attiva' : ''}
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setVista('anteprima')}
           >
-            Anteprima
+            <Icon name="visibility" />
           </button>
           <button
             type="button"
             role="tab"
+            title="Codice XHTML"
+            aria-label="Codice XHTML"
             aria-selected={vista === 'codice'}
             className={vista === 'codice' ? 'attiva' : ''}
             tabIndex={-1}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setVista('codice')}
           >
-            Codice
+            <Icon name="code" />
           </button>
         </div>
-        {value ? (
-          <button
-            type="button"
-            className="xhtml-clear"
-            title="Svuota"
-            tabIndex={-1}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={clearAll}
-          >
-            <Icon name="close" />
-          </button>
-        ) : null}
       </div>
+      {value ? (
+        <button
+          type="button"
+          className="xhtml-clear"
+          title="Svuota"
+          tabIndex={-1}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={clearAll}
+        >
+          <Icon name="close" />
+        </button>
+      ) : null}
       <div
         ref={ref}
         className={'xhtml-editor' + (compact ? ' compact' : '')}

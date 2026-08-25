@@ -57,8 +57,7 @@ function FieldControl({ name, schema, item, value, onChange, onPickPlace, onPatc
   if (schema.format === 'xhtml') {
     return (
       <div className="rf full">
-        <label className="field-label">{label}</label>
-        <XhtmlEditor value={value} onChange={onChange} compact />
+        <XhtmlEditor value={value} onChange={onChange} compact label={label} />
       </div>
     );
   }

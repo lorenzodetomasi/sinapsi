@@ -40,12 +40,18 @@ const ultimoSegmento = (id) =>
     .pop() || '';
 
 /** Regione dall'@id del luogo: `places/IT00122/piazzaancomarzio` → `IT00122`.
- *  Vale solo la forma paese+CAP: `places/lido-di-ostia/lungomare` non ne ha una. */
+ *  Vale la forma paese+CAP, oppure `online` per i luoghi che esistono solo in rete
+ *  (`places/online/serenlibrita`): anche quelli sono un dove, solo senza CAP.
+ *  `places/lido-di-ostia/lungomare` non ne ha una. */
 export function regioneDaLuogo(idLuogo) {
   const pezzi = String(idLuogo ?? '').split('/');
   const forse = pezzi[1] || '';
+  if (forse === 'online') return 'online';
   return /^[A-Z]{2}\d{4,5}$/.test(forse) ? forse : '';
 }
+
+/** L'evento succede solo in rete? Allora un CAP non ce l'ha, e non serve. */
+export const soloOnline = (d) => /OnlineEventAttendanceMode/i.test(String(d?.eventAttendanceMode ?? ''));
 
 /** Data e ora compatte da un `datetime-local` (2026-10-17T10:00 → 20261017T1000).
  *  Si prendono le cifre come sono scritte: l'ora dell'evento è l'ora del posto in
@@ -73,7 +79,9 @@ export function pezziMancanti(d) {
     if (!ultimoSegmento(d?.organizer?.[0]?.id)) mancano.push('l’organizzatore');
   } else {
     if (!dataCompatta(d?.startDate)) mancano.push('la data di inizio');
-    if (!regioneDaLuogo(d?.location?.id)) mancano.push('il luogo (con paese e CAP nell’@id)');
+    if (!regioneDaLuogo(d?.location?.id) && !soloOnline(d)) {
+      mancano.push('il luogo (con paese e CAP nell’@id, oppure «online»)');
+    }
   }
   return mancano;
 }
@@ -91,7 +99,9 @@ export function proponiId(d) {
   }
 
   const quando = dataCompatta(d?.startDate);
-  const dove = regioneDaLuogo(d?.location?.id);
+  // Un evento in rete non ha un CAP: al suo posto va «online», che nell'@id dice
+  // esattamente la stessa cosa che dice il CAP — dove succede.
+  const dove = regioneDaLuogo(d?.location?.id) || (soloOnline(d) ? 'online' : '');
   if (!quando || !dove) return '';
   // Un'occorrenza di una serie porta il nome della serie, non il proprio: così le
   // occorrenze della stessa serie si riconoscono in ordine alfabetico.
@@ -117,9 +127,9 @@ export function difettoId(id, primaryType) {
       : 'una serie si scrive in minuscolo (es. clubdellibro-ostia-reading_party)';
   }
   if (!/^\d{8}T\d{4}-/.test(nudo)) return 'un evento singolo comincia con data e ora (es. 20261017T1000-…)';
-  return /^\d{8}T\d{4}-[A-Z]{2}\d{4,5}-[a-z0-9][a-z0-9_-]*$/.test(nudo)
+  return /^\d{8}T\d{4}-([A-Z]{2}\d{4,5}|online)-[a-z0-9][a-z0-9_-]*$/.test(nudo)
     ? ''
-    : 'la forma è data-CAP-nome (es. 20261017T1000-IT00122-giornata_della_gentilezza)';
+    : 'la forma è data-CAP-nome, o data-online-nome (es. 20261017T1000-IT00122-giornata_della_gentilezza)';
 }
 
 /** Il percorso in cui finirà il file. */

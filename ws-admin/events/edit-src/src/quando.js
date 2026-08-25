@@ -19,6 +19,32 @@ export function fusoDelBrowser() {
   }
 }
 
+/* Il fuso di un paese. L'@id del luogo porta il paese nel suo CAP
+ * (`places/IT00122/…` → IT), e per quasi tutti i paesi europei il fuso è uno solo:
+ * tanto basta per proporre quello giusto invece di quello di chi sta redigendo.
+ * Un paese con più fusi (Stati Uniti, Russia) non sta qui: meglio farlo scegliere
+ * che indovinare. */
+const FUSO_DEL_PAESE = {
+  IT: 'Europe/Rome', SM: 'Europe/Rome', VA: 'Europe/Rome', MT: 'Europe/Malta',
+  FR: 'Europe/Paris', MC: 'Europe/Monaco', ES: 'Europe/Madrid', PT: 'Europe/Lisbon',
+  DE: 'Europe/Berlin', AT: 'Europe/Vienna', CH: 'Europe/Zurich', BE: 'Europe/Brussels',
+  NL: 'Europe/Amsterdam', LU: 'Europe/Luxembourg', DK: 'Europe/Copenhagen',
+  SE: 'Europe/Stockholm', NO: 'Europe/Oslo', FI: 'Europe/Helsinki', IE: 'Europe/Dublin',
+  GB: 'Europe/London', PL: 'Europe/Warsaw', CZ: 'Europe/Prague', SK: 'Europe/Bratislava',
+  HU: 'Europe/Budapest', SI: 'Europe/Ljubljana', HR: 'Europe/Zagreb', GR: 'Europe/Athens',
+  RO: 'Europe/Bucharest', BG: 'Europe/Sofia',
+};
+
+/** Il fuso che si deduce dal luogo: dal paese nel suo @id. '' se non si può dire. */
+export function fusoDelLuogo(idLuogo) {
+  const m = /^places\/([A-Z]{2})\d{4,5}\//.exec(String(idLuogo ?? ''));
+  return m ? FUSO_DEL_PAESE[m[1]] || '' : '';
+}
+
+/** Il fuso da usare per un evento: quello scelto, quello del luogo, quello di qui.
+ *  L'ordine è l'ordine di chi ne sa di più. */
+export const fusoPer = (d) => d?.timezone || fusoDelLuogo(d?.location?.id) || fusoDelBrowser();
+
 /** Elenco dei fusi noti al browser (poche centinaia); se non li espone, i nostri. */
 export function fusiDisponibili() {
   try {
@@ -103,13 +129,72 @@ const quandoLeggibile = (iso) => {
   return isNaN(d) ? iso : d.toLocaleDateString('it-IT', ITA) + ' ' + oraDi(iso);
 };
 
-/** Da una ricorrenza del form alla domanda «questa data ci sta dentro?». */
+/** Da una ricorrenza del form alla domanda «questa data ci sta dentro?».
+ *  Una ricorrenza «indicativa» non risponde mai di no: dice a che ritmo va la
+ *  collezione, non a quali date deve stare. */
 function rispettaRicorrenza(ric, iso) {
-  if (!ric || !ric.frequency) return true;
+  if (!ric || !ric.frequency || ric.aderenza === 'indicativa') return true;
   if (ric.frequency !== 'weekly' || !ric.byDay?.length) return true; // solo il caso che sappiamo dire
   const SIGLE = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   const d = new Date(senzaOffset(iso));
   return isNaN(d) ? true : ric.byDay.includes(SIGLE[d.getDay()]);
+}
+
+/**
+ * Le date che una ricorrenza descrive, a partire dall'inizio. Serve a proporre le
+ * occorrenze di una collezione: la cadenza dice quando, e da lì si ricavano le
+ * date — che restano una PROPOSTA, perché gli eventi veri li scrive il redattore.
+ *
+ * Si fermano al primo dei tre limiti: quante ne sono state chieste, la fine
+ * dichiarata («Termina il»), il numero dichiarato («Dopo N occorrenze»).
+ */
+export function dateRicorrenti(inizio, ric, quante) {
+  const base = senzaOffset(inizio);
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(base);
+  if (!m || !ric?.frequency) return [];
+  const passo = Math.max(1, Number(ric.interval) || 1);
+  const ora = `${m[4]}:${m[5]}`;
+  const limite = ric.endMode === 'count' ? Math.min(quante, Math.max(1, Number(ric.count) || 1)) : quante;
+  const fine = ric.endMode === 'until' && ric.until ? dataDi(ric.until) : '';
+  const SIGLE = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+  const out = [];
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  const scrivi = (g) => {
+    const iso = `${g.toISOString().slice(0, 10)}T${ora}`;
+    if (fine && dataDi(iso) > fine) return false;
+    out.push(iso);
+    return true;
+  };
+
+  if (ric.frequency === 'weekly' && ric.byDay?.length) {
+    // Dal giorno d'inizio in avanti, prendendo i giorni della settimana scelti.
+    const giorni = new Set(ric.byDay);
+    const cursore = new Date(d);
+    let settimane = 0;
+    while (out.length < limite && settimane < limite * 7 + 370) {
+      if (giorni.has(SIGLE[cursore.getUTCDay()])) {
+        // `interval` conta le SETTIMANE: quelle in mezzo si saltano.
+        const dallInizio = Math.floor((cursore - d) / 604800000);
+        if (dallInizio % passo === 0 && cursore >= d && !scrivi(cursore)) break;
+      }
+      cursore.setUTCDate(cursore.getUTCDate() + 1);
+      settimane++;
+    }
+    return out;
+  }
+
+  const avanti = { daily: (x) => x.setUTCDate(x.getUTCDate() + passo),
+                   weekly: (x) => x.setUTCDate(x.getUTCDate() + 7 * passo),
+                   monthly: (x) => x.setUTCMonth(x.getUTCMonth() + passo),
+                   yearly: (x) => x.setUTCFullYear(x.getUTCFullYear() + passo) }[ric.frequency];
+  if (!avanti) return [];
+  const cursore = new Date(d);
+  while (out.length < limite) {
+    if (!scrivi(cursore)) break;
+    avanti(cursore);
+  }
+  return out;
 }
 
 /**
@@ -161,14 +246,27 @@ export function avvisiQuando(d, occorrenze = null) {
     out.push({ tipo: 'nota', testo: 'Le date delle occorrenze non sono ancora state lette dall’indice.' });
     return out;
   }
+  const mio = String(d?.id || '').trim().replace(/^events\//, '');
+  const nellElenco = new Set(elenco.map((o) => String(o?.id || '').trim().replace(/^events\//, '')).filter(Boolean));
   const senzaData = [];
   for (const o of elenco) {
     const id = (o?.id || '').trim();
     if (!id) continue;
-    const quando = occorrenze[id] || occorrenze[id.replace(/^events\//, '')];
-    if (!quando) {
+    const voce = occorrenze[id] || occorrenze[id.replace(/^events\//, '')];
+    if (!voce) {
       senzaData.push(id);
       continue;
+    }
+    const quando = typeof voce === 'string' ? voce : voce.startDate || '';
+    // L'altra faccia del legame: l'occorrenza deve dire di appartenere a QUESTA
+    // collezione. Se dice un'altra cosa, uno dei due file va corretto — e finché
+    // non lo si fa, gli indici seguono l'evento, non l'elenco.
+    const sua = typeof voce === 'object' ? String(voce.collection || '').replace(/^events\//, '') : '';
+    if (mio && sua && sua !== mio) {
+      out.push({ tipo: 'errore', testo: `L’occorrenza ${id} dice di appartenere a un’altra collezione (${sua}).` });
+    }
+    if (mio && !sua && typeof voce === 'object') {
+      out.push({ tipo: 'avviso', testo: `L’occorrenza ${id} non dichiara di appartenere a questa collezione (le manca superEvent).` });
     }
     const q = minuti(quando);
     if (inizio !== null && q !== null && q < inizio) {
@@ -189,13 +287,29 @@ export function avvisiQuando(d, occorrenze = null) {
         `(${senzaData.slice(0, 3).join(', ')}${senzaData.length > 3 ? '…' : ''}): rigenera l’indice, o l’@id non esiste.`,
     });
   }
+  // …e gli eventi che dicono di appartenere a questa collezione ma nell'elenco non ci sono.
+  if (mio) {
+    const mancanti = Object.entries(occorrenze)
+      .filter(([id, v]) => typeof v === 'object' && String(v.collection || '').replace(/^events\//, '') === mio && !nellElenco.has(id.replace(/^events\//, '')))
+      .map(([id]) => id);
+    if (mancanti.length) {
+      out.push({
+        tipo: 'avviso',
+        testo:
+          `${mancanti.length} event${mancanti.length > 1 ? 'i dicono' : 'o dice'} di appartenere a questa collezione ` +
+          `ma non ${mancanti.length > 1 ? 'sono' : 'è'} nell’elenco: ${mancanti.slice(0, 3).join(', ')}${mancanti.length > 3 ? '…' : ''}.`,
+      });
+    }
+  }
+
   // Una ricorrenza mensile con date sparse non descrive niente: meglio dirlo.
   const ric = d?.eventSchedule;
-  if (ric?.frequency === 'monthly' && elenco.length > 2) {
+  if (ric?.frequency === 'monthly' && ric?.aderenza !== 'indicativa' && elenco.length > 2) {
     const date = elenco
       .map((o) => occorrenze[(o?.id || '').trim()] || occorrenze[(o?.id || '').replace(/^events\//, '')])
       .filter(Boolean)
-      .map((x) => giorno(x))
+      .map((x) => giorno(typeof x === 'string' ? x : x.startDate || ''))
+      .filter(Boolean)
       .sort();
     const mesi = new Set(date.map((x) => x.slice(0, 7)));
     if (date.length > mesi.size) {
