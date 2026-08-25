@@ -245,8 +245,12 @@ if (!function_exists('ws_mappa_sitemap_pubblico')) {
                 $sito = explode('/', $m[1])[0];
                 $prefisso = $prefissoDi[$sito] ?? '';
             }
-            $loc = $radice . rtrim($prefisso, '/') . '/' . ltrim($wspath, '/');
-            $loc = rtrim($loc, '/') ?: $radice . '/';
+            $nudo = ltrim($wspath, '/');
+            $loc = $radice . rtrim($prefisso, '/') . '/' . $nudo;
+            // La home tiene la barra finale: `https://sito/` e `https://sito` sono
+            // due indirizzi per un motore, e quello canonico è il primo. Le altre
+            // pagine la perdono, per non averne due versioni.
+            if ($nudo !== '') $loc = rtrim($loc, '/');
             if (isset($visti[$loc])) continue;   // la mappa generale ha dei doppioni
             $visti[$loc] = true;
 
