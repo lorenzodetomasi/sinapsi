@@ -35,3 +35,7 @@ ws-custom/plugins/
 
 # Cartella di lavoro rimasta dal trasloco di Meetoo verso la radice.
 sinapsi/
+
+# Copia scaricata dal server, per confronto: non è codice del progetto, è una
+# fotografia. Si rifà quando serve, non si versiona.
+archive/themes/

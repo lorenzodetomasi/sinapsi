@@ -1,0 +1,48 @@
+/*
+ Align container
+ $horizontal: 'left' | 'center' | 'right' | 'justify' (stretch);
+ $vertical: 'top' | 'baseline' | 'middle' (center) | 'bottom' | 'justify' (stretch);
+ $method: text | flex | position | float;
+ @if $height != null {
+ height: $height;
+ }
+ */
+/*
+ $distribute: 'vertical' | 'horizontal';
+ $align: 'top' | 'middle' | 'bottom' | 'left' | 'center' | 'right';
+ $space: 'space-between' | 'space-around' | 'space-evenly';
+ $method: 'flex';
+ */
+.vgrid-no, .hgrid, .maxgrid, .print {
+  display: none !important; }
+
+.content-container {
+  box-sizing: border-box;
+  padding: 0.5rem; }
+
+#header-top .email.link .text, #header-top .telephone.link .text {
+  display: none; }
+
+#header1 {
+  flex-wrap: wrap; }
+  #header1 > * {
+    width: 100%; }
+  #header1 > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; }
+    #header1 > div > [itemprop="logo"] > img {
+      margin-top: 0;
+      margin-right: 0; }
+  #header1 h1[itemprop="name"] {
+    margin-bottom: 0.2em; }
+  #header1 h2[itemprop="headline"] {
+    margin-top: 0; }
+
+#header1-nav1 h3 {
+  text-align: right; }
+
+.nav.vgrid-fullwidth > div > ul > li, .nav.vgrid-fullwidth > div > ol > li {
+  width: 100%; }
+  .nav.vgrid-fullwidth > div > ul > li a, .nav.vgrid-fullwidth > div > ol > li a {
+    width: 100%; }

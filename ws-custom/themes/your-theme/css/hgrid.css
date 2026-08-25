@@ -1,0 +1,22 @@
+/*
+ Align container
+ $horizontal: 'left' | 'center' | 'right' | 'justify' (stretch);
+ $vertical: 'top' | 'baseline' | 'middle' (center) | 'bottom' | 'justify' (stretch);
+ $method: text | flex | position | float;
+ @if $height != null {
+ height: $height;
+ }
+ */
+/*
+ $distribute: 'vertical' | 'horizontal';
+ $align: 'top' | 'middle' | 'bottom' | 'left' | 'center' | 'right';
+ $space: 'space-between' | 'space-around' | 'space-evenly';
+ $method: 'flex';
+ */
+#footer-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 1.2em 1.2em;
+  grid-auto-flow: row;
+  grid-template-areas: "fiscal-data ." ". ."; }
