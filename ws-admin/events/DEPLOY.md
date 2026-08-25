@@ -696,6 +696,33 @@ e una cartella sbagliata non si corregge da sola.
 Nota sui file già scritti: `20260716T11730-IT00122-…` ha cinque cifre nell'ora ed è
 malformato — aprendolo, il campo lo segnala.
 
+## Editor: «Quando», il fuso e gli avvisi di coerenza
+
+Le date si salvano **con lo scarto da UTC** (`2026-08-31T19:00:00+02:00`). Un'ora senza
+scarto è ambigua: «17:30» a Ostia e «17:30» a Berlino sono due istanti diversi, e chi legge
+il JSON da fuori non ha modo di saperlo. Il *nome* del fuso viaggia a parte in
+`meetoo:timezone`, perché dallo scarto non si ricava (+02:00 d'estate ce l'ha mezza Europa).
+Il campo «Fuso orario» è il primo di Quando; vuoto significa «il fuso di questo computer»,
+e lo dice.
+
+> ⚠ **Al primo salvataggio ogni evento cambia**: le date acquistano lo scarto e compare
+> `meetoo:timezone`. È l'effetto voluto, ma nel confronto col web appare come modifica.
+> Cinque eventi su nove oggi non hanno lo scarto.
+
+Nel **Programma dell'evento** si scelgono solo gli orari (Dalle – alle): la data la mette
+l'evento, e nel file resta un datetime intero. «Solo ora» compare anche nella *fine* di un
+evento singolo, dove la data si eredita dall'inizio.
+
+Sotto le date c'è un pannello che elenca quello che non torna — fine prima dell'inizio,
+evento che scavalca la mezzanotte, voci di programma fuori orario, occorrenze fuori
+intervallo o in disaccordo con la ricorrenza. **Avvisa, non blocca**: le date delle
+occorrenze si leggono dall'indice (da entrambi i file, `events.json` e
+`events.archive.json`), quindi un indice vecchio produce la nota «rigenera l'indice».
+
+La **ricorrenza è facoltativa**: si accende con un interruttore. Spenta non finisce nel
+file — prima una collezione senza ricorrenza se ne ritrovava una («ogni settimana») al
+primo salvataggio.
+
 ## Editor XHTML: i tag semantici
 
 Due menu nella barra:
