@@ -8,9 +8,12 @@ import { proponiId, pezziMancanti, difettoId, percorsoDa } from './eventId.js';
 // (tipo, nome, data, luogo, organizzatore) e si ferma appena qualcuno lo tocca —
 // da quel momento è roba sua e nessun automatismo glielo cambia sotto.
 //
-// Sotto al campo c'è sempre la stessa riga, che risponde a tre domande in
-// quest'ordine: che cosa manca per comporlo, che cosa non va in quello scritto,
-// e se quell'@id sul sito è già occupato.
+// Sotto al campo c'è sempre la stessa riga, che risponde in quest'ordine: che cosa
+// manca per comporlo, che cosa non va in quello scritto, se sul sito è già
+// occupato, e infine se COINCIDE CON QUELLO CHE LA REGOLA COMPORREBBE. Quest'ultima
+// è la domanda che conta davvero: «chi l'ha scritto» non interessa a nessuno —
+// aprendo un evento l'@id l'ha sempre scritto qualcun altro — mentre «è conforme»
+// dice se quel nome è quello che il sito si aspetta.
 
 /** C'è già un evento con questo @id? Sotto il CMS un file mancante torna la pagina
  *  HTML con stato 200: guardare `res.ok` direbbe «esiste» per qualunque @id. */
@@ -73,6 +76,12 @@ const EventId = ({ data, handleChange, path, label, visible }) => {
 
   const difetto = valore ? difettoId(valore, d.primaryType) : '';
   const rel = percorsoDa(valore);
+  // Conforme = identico a quello che la regola comporrebbe. Il confronto è stretto,
+  // sul testo intero: un @id senza la cartella (`clubdellibro-ostia-reading_party`
+  // invece di `events/clubdellibro-ostia-reading_party`) NON è conforme, ed è
+  // giusto dirlo — è un riferimento che non si risolve, e il pulsante qui accanto
+  // lo raddrizza in un clic.
+  const conforme = !!proposta && valore === proposta;
 
   return (
     <div className="rf rf-text event-id">
@@ -96,11 +105,16 @@ const EventId = ({ data, handleChange, path, label, visible }) => {
           </span>
         ) : valore ? (
           <span className="place-status place-ok">
-            ✓ {automatico ? 'Composto in automatico' : 'Scritto a mano'} · finirà in {rel}/index.json
+            ✓ {conforme
+              ? 'Conforme alla regola'
+              : proposta
+                ? 'Diverso da quello che la regola comporrebbe'
+                : 'Scritto a mano'}{' '}
+            · finirà in {rel}/index.json
           </span>
         ) : null}
       </span>
-      {!automatico && proposta && proposta !== valore ? (
+      {proposta && proposta !== valore ? (
         <button
           type="button"
           className="btn-ghost event-id-riproponi"
@@ -108,7 +122,7 @@ const EventId = ({ data, handleChange, path, label, visible }) => {
             scritto.current = proposta;
             handleChange(path, proposta);
           }}
-          title="Torna all'@id composto dal form"
+          title="Usa l’@id composto dal form"
         >
           <span className="material-symbols-outlined">auto_fix_high</span> {proposta}
         </button>
