@@ -10,7 +10,7 @@
  * com'è. Un motore di ricerca legge l'evento — data, luogo, organizzatore, prezzo —
  * senza eseguire una riga di JavaScript.
  */
-global $ws_query, $ws_content, $ws_content_root_url;
+global $ws_query, $ws_content, $ws_content_root_url, $rewrite_rule;
 
 $ws_theme_url = ws_theme_url();
 
@@ -31,8 +31,57 @@ foreach(array(
 	'<link rel="preconnect" href="https://fonts.googleapis.com" />',
 	'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin" />',
 	'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=swap" />',
+	// I caratteri di Meetoo, gli stessi che i token chiedono: Roboto Slab per i
+	// titoli, Roboto per il testo. Li chiediamo con un foglio di stile, come faceva
+	// la vecchia home — vedi qui sotto perché non con WebFont.js.
+	'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;family=Roboto+Slab:wght@400;500;600;700&amp;display=swap" />',
 ) as $collegamento){
 	$GLOBALS['ws_links'][] = $collegamento;
+}
+
+/* Due cose che il tema genitore mette nella testa di tutti i suoi siti, e che qui
+ * non solo non servono ma fanno danno. Si tolgono da qui perché `functions.php` si
+ * carica a cascata e il figlio parla per ultimo: il genitore resta com'è per
+ * isotype, che quelle due cose le usa davvero.
+ *
+ * - `js_header` misura un `#header1` che nei temi del genitore c'è e in Meetoo no:
+ *   su ogni pagina lasciava un errore JavaScript vero («firstElementChild of
+ *   null»), e con lui moriva tutto ciò che veniva dopo nello stesso blocco.
+ * - `js_webfont` carica WebFont.js da ajax.googleapis.com per prendere Titillium e
+ *   Raleway, che Meetoo non usa: un file in più e due famiglie scaricate per
+ *   niente. I caratteri che servono li chiede il foglio di stile qui sopra. */
+unset($GLOBALS['ws_scripts']['head']['js_header'], $GLOBALS['ws_scripts']['head']['js_webfont']);
+
+/* E il CSS «above the fold» del genitore, che qui pesava 25 KB su ogni pagina.
+ *
+ * Il genitore lo stampa dentro la testa perché la prima schermata si veda senza
+ * aspettare un foglio esterno: giusto, per i suoi siti. Ma è la griglia a tre
+ * colonne di isotype, con il suo `#header1` e la sua spalla, e Meetoo non ne usa
+ * una riga — anzi, ne annullava dei pezzi in `meetoo-cms.css`. Toglierlo dimezza
+ * la pagina (57 → 32 KB) e la lascia identica: i fogli di Meetoo bastano a sé,
+ * come bastavano alle pagine che il CMS non serviva ancora.
+ *
+ * Se un giorno servisse rimetterlo, è questa riga sola: si cancella. */
+unset(
+	$GLOBALS['ws_styles']['head']['all'], $GLOBALS['ws_styles']['head']['screen'],
+	$GLOBALS['ws_styles']['head']['vgrid'], $GLOBALS['ws_styles']['head']['hgrid'],
+	$GLOBALS['ws_styles']['head']['maxgrid']
+);
+
+/* L'indirizzo CANONICO della pagina.
+ *
+ * Il CMS scrive `og:url` da REQUEST_URI, cioè dall'indirizzo com'è arrivato: se
+ * qualcuno apre `?tutti=luoghi` — il ripiego senza JavaScript per vedere un elenco
+ * intero — quell'indirizzo diventa una seconda copia della stessa pagina agli
+ * occhi di un motore. Il canonico invece viene dalla MAPPA: è l'indirizzo che
+ * quella pagina ha, e uno solo. */
+if(!empty($rewrite_rule->wspath)){
+	$wspath = (string)$rewrite_rule->wspath;
+	$canonico = ws_href(ltrim($wspath, '/'));
+	if(substr($wspath, -1) === '/' and substr($canonico, -1) !== '/'){
+		$canonico .= '/';   // la home tiene la sua barra finale
+	}
+	$GLOBALS['ws_links'][] = '<link rel="canonical" href="'.htmlspecialchars($canonico, ENT_QUOTES, 'UTF-8').'" />';
 }
 
 /**
@@ -64,6 +113,12 @@ $GLOBALS['ws_scripts']['head']['meetoo_jsonld'] = meetoo_jsonld();
 // I gesti dell'header (cassetto, condividi): quel poco che resta al browser ora
 // che il markup arriva già scritto.
 $GLOBALS['ws_scripts']['bodyend']['meetoo_header'] = '<script defer="defer" src="'.$ws_theme_url.'js/header.js"></script>';
+// I gesti delle card — condividi, «mi interessa» — sono già scritti una volta
+// sola in `cards.js`, che li intercetta sul documento: valgono anche per le card
+// che arrivano dal server, senza doverle costruire in JavaScript.
+$GLOBALS['ws_scripts']['bodyend']['meetoo_carte'] = '<script defer="defer" src="'.$ws_theme_url.'cards.js"></script>';
+// Le liste lunghe che si allungano mentre si scorre.
+$GLOBALS['ws_scripts']['bodyend']['meetoo_liste'] = '<script defer="defer" src="'.$ws_theme_url.'js/lista.js"></script>';
 
 // L'header che si restringe al primo scorrimento vive nel tema genitore, perché
 // serve a tutti i siti: qui si accende soltanto.

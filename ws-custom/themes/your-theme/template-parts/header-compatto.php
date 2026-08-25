@@ -29,7 +29,17 @@
 	}
 	.header-compatto img, .header-compatto svg, .header-compatto .logo {
 		height: var(--header-logo); width: auto;
+		/* Un logo orizzontale alto 3,5rem è largo il triplo: su un telefono usciva
+		   dalla riga e finiva sotto le icone dell'account. Non può mai essere più
+		   largo dello spazio che ha; `contain` lo rimpicciolisce invece di
+		   schiacciarlo. */
+		max-width: 100%; object-fit: contain; object-position: left center;
 		transition: height .22s cubic-bezier(.22,1,.36,1);
+	}
+	/* E sui telefoni parte già più piccolo: l'impressione grande la può dare uno
+	   schermo grande, qui lo spazio è tutto quello che c'è. */
+	@media (max-width: 30rem) {
+		.header-compatto { --header-logo: 2.25rem; }
 	}
 	.header-compatto .header-espanso-solo {
 		transition: opacity .18s ease, max-height .22s cubic-bezier(.22,1,.36,1);

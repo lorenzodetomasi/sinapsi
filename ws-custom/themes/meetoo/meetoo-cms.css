@@ -71,6 +71,32 @@
 .mt-zona-nota { color: var(--color-hint); font-size: .85rem; }
 .mt-zona-freccia { margin-left: auto; }
 
+/* La testata della zona: la stessa fascia di mare e sabbia della vecchia home,
+   che qui arriva già scritta dal server. È l'unico pezzo a tutta larghezza. */
+.mt-hero {
+  background: linear-gradient(160deg, var(--color-sea), var(--color-sand));
+  border-radius: 0 0 24px 24px;
+  margin-bottom: .5rem;
+}
+.mt-hero .mt-pagina { padding-top: 2rem; padding-bottom: 1.75rem; }
+.mt-hero .mt-h1 { margin-top: 0; }
+.mt-hero .mt-corpo { color: var(--color-text); }
+.mt-hero .mt-corpo p:last-child { margin-bottom: 0; }
+
+/* L'header è appiccicato in alto: un'ancora che porta a una sezione deve
+   fermarsi più sotto, o il titolo finisce sotto la barra. */
+.mt-sezione, .mt-esplora { scroll-margin-top: 6rem; }
+
+/* «Da dove comincio»: le quattro porte della zona, subito sotto la testata.
+   Attaccata alla testata: fra le due non ci va uno stacco di sezione. */
+.mt-esplora { margin-top: 0; }
+.mt-esplora .grid { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+
+/* Il segnaposto in fondo a un elenco che continua: occupa tutta la riga, anche
+   dentro una griglia, perché non è una card ma la fine di un elenco. */
+.mt-altri { grid-column: 1 / -1; display: flex; justify-content: center; padding: .5rem 0; }
+.mt-altri.caricando { opacity: .5; pointer-events: none; }
+
 /* Il piede: in fondo al contenuto, non incollato allo schermo. */
 .mt-footer {
   max-width: 56rem; margin: 0 auto; padding: 2rem 1rem 3rem;

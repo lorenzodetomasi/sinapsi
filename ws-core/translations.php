@@ -19,8 +19,12 @@ function ws_locales() {
 		$locales['default'] = WS_DEFAULT_LOCALE;
 	}
 	// Detect user locale
-	if(!empty(locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']))){
-		$locales['user_http'] = locale_accept_from_http($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+	// L'intestazione può non arrivare — i motori di ricerca e i programmi a riga di
+	// comando spesso non la mandano — e chiederla senza guardare se c'è stampava un
+	// avviso PHP in cima a ogni pagina, prima ancora del DOCTYPE.
+	$accettate = isset($_SERVER['HTTP_ACCEPT_LANGUAGE']) ? (string)$_SERVER['HTTP_ACCEPT_LANGUAGE'] : '';
+	if($accettate !== '' and !empty(locale_accept_from_http($accettate))){
+		$locales['user_http'] = locale_accept_from_http($accettate);
 	}
 	if(!empty($ws_user['selected_locale'])){
 		$locales['user_selected'] = $ws_user['selected_locale'];
