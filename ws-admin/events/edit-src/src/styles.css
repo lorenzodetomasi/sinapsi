@@ -438,6 +438,9 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .event-id-riproponi { align-self: flex-start; margin-top: var(--sp-xs); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .event-id-riproponi .material-symbols-outlined { font-size: 1rem; }
 
+.rec-accendi { display: inline-flex; align-items: center; gap: var(--sp-xs); cursor: pointer; }
+.rec-accendi input { width: var(--checkbox-size); height: var(--checkbox-size); margin: 0; }
+
 /* Avvisi di coerenza in «Quando»: non bloccano, quindi non urlano. */
 .coerenza { margin: var(--sp-sm) 0; }
 .coerenza ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--sp-xs); }

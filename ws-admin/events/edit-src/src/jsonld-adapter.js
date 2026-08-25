@@ -48,8 +48,13 @@ const detectSocial = (url) => {
 
 // eventSchedule (schema.org Schedule) <-> modello del form della ricorrenza.
 function fromSchedule(sched) {
-  const d = { frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10, timezone: '' };
+  /* `presente` distingue «non si ripete» da «si ripete ogni settimana», che senza
+   * di lui erano la stessa cosa: il form parte da valori di comodo (settimanale,
+   * ogni 1) e salvando li scriveva nel file anche per una collezione che una
+   * ricorrenza non l'aveva mai avuta — inventandogliela. */
+  const d = { presente: false, frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10 };
   if (!sched) return d;
+  d.presente = true;
   const m = /^P(\d+)([DWMY])$/.exec(sched.repeatFrequency || '');
   if (m) {
     d.frequency = { D: 'daily', W: 'weekly', M: 'monthly', Y: 'yearly' }[m[2]];
@@ -62,7 +67,7 @@ function fromSchedule(sched) {
   return d;
 }
 function toSchedule(s, fuso) {
-  if (!s) return undefined;
+  if (!s || !s.presente) return undefined;
   const unit = { daily: 'D', weekly: 'W', monthly: 'M', yearly: 'Y' }[s.frequency] || 'W';
   const out = { '@type': 'Schedule', repeatFrequency: `P${Math.max(1, Number(s.interval) || 1)}${unit}` };
   if (s.frequency === 'weekly' && s.byDay?.length) out.byDay = s.byDay.join(',');

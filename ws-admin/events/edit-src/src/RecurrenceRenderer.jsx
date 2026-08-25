@@ -25,7 +25,7 @@ const DAYS = [
   { code: 'SU', label: 'D' },
 ];
 
-const DEFAULT = { frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10, timezone: '' };
+const DEFAULT = { presente: false, frequency: 'weekly', interval: 1, byDay: [], endMode: 'never', until: '', count: 10 };
 
 const Recurrence = ({ data, handleChange, path, label, visible }) => {
   if (visible === false) return null; // rispetta la regola SHOW/HIDE
@@ -38,11 +38,18 @@ const Recurrence = ({ data, handleChange, path, label, visible }) => {
 
   return (
     <div className="recurrence">
-      <label className="field-label">
+      {/* Una collezione può benissimo non avere una ricorrenza: le sue occorrenze
+          stanno quando stanno. Senza questo interruttore i valori di comodo del
+          form («ogni 1 settimana») finivano nel file al primo salvataggio, e la
+          collezione si ritrovava una cadenza che nessuno le aveva dato. */}
+      <label className="field-label rec-accendi">
+        <input type="checkbox" checked={!!v.presente} onChange={(e) => set({ presente: e.target.checked })} />
         <span className="material-symbols-outlined">repeat</span>
         {label || 'Ricorrenza'}
       </label>
 
+      {v.presente && (
+        <>
       <div className="rec-line">
         <span>Ripeti ogni</span>
         <input
@@ -110,6 +117,8 @@ const Recurrence = ({ data, handleChange, path, label, visible }) => {
           </label>
         </div>
       </div>
+        </>
+      )}
 
     </div>
   );

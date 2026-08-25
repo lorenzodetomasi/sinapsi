@@ -73,11 +73,14 @@ export function conOffset(iso, zona) {
   return conSecondi + off;
 }
 
-/** Toglie scarto e secondi: la forma che vogliono i campi del form. */
+/** Toglie scarto e secondi: la forma che vogliono i campi del form. Quello che non
+ *  è una data con l'ora resta com'è — anche se è sbagliato. Un valore rotto va
+ *  mostrato com'è e corretto a mano, non limato di nascosto fino a sembrare un
+ *  altro valore rotto (è successo: «2025-01.000Z» diventava «2025-01.000»). */
 export function senzaOffset(iso) {
   const s = String(iso ?? '').trim();
   const m = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/.exec(s);
-  return m ? m[1] : s.replace(/(Z|[+-]\d{2}:?\d{2})$/, '');
+  return m ? m[1] : s;
 }
 
 export const dataDi = (iso) => String(iso ?? '').slice(0, 10);
