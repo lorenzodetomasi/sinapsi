@@ -19,6 +19,9 @@
  * e il giorno del dominio proprio non ci sarà niente da riscrivere.
  */
 
+// I prefissi dei siti innestati: stessa definizione che usa il CMS per instradare.
+require_once __DIR__ . '/../../ws-core/mounts.php';
+
 if (!function_exists('ws_mappa_wspath')) {
 
     /** Nome della cartella-foglia di un @id: `events/20261017T1000-…` → `20261017T1000-…`. */
@@ -188,5 +191,79 @@ if (!function_exists('ws_mappa_wspath')) {
         return @file_put_contents($file, $nuovo) !== false
             ? ['ok' => true, 'why' => 'incluso']
             : ['ok' => false, 'why' => 'scrittura fallita'];
+    }
+}
+
+if (!function_exists('ws_mappa_sitemap_pubblico')) {
+    /**
+     * Il `sitemap.xml` che leggono i motori di ricerca.
+     *
+     * Nasce dalla mappa generale (quella che il CMS usa per instradare), ma con due
+     * differenze che contano:
+     *
+     *  1. gli indirizzi diventano ASSOLUTI, perché un sitemap con percorsi relativi
+     *     non serve a niente;
+     *  2. le pagine di un sito INNESTATO prendono il loro prefisso. I contenuti
+     *     scrivono `/eventi/…` perché un giorno vivranno su un dominio proprio, ma
+     *     oggi stanno sotto `/meetoo/`, e un motore che seguisse l'indirizzo nudo
+     *     troverebbe la pagina sbagliata. Il prefisso lo sa solo chi ospita, quindi
+     *     lo aggiunge questo passaggio e non il contenuto.
+     *
+     * `noindex` esce dall'elenco: è l'unica cosa che il file dichiara e va rispettata.
+     */
+    function ws_mappa_sitemap_pubblico(string $contentsDir, array $mounts, bool $apply): array {
+        $mappa = rtrim($contentsDir, '/') . '/ws_sitemap.wsx';
+        if (!is_file($mappa)) return ['ok' => false, 'why' => 'ws_sitemap.wsx generale non trovato', 'urls' => 0];
+
+        $prima = libxml_use_internal_errors(true);
+        $dom = new DOMDocument();
+        $dom->load($mappa);
+        $dom->xinclude();
+        libxml_clear_errors();
+        libxml_use_internal_errors($prima);
+
+        $x = new DOMXPath($dom);
+        $radice = rtrim((string)($x->evaluate('string(/*/ws_root_url)') ?: ''), '/');
+        if ($radice === '') return ['ok' => false, 'why' => 'ws_root_url non dichiarato nella mappa', 'urls' => 0];
+
+        // sito → prefisso, letto al contrario rispetto a WS_MOUNTS.
+        $prefissoDi = [];
+        foreach ($mounts as $prefisso => $sito) $prefissoDi[$sito] = '/' . trim((string)$prefisso, '/');
+
+        $out = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n";
+        $visti = [];
+        $n = 0;
+        foreach ($x->query('/*/url') as $url) {
+            $wspath = trim($x->evaluate('string(wspath)', $url));
+            $robots = $x->evaluate('string(robots)', $url);
+            if ($wspath === '' || strpos($robots, 'noindex') !== false) continue;
+
+            // A quale sito appartiene: lo dice il `content=` della query.
+            $query = $x->evaluate('string(query)', $url);
+            $prefisso = '';
+            if (preg_match('/content=([^&\s]+)/', $query, $m)) {
+                $sito = explode('/', $m[1])[0];
+                $prefisso = $prefissoDi[$sito] ?? '';
+            }
+            $loc = $radice . rtrim($prefisso, '/') . '/' . ltrim($wspath, '/');
+            $loc = rtrim($loc, '/') ?: $radice . '/';
+            if (isset($visti[$loc])) continue;   // la mappa generale ha dei doppioni
+            $visti[$loc] = true;
+
+            $out .= "\t<url>\n\t\t<loc>" . htmlspecialchars($loc, ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</loc>\n";
+            foreach (['changefreq' => 'changefreq', 'priority' => 'priority', 'dateModified' => 'lastmod'] as $da => $a) {
+                $v = trim($x->evaluate("string($da)", $url));
+                if ($v !== '') $out .= "\t\t<$a>" . htmlspecialchars($v, ENT_XML1 | ENT_QUOTES, 'UTF-8') . "</$a>\n";
+            }
+            $out .= "\t</url>\n";
+            $n++;
+        }
+        $out .= "</urlset>\n";
+
+        $file = rtrim($contentsDir, '/') . '/sitemap.xml';
+        if (!$apply) return ['ok' => true, 'why' => "$n indirizzi", 'urls' => $n];
+        return @file_put_contents($file, $out) !== false
+            ? ['ok' => true, 'why' => "$n indirizzi scritti in sitemap.xml", 'urls' => $n]
+            : ['ok' => false, 'why' => 'sitemap.xml: scrittura fallita', 'urls' => $n];
     }
 }

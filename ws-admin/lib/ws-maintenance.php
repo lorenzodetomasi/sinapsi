@@ -117,6 +117,11 @@ if (!function_exists('ws_maint_ops')) {
                     $sito = basename($radiceSito);
                     $r = ws_mappa_costruisci($radiceSito, $sito, $locale, $apply);
                     $inn = ws_mappa_innesta(dirname($radiceSito), $sito, $apply);
+                    // Le due metà dello stesso lavoro: la mappa serve al CMS per
+                    // instradare, il sitemap.xml ai motori per trovare. Farne una
+                    // sola significa avere pagine che rispondono e che nessuno cerca.
+                    $mounts = is_array(WS_MOUNTS) ? WS_MOUNTS : array();  // ws-mappa.php la definisce
+                    $pub = ws_mappa_sitemap_pubblico(dirname($radiceSito), $mounts, $apply);
                     $per = [];
                     foreach ($r['voci'] as $v) $per[$v['template']][] = $v['wspath'];
                     $righe = [];
@@ -125,6 +130,7 @@ if (!function_exists('ws_maint_ops')) {
                             . (count($w) > 3 ? ' …' : '');
                     }
                     $righe[] = 'mappa generale: ' . $inn['why'];
+                    $righe[] = 'sitemap.xml per i motori: ' . $pub['why'];
                     return [
                         'changes' => $r['changes'],
                         'summary' => $r['changes']
