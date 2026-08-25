@@ -426,6 +426,16 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .grid-spacer { min-width: 0; } /* cella vuota per allineare la griglia */
 
 /* Google Place ID mostrato sotto il luogo */
+/* L'@id nella finestra di conferma: si deve poter leggere carattere per carattere. */
+.conferma-id {
+  margin: var(--sp-sm) 0; padding: var(--sp-sm) var(--sp-md);
+  background: var(--field-bg); border: 1px solid var(--border); border-radius: var(--r-md);
+  font-size: var(--fs-label); word-break: break-all;
+}
+.event-id-note { display: block; }
+.event-id-riproponi { align-self: flex-start; margin-top: var(--sp-xs); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.event-id-riproponi .material-symbols-outlined { font-size: 1rem; }
+
 /* ---------- Campo con elenco (sito + Google) ---------- */
 .ent-picker { position: relative; }
 .ent-picker > input { width: 100%; box-sizing: border-box; }

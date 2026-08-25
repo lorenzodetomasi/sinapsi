@@ -90,7 +90,8 @@ const AGE_RANGES = [
 export const schema = {
   type: 'object',
   properties: {
-    id: { type: 'string', title: '@id' },
+    // Si compone da solo dai campi del form (vedi eventId.js); resta scrivibile.
+    id: { type: 'string', title: '@id', format: 'event-id' },
     url: { type: 'string', title: 'Sito web' },
     // Altri profili/siti (schema.org sameAs): url + tipo di social (select-search
     // con valori anche personalizzati). Il "social" è un aiuto UI: in JSON-LD
@@ -275,9 +276,12 @@ export const uischema = {
             ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
             // Serie contenitrice accanto al tipo, solo per gli eventi non-serie (Evento singolo)
             ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
-            ctrl('#/properties/id')
           ],
         },
+        // L'@id sta su una riga sua: si compone da solo e si porta dietro una nota
+        // (che cosa manca, dove finira' il file), che in un terzo di colonna
+        // diventava un muro di testo a capo ogni due parole.
+        ctrl('#/properties/id'),
         ctrl('#/properties/url', { options: { icon: 'link' } }),
         ctrl('#/properties/sameAs', { options: { icon: 'link_2', variant: 'row' } }),
       ]

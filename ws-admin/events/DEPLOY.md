@@ -665,6 +665,53 @@ curl -s https://isotype.org/ws-admin/events/edit/ | grep -o 'assets/index-[^"]*\
 Se in DevTools → Network il file caricato ha un nome diverso, o sei su un altro indirizzo
 o il browser sta usando la sua copia in cache (⌘⇧R).
 
+## Editor: l'@id si compone da solo
+
+L'@id non si scrive più a memoria: si compone mentre si riempie il form, e la forma
+dipende dal **tipo di evento** (`eventId.js`).
+
+| tipo | forma | esempio |
+|---|---|---|
+| Evento singolo | `AAAAMMGG'T'hhmm-PAESE+CAP-nome` | `20261017T1000-IT00122-giornata_della_gentilezza` |
+| Serie | `organizzatore-nome` | `clubdellibro-ostia-reading_party` |
+
+Un evento singolo si distingue per **quando** e **dove**; una serie, che una data
+propria non ce l'ha, per **chi** la organizza. Le parole del nome si legano con `_`,
+i pezzi fra loro con `-`. L'occorrenza di una serie porta il nome della serie, non
+il proprio. Nel nome della serie non si ripetono le parole già dette
+dall'organizzatore: «Club del libro Junior» di `clubdellibro-ostia` è
+`clubdellibro-ostia-junior`.
+
+Sotto al campo c'è sempre una riga che risponde, in quest'ordine: che cosa manca
+per comporlo (nome, data, luogo con il CAP nell'@id, organizzatore), che cosa non va
+in quello scritto, se quell'@id sul sito è già occupato, e dove finirà il file.
+Il campo resta scrivibile: **appena lo si tocca, l'automatismo si ferma** e un
+pulsante permette di tornare alla proposta. Aprendo un evento esistente l'@id
+salvato non viene mai riscritto.
+
+**Prima di salvare** l'@id viene controllato (forma, maiuscole, caratteri ammessi) e
+mostrato in una finestra di conferma, una volta per @id: dà il nome alla cartella,
+e una cartella sbagliata non si corregge da sola.
+
+Nota sui file già scritti: `20260716T11730-IT00122-…` ha cinque cifre nell'ora ed è
+malformato — aprendolo, il campo lo segnala.
+
+## Editor XHTML: i tag semantici
+
+Due menu nella barra:
+
+- **Blocco** — paragrafo, titoli 1–6, citazione (`blockquote`), preformattato (`pre`),
+  sezione (`section`). Il titolo *sostituisce* il blocco, non ci si annida dentro.
+- **Marca** — `code`, `q`, `cite`, `abbr` (chiede il significato), `dfn`, `mark`,
+  `kbd`, `samp`, `var`, `ins`, `del`, pedice, apice, `small`. Si applicano alla
+  selezione; senza selezione inseriscono l'elemento con dentro uno spazio, già
+  selezionato, così ci si scrive sopra.
+
+«Rimuovi formattazione» toglie anche le marcature. Il validatore accetta tutto:
+controlla che il frammento sia **ben formato**, non una lista chiusa di tag.
+Attenzione al **titolo 1**: nella pagina dell'evento l'`h1` è già il nome
+dell'evento, quindi dentro la descrizione il primo livello sensato è `h2`.
+
 ## Editor: modificare il JSON dal riquadro di validazione
 
 Il riquadro «JSON-LD» ha un pulsante **Modifica**: il codice diventa scrivibile e **Applica**

@@ -270,10 +270,13 @@ function containsXhtmlMarkup(string $value): bool {
 function xhtmlTagSet(): array {
     static $set = null;
     if ($set === null) {
-        $tags = ['a','abbr','address','b','blockquote','br','cite','code','dd','del','dfn','div','dl','dt',
-            'em','figcaption','figure','h1','h2','h3','h4','h5','h6','hr','i','img','ins','kbd','li','mark',
-            'ol','p','pre','q','s','samp','small','span','strong','sub','sup','table','tbody','td','tfoot',
-            'th','thead','tr','u','ul','var','wbr'];
+        // Include i tag di sezionamento: l'editor XHTML sa metterli (menu "Blocco"),
+        // quindi il riconoscimento del rich-text deve saperli leggere.
+        $tags = ['a','abbr','address','article','aside','b','blockquote','br','cite','code','dd','del','details',
+            'dfn','div','dl','dt','em','figcaption','figure','footer','h1','h2','h3','h4','h5','h6','header',
+            'hr','i','img','ins','kbd','li','main','mark','nav','ol','p','pre','q','s','samp','section','small',
+            'span','strong','sub','summary','sup','table','tbody','td','tfoot','th','thead','time','tr','u',
+            'ul','var','wbr'];
         $set = array_fill_keys($tags, true);
     }
     return $set;

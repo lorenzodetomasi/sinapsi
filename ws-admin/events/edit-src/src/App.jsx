@@ -16,6 +16,7 @@ import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
 import PlaceLocationRenderer, { placeLocationTester } from './PlaceLocationRenderer.jsx';
+import EventIdRenderer, { eventIdTester } from './EventIdRenderer.jsx';
 import { loadEntities, findEntityById } from './entities.js';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
@@ -23,6 +24,7 @@ import PageSettings from './PageSettings.jsx';
 import OpenEventModal from './OpenEventModal.jsx';
 import DiffModal from './DiffModal.jsx';
 import { diffForm, mergeChoices, pathToClass } from './diff.js';
+import { difettoId, percorsoDa } from './eventId.js';
 import { API_BASE, CONTENT_BASE, SAVE_EVENT_URL } from './config.js';
 import { supportsFs, ensurePermission, writeInto, downloadFile, idbGet, idbSet, idbDel } from './fsSave.js';
 
@@ -42,6 +44,7 @@ const renderers = [
   { tester: iconTextTester, renderer: IconTextRenderer },
   { tester: smartDateTester, renderer: SmartDateRenderer },
   { tester: placeLocationTester, renderer: PlaceLocationRenderer },
+  { tester: eventIdTester, renderer: EventIdRenderer },
 ];
 
 // Campi derivati/gestiti da escludere dal confronto (calcolati o iniettati dal server).
@@ -267,12 +270,27 @@ export default function App() {
   // con versioning (come un Google Document).
   const canSave = validation.status === 'valid';
 
-  // Percorso relativo dell'evento (schema c). Se l'@id è già un percorso lo uso,
-  // altrimenti lo metto sotto events/. La Fase 4 lo formalizzerà con un campo path.
+  // Percorso relativo dell'evento: l'@id È il percorso (sotto events/ se non ne
+  // porta già uno). Vedi eventId.js per come nasce.
   function eventRelPath(d) {
-    const id = (d.id || '').trim().replace(/^\/+|\/+$/g, '');
-    if (!id) return 'events/senza-id';
-    return id.includes('/') ? id : 'events/' + id;
+    return percorsoDa(d.id) || 'events/senza-id';
+  }
+
+  /* L'@id decide il nome della cartella, e una cartella sbagliata non si corregge
+   * da sola: resta lì, e l'evento vero non lo trova nessuno. Quindi prima di
+   * scrivere si guarda com'è fatto, e lo si fa vedere una volta a chi salva —
+   * una volta per @id: cambiandolo, si torna a chiedere. */
+  const [confermaId, setConfermaId] = useState(null); // { id, rel, prosegui }
+  const idConfermato = useRef(null);
+  function idPronto(prosegui) {
+    const guasto = difettoId(data.id, data.primaryType);
+    if (guasto) {
+      showFlash('@id non valido: ' + guasto, 'err');
+      return false;
+    }
+    if (idConfermato.current === data.id) return true;
+    setConfermaId({ id: data.id, rel: eventRelPath(data), prosegui });
+    return false;
   }
 
   // Fase 3 — Salva su PC. Con File System Access API scrive index.json nella cartella
@@ -280,6 +298,7 @@ export default function App() {
   // volta e resta ricordata. Fallback: download classico (Safari/iOS/Firefox).
   async function savePc() {
     if (!canSave) return;
+    if (!idPronto(savePc)) return;
     const rel = eventRelPath(data);
     if (!supportsFs()) {
       downloadFile(payload);
@@ -312,6 +331,7 @@ export default function App() {
 
   async function saveWeb() {
     if (!canSave || savingWeb || diff) return;
+    if (!idPronto(saveWeb)) return;
     const rel = eventRelPath(data);
     // Confronto col web: scaricabile senza login (contenuto pubblico); il login serve al salvataggio.
     let stored = null;
@@ -588,6 +608,45 @@ export default function App() {
       {flash && <div className={'flash flash-' + flash.kind} role="status">{flash.msg}</div>}
 
       <OpenEventModal open={openWeb} onClose={() => setOpenWeb(false)} onOpen={loadFromWeb} />
+
+      {/* Conferma dell'@id: si vede una volta per @id, prima di scrivere. */}
+      {confermaId && (
+        <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && setConfermaId(null)}>
+          <div className="modal-box" role="dialog" aria-modal="true" aria-label="Conferma l'@id">
+            <div className="modal-head">
+              <h3>Confermi l'@id dell'evento?</h3>
+              <button type="button" className="icon-btn" onClick={() => setConfermaId(null)} title="Chiudi">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="modal-note">
+                L'@id dà il nome alla cartella e non si cambia dopo: da qui in poi è l'indirizzo
+                dell'evento, quello che finisce nei link e negli indici.
+              </p>
+              <div className="conferma-id code-font">{confermaId.id}</div>
+              <p className="modal-note">Il file andrà in <code>{confermaId.rel}/index.json</code>.</p>
+              <div className="modal-row" style={{ justifyContent: 'flex-end' }}>
+                <button type="button" className="btn-ghost" onClick={() => setConfermaId(null)}>
+                  Torna al form
+                </button>
+                <button
+                  type="button"
+                  className="btn-save"
+                  onClick={() => {
+                    const { id, prosegui } = confermaId;
+                    idConfermato.current = id;
+                    setConfermaId(null);
+                    prosegui();
+                  }}
+                >
+                  <span className="material-symbols-outlined">check</span> Conferma e salva
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <DiffModal
         open={!!diff}
