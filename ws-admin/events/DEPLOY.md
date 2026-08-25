@@ -723,6 +723,19 @@ La **ricorrenza è facoltativa**: si accende con un interruttore. Spenta non fin
 file — prima una collezione senza ricorrenza se ne ritrovava una («ogni settimana») al
 primo salvataggio.
 
+### Manutenzione «Normalizza date, fusi e @id»
+
+Quello che l'editor fa a ogni salvataggio, fatto in un colpo su tutti gli eventi:
+scarto da UTC sulle date (evento e programma), `meetoo:timezone` dedotto dal **paese**
+del luogo (`places/IT00122/…` → `Europe/Rome`, via `DateTimeZone::PER_COUNTRY`: solo dove
+il paese ha un fuso solo), e `@id` riallineato alla **cartella** — la cartella è la verità,
+è lì che il file sta.
+
+Le cartelle con il nome malformato (`20260716T11730-…`, cinque cifre nell'ora) vengono
+**segnalate e basta**: rinominarle vuol dire spostare una cartella e riscrivere ogni
+riferimento che la cita, ed è una decisione da prendere caso per caso. Provata su una copia
+dei contenuti: 10 eventi toccati, e rilanciandola non trova più niente.
+
 ## Editor XHTML: i tag semantici
 
 Due menu nella barra:

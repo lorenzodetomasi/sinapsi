@@ -75,6 +75,34 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'quando-normalize' => [
+                'title' => 'Normalizza date, fusi e @id',
+                'meta'  => 'Scarto da UTC sulle date, meetoo:timezone dal luogo, @id allineato alla cartella',
+                'icon'  => 'schedule', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Normalizzare date e fusi? I file degli eventi interessati verranno riscritti.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-quando.php';
+                    require_once __DIR__ . '/events-index.php';
+                    $r = ws_quando_normalizza($base, $apply);
+                    // L'indice porta le date: se cambiano, va rifatto.
+                    if ($apply && $r['changes']) event_index_rebuild($base);
+                    return [
+                        'changes' => $r['changes'],
+                        'summary' => $r['changes']
+                            ? $r['changes'] . ' event' . ($r['changes'] > 1 ? 'i' : 'o')
+                              . ($apply ? ' normalizzat' . ($r['changes'] > 1 ? 'i' : 'o') : ' da normalizzare')
+                              . (count($r['segnalati']) ? ' · ⚠ ' . count($r['segnalati']) . ' da guardare a mano' : '')
+                            : 'Date, fusi e @id sono già a posto.'
+                              . (count($r['segnalati']) ? ' ⚠ ' . count($r['segnalati']) . ' da guardare a mano.' : ''),
+                        'lines' => array_merge(
+                            array_map(fn($d) => $d['path'] . ': ' . implode(' · ', array_slice($d['cambi'], 0, 4))
+                                . (count($d['cambi']) > 4 ? ' … (+' . (count($d['cambi']) - 4) . ')' : ''), $r['done']),
+                            array_map(fn($x) => "⚠ $x", $r['segnalati'])
+                        ),
+                    ];
+                },
+            ],
+
             'events-normalize' => [
                 'title' => 'Normalizza i contenuti degli eventi',
                 'meta'  => 'Ripara serie annidate, occorrenze mancanti, subEvent↔superEvent',
