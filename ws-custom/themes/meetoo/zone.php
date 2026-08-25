@@ -165,7 +165,8 @@ function meetoo_voci($quale){
 		foreach(meetoo_indice('gruppi.json') as $g){
 			$id = (string)($g['@id'] ?? '');
 			$org = (($g['kind'] ?? '') === 'org');
-			$slug = $org ? (string)($g['key'] ?: basename($id)) : basename($id);
+			$chiave = trim((string)($g['key'] ?? ''));
+			$slug = ($org and $chiave !== '') ? $chiave : basename($id);
 			$out[] = mt_card_tile(array(
 				'href' => ws_href(($org ? 'organizzatori/' : 'luoghi/').$slug),
 				'icon' => mt_org_icona($g['@type'] ?? '', $g['name'] ?? ''),
