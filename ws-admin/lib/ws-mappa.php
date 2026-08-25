@@ -45,6 +45,10 @@ if (!function_exists('ws_mappa_wspath')) {
             return ['/eventi/' . $slug, $serie ? 'collection' : 'event', $serie ? 'EventSeries' : 'Event'];
         }
         if (strpos($rel, 'places/') === 0) {
+            // Una ZONA — `places/lido-di-ostia/` — è un livello solo sotto places:
+            // non è un posto dove si va, è il territorio dentro cui si sta. Sta alla
+            // radice perché è la porta d'ingresso del sito per chi ci abita.
+            if (substr_count(trim($rel, '/'), '/') === 1) return ['/' . $slug, 'zone', 'AdministrativeArea'];
             // Le liste curate (Lungomare, BookCrossing) sono percorsi, non luoghi:
             // stanno alla radice perché è così che le si nomina e le si condivide.
             if ($lista) return ['/' . $slug, 'collection', 'ItemList'];
@@ -69,7 +73,7 @@ if (!function_exists('ws_mappa_wspath')) {
     /** Tutte le entità con un index.json, come percorsi relativi al locale. */
     function ws_mappa_entita(string $localeDir): array {
         $out = [];
-        foreach (['events/*', 'places/*/*', 'organizations/*'] as $g) {
+        foreach (['events/*', 'places/*', 'places/*/*', 'organizations/*'] as $g) {
             foreach (glob("$localeDir/$g/index.json") as $f) {
                 $out[] = trim(str_replace($localeDir, '', dirname($f)), '/');
             }

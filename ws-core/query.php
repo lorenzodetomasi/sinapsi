@@ -81,7 +81,15 @@ if(empty($rewrite_rule) and defined('WS_MOUNTS') and is_array(WS_MOUNTS)){
 		}
 		if($wspath === $nudo or strpos($wspath, $nudo.'/') === 0){
 			$dentro = trim(substr($wspath, strlen($nudo)), '/');
-			$trovata = $ws_sitemap->xpath('./url[./wspath = "/'.$dentro.'"]');
+			/* Si cerca DENTRO la parte di mappa del sito innestato, non in tutta la
+			 * mappa: la home di un sito ospite ha lo stesso wspath («/») di quella
+			 * dell'ospitante, e senza questo filtro vincerebbe sempre la prima
+			 * dichiarata — cioè /meetoo/ aprirebbe la home di isotype. A quale sito
+			 * appartiene una voce lo dice il `content=` della sua query. */
+			$trovata = $ws_sitemap->xpath('./url[./wspath = "/'.$dentro.'" and contains(./query, "content='.$sito.'/")]');
+			if(empty($trovata[0])){
+				$trovata = $ws_sitemap->xpath('./url[./wspath = "/'.$dentro.'"]');
+			}
 			if(!empty($trovata[0])){
 				$rewrite_rule = $trovata[0];
 				$ws_mount = $nudo;

@@ -23,6 +23,9 @@ foreach(array(
 	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'meetoo-tokens.css" />',
 	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'meetoo.css" />',
 	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'places.css" />',
+	// Le classi delle pagine costruite dal server, separate da quelle delle pagine
+	// costruite in JavaScript: finché convivono, si possono togliere una per volta.
+	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'meetoo-cms.css" />',
 	// Le icone: la stessa famiglia dell'editor, così l'amministrazione e il sito
 	// parlano con gli stessi simboli.
 	'<link rel="preconnect" href="https://fonts.googleapis.com" />',

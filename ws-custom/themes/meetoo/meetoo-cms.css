@@ -1,0 +1,83 @@
+/* Le classi delle pagine costruite dal server.
+ *
+ * Stanno in un foglio a parte da `meetoo.css`, che descrive le pagine costruite in
+ * JavaScript: finché convivono, tenerli separati vuol dire poter togliere uno dei
+ * due senza guardare l'altro. I colori e le misure vengono tutti dai token, così
+ * queste pagine cambiano vestito insieme alle altre.
+ */
+
+/* Meetoo è a colonna sola. Il tema genitore dispone la pagina in griglia con una
+ * spalla laterale — giusto per isotype, che quella spalla la riempie — e qui
+ * lascerebbe un vuoto a destra largo un terzo dello schermo. */
+#page { display: block; }
+#main, .main-container { width: auto; max-width: none; }
+/* Il tema genitore colora header e piede con un selettore per ID, che batte quello
+ * di Meetoo: risultato, una fascia bianca larga quanto lo schermo dietro a una
+ * barra scura larga 960. Si risale di specificità quel tanto che basta. */
+#header.mt-header, #footer { background: var(--color-background-main); border-color: var(--mt-line, var(--color-line)); }
+#footer { border-top: 1px solid var(--color-line); }
+
+.mt-pagina { max-width: 56rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+.mt-h1 {
+  font-family: var(--font-family1); font-weight: 700; font-size: 2rem;
+  color: var(--color-heading); margin: .5rem 0 .75rem; line-height: 1.15;
+}
+.mt-h2 {
+  font-family: var(--font-family1); font-weight: 600; font-size: 1.25rem;
+  color: var(--color-heading); margin: 2rem 0 .75rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.mt-sommario { color: var(--color-hint); font-size: 1.05rem; margin: 0 0 1rem; }
+.mt-corpo { line-height: 1.6; }
+.mt-corpo p { margin: 0 0 .75rem; }
+.mt-corpo ul { margin: .5rem 0 .75rem 1.25rem; }
+.mt-nota { color: var(--color-hint); font-size: .92rem; }
+.mt-copertina { margin: 0 0 1rem; }
+.mt-copertina img { width: 100%; height: auto; border-radius: var(--border-radius); display: block; }
+
+/* Elenchi: una riga è un collegamento, e si vede che lo è. */
+.mt-elenco { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.mt-elenco-fitto { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.mt-riga {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem 1rem; text-decoration: none; color: inherit;
+  background: var(--color-background-section1);
+  border: 1px solid var(--color-line); border-radius: var(--border-radius);
+  transition: border-color .15s ease, transform .15s ease;
+}
+.mt-riga:hover { border-color: var(--color-link); transform: translateY(-1px); }
+.mt-riga .material-symbols-outlined { color: var(--color1); flex: none; }
+.mt-riga-testo { display: flex; flex-direction: column; min-width: 0; }
+.mt-riga-testo b { font-family: var(--font-family1); font-weight: 600; }
+.mt-riga-nota { color: var(--color-hint); font-size: .85rem; }
+.mt-riga-freccia { margin-left: auto; color: var(--color-hint) !important; }
+
+/* La scelta della zona: un albero, e si deve vedere che è un albero. */
+.mt-zone { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.mt-zone .mt-zone { margin-top: .5rem; }
+.mt-zona { margin-left: calc(var(--profondita, 0) * .75rem); }
+.mt-zona-nome {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .75rem 1rem; text-decoration: none; color: inherit;
+  border: 1px solid var(--color-line); border-radius: var(--border-radius);
+  background: var(--color-background-section1);
+}
+.mt-zona.attiva .mt-zona-nome { border-color: var(--color-link); }
+.mt-zona.attiva .mt-zona-nome:hover { background: var(--color-background-main); }
+/* Una zona non ancora attiva non finge di essere un pulsante. */
+.mt-zona.in-arrivo .mt-zona-nome { background: transparent; border-style: dashed; color: var(--color-hint); cursor: default; }
+.mt-zona-testo { display: flex; flex-direction: column; min-width: 0; }
+.mt-zona-testo b { font-family: var(--font-family1); font-weight: 600; }
+.mt-zona-nota { color: var(--color-hint); font-size: .85rem; }
+.mt-zona-freccia { margin-left: auto; }
+
+/* Il piede: in fondo al contenuto, non incollato allo schermo. */
+.mt-footer {
+  max-width: 56rem; margin: 0 auto; padding: 2rem 1rem 3rem;
+  border-top: 1px solid var(--color-line); color: var(--color-hint);
+  display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: baseline;
+}
+.mt-footer-voci ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1rem; }
+.mt-footer-voci a { color: var(--color-link); text-decoration: none; }
+.mt-footer-voci a:hover { text-decoration: underline; }
+.mt-footer-firma { margin: 0; font-size: .9rem; }
