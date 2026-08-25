@@ -17,6 +17,11 @@ function ws_load_file( $abspath, $args = array() ){
 	);
 	$args = array_intersect_key( $args, $default_args );
 	$args = array_merge( $default_args, $args );
+	// Il tipo si riconosce dal file: chi chiama passa un percorso, non sa (e non
+	// deve sapere) se quel contenuto oggi vive in XML o in JSON.
+	if(strtolower((string)pathinfo(parse_url($abspath, PHP_URL_PATH) ?: $abspath, PATHINFO_EXTENSION)) === 'json'){
+		$args['input_type'] = 'json';
+	}
 	if($args['input_type'] == 'xml'){
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = $args['preserve_white_space'];
@@ -32,14 +37,126 @@ function ws_load_file( $abspath, $args = array() ){
 			$return = $dom;
 		}
 	} else if($args['input_type'] == 'json'){
-		$json = file_get_contents($abspath);
-		if($output_type == 'string'){
-			$return = $json;
-		}	elseif($output_type = 'obj'){
-			$return = json2obj($json);
+		/* JSON come contenuto. Il JSON è la fonte (lo scrive l'editor); l'XML,
+		 * dove c'è, è solo una copia. Qui l'albero si costruisce in memoria con
+		 * LA STESSA conversione che genera i gemelli su disco, così la pagina
+		 * servita e il file salvato non possono dire cose diverse.
+		 *
+		 * `documentURI` non è un dettaglio: senza, gli xi:include relativi non
+		 * saprebbero da dove partire e non si risolverebbe niente. */
+		require_once( ws_core_abspath() . '/json-to-xml.php' );
+		$dom = new DOMDocument();
+		$dom->preserveWhiteSpace = $args['preserve_white_space'];
+		$dom->formatOutput = $args['format_output'];
+		$xml_string = jsonToWsx( (string)file_get_contents($abspath) );
+		$prima = libxml_use_internal_errors(true);
+		$dom->loadXML($xml_string);
+		$dom->documentURI = $abspath;
+		if($args['xinclude'] === true){
+			$dom->xinclude();
+			// I riferimenti puntano a `index.xml`, che per la maggior parte delle
+			// entità non esiste: il gemello si genera solo quando serve. Quelli
+			// rimasti aperti si risolvono leggendo il JSON dell'entità citata.
+			ws_xinclude_da_json($dom, dirname($abspath));
+		}
+		libxml_clear_errors();
+		libxml_use_internal_errors($prima);
+		if($args['output_type'] == 'dom'){
+			$return = $dom;
+		} else if($args['output_type'] == 'string'){
+			$return = $dom->saveXML();
+		} else {
+			$return = ws_simplexml_import_dom($dom);
 		}
 	}
 	return $return;
+}
+
+/**
+ * Risolve gli `xi:include` che libxml ha lasciato aperti perché il file citato non
+ * esiste, ma di cui esiste il JSON. È il caso normale, non l'eccezione: i gemelli
+ * XML si generano solo per le entità che servono in altri formati, mentre l'@id di
+ * un luogo o di un organizzatore punta sempre e comunque a qualcosa che in JSON c'è.
+ *
+ * Senza questo, un riferimento puro (solo @id) resterebbe un elemento vuoto: la
+ * pagina di un evento perderebbe il nome del luogo, e nessuno saprebbe perché.
+ */
+function ws_xinclude_da_json(DOMDocument $dom, string $dir, int $profondita = 0){
+	if($profondita > 3){
+		// Un riferimento circolare non deve diventare un ciclo infinito.
+		return;
+	}
+	$xpath = new DOMXPath($dom);
+	$xpath->registerNamespace('xi', 'http://www.w3.org/2001/XInclude');
+	$rimasti = $xpath->query('//xi:include');
+	if($rimasti->length === 0){
+		return;
+	}
+	require_once( ws_core_abspath() . '/json-to-xml.php' );
+	foreach(iterator_to_array($rimasti) as $inclusione){
+		$href = $inclusione->getAttribute('href');
+		if($href === ''){
+			continue;
+		}
+		$json = ws_riferimento_a_file($dir, $href);
+		if($json === ''){
+			continue;
+		}
+		$parte = new DOMDocument();
+		$parte->loadXML(jsonToWsx((string)file_get_contents($json)));
+		$parte->documentURI = $json;
+		$parte->xinclude();
+		ws_xinclude_da_json($parte, dirname($json), $profondita + 1);
+		$portato = $dom->importNode($parte->documentElement, true);
+		$inclusione->parentNode->replaceChild($portato, $inclusione);
+	}
+}
+
+/**
+ * Da un riferimento al file che lo contiene.
+ *
+ * Si prova prima il percorso letterale, poi — ed è il caso che conta — si cerca
+ * l'antenato giusto: gli `@id` sono relativi alla radice del locale, ma chi genera
+ * l'XML scrive `../../`, che risale di due livelli. Per un evento
+ * (`events/{slug}/`) è esatto; per un luogo (`places/{regione}/{slug}/`) manca un
+ * livello, e il riferimento cade nel vuoto senza dire niente. Invece di indovinare
+ * quanti `..` servivano, si risale finché non si trova la cartella che contiene
+ * davvero la collezione citata.
+ */
+function ws_riferimento_a_file(string $dir, string $href): string {
+	$rif = preg_replace('/index\.xml$/', 'index.json', $href);
+	$letterale = ws_percorso_normalizzato($dir . '/' . $rif);
+	if(is_file($letterale)){
+		return $letterale;
+	}
+	$nudo = ltrim(preg_replace('#^(\.\./)+#', '', $rif), '/');
+	$collezione = explode('/', $nudo)[0];
+	$risali = $dir;
+	for($i = 0; $i < 6; $i++){
+		if(is_dir($risali . '/' . $collezione) and is_file($risali . '/' . $nudo)){
+			return $risali . '/' . $nudo;
+		}
+		$sopra = dirname($risali);
+		if($sopra === $risali){
+			break;
+		}
+		$risali = $sopra;
+	}
+	return '';
+}
+
+/** Appiattisce i `..` di un percorso senza chiedere al filesystem (realpath
+ *  fallirebbe sui file che non esistono, che è proprio il caso che ci interessa). */
+function ws_percorso_normalizzato(string $percorso): string {
+	$fuori = [];
+	foreach(explode('/', $percorso) as $pezzo){
+		if($pezzo === '..'){
+			array_pop($fuori);
+		} else if($pezzo !== '.'){
+			$fuori[] = $pezzo;
+		}
+	}
+	return implode('/', $fuori);
 }
 function ws_save_file( $data, $abspath, $args = array() ){
 	// $data format set in $args['input_type'], default: dom (DOMDocument)

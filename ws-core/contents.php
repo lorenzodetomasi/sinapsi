@@ -19,17 +19,28 @@ function ws_content_relpath($content_path = null){
 	}
 	$content_relpath = WS_CONTENTS_RELPATH . "/$content_path";
 	$content_abspath = ws_root_abspath() . "/$content_relpath";
-	if(file_exists($content_abspath.'.xml')) {
-		$content_relpath = $content_relpath.'.xml';
-	} else if(is_dir($content_abspath) and file_exists($content_abspath)){
-		// If is an existing dir
-		if(file_exists($content_abspath.'/index.xml')){
-			$content_relpath = $content_relpath.'/index.xml';
+	/* Un contenuto può vivere in XML o in JSON. Quando ci sono entrambi vince il
+	 * PIÙ RECENTE: il JSON è la fonte e l'XML una copia derivata, quindi una copia
+	 * vecchia non deve mai coprire l'originale appena salvato — è il modo tipico in
+	 * cui un sito comincia a mostrare cose che nei file non ci sono più. */
+	foreach(array('', '/index') as $suffisso){
+		$xml = $content_abspath.$suffisso.'.xml';
+		$json = $content_abspath.$suffisso.'.json';
+		$c_xml = file_exists($xml);
+		$c_json = file_exists($json);
+		if($c_xml or $c_json){
+			if($c_xml and $c_json){
+				$scelto = (filemtime($json) >= filemtime($xml)) ? '.json' : '.xml';
+			} else {
+				$scelto = $c_json ? '.json' : '.xml';
+			}
+			return $content_relpath.$suffisso.$scelto;
 		}
-	} else {
-		$content_relpath = $content_relpath.'/';
+		if($suffisso === '' and !is_dir($content_abspath)){
+			break;
+		}
 	}
-	return $content_relpath;
+	return $content_relpath.'/';
 }
 // [ws_root_abspath]ws-custom/contents/[content_id]
 function ws_content_abspath($content_path = null){
