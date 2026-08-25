@@ -1,3 +1,5 @@
+import { conOffset, senzaOffset, fusoDelBrowser } from './quando.js';
+
 // Adapter tra il modello "piatto" del form e la forma JSON-LD reale (index.json).
 // Tutte le chiavi @-prefissate, i @type (anche array) e i namespace (meetoo:…)
 // vivono QUI: il form non le vede, l'adapter le aggiunge/rimuove deterministicamente.
@@ -59,14 +61,15 @@ function fromSchedule(sched) {
   if (sched.scheduleTimezone) d.timezone = sched.scheduleTimezone;
   return d;
 }
-function toSchedule(s) {
+function toSchedule(s, fuso) {
   if (!s) return undefined;
   const unit = { daily: 'D', weekly: 'W', monthly: 'M', yearly: 'Y' }[s.frequency] || 'W';
   const out = { '@type': 'Schedule', repeatFrequency: `P${Math.max(1, Number(s.interval) || 1)}${unit}` };
   if (s.frequency === 'weekly' && s.byDay?.length) out.byDay = s.byDay.join(',');
   if (s.endMode === 'until' && s.until) out.endDate = s.until;
   if (s.endMode === 'count' && s.count) out.repeatCount = Number(s.count);
-  if (s.timezone) out.scheduleTimezone = s.timezone;
+  // Il fuso è quello dell'evento: la ricorrenza non ne ha uno suo.
+  if (fuso) out.scheduleTimezone = fuso;
   return out;
 }
 
@@ -103,8 +106,13 @@ export function fromJsonLd(doc) {
     description: doc.description ?? '',
     image: doc.image ?? '',
     logo: doc.logo ?? '',
-    startDate: doc.startDate ?? '',
-    endDate: doc.endDate ?? '',
+    // Nel form le date stanno senza scarto: i campi datetime-local vogliono l'ora
+    // di parete, che è anche quella scritta sulla locandina.
+    startDate: senzaOffset(doc.startDate ?? ''),
+    endDate: senzaOffset(doc.endDate ?? ''),
+    // Il fuso: prima quello salvato, poi quello della ricorrenza (dove viveva
+    // finora), poi niente — e ci pensa il campo a proporre quello del browser.
+    timezone: doc['meetoo:timezone'] || doc.eventSchedule?.scheduleTimezone || '',
     typicalAgeRange: doc.typicalAgeRange ?? '',
     eventAttendanceMode: doc.eventAttendanceMode ?? '',
     eventStatus: doc.eventStatus ?? '',
@@ -137,8 +145,8 @@ export function fromJsonLd(doc) {
       : subEventArr.map((s) => ({
           name: s.name ?? '',
           description: s.description ?? '',
-          startDate: s.startDate ?? '',
-          endDate: s.endDate ?? '',
+          startDate: senzaOffset(s.startDate ?? ''),
+          endDate: senzaOffset(s.endDate ?? ''),
         })),
     occurrences: isSeries ? subEventArr.map((s) => ({ id: s['@id'] ?? '', name: s.name ?? '' })) : [],
     // Riferimento alla serie contenitrice (occorrenza → serie). Non ha un campo UI dedicato,
@@ -209,6 +217,10 @@ export function toJsonLd(d) {
   const addTypeArr = Array.isArray(d.additionalType) ? d.additionalType.filter(Boolean) : d.additionalType ? [d.additionalType] : [];
   const additionalType = addTypeArr.length === 0 ? '' : addTypeArr.length === 1 ? addTypeArr[0] : addTypeArr;
 
+  // Il fuso da usare per lo scarto: quello scelto, o quello del computer che sta
+  // redigendo (il campo vuoto significa proprio quello, non «nessun fuso»).
+  const fuso = d.timezone || fusoDelBrowser();
+
   // Nodi figli con i soli campi valorizzati (niente stringhe/valori vuoti).
   const program = (d.subEvent ?? [])
     .filter((s) => s.name || s.description || s.startDate || s.endDate)
@@ -216,14 +228,14 @@ export function toJsonLd(d) {
       '@type': 'Event',
       ...(s.name ? { name: s.name } : {}),
       ...(s.description ? { description: s.description } : {}),
-      ...(s.startDate ? { startDate: s.startDate } : {}),
-      ...(s.endDate ? { endDate: s.endDate } : {}),
+      ...(s.startDate ? { startDate: conOffset(s.startDate, fuso) } : {}),
+      ...(s.endDate ? { endDate: conOffset(s.endDate, fuso) } : {}),
     }));
   const occurrences = (d.occurrences ?? [])
     .filter((o) => o.id || o.name)
     .map((o) => ({ ...(o.id ? { '@id': toEventRef(o.id) } : {}), '@type': 'Event', ...(o.name ? { name: o.name } : {}) }));
   const subEvent = isSeries ? occurrences : program;
-  const schedule = isSeries ? toSchedule(d.eventSchedule) : undefined;
+  const schedule = isSeries ? toSchedule(d.eventSchedule, fuso) : undefined;
 
   // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
   const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
@@ -284,8 +296,13 @@ export function toJsonLd(d) {
     ...(d.description ? { description: d.description } : {}),
     ...(d.image ? { image: d.image } : {}),
     ...(d.logo ? { logo: d.logo } : {}),
-    ...(d.startDate ? { startDate: d.startDate } : {}),
-    ...(d.endDate ? { endDate: d.endDate } : {}),
+    /* Le date escono con lo scarto da UTC. Un'ora senza scarto è ambigua: «17:30»
+     * a Ostia e «17:30» a Berlino sono due istanti diversi, e chi legge il JSON da
+     * fuori non ha modo di saperlo. Il NOME del fuso viaggia a parte, perché dallo
+     * scarto non si ricava (+02:00 d'estate ce l'ha mezza Europa). */
+    ...(d.startDate ? { startDate: conOffset(d.startDate, fuso) } : {}),
+    ...(d.endDate ? { endDate: conOffset(d.endDate, fuso) } : {}),
+    ...(d.startDate || d.endDate ? { 'meetoo:timezone': fuso } : {}),
     ...(d.typicalAgeRange ? { typicalAgeRange: d.typicalAgeRange } : {}),
     ...(d.eventAttendanceMode ? { eventAttendanceMode: d.eventAttendanceMode } : {}),
     ...(physical ? { maximumPhysicalAttendeeCapacity: physical } : {}),

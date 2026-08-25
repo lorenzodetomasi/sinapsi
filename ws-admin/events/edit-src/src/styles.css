@@ -438,6 +438,19 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .event-id-riproponi { align-self: flex-start; margin-top: var(--sp-xs); max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .event-id-riproponi .material-symbols-outlined { font-size: 1rem; }
 
+/* Avvisi di coerenza in «Quando»: non bloccano, quindi non urlano. */
+.coerenza { margin: var(--sp-sm) 0; }
+.coerenza ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--sp-xs); }
+.coerenza li {
+  display: flex; align-items: flex-start; gap: var(--sp-sm);
+  padding: var(--sp-xs) var(--sp-md); border-radius: var(--r-sm);
+  font-size: var(--fs-label); line-height: 1.4;
+}
+.coerenza li .material-symbols-outlined { font-size: 1.125rem; flex: none; }
+.coerenza-errore { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
+.coerenza-avviso { background: color-mix(in srgb, var(--warning) 12%, transparent); color: var(--warning); }
+.coerenza-nota { color: var(--text-dim); }
+
 /* ---------- Campo con elenco (sito + Google) ---------- */
 .ent-picker { position: relative; }
 .ent-picker > input { width: 100%; box-sizing: border-box; }

@@ -115,6 +115,9 @@ export const schema = {
     description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
     image: { type: 'string', title: 'Immagine', format: 'image' },
     logo: { type: 'string', title: 'Logo', format: 'image' },
+    // Il fuso in cui l'evento succede: da qui esce lo scarto (+02:00) che rende
+    // le date non ambigue per chi legge il JSON da fuori.
+    timezone: { type: 'string', title: 'Fuso orario', format: 'timezone' },
     startDate: { type: 'string', format: 'date-time', title: 'Dal' },
     endDate: { type: 'string', format: 'date-time', title: 'al' },
     typicalAgeRange: { type: 'string', title: "Fascia d'età" },
@@ -174,8 +177,11 @@ export const schema = {
         properties: {
           name: { type: 'string', title: 'Nome' },
           description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
-          startDate: { type: 'string', format: 'date-time', title: 'Dal' },
-          endDate: { type: 'string', format: 'date-time', title: 'al' },
+          // Il programma sta dentro la giornata dell'evento: qui si scelgono solo
+          // gli orari, e la data la mette l'evento. Nel file resta un datetime
+          // intero, perché un orario nudo non e' un istante.
+          startDate: { type: 'string', format: 'ora', title: 'Dalle' },
+          endDate: { type: 'string', format: 'ora', title: 'alle' },
         },
       },
     },
@@ -324,14 +330,18 @@ export const uischema = {
       label: 'Quando',
       options: { icon: 'schedule' },
       elements: [
+        // Il fuso viene prima delle date: senza, un'ora non dice quale istante è.
+        ctrl('#/properties/timezone', { options: { icon: 'public' } }),
         {
           type: 'HorizontalLayout',
           options: { separator: '–' },
           elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')],
         },
-        ctrl('#/properties/eventStatus'),
         // Ricorrenza: solo per le serie
         ctrl('#/properties/eventSchedule', { rule: showIfSeries }),
+        // Quello che non torna fra date, programma e occorrenze
+        { type: 'Coerenza' },
+        ctrl('#/properties/eventStatus'),
       ],
     },
     {

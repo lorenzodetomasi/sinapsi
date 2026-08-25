@@ -1,6 +1,7 @@
 import { Fragment, useId } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
-import { withJsonFormsControlProps } from '@jsonforms/react';
+import { withJsonFormsControlProps, useJsonForms } from '@jsonforms/react';
+import { componi, dataDi, oraDi } from './quando.js';
 import XhtmlEditor from './XhtmlEditor.jsx';
 import PlaceInput from './PlaceInput.jsx';
 import { EntityNameInput, EntityIdInput } from './EntityInput.jsx';
@@ -15,6 +16,7 @@ const toLocal = (v) => (v ? String(v).slice(0, 16) : '');
 function FieldControl({ name, schema, item, value, onChange, onPickPlace, onPatch }) {
   const label = schema.title || name;
   const listId = useId();
+  const ctx = useJsonForms();
   // Entità del sito (organizzatori): si sceglie dall'elenco del server, oppure si
   // incolla l'@id e il nome arriva da solo. Scrivono nome e @id INSIEME.
   if (schema.format === 'entity') {
@@ -65,6 +67,24 @@ function FieldControl({ name, schema, item, value, onChange, onPickPlace, onPatc
       <div className="rf rf-date">
         <label className="field-label">{label}</label>
         <input type="datetime-local" value={toLocal(value)} onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  /* Solo l'orario: la data la mette l'evento. Il programma di una giornata non ha
+   * bisogno di ripetere il giorno dodici volte, ma nel file il valore resta un
+   * datetime intero — un orario nudo non è un istante e schema.org lo rifiuta. */
+  if (schema.format === 'ora') {
+    const giorno = dataDi(ctx?.core?.data?.startDate);
+    return (
+      <div className="rf rf-date">
+        <label className="field-label">{label}</label>
+        <input
+          type="time"
+          value={oraDi(value)}
+          disabled={!giorno}
+          title={giorno ? undefined : 'Prima serve la data dell’evento, in Quando'}
+          onChange={(e) => onChange(componi(giorno, e.target.value) || undefined)}
+        />
       </div>
     );
   }

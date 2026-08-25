@@ -17,6 +17,8 @@ import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
 import PlaceLocationRenderer, { placeLocationTester } from './PlaceLocationRenderer.jsx';
 import EventIdRenderer, { eventIdTester } from './EventIdRenderer.jsx';
+import TimezoneRenderer, { timezoneTester } from './TimezoneRenderer.jsx';
+import CoerenzaRenderer, { coerenzaTester } from './CoerenzaRenderer.jsx';
 import { loadEntities, findEntityById } from './entities.js';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
@@ -45,6 +47,8 @@ const renderers = [
   { tester: smartDateTester, renderer: SmartDateRenderer },
   { tester: placeLocationTester, renderer: PlaceLocationRenderer },
   { tester: eventIdTester, renderer: EventIdRenderer },
+  { tester: timezoneTester, renderer: TimezoneRenderer },
+  { tester: coerenzaTester, renderer: CoerenzaRenderer },
 ];
 
 // Campi derivati/gestiti da escludere dal confronto (calcolati o iniettati dal server).

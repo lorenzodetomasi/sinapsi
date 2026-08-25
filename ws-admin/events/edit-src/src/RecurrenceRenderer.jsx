@@ -2,7 +2,10 @@ import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 
 // Editor di ricorrenza (schema.org Schedule) modellato su Google Calendar.
-// Modello dati (form): { frequency, interval, byDay[], endMode, until, count, timezone }.
+// Modello dati (form): { frequency, interval, byDay[], endMode, until, count }.
+// Il fuso NON sta qui: è di tutto l'evento, non della sola ricorrenza, e vive in
+// cima a «Quando». Averlo in due posti significava due campi con lo stesso nome
+// che potevano dire cose diverse.
 // La mappatura verso Schedule (repeatFrequency P{n}{unità}, byDay, endDate/repeatCount,
 // scheduleTimezone) è nell'adapter jsonld.
 
@@ -108,15 +111,6 @@ const Recurrence = ({ data, handleChange, path, label, visible }) => {
         </div>
       </div>
 
-      <div className="rec-tz">
-        <label className="field-label">Fuso orario</label>
-        <input
-          type="text"
-          value={v.timezone}
-          placeholder="es. Europe/Rome"
-          onChange={(e) => set({ timezone: e.target.value })}
-        />
-      </div>
     </div>
   );
 };
