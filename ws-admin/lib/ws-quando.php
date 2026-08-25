@@ -15,9 +15,10 @@
  *     riallinea a lei, non viceversa.
  *
  * Le cartelle con il nome malformato (per esempio `20260716T11730-…`, cinque cifre
- * nell'ora) vengono SEGNALATE e basta: rinominarle significa spostare una cartella
- * e riscrivere ogni riferimento che la cita, ed è una decisione che va presa
- * guardando i casi, non un effetto collaterale di una normalizzazione.
+ * nell'ora) qui vengono solo SEGNALATE: rinominarle significa spostare una cartella
+ * e riscrivere ogni riferimento che la cita, e non può essere l'effetto collaterale
+ * di una normalizzazione. Per quello c'è `ws_quando_rinomina()`, in fondo a questo
+ * file, che è un'operazione a sé e mostra prima quali file toccherebbe.
  */
 
 if (!function_exists('ws_quando_fuso_del_luogo')) {
@@ -150,5 +151,140 @@ if (!function_exists('ws_quando_normalizza')) {
             unset($prima);
         }
         return ['changes' => count($done), 'done' => $done, 'segnalati' => $segnalati];
+    }
+}
+
+if (!function_exists('ws_quando_slug')) {
+    /** Parole minuscole legate da `_`, senza accenti: la coda di un @id. */
+    function ws_quando_slug(?string $testo): string {
+        $s = @iconv('UTF-8', 'ASCII//TRANSLIT', (string)$testo);
+        $s = strtolower($s === false ? (string)$testo : $s);
+        $parti = preg_split('/[^a-z0-9]+/', $s, -1, PREG_SPLIT_NO_EMPTY);
+        return implode('_', $parti ?: []);
+    }
+}
+
+if (!function_exists('ws_quando_nome_proposto')) {
+    /**
+     * Il nome che una cartella dovrebbe avere, ricavato dal CONTENUTO e non dalla
+     * stringa: la data la dice `startDate`, il dove la dice il luogo. La coda —
+     * la parte redazionale, quella scelta da chi scrive — si conserva com'è: è
+     * l'unico pezzo che nessuna regola sa rifare meglio di chi l'ha deciso.
+     * Ritorna '' se dal contenuto non si ricava abbastanza.
+     */
+    function ws_quando_nome_proposto(string $nome, array $e, bool $serie): string {
+        if ($serie) {
+            // Nelle collezioni il trattino separa organizzatore e titolo: si tiene.
+            $pulito = strtolower(preg_replace('/[^A-Za-z0-9_-]+/', '-', $nome));
+            $pulito = trim(preg_replace('/-{2,}/', '-', $pulito), '-');
+            return $pulito;
+        }
+        if (!preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/', (string)($e['startDate'] ?? ''), $d)) return '';
+        $quando = "{$d[1]}{$d[2]}{$d[3]}T{$d[4]}{$d[5]}";
+
+        $idLuogo = (string)($e['location']['@id'] ?? '');
+        $dove = '';
+        if (preg_match('#^places/([A-Z]{2}\d{4,5})/#', $idLuogo, $m)) $dove = $m[1];
+        elseif (strpos($idLuogo, 'places/online/') === 0) $dove = 'online';
+        elseif (stripos((string)($e['eventAttendanceMode'] ?? ''), 'OnlineEventAttendanceMode') !== false) $dove = 'online';
+        if ($dove === '') return '';
+
+        // La coda: quello che resta togliendo data e luogo dal nome di adesso.
+        $coda = preg_replace('/^\d{4,8}T?\d{0,6}-/', '', $nome);
+        $coda = preg_replace('/^([A-Za-z]{2}\d{4,5}|online)-/i', '', $coda);
+        if ($coda === '' || $coda === $nome) $coda = ws_quando_slug($e['name'] ?? '');
+        if ($coda === '') return '';
+        return "$quando-$dove-" . strtolower($coda);
+    }
+}
+
+if (!function_exists('ws_quando_riferimenti')) {
+    /** I file che citano `events/<id>`: percorso relativo → quante volte.
+     *  `_index/` non si conta: è derivato, si rigenera dopo. */
+    function ws_quando_riferimenti(string $base, string $id): array {
+        $out = [];
+        $radice = rtrim($base, '/');
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($radice, FilesystemIterator::SKIP_DOTS));
+        // Il confine a destra evita di scambiare un @id per il prefisso di un altro.
+        $re = '#' . preg_quote("events/$id", '#') . '(?![A-Za-z0-9_-])#';
+        foreach ($it as $f) {
+            $nome = $f->getFilename();
+            if ($nome !== 'index.json' && $nome !== 'index.xml') continue;
+            $rel = ltrim(str_replace($radice, '', $f->getPathname()), '/');
+            if (strpos($rel, '_index/') !== false) continue;
+            $raw = (string)file_get_contents($f->getPathname());
+            $n = preg_match_all($re, $raw);
+            if ($n) $out[$rel] = $n;
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('ws_quando_rinomina')) {
+    /**
+     * Rinomina le cartelle degli eventi che non rispettano la regola, e riscrive i
+     * riferimenti che le citano. In anteprima non tocca niente e dice esattamente
+     * quali file verrebbero riscritti.
+     *
+     * L'ordine conta: PRIMA si riscrivono i riferimenti (compreso quello che il file
+     * fa a se stesso), POI si sposta la cartella. Al contrario, i percorsi raccolti
+     * non esisterebbero più.
+     */
+    function ws_quando_rinomina(string $base, bool $apply): array {
+        $dir = rtrim($base, '/') . '/events';
+        $piano = [];
+        $problemi = [];
+        if (!is_dir($dir)) return ['changes' => 0, 'piano' => [], 'problemi' => []];
+
+        $presi = [];
+        foreach (scandir($dir) as $nome) {
+            if ($nome === '.' || $nome === '..' || $nome === '_index') continue;
+            $file = "$dir/$nome/index.json";
+            if (!is_file($file)) continue;
+            $doc = json_decode((string)file_get_contents($file), true);
+            if (!is_array($doc)) { $problemi[] = "$nome: JSON illeggibile"; continue; }
+            $e = (isset($doc['mainEntity']) && is_array($doc['mainEntity'])) ? $doc['mainEntity'] : $doc;
+            $serie = in_array('EventSeries', (array)($e['@type'] ?? []), true);
+
+            $perche = ws_quando_nome_regolare($nome, $serie);
+            if ($perche === '') continue;
+
+            $nuovo = ws_quando_nome_proposto($nome, $e, $serie);
+            if ($nuovo === '' || $nuovo === $nome) {
+                $problemi[] = "$nome: $perche — dal contenuto non si ricava un nome migliore, va deciso a mano";
+                continue;
+            }
+            if (ws_quando_nome_regolare($nuovo, $serie) !== '') {
+                $problemi[] = "$nome: il nome che si ricava ($nuovo) non sarebbe comunque regolare";
+                continue;
+            }
+            if (is_dir("$dir/$nuovo") || isset($presi[$nuovo])) {
+                $problemi[] = "$nome → $nuovo: esiste già una cartella con quel nome";
+                continue;
+            }
+            $presi[$nuovo] = true;
+            $piano[] = ['da' => $nome, 'a' => $nuovo, 'perche' => $perche, 'file' => ws_quando_riferimenti($base, $nome)];
+        }
+
+        if (!$apply) return ['changes' => count($piano), 'piano' => $piano, 'problemi' => $problemi];
+
+        $fatti = [];
+        foreach ($piano as $p) {
+            $re = '#' . preg_quote('events/' . $p['da'], '#') . '(?![A-Za-z0-9_-])#';
+            $scritti = 0;
+            foreach (array_keys($p['file']) as $rel) {
+                $f = rtrim($base, '/') . '/' . $rel;
+                $raw = (string)@file_get_contents($f);
+                if ($raw === '') continue;
+                $nuovoRaw = preg_replace($re, 'events/' . $p['a'], $raw);
+                if ($nuovoRaw !== null && $nuovoRaw !== $raw && @file_put_contents($f, $nuovoRaw) !== false) $scritti++;
+            }
+            if (!@rename("$dir/{$p['da']}", "$dir/{$p['a']}")) {
+                $problemi[] = "{$p['da']}: riferimenti riscritti ma la cartella non si è spostata";
+                continue;
+            }
+            $fatti[] = $p + ['scritti' => $scritti];
+        }
+        return ['changes' => count($fatti), 'piano' => $fatti, 'problemi' => $problemi];
     }
 }

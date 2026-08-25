@@ -103,6 +103,37 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'quando-rinomina' => [
+                'title' => 'Rinomina le cartelle malformate',
+                'meta'  => 'Nome ricavato dal contenuto, e i riferimenti che le citano riscritti',
+                'icon'  => 'drive_file_rename_outline', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Rinominare le cartelle? Verranno spostate e ogni file che le cita verrà riscritto. Guarda prima l\'anteprima.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-quando.php';
+                    require_once __DIR__ . '/events-index.php';
+                    $r = ws_quando_rinomina($base, $apply);
+                    if ($apply && $r['changes']) event_index_rebuild($base);
+                    $righe = [];
+                    foreach ($r['piano'] as $p) {
+                        $righe[] = "{$p['da']} → {$p['a']}  ({$p['perche']})";
+                        foreach ($p['file'] as $rel => $n) {
+                            $righe[] = "      " . ($apply ? 'riscritto' : 'da riscrivere') . ": $rel ($n riferiment" . ($n > 1 ? 'i' : 'o') . ')';
+                        }
+                        if (!$p['file']) $righe[] = '      nessun file la cita';
+                    }
+                    return [
+                        'changes' => $r['changes'],
+                        'summary' => $r['changes']
+                            ? $r['changes'] . ' cartell' . ($r['changes'] > 1 ? 'e' : 'a')
+                              . ($apply ? ' rinominat' . ($r['changes'] > 1 ? 'e' : 'a') : ' da rinominare')
+                              . (count($r['problemi']) ? ' · ⚠ ' . count($r['problemi']) . ' da decidere a mano' : '')
+                            : 'Nessuna cartella da rinominare.'
+                              . (count($r['problemi']) ? ' ⚠ ' . count($r['problemi']) . ' da decidere a mano.' : ''),
+                        'lines' => array_merge($righe, array_map(fn($x) => "⚠ $x", $r['problemi'])),
+                    ];
+                },
+            ],
+
             'events-normalize' => [
                 'title' => 'Normalizza i contenuti degli eventi',
                 'meta'  => 'Ripara serie annidate, occorrenze mancanti, subEvent↔superEvent',

@@ -731,10 +731,28 @@ del luogo (`places/IT00122/…` → `Europe/Rome`, via `DateTimeZone::PER_COUNTR
 il paese ha un fuso solo), e `@id` riallineato alla **cartella** — la cartella è la verità,
 è lì che il file sta.
 
-Le cartelle con il nome malformato (`20260716T11730-…`, cinque cifre nell'ora) vengono
-**segnalate e basta**: rinominarle vuol dire spostare una cartella e riscrivere ogni
-riferimento che la cita, ed è una decisione da prendere caso per caso. Provata su una copia
-dei contenuti: 10 eventi toccati, e rilanciandola non trova più niente.
+Le cartelle con il nome malformato (`20260716T11730-…`, cinque cifre nell'ora) qui vengono
+**solo segnalate**: per quelle c'è un'operazione a sé (sotto). Provata su una copia dei
+contenuti: 10 eventi toccati, e rilanciandola non trova più niente.
+
+### Manutenzione «Rinomina le cartelle malformate»
+
+Il nome nuovo si ricava dal **contenuto**, non dalla stringa: la data la dice `startDate`,
+il dove lo dice il luogo. La coda — la parte redazionale — si conserva com'è: è l'unico
+pezzo che nessuna regola sa rifare meglio di chi l'ha scelto.
+
+L'anteprima mostra `vecchio → nuovo`, il perché, e **ogni file che verrebbe riscritto** con
+quanti riferimenti contiene (JSON e XML; `_index/` no, si rigenera). Applicando, l'ordine è:
+prima si riscrivono i riferimenti — compreso quello che il file fa a se stesso — poi si
+sposta la cartella; al contrario i percorsi raccolti non esisterebbero più.
+
+Non rinomina quello che non sa rifare: se dal contenuto non esce un nome migliore, o se la
+cartella di destinazione esiste già, lo dice e non tocca niente.
+
+Sul caso vero: `20260716T11730-IT00122-clubdellibro-ostia-junior` →
+`20260716T1730-IT00121-clubdellibro-ostia-junior` — si raddrizzano **due** cose, l'ora a
+cinque cifre e il CAP, che diceva IT00122 mentre il luogo dell'evento
+(`places/IT00121/sognalibri`) sta a IT00121. Quattro file riscritti, provato su una copia.
 
 ## Editor XHTML: i tag semantici
 

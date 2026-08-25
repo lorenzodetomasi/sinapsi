@@ -427,7 +427,7 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
           Sempre visibili: da «Codice» il campo di scrittura non c'è, e se stessero
           nella barra (che compare col fuoco) non si potrebbe tornare indietro. */}
       <div className="xhtml-intestazione">
-        <label className="field-label">
+        <label className="field-label xhtml-etichetta">
           {icona && <Icon name={icona} />}
           {label}
         </label>
@@ -459,19 +459,22 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
             <Icon name="code" />
           </button>
         </div>
+        {/* La × sta dove sta il + delle sezioni ripetibili: in fondo alla riga
+            dell'etichetta. Un comando che riguarda TUTTO il campo si cerca lì,
+            non sovrapposto alla prima riga di testo. */}
+        {value ? (
+          <button
+            type="button"
+            className="icon-btn xhtml-clear"
+            title="Svuota"
+            tabIndex={-1}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={clearAll}
+          >
+            <Icon name="close" />
+          </button>
+        ) : null}
       </div>
-      {value ? (
-        <button
-          type="button"
-          className="xhtml-clear"
-          title="Svuota"
-          tabIndex={-1}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={clearAll}
-        >
-          <Icon name="close" />
-        </button>
-      ) : null}
       <div
         ref={ref}
         className={'xhtml-editor' + (compact ? ' compact' : '')}

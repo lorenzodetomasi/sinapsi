@@ -802,8 +802,8 @@ button.primary { margin-top: var(--sp-md); }
 /* ---------- Editor XHTML ---------- */
 .xhtml-control { position: relative; margin: var(--label-gap) 0 var(--sp-md); }
 /* Intestazione del campo: etichetta a sinistra, viste all'estrema destra. */
-.xhtml-intestazione { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-sm); }
-.xhtml-intestazione .field-label { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+.xhtml-intestazione { display: flex; align-items: center; gap: var(--sp-xs); }
+.xhtml-intestazione .xhtml-etichetta { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-right: auto; }
 .xhtml-viste { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-pill); overflow: hidden; }
 .xhtml-viste button {
   display: inline-flex; align-items: center; justify-content: center;
@@ -812,7 +812,7 @@ button.primary { margin-top: var(--sp-md); }
 }
 .xhtml-viste button .material-symbols-outlined { font-size: 1.125rem; }
 .xhtml-viste button.attiva { background: var(--surface-2); color: var(--text); }
-.xhtml-clear { position: absolute; top: 2rem; right: var(--sp-xs); }
+.xhtml-clear { flex: none; }
 .xhtml-codice {
   display: block; width: 100%; min-height: 8rem;
   padding: var(--sp-sm) var(--field-pad-x);

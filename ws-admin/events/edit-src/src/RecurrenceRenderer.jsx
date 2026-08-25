@@ -93,21 +93,6 @@ const Recurrence = ({ data, handleChange, path, label, visible }) => {
 
       {v.presente && (
         <>
-      <div className="rec-line rec-genera">
-        <button type="button" className="btn-ghost" disabled={!generabile} onClick={genera}>
-          <span className="material-symbols-outlined">playlist_add</span> Genera
-        </button>
-        <input
-          type="number"
-          min="1"
-          max={MAX_OCCORRENZE}
-          className="rec-count"
-          value={quante}
-          onChange={(e) => setQuante(Math.min(MAX_OCCORRENZE, Math.max(1, Number(e.target.value) || 1)))}
-        />
-        <span>occorrenze{generabile ? '' : ' — serve prima la data di inizio, con l’ora'}</span>
-      </div>
-      {esito ? <span className="place-status place-ok">✓ {esito}</span> : null}
       <div className="rec-line">
         <span>Ripeti ogni</span>
         <input
@@ -188,6 +173,24 @@ const Recurrence = ({ data, handleChange, path, label, visible }) => {
           </label>
         </div>
       </div>
+
+      {/* Ultimo, e non per caso: si genera DOPO aver detto che cadenza ha la
+          collezione, altrimenti si generano date che poi vanno rifatte. */}
+      <div className="rec-line rec-genera">
+        <button type="button" className="btn-ghost" disabled={!generabile} onClick={genera}>
+          <span className="material-symbols-outlined">playlist_add</span> Genera
+        </button>
+        <input
+          type="number"
+          min="1"
+          max={MAX_OCCORRENZE}
+          className="rec-count"
+          value={quante}
+          onChange={(e) => setQuante(Math.min(MAX_OCCORRENZE, Math.max(1, Number(e.target.value) || 1)))}
+        />
+        <span>occorrenze{generabile ? '' : ' — serve prima la data di inizio, con l’ora'}</span>
+      </div>
+      {esito ? <span className="place-status place-ok">✓ {esito}</span> : null}
         </>
       )}
 
