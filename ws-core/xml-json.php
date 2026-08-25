@@ -26,10 +26,22 @@ function ws_load_file( $abspath, $args = array() ){
 		$dom = new DOMDocument();
 		$dom->preserveWhiteSpace = $args['preserve_white_space'];
 		$dom->formatOutput = $args['format_output'];
+		/* Gli errori di libxml si raccolgono, non si stampano. Un XInclude che non
+		 * risolve — un file derivato non ancora rigenerato, un riferimento a
+		 * qualcosa che non c'è più — riempiva la pagina servita al visitatore di
+		 * avvisi PHP: 250 KB di rumore davanti al contenuto, e in produzione
+		 * l'HTML rotto prima ancora del `<!DOCTYPE>`. Quello che non si risolve
+		 * finisce nel registro, dove serve a chi ripara. */
+		$prima = libxml_use_internal_errors(true);
 		$dom->load($abspath) or die(sprintf(__('Unable to load file %1$s.', 'ws').' '.__('<a href="%2$s">Debug</a>', 'ws'), $abspath, abspath2url($abspath)));
 		if($args['xinclude'] === true){
 			$dom->xinclude();
 		}
+		foreach(libxml_get_errors() as $errore){
+			$ws_logs[] = 'XML: '.trim($errore->message).' ('.basename($abspath).')';
+		}
+		libxml_clear_errors();
+		libxml_use_internal_errors($prima);
 		if($args['output_type'] == 'simplexml'){
 			$simplexml = ws_simplexml_import_dom($dom);
 			$return = $simplexml;

@@ -75,6 +75,14 @@ function ws_initial_constants() {
 		define('WS_DEBUG_LOG', false);
 	if ( !defined('WS_CACHE') )
 		define('WS_CACHE', false);
+	/* Siti INNESTATI: prefisso dell'indirizzo => cartella del sito in contents/.
+	 * Serve a far convivere più siti in un dominio solo senza che i contenuti lo
+	 * sappiano: i loro wspath restano quelli del giorno in cui avranno un dominio
+	 * proprio, e il prefisso lo mette (e lo toglie) il CMS.
+	 * Si ridefinisce in ws-custom/ws-config.php; svuotarlo significa «questo sito
+	 * risponde alla radice». */
+	if ( !defined('WS_MOUNTS') )
+		define('WS_MOUNTS', array('/meetoo' => 'meetoo'));
 	// Add define('SCRIPT_DEBUG', true); to wp-config.php to enable loading of non-minified,
 	// non-concatenated scripts and stylesheets.
 	if ( ! defined( 'SCRIPT_DEBUG' ) ) {

@@ -62,9 +62,38 @@ if($wspath !== '/' or $wspath !== ''){
 	$wspath = ws_normalize_relpath($uri_parts['path']);
 }
 // Search for uri/path in rewrite_rules/wspath
-$rewrite_rule = $ws_sitemap->xpath('./url[./wspath = "/'.$wspath.'"]')[0];
+$ws_mount = '';
+// `[0]` su una ricerca vuota è un avviso PHP stampato in cima alla pagina: qui
+// «nessuna regola» è un esito normale, non un errore.
+$trovate = $ws_sitemap->xpath('./url[./wspath = "/'.$wspath.'"]');
+$rewrite_rule = $trovate[0] ?? null;
+/* Siti INNESTATI. Più siti convivono in un dominio solo — oggi meetoo dentro
+ * isotype.org, domani su meetoo.it — e i loro contenuti non devono saperlo: i
+ * wspath restano quelli del giorno in cui avranno un dominio proprio, e il
+ * prefisso si toglie qui prima di cercare la regola. Da qui in poi il prefisso
+ * vive in $ws_query['mount'], e ws_href() lo rimette nei link.
+ * I prefissi si dichiarano in ws-custom/ws-config.php: define('WS_MOUNTS', ['/meetoo' => 'meetoo']); */
+if(empty($rewrite_rule) and defined('WS_MOUNTS') and is_array(WS_MOUNTS)){
+	foreach(WS_MOUNTS as $prefisso => $sito){
+		$nudo = trim((string)$prefisso, '/');
+		if($nudo === ''){
+			continue;
+		}
+		if($wspath === $nudo or strpos($wspath, $nudo.'/') === 0){
+			$dentro = trim(substr($wspath, strlen($nudo)), '/');
+			$trovata = $ws_sitemap->xpath('./url[./wspath = "/'.$dentro.'"]');
+			if(!empty($trovata[0])){
+				$rewrite_rule = $trovata[0];
+				$ws_mount = $nudo;
+				$wspath = $dentro;
+				break;
+			}
+		}
+	}
+}
 if(empty($rewrite_rule)){
-	$rewrite_rule = $ws_sitemap->xpath('./url[./wspath = "/"]')[0];
+	$radice = $ws_sitemap->xpath('./url[./wspath = "/"]');
+	$rewrite_rule = $radice[0] ?? null;
 	$rewrite_rule_query = get_query($rewrite_rule->query);
 	$rewrite_rule_query['template'] = "404";
 	$rewrite_rule_query['content'] = explode_and_remove_last('/', $rewrite_rule_query['content'])."/404";
@@ -91,4 +120,5 @@ if(!empty($uri_query)){
 	$ws_query = array_merge($ws_query, $uri_query);
 }
 $ws_query['wspath'] = $wspath;
+$ws_query['mount'] = $ws_mount;
 ?>

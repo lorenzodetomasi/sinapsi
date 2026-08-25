@@ -103,6 +103,39 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'mappa-sito' => [
+                'title' => 'Rigenera la mappa del sito',
+                'meta'  => 'Un indirizzo per ogni contenuto: e\' cosi\' che le pagine diventano visibili al CMS e ai motori',
+                'icon'  => 'map', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Rigenerare la mappa del sito? ws_sitemap.wsx verra\' riscritto.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-mappa.php';
+                    // $base è la cartella del LOCALE (…/meetoo/it_IT): la mappa vive
+                    // un livello sopra, accanto ai locali, perché il sito è uno solo.
+                    $locale = basename(rtrim($base, '/'));
+                    $radiceSito = dirname(rtrim($base, '/'));
+                    $sito = basename($radiceSito);
+                    $r = ws_mappa_costruisci($radiceSito, $sito, $locale, $apply);
+                    $inn = ws_mappa_innesta(dirname($radiceSito), $sito, $apply);
+                    $per = [];
+                    foreach ($r['voci'] as $v) $per[$v['template']][] = $v['wspath'];
+                    $righe = [];
+                    foreach ($per as $t => $w) {
+                        $righe[] = "$t: " . count($w) . ' pagine · ' . implode(', ', array_slice($w, 0, 3))
+                            . (count($w) > 3 ? ' …' : '');
+                    }
+                    $righe[] = 'mappa generale: ' . $inn['why'];
+                    return [
+                        'changes' => $r['changes'],
+                        'summary' => $r['changes']
+                            ? $r['changes'] . ' pagine' . ($apply ? ' scritte in ' . basename($r['file']) : ' da mappare')
+                              . (count($r['problemi']) ? ' · ⚠ ' . count($r['problemi']) : '')
+                            : 'Nessun contenuto da mappare.',
+                        'lines' => array_merge($righe, array_map(fn($x) => "⚠ $x", $r['problemi'])),
+                    ];
+                },
+            ],
+
             'quando-rinomina' => [
                 'title' => 'Rinomina le cartelle malformate',
                 'meta'  => 'Nome ricavato dal contenuto, e i riferimenti che le citano riscritti',

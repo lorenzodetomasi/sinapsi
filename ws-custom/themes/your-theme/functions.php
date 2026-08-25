@@ -4,7 +4,7 @@ $ws_theme_url = ws_theme_url();
 $ws_parent_theme_url = ws_parent_theme_url();
 $ws_content_root_url = ws_content_root_url();
 
-ws_array_merge($GLOBALS, array('ws_links'), array(
+ws_globals_set(array('ws_links'), array(
 	'<link rel="apple-touch-icon" sizes="180x180" href="'.$ws_content_root_url.'/favicons/apple-touch-icon.png" />',
 	'<link rel="icon" type="image/png" sizes="32x32" href="'.$ws_content_root_url.'/favicons/favicon-32x32.png" />',
 	'<link rel="icon" type="image/png" sizes="16x16" href="'.$ws_content_root_url.'/favicons/favicon-16x16.png" />',
@@ -48,13 +48,26 @@ if(GTAG){
 }
 // Stylesheets
 // 1. AboveTheFold
-$GLOBALS['ws_styles']['head']['all'] = '<style media="all">'.file_get_contents(locate_file('css/all-abovethefold.css')).'</style>';
-$GLOBALS['ws_styles']['head']['screen'] = '<style media="screen">'.file_get_contents(locate_file('css/screen-abovethefold.css')).'</style>';
-$GLOBALS['ws_styles']['head']['vgrid'] = '<style media="screen and (max-width: 999px)">'.file_get_contents(locate_file('css/vgrid-abovethefold.css')).'</style>';
-$GLOBALS['ws_styles']['head']['hgrid'] = '<style media="screen and (min-width: 1000px)"'.file_get_contents(locate_file('css/hgrid-abovethefold.css')).'</style>';
-$GLOBALS['ws_styles']['head']['maxgrid'] = '<style media="screen and (min-width: 1280px)"'.file_get_contents(locate_file('css/maxgrid-abovethefold.css')).'</style>';
+/* Il foglio si stampa nella testa solo se esiste davvero. Prima si chiamava
+ * `file_get_contents(locate_file(...))` senza guardare l'esito: un tema figlio
+ * senza `css/` (per esempio meetoo, che ha fogli suoi) faceva morire la pagina con
+ * «Path must not be empty», e nessuno lo sapeva finché non si apriva quel tema.
+ * Due delle cinque righe avevano anche il `>` di chiusura mancante: il foglio
+ * finiva nell'HTML dentro un tag rotto. */
+function ws_stile_se_esiste($chiave, $media, $basename){
+	$abspath = locate_file($basename);
+	if(!$abspath or !file_exists($abspath)){
+		return;
+	}
+	$GLOBALS['ws_styles']['head'][$chiave] = '<style media="'.$media.'">'.file_get_contents($abspath).'</style>';
+}
+ws_stile_se_esiste('all', 'all', 'css/all-abovethefold.css');
+ws_stile_se_esiste('screen', 'screen', 'css/screen-abovethefold.css');
+ws_stile_se_esiste('vgrid', 'screen and (max-width: 999px)', 'css/vgrid-abovethefold.css');
+ws_stile_se_esiste('hgrid', 'screen and (min-width: 1000px)', 'css/hgrid-abovethefold.css');
+ws_stile_se_esiste('maxgrid', 'screen and (min-width: 1280px)', 'css/maxgrid-abovethefold.css');
 // 2. Linked
-ws_array_merge($GLOBALS, array('ws_links'), array(
+ws_globals_set(array('ws_links'), array(
 	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_parent_theme_url.'css/all.css" />',
 	'<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_parent_theme_url.'css/vgrid.css" />',
 	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_parent_theme_url.'css/hgrid.css" />',
@@ -76,15 +89,15 @@ $GLOBALS['ws_html_attributes']['body'] = array(
   'itemscope' => null,
   'itemtype' => "http://schema.org/WebPage"
 );
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'page', 'class'), array('center'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header-content', 'id'), array('header-content'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header-top', 'class'), array('nav', 'horizontal', 'padding-h-d2'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header1', 'id'), array('header1'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header1', 'class'), array('content-container'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'main-container', 'id'), array('main-container'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'main-content', 'class'), array('content-container'));
-// ws_array_merge($GLOBALS, array('ws_html_attributes', 'footer', 'class'), array(''));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'footer-content', 'class'), array('content-container'));
+ws_globals_set(array('ws_html_attributes', 'page', 'class'), array('center'));
+ws_globals_set(array('ws_html_attributes', 'header-content', 'id'), array('header-content'));
+ws_globals_set(array('ws_html_attributes', 'header-top', 'class'), array('nav', 'horizontal', 'padding-h-d2'));
+ws_globals_set(array('ws_html_attributes', 'header1', 'id'), array('header1'));
+ws_globals_set(array('ws_html_attributes', 'header1', 'class'), array('content-container'));
+ws_globals_set(array('ws_html_attributes', 'main-container', 'id'), array('main-container'));
+ws_globals_set(array('ws_html_attributes', 'main-content', 'class'), array('content-container'));
+// ws_globals_set(array('ws_html_attributes', 'footer', 'class'), array(''));
+ws_globals_set(array('ws_html_attributes', 'footer-content', 'class'), array('content-container'));
 /*
 $js_forms_abspath = locate_file('js/forms.js');
 
@@ -319,4 +332,11 @@ function ws_nav_items($nav){
     }
   }
 }
+
+/* L'header che si restringe al primo scorrimento: markup zero, solo stile e un
+ * ascoltatore. Si accende aggiungendo la classe `header-compatto` all'header —
+ * lo fa il tema figlio che lo vuole (vedi meetoo/functions.php). */
+ob_start();
+include_template('template-parts/header-compatto');
+$GLOBALS['ws_styles']['head']['header_compatto'] = ob_get_clean();
 ?>

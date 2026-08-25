@@ -81,7 +81,7 @@ $GLOBALS['ws_html_attributes']['body'] = array(
   'itemscope' => null,
   'itemtype' => "http://schema.org/WebPage"
 );
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header1', 'id'), array('header1'));
+ws_globals_set(array('ws_html_attributes', 'header1', 'id'), array('header1'));
 function telephone($telephone, $args = array()){
   $default_args = array(
     'input' => 'simplexml',

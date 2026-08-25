@@ -139,6 +139,33 @@ function load_template( $template_abspath, $args = array() ) {
 }
 
 //
+/**
+ * Scrive un valore dentro `$GLOBALS`, anche in profondità.
+ *
+ * Esiste perché da PHP 8.1 `$GLOBALS` non si passa più per riferimento: la forma
+ * usata finora nei temi — `ws_array_merge($GLOBALS, …)` — è un errore fatale su
+ * ogni PHP moderno, e il sito sta in piedi solo finché il server resta indietro.
+ * Qui il ramo si copia, si modifica e si riscrive: stesso effetto, nessun
+ * riferimento a `$GLOBALS`.
+ *
+ * ⚠ Come `ws_array_merge`, alla foglia SOSTITUISCE. Due chiamate sullo stesso
+ * percorso non si sommano: la seconda cancella la prima. Per aggiungere a un
+ * elenco (`ws_links`, `ws_scripts`) conviene la forma diretta `$GLOBALS[…][] = …`.
+ */
+function ws_globals_set($path, $value, $args = array()){
+	$path = (array)$path;
+	$key = array_shift($path);
+	if(empty($path)){
+		$GLOBALS[$key] = $value;
+		return;
+	}
+	if(!isset($GLOBALS[$key]) or !is_array($GLOBALS[$key])){
+		$GLOBALS[$key] = array();
+	}
+	$ramo = $GLOBALS[$key];
+	ws_array_merge($ramo, $path, $value, $args);
+	$GLOBALS[$key] = $ramo;
+}
 function ws_array_merge(&$array, $path, $value, $args = array()){
 	$default_args = array(
 		'recursive' => true,
@@ -246,17 +273,43 @@ function ws_styles($selector, $styles = array(), $args = array()){
 	}
 	return $html;
 }
+/**
+ * L'indirizzo pubblico di un wspath.
+ *
+ * Se il sito è INNESTATO sotto un prefisso (vedi ws_mount()), il prefisso si
+ * aggiunge qui e solo qui: i contenuti scrivono il loro wspath nella forma
+ * definitiva (`/lido-di-ostia/eventi`), e il giorno che il sito avrà il suo
+ * dominio basterà togliere il prefisso dalla configurazione, senza riscrivere né
+ * un contenuto né un link.
+ */
 function ws_href($wspath, $args = array()){
 	$default_args = array(
 		'output' => 'absolute',// absolute | relative
+		'mount' => true,       // false per un indirizzo che il prefisso non lo vuole
 	);
 	$args = array_intersect_key( $args, $default_args );
 	$args = array_merge( $default_args, $args );
 	$wspath = ws_normalize_relpath($wspath);
+	$prefisso = ($args['mount'] === false) ? '' : trim(ws_mount(), '/');
+	if($prefisso !== ''){
+		$wspath = ($wspath === '') ? $prefisso : $prefisso.'/'.$wspath;
+	}
 	if($args['output'] == 'absolute'){
 		return ws_root_url()."/$wspath";
 	} else if($args['output'] == 'relative'){
 		return './'.$wspath;
 	}
+}
+
+/**
+ * Il prefisso sotto cui è innestato il sito che sta rispondendo, '' se nessuno.
+ *
+ * Serve a far convivere più siti in un dominio solo — oggi meetoo dentro
+ * isotype.org — senza che i contenuti sappiano di essere ospiti: i loro wspath
+ * restano quelli del giorno in cui avranno un dominio proprio.
+ */
+function ws_mount(){
+	global $ws_query;
+	return isset($ws_query['mount']) ? (string)$ws_query['mount'] : '';
 }
 ?>

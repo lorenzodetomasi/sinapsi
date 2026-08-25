@@ -106,7 +106,9 @@ function ws_pageDOMElements($type){
 }
 function ws_pageLink($type, $text = null){
 	$pageDOMElements = ws_pageDOMElements($type);
-	$pageDOMElement = $pageDOMElements[0];
+	// Una pagina di servizio che non esiste è la norma, non un errore: chiederla
+	// non deve stampare un avviso davanti al contenuto.
+	$pageDOMElement = $pageDOMElements[0] ?? null;
 	if($pageDOMElement){
 		if(!$text and !empty($pageDOMElement->title)){
 			$text = $pageDOMElement->title;

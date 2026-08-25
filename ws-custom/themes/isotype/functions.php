@@ -3,7 +3,7 @@ global $ws_query, $ws_content_root;
 $ws_theme_url = ws_theme_url();
 $ws_content_root_url = ws_content_root_url();
 
-ws_array_merge($GLOBALS, array('ws_links'), array(
+ws_globals_set(array('ws_links'), array(
 	'<link rel="apple-touch-icon" sizes="180x180" href="'.$ws_content_root_url.'/favicons/apple-touch-icon.png" />',
 	'<link rel="icon" type="image/png" sizes="32x32" href="'.$ws_content_root_url.'/favicons/favicon-32x32.png" />',
 	'<link rel="icon" type="image/png" sizes="16x16" href="'.$ws_content_root_url.'/favicons/favicon-16x16.png" />',
@@ -68,7 +68,7 @@ $GLOBALS['ws_styles']['head']['maxgrid'] = array(
   'path' => array('css/maxgrid-abovethefold.css')
 );
 // 2. Linked
-ws_array_merge($GLOBALS, array('ws_links'), array(
+ws_globals_set(array('ws_links'), array(
 	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'css/all.css" />',
 	'<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_theme_url.'css/vgrid.css" />',
 	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_theme_url.'css/hgrid.css" />',
@@ -88,15 +88,15 @@ $GLOBALS['ws_html_attributes']['body'] = array(
   'itemscope' => null,
   'itemtype' => "http://schema.org/WebPage"
 );
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'page', 'class'), array('center'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header-content', 'id'), array('header-content'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header-top', 'class'), array('nav', 'horizontal', 'padding-h-d2'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header1', 'id'), array('header1'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'header1', 'class'), array('content-container'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'main-container', 'id'), array('main-container'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'main-content', 'class'), array('content-container'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'footer', 'class'), array('background-color1'));
-ws_array_merge($GLOBALS, array('ws_html_attributes', 'footer-content', 'class'), array('content-container'));
+ws_globals_set(array('ws_html_attributes', 'page', 'class'), array('center'));
+ws_globals_set(array('ws_html_attributes', 'header-content', 'id'), array('header-content'));
+ws_globals_set(array('ws_html_attributes', 'header-top', 'class'), array('nav', 'horizontal', 'padding-h-d2'));
+ws_globals_set(array('ws_html_attributes', 'header1', 'id'), array('header1'));
+ws_globals_set(array('ws_html_attributes', 'header1', 'class'), array('content-container'));
+ws_globals_set(array('ws_html_attributes', 'main-container', 'id'), array('main-container'));
+ws_globals_set(array('ws_html_attributes', 'main-content', 'class'), array('content-container'));
+ws_globals_set(array('ws_html_attributes', 'footer', 'class'), array('background-color1'));
+ws_globals_set(array('ws_html_attributes', 'footer-content', 'class'), array('content-container'));
 /*
 $js_forms_abspath = locate_file('js/forms.js');
 

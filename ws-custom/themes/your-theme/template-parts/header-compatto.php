@@ -1,0 +1,81 @@
+<?php
+/**
+ * L'header che si restringe al primo scorrimento.
+ *
+ * Aperto quando la pagina si apre — logo grande, titolo, aria intorno — e stretto
+ * appena si comincia a leggere, per non rubare schermo. Una volta stretto ci resta:
+ * un header che si riapre e si richiude a ogni cambio di direzione dello
+ * scorrimento fa ballare il testo sotto, ed è la ragione per cui tanti siti
+ * preferiscono l'header sempre piccolo. Qui si tiene il meglio dei due: la prima
+ * impressione è quella grande, la lettura è quella stretta.
+ *
+ * Sta nel tema genitore perché non è una scelta di Meetoo: serve a qualunque sito
+ * che voglia un'intestazione presente all'apertura e discreta dopo. I temi figli
+ * l'accendono aggiungendo la classe `header-compatto` all'header.
+ *
+ * Senza JavaScript resta aperto, che è la forma leggibile: nessuna riga di
+ * contenuto dipende da questo.
+ */
+?>
+<style media="screen">
+	/* La transizione è sulle misure, non su `height`: così il contenuto non si
+	   schiaccia, si accorcia il contorno. */
+	.header-compatto {
+		--header-logo: 3.5rem;
+		--header-aria: 1rem;
+		transition: padding .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease;
+		padding-block: var(--header-aria);
+		position: sticky; top: 0; z-index: 40;
+	}
+	.header-compatto img, .header-compatto svg, .header-compatto .logo {
+		height: var(--header-logo); width: auto;
+		transition: height .22s cubic-bezier(.22,1,.36,1);
+	}
+	.header-compatto .header-espanso-solo {
+		transition: opacity .18s ease, max-height .22s cubic-bezier(.22,1,.36,1);
+		overflow: hidden; max-height: 6rem; opacity: 1;
+	}
+	.header-compatto.stretto {
+		--header-logo: 2rem;
+		--header-aria: .375rem;
+		box-shadow: 0 1px 0 0 var(--mt-border, rgba(0,0,0,.12));
+	}
+	.header-compatto.stretto .header-espanso-solo { max-height: 0; opacity: 0; }
+	@media (prefers-reduced-motion: reduce) {
+		.header-compatto, .header-compatto img, .header-compatto .header-espanso-solo { transition: none; }
+	}
+</style>
+<script>
+(function(){
+	/* Lo script sta nella testa, quindi parte prima che l'header esista: se
+	   cercasse l'elemento subito non troverebbe niente e non succederebbe più
+	   nulla. Si aspetta il documento, e se è già pronto si parte e basta. */
+	function avvia(){
+	var header = document.querySelector('.header-compatto');
+	if(!header) return;
+	/* Si stringe al primo scorrimento e RESTA stretto. Non si riapre tornando in
+	   cima: un header che cambia misura avanti e indietro fa ballare il testo
+	   sotto a ogni rimbalzo, e la prima impressione — quella grande — l'ha già
+	   data. Una volta che si legge, lo spazio serve alla lettura. */
+	var soglia = 24;
+	var fermo = false;
+	function guarda(){
+		fermo = false;
+		if(window.scrollY > soglia){
+			header.classList.add('stretto');
+		}
+	}
+	window.addEventListener('scroll', function(){
+		if(fermo) return;
+		fermo = true;
+		window.requestAnimationFrame(guarda);
+	}, { passive: true });
+	guarda();
+	}
+	if(document.readyState === 'loading'){
+		document.addEventListener('DOMContentLoaded', avvia);
+	} else {
+		avvia();
+	}
+})();
+</script>
