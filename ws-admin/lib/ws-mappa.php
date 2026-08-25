@@ -85,6 +85,22 @@ if (!function_exists('ws_mappa_wspath')) {
         $problemi = [];
         $presi = [];
 
+        /* La home del sito, se c'è: `index/index.json`. Oggi Meetoo non ce l'ha —
+         * le sue pagine sono gli eventi e i luoghi — ma il giorno che nasce basta
+         * il file, senza toccare né questo generatore né la configurazione. */
+        if (is_file("$localeDir/index/index.json")) {
+            $raw = (string)file_get_contents("$localeDir/index/index.json");
+            $doc = json_decode($raw, true);
+            $e = (is_array($doc) && isset($doc['mainEntity'])) ? $doc['mainEntity'] : (is_array($doc) ? $doc : []);
+            $voci[] = [
+                'wspath' => '/', 'rel' => 'index', 'template' => 'index', 'tipo' => 'WebSite',
+                'title' => trim((string)($e['name'] ?? 'Meetoo')),
+                'description' => ws_mappa_descrizione($e['description'] ?? ''),
+                'dateModified' => (string)($doc['dateModified'] ?? date('c')),
+            ];
+            $presi['/'] = 'index';
+        }
+
         foreach (ws_mappa_entita($localeDir) as $rel) {
             $raw = (string)@file_get_contents("$localeDir/$rel/index.json");
             $doc = json_decode($raw, true);

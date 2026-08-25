@@ -49,20 +49,35 @@ function locate_file($basenames, $args = array() ) {
 	$args = array_merge( $default_args, $args );
 	$located = '';
 	if($args['cascading'] == false) {
+		/* Prima i TEMI, poi l'amministrazione.
+		 *
+		 * Era il contrario, e bastava che in `ws-admin/` esistesse un file con lo
+		 * stesso nome di un template perché quello vincesse su tutti i siti. È
+		 * successo davvero: spostando qui il pannello di Meetoo, `ws-admin/index.php`
+		 * ha preso il posto del template `index` di OGNI tema, e la home di
+		 * isotype.org ha cominciato a rispondere con l'amministrazione — mentre
+		 * `/contatti`, che usa un altro template, continuava a funzionare. Un
+		 * sintomo così non porta a guardare qui.
+		 *
+		 * L'amministrazione resta come ULTIMA risorsa, che è il suo mestiere: dà i
+		 * template che nessun tema fornisce (refresh, refresh-contents…). Quello che
+		 * un tema fornisce, però, è del tema. */
 		foreach ( (array) $basenames as $basename ) {
 			if ( !$basename )
 				continue;
-			if(file_exists(ws_admin_abspath()."/$basename")){
-				//if template file exists in admin folder
-				$located = ws_admin_abspath()."/$basename";
-				break;
-			}
 			foreach ($ws_query['themes'] as $ws_theme_id) {
 				if ( file_exists(ws_theme_abspath($ws_theme_id).$basename)) {
 					//if template file exists, starting from last descendant theme
 					$located = ws_theme_abspath($ws_theme_id).$basename;
 					break;
 				}
+			}
+			if(empty($located) and file_exists(ws_admin_abspath()."/$basename")){
+				// Nessun tema ce l'ha: lo dà l'amministrazione (refresh e simili).
+				$located = ws_admin_abspath()."/$basename";
+			}
+			if(!empty($located)){
+				break;
 			}
 		}
 		if ( $args['load'] && !empty($located) ){

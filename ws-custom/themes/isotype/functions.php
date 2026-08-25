@@ -1,4 +1,10 @@
 <?php
+/* ⚠ Queste funzioni sono COPIE IDENTICHE, byte per byte, di quelle di
+ * your-theme: non sono una riscrittura, sono un copia-incolla. Finche' restano
+ * qui vanno protette da un guardiano, perche' `functions.php` si carica a
+ * cascata (genitore E figlio) e la seconda dichiarazione farebbe morire la
+ * pagina con «Cannot redeclare». Da togliere: il genitore le fornisce gia'.
+ */
 global $ws_query, $ws_content_root;
 $ws_theme_url = ws_theme_url();
 $ws_content_root_url = ws_content_root_url();
@@ -170,164 +176,174 @@ if(file_exists($js_forms_abspath)){
 */
 // Functions
 // - Formatting
-function telephone($telephone, $args = array()){
-  $default_args = array(
-    'input' => 'simplexml',
-    'output' => 'microdata',// microdata | iso
-    'class' => 'telephone link',// telephone | mobile
-    'type' => 'telephone',// telephone | mobile
-  );
-  $args = array_merge( $default_args, $args );
-  $icon_mobile = '<abbr title="'.__('Mobile').'" class="material-symbols-outlined">smartphone</abbr>';
-  $icon_phone = '<abbr title="'.__('Phone').'" class="material-symbols-outlined">phone</abbr>';
-  if($args['type'] == 'mobile'){
-    $icon = $icon_mobile;
-  } else {
-    $icon = $icon_phone;
-  }
-  if($args['input'] == 'string'){
-    if($args['output'] == 'microdata') {
-      return '<a href="tel:'.telephone($telephone, array('output' => 'iso')).'">'.$telephone.'</a>';
-    } else if($args['output'] == 'iso'){
-      return remove_whitespaces($telephone);
-    }
-  } else if($args['input'] == 'simplexml'){
-    if($args['output'] == 'microdata') {
-      return '<a title="'.__('Call now').'" href="tel:'.telephone($telephone, array('output' => 'iso')).'" class="'.$args['class'].'">'.$icon.'<span class="text">'.$telephone.'</span></a>';
-    } else if($args['output'] == 'iso'){
-      return remove_whitespaces($telephone);
-    }
-  }
+if(!function_exists('telephone')){
+	function telephone($telephone, $args = array()){
+	  $default_args = array(
+	    'input' => 'simplexml',
+	    'output' => 'microdata',// microdata | iso
+	    'class' => 'telephone link',// telephone | mobile
+	    'type' => 'telephone',// telephone | mobile
+	  );
+	  $args = array_merge( $default_args, $args );
+	  $icon_mobile = '<abbr title="'.__('Mobile').'" class="material-symbols-outlined">smartphone</abbr>';
+	  $icon_phone = '<abbr title="'.__('Phone').'" class="material-symbols-outlined">phone</abbr>';
+	  if($args['type'] == 'mobile'){
+	    $icon = $icon_mobile;
+	  } else {
+	    $icon = $icon_phone;
+	  }
+	  if($args['input'] == 'string'){
+	    if($args['output'] == 'microdata') {
+	      return '<a href="tel:'.telephone($telephone, array('output' => 'iso')).'">'.$telephone.'</a>';
+	    } else if($args['output'] == 'iso'){
+	      return remove_whitespaces($telephone);
+	    }
+	  } else if($args['input'] == 'simplexml'){
+	    if($args['output'] == 'microdata') {
+	      return '<a title="'.__('Call now').'" href="tel:'.telephone($telephone, array('output' => 'iso')).'" class="'.$args['class'].'">'.$icon.'<span class="text">'.$telephone.'</span></a>';
+	    } else if($args['output'] == 'iso'){
+	      return remove_whitespaces($telephone);
+	    }
+	  }
+	}
 }
-function email($email, $args = array()){
-  $default_args = array(
-    'input' => 'simplexml',
-    'output' => 'microdata',
-    'class' => 'work',// work|personal
-  );
-  $args = array_merge( $default_args, $args );
-  $icon = '<abbr title="'.__('Email').'" class="material-symbols-outlined">email</abbr>';
-  if($args['input'] == 'string'){
-    if($args['output'] == 'microdata') {
-      return '<a class="link" title="'.__('Write us by email').'" href="mailto:'.email($email, array('output' => 'iso')).'">'.$email.'</a>';
-    } else if($args['output'] == 'iso'){
-      return $email;
-    }
-  } else if($args['input'] == 'simplexml'){
-    if($args['output'] == 'microdata') {
-      return '<a title="'.__('Write us by email').'" href="mailto:'.email($email, array('output' => 'iso')).'" class="email link">'.$icon.'<span class="text">'.$email.'</span></a>';
-    } else if($args['output'] == 'iso'){
-      return $email;
-    }
-  }
+if(!function_exists('email')){
+	function email($email, $args = array()){
+	  $default_args = array(
+	    'input' => 'simplexml',
+	    'output' => 'microdata',
+	    'class' => 'work',// work|personal
+	  );
+	  $args = array_merge( $default_args, $args );
+	  $icon = '<abbr title="'.__('Email').'" class="material-symbols-outlined">email</abbr>';
+	  if($args['input'] == 'string'){
+	    if($args['output'] == 'microdata') {
+	      return '<a class="link" title="'.__('Write us by email').'" href="mailto:'.email($email, array('output' => 'iso')).'">'.$email.'</a>';
+	    } else if($args['output'] == 'iso'){
+	      return $email;
+	    }
+	  } else if($args['input'] == 'simplexml'){
+	    if($args['output'] == 'microdata') {
+	      return '<a title="'.__('Write us by email').'" href="mailto:'.email($email, array('output' => 'iso')).'" class="email link">'.$icon.'<span class="text">'.$email.'</span></a>';
+	    } else if($args['output'] == 'iso'){
+	      return $email;
+	    }
+	  }
+	}
 }
-function PostalAddress($address, $args = array()){
-  //input: 'simplexml'
-  //output: 'microdata'|'text'
-  //format: 'multiline'|'singleline'
-  $default_args = array(
-    'input' => 'simplexml',
-    'output' => 'microdata',
-    'format' => 'multiline',
-  );
-  $args = array_merge( $default_args, $args );
-  if($args['format'] == 'multiline') {
-    if($args['output'] == 'microdata') {
-      $html = $address->streetAddress.'<br />';
-      $html .= $address->district.'<br />';
-      $html .= $address->postalCode.' ';
-      $html .= $address->addressLocality;
-      $html .= ' ('.$address->addressRegion.')<br />';
-      $html .= $address->administrativeArea;
-      $html .= ', '.$address->addressCountry;
-      return $html;
-    } else if($args['output'] == 'text'){
-      $html = $address->streetAddress.'<br />';
-      $html .= $address->district.'<br />';
-      $html .= $address->postalCode.' ';
-      $html .= $address->addressLocality;
-      $html .= ' ('.$address->addressRegion.')<br />';
-      $html .= $address->administrativeArea;
-      $html .= ', '.$address->addressCountry;
-      return $html;
-    }
-  } elseif($args['format'] == 'singleline') {
-    if($args['output'] == 'microdata') {
-      $html = $address->streetAddress.', ';
-      $html .= $address->postalCode.' ';
-      if(!empty($address->district)){
-        $html .= $address->district.', ';
-      }
-      $html .= $address->addressLocality.' ';
-      $html .= ' ('.$address->addressRegion.'), ';
-      $html .= $address->administrativeArea;
-      $html .= ', '.$address->addressCountry;
-      return $html;
-    } else if($args['output'] == 'text'){
-      $html = $address->streetAddress.', ';
-//      $html .= $address->district.'<br />';
-      $html .= $address->postalCode.' ';
-      $html .= $address->addressLocality.' ';
-      $html .= ' ('.$address->addressRegion.'), ';
-      $html .= $address->administrativeArea;
-      $html .= ', '.$address->addressCountry;
-      return $html;
-    }
-  }
+if(!function_exists('PostalAddress')){
+	function PostalAddress($address, $args = array()){
+	  //input: 'simplexml'
+	  //output: 'microdata'|'text'
+	  //format: 'multiline'|'singleline'
+	  $default_args = array(
+	    'input' => 'simplexml',
+	    'output' => 'microdata',
+	    'format' => 'multiline',
+	  );
+	  $args = array_merge( $default_args, $args );
+	  if($args['format'] == 'multiline') {
+	    if($args['output'] == 'microdata') {
+	      $html = $address->streetAddress.'<br />';
+	      $html .= $address->district.'<br />';
+	      $html .= $address->postalCode.' ';
+	      $html .= $address->addressLocality;
+	      $html .= ' ('.$address->addressRegion.')<br />';
+	      $html .= $address->administrativeArea;
+	      $html .= ', '.$address->addressCountry;
+	      return $html;
+	    } else if($args['output'] == 'text'){
+	      $html = $address->streetAddress.'<br />';
+	      $html .= $address->district.'<br />';
+	      $html .= $address->postalCode.' ';
+	      $html .= $address->addressLocality;
+	      $html .= ' ('.$address->addressRegion.')<br />';
+	      $html .= $address->administrativeArea;
+	      $html .= ', '.$address->addressCountry;
+	      return $html;
+	    }
+	  } elseif($args['format'] == 'singleline') {
+	    if($args['output'] == 'microdata') {
+	      $html = $address->streetAddress.', ';
+	      $html .= $address->postalCode.' ';
+	      if(!empty($address->district)){
+	        $html .= $address->district.', ';
+	      }
+	      $html .= $address->addressLocality.' ';
+	      $html .= ' ('.$address->addressRegion.'), ';
+	      $html .= $address->administrativeArea;
+	      $html .= ', '.$address->addressCountry;
+	      return $html;
+	    } else if($args['output'] == 'text'){
+	      $html = $address->streetAddress.', ';
+	//      $html .= $address->district.'<br />';
+	      $html .= $address->postalCode.' ';
+	      $html .= $address->addressLocality.' ';
+	      $html .= ' ('.$address->addressRegion.'), ';
+	      $html .= $address->administrativeArea;
+	      $html .= ', '.$address->addressCountry;
+	      return $html;
+	    }
+	  }
+	}
 }
-function url($url, $args = array()){
-  $default_args = array(
-    'input' => 'simplexml',
-    'output' => 'microdata',// microdata | iso
-    'class' => 'website link',// telephone | mobile
-    'type' => 'website',// website | link
-    'target' => '_blank',// _blank
-  );
-  $args = array_merge( $default_args, $args );
-  $icon_website = '<abbr title="'.__('Website').'" class="material-symbols-outlined">public</abbr>';
-  $icon_link = '<abbr title="'.__('Link').'" class="material-symbols-outlined">link</abbr>';
-  if(!empty($args['target'])){
-    $target = ' target="'.$args['target'].'"';
-  }
-  $a_text = explode('://', $url)[1];
-  if($args['type'] == 'website'){
-    $icon = $icon_website;
-  } else {
-    $icon = $icon_link;
-  }
-  if($args['input'] == 'string'){
-    if($args['output'] == 'microdata') {
-      return '<a href="'.$url.'">'.$url.'</a>';
-    } else if($args['output'] == 'iso'){
-      return $url;
-    }
-  } else if($args['input'] == 'simplexml'){
-    if($args['output'] == 'microdata') {
-      return '<a title="'.__('Visit website').'" href="'.$url.'" class="'.$args['class'].'"'.$target.'>'.$icon.'<span class="text">'.$a_text.'</span></a>';
-    } else if($args['output'] == 'iso'){
-      return $url;
-    }
-  }
+if(!function_exists('url')){
+	function url($url, $args = array()){
+	  $default_args = array(
+	    'input' => 'simplexml',
+	    'output' => 'microdata',// microdata | iso
+	    'class' => 'website link',// telephone | mobile
+	    'type' => 'website',// website | link
+	    'target' => '_blank',// _blank
+	  );
+	  $args = array_merge( $default_args, $args );
+	  $icon_website = '<abbr title="'.__('Website').'" class="material-symbols-outlined">public</abbr>';
+	  $icon_link = '<abbr title="'.__('Link').'" class="material-symbols-outlined">link</abbr>';
+	  if(!empty($args['target'])){
+	    $target = ' target="'.$args['target'].'"';
+	  }
+	  $a_text = explode('://', $url)[1];
+	  if($args['type'] == 'website'){
+	    $icon = $icon_website;
+	  } else {
+	    $icon = $icon_link;
+	  }
+	  if($args['input'] == 'string'){
+	    if($args['output'] == 'microdata') {
+	      return '<a href="'.$url.'">'.$url.'</a>';
+	    } else if($args['output'] == 'iso'){
+	      return $url;
+	    }
+	  } else if($args['input'] == 'simplexml'){
+	    if($args['output'] == 'microdata') {
+	      return '<a title="'.__('Visit website').'" href="'.$url.'" class="'.$args['class'].'"'.$target.'>'.$icon.'<span class="text">'.$a_text.'</span></a>';
+	    } else if($args['output'] == 'iso'){
+	      return $url;
+	    }
+	  }
+	}
 }
 // WS Nav
-function ws_nav_items($nav){
-  global $ws_query;
-  $nav_id = $nav['id'];
-  $nav_items = $nav->item;
-  $nav_item_index = 0;
-  foreach($nav_items as $key => $item){
-    if(!empty($item->name) and !empty($item->wspath)){
-      if(ws_normalize_relpath($item->wspath) == $ws_query['wspath']){
-        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = 'current-menu-item';
-      }
-      if(!empty($item->class)){
-        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = $item->class;
-      }
-  ?>
-      <li<?php echo ws_html_attributes($nav_id.'-item-'.$nav_item_index); ?>><a href="<?php echo ws_href($item->wspath); ?>"><?php echo $item->name->innerHTML(); ?></a></li>
-  <?php
-      $nav_item_index++;
-    }
-  }
+if(!function_exists('ws_nav_items')){
+	function ws_nav_items($nav){
+	  global $ws_query;
+	  $nav_id = $nav['id'];
+	  $nav_items = $nav->item;
+	  $nav_item_index = 0;
+	  foreach($nav_items as $key => $item){
+	    if(!empty($item->name) and !empty($item->wspath)){
+	      if(ws_normalize_relpath($item->wspath) == $ws_query['wspath']){
+	        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = 'current-menu-item';
+	      }
+	      if(!empty($item->class)){
+	        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = $item->class;
+	      }
+	  ?>
+	      <li<?php echo ws_html_attributes($nav_id.'-item-'.$nav_item_index); ?>><a href="<?php echo ws_href($item->wspath); ?>"><?php echo $item->name->innerHTML(); ?></a></li>
+	  <?php
+	      $nav_item_index++;
+	    }
+	  }
+	}
 }
 ?>
