@@ -395,8 +395,28 @@ function meetoo_frammento(){
 	exit;
 }
 
-/** Una sezione a elenco, con il suo conteggio e la sua coda pigra. */
-function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = ''){
+/**
+ * Una sezione a elenco, con il suo conteggio e la sua coda pigra.
+ *
+ * `$titoloLink` rende cliccabile il TITOLO; `$vediTutti` mette invece un
+ * collegamento sotto l'elenco. Sono due cose diverse: un titolo di sezione dice
+ * che cosa viene dopo, e se porta altrove chi legge non sa più se sta guardando
+ * l'elenco o l'annuncio di un altro elenco.
+ */
+function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = '', $vediTutti = ''){
+	/* Una sezione che non esiste non stampa quattro avvisi PHP in mezzo alla pagina.
+	 * Succede quando i file del tema arrivano sul server in momenti diversi — un
+	 * template nuovo che chiede una sezione che il file delle sezioni, più vecchio,
+	 * non conosce ancora. Il rimedio vero è caricarli insieme; questo serve perché
+	 * nel frattempo la pagina resti leggibile invece di riempirsi di avvisi. */
+	if(!is_array($cfg)){
+		$tutte = meetoo_sezioni();
+		if(!isset($tutte[$quale])){
+			return;
+		}
+		$cfg = $tutte[$quale];
+	}
+	$cfg += array('titolo' => $quale, 'icona' => 'list', 'lista' => 'cards', 'primi' => 12, 'vuoto' => __('Niente da mostrare.'));
 	$manuale = !empty($cfg['manuale']);
 	$voci = meetoo_voci($quale);
 	$totale = count($voci);
@@ -419,8 +439,8 @@ function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = ''){
 	echo meetoo_altri($quale, $quante, $totale, $manuale, $manuale ? (string)($cfg['apri'] ?? '') : '');
 ?>
 					</div>
-<?php if($quante < $totale and $titoloLink !== ''){ ?>
-					<p class="mt-nota"><a href="<?php echo mt_esc($titoloLink); ?>"><?php printf(__('Vedi tutti (%d)'), $totale); ?></a></p>
+<?php $altrove = $vediTutti !== '' ? $vediTutti : $titoloLink; if($quante < $totale and $altrove !== ''){ ?>
+					<p class="mt-nota"><a href="<?php echo mt_esc($altrove); ?>"><?php printf(__('Vedi tutti (%d)'), $totale); ?></a></p>
 <?php } ?>
 <?php } ?>
 				</section>

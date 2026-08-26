@@ -102,7 +102,12 @@ foreach(array('eventi' => 'event', 'gruppi' => 'groups', 'luoghi' => 'place') as
 					</div>
 				</section>
 
-<?php meetoo_sezione('eventi', $SEZIONI['eventi'], $tutto, meetoo_elenco_url($qui, 'eventi')); ?>
+<?php
+/* Il titolo della sezione è un TITOLO, come «Categorie e Percorsi»: dice che cosa
+ * viene dopo, non porta da un'altra parte. Alla pagina degli eventi si va dalla
+ * card qui sopra, e da «Vedi tutti» quando ce ne sono più di quanti ne stiano. */
+meetoo_sezione('eventi', $SEZIONI['eventi'], $tutto, '', meetoo_elenco_url($qui, 'eventi'));
+?>
 
 <?php if(count($percorsi)){ ?>
 				<section id="categorie" class="mt-sezione">

@@ -47,10 +47,12 @@ include_template('template-parts/header');
 
 <?php
 if($serie){
-	meetoo_sezione('eventi', $SEZIONI['eventi'], $tutto);
-	meetoo_sezione('archivio', $SEZIONI['archivio'], $tutto);
+	meetoo_sezione('eventi', $SEZIONI['eventi'] ?? null, $tutto);
+	meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
 } else {
-	meetoo_sezione('raccolta', $SEZIONI['raccolta'], $tutto);
+	// `?? null`: se il file delle sezioni sul server fosse più vecchio di questo
+	// template, la sezione si arrangia invece di far stampare avvisi.
+	meetoo_sezione('raccolta', $SEZIONI['raccolta'] ?? null, $tutto);
 }
 ?>
 			</article>

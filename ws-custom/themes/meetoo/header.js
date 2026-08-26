@@ -290,10 +290,15 @@
   function renderAccount() {
     var el = document.getElementById('mt-account');
     if (!el) return;
-    // Sessione PHP: quel posto l'ha già riempito il server, che sa chi sei prima
-    // ancora di mandare la pagina. Sovrascriverlo vorrebbe dire far lampeggiare
-    // l'avatar a ogni caricamento.
-    if (CFG.sessione === 'php') return;
+    /* Se in quel posto c'è GIÀ QUALCOSA, l'ha messo il server — che sa chi sei
+     * prima ancora di mandare la pagina — e non si tocca.
+     *
+     * La guardia guarda il DOM, non la configurazione, e non è un dettaglio: se
+     * guardasse solo `CFG.sessione` basterebbe che questo file e `functions.php`
+     * arrivassero sul server in momenti diversi — uno nuovo e uno vecchio — perché
+     * il pulsante di accesso venisse cancellato da qui e la pagina restasse senza
+     * login. È successo. Adesso l'ordine di caricamento non conta più. */
+    if (CFG.sessione === 'php' || el.children.length) return;
     if (CFG.noAuth) { el.innerHTML = ''; return; } // pagine admin: nessun login qui
     if (S.user) {
       el.innerHTML = S.user.picture
@@ -368,6 +373,13 @@
    *
    * Senza quella dichiarazione si resta alla strada di prima: token in memoria,
    * verificato a ogni caricamento. La usano l'archivio e le pagine di ws-admin. */
+  /* La sessione PHP la dichiara `functions.php`. Se la dichiarazione non è
+   * arrivata ma nella pagina c'è il plugin di accesso (`#g_id_onload`), vuol dire
+   * lo stesso che l'accesso lo governa il server: chiedere anche noi un token a
+   * Google, in quel caso, vuol dire due login che si contendono lo stesso posto. */
+  if (CFG.sessione !== 'php' && document.getElementById('g_id_onload')) {
+    CFG.sessione = 'php';
+  }
   if (CFG.sessione === 'php') {
     S.user = CFG.utente || null;
     S.prefs = (CFG.utente && CFG.utente.prefs) || {};

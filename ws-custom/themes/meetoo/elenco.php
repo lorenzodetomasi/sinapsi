@@ -43,8 +43,8 @@ meetoo_sezione($quale, $cfg, $tutto);
  * perché sono poche e sono il modo in cui un quartiere ha un ritmo; l'archivio no,
  * si apre a chi lo chiede. */
 if($quale === 'eventi'){
-	meetoo_sezione('collezioni', $SEZIONI['collezioni'], $tutto);
-	meetoo_sezione('archivio', $SEZIONI['archivio'], $tutto);
+	meetoo_sezione('collezioni', $SEZIONI['collezioni'] ?? null, $tutto);
+	meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
 }
 ?>
 			</article>

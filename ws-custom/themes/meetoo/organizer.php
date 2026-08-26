@@ -45,9 +45,9 @@ include_template('template-parts/header');
 <?php } ?>
 
 <?php
-meetoo_sezione('collezioni', $SEZIONI['collezioni'], $tutto);
-meetoo_sezione('eventi', $SEZIONI['eventi'], $tutto);
-meetoo_sezione('archivio', $SEZIONI['archivio'], $tutto);
+meetoo_sezione('collezioni', $SEZIONI['collezioni'] ?? null, $tutto);
+meetoo_sezione('eventi', $SEZIONI['eventi'] ?? null, $tutto);
+meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
 ?>
 			</article>
 <?php
