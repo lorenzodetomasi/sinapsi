@@ -146,6 +146,56 @@ function meetoo_indirizzo($rel){
 }
 
 /**
+ * Un contenuto, letto dal disco e tenuto da parte.
+ *
+ * Serve alle card che linkano a qualcos'altro e vogliono sapere una cosa sola —
+ * l'icona, il nome — senza caricarne il documento due volte. Si legge il JSON
+ * direttamente, come fa il JSON-LD nella testa: è la forma in cui il contenuto è
+ * scritto, e passare dall'albero XML per leggere un campo sarebbe un giro lungo.
+ */
+function meetoo_contenuto($rel){
+	global $ws_query;
+	static $letti = array();
+	$rel = trim((string)$rel, '/');
+	if($rel === ''){
+		return null;
+	}
+	if(array_key_exists($rel, $letti)){
+		return $letti[$rel];
+	}
+	$pezzi = explode('/', (string)$ws_query['content']);
+	$radice = ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/'.$pezzi[0].'/'.($pezzi[1] ?? ws_locale());
+	$file = "$radice/$rel/index.json";
+	$doc = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
+	if(is_array($doc) and isset($doc['mainEntity']) and is_array($doc['mainEntity'])){
+		$doc = $doc['mainEntity'];
+	}
+	return $letti[$rel] = (is_array($doc) ? $doc : null);
+}
+
+/**
+ * L'icona di un contenuto, dichiarata dal contenuto stesso.
+ *
+ * `"meetoo:icon": {"class": "material-symbols-outlined", "name": "water"}`.
+ *
+ * L'icona appartiene alla cosa, non a chi la nomina: così il lungomare ha la sua
+ * onda dovunque compaia — nella zona, dentro una raccolta, in un elenco — e per
+ * cambiarla si tocca un posto solo. Chi non ce l'ha ancora ritorna null, e chi
+ * chiama mette la sua.
+ */
+function meetoo_icona_di($rel){
+	$doc = meetoo_contenuto($rel);
+	$ico = is_array($doc) ? ($doc['meetoo:icon'] ?? null) : null;
+	if(is_string($ico) and trim($ico) !== ''){
+		return array('name' => trim($ico), 'class' => '');
+	}
+	if(is_array($ico) and !empty($ico['name'])){
+		return array('name' => (string)$ico['name'], 'class' => (string)($ico['class'] ?? ''));
+	}
+	return null;
+}
+
+/**
  * Il titolo della pagina di un contenuto, dal suo @id.
  *
  * Serve alle collezioni che elencano RIFERIMENTI e basta — «Libri e letture» dice

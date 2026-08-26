@@ -24,9 +24,17 @@ function mt_esc($s){
 	return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
 }
 
-/** Un simbolo Material. Decorativo: chi legge con la voce non lo sente. */
-function mt_icona($nome){
-	return '<span class="material-symbols-outlined" aria-hidden="true">'.mt_esc($nome).'</span>';
+/**
+ * Un simbolo. Decorativo: chi legge con la voce non lo sente.
+ *
+ * La CLASSE si può passare perché a dichiarare l'icona è il contenuto, e il
+ * contenuto dice tutte e due le cose: `{"class": "material-symbols-outlined",
+ * "name": "water"}`. Oggi la famiglia è una sola, ma il giorno che ne arriva
+ * un'altra non c'è niente da riscrivere qui.
+ */
+function mt_icona($nome, $classe = 'material-symbols-outlined'){
+	$classe = trim((string)$classe) ?: 'material-symbols-outlined';
+	return '<span class="'.mt_esc($classe).'" aria-hidden="true">'.mt_esc($nome).'</span>';
 }
 
 /** Una voce dei meta: icona facoltativa + testo. */
@@ -196,7 +204,7 @@ function mt_card_evento($ev, $o = array()){
 /** La card con l'icona: collezioni, gruppi, percorsi, voci di sezione. */
 function mt_card_tile($o){
 	$testa = '<div class="card-icon'.(!empty($o['accent']) ? ' accent' : '').'">'
-		.mt_icona(!empty($o['icon']) ? $o['icon'] : 'chevron_right').'</div>';
+		.mt_icona(!empty($o['icon']) ? $o['icon'] : 'chevron_right', $o['iconClass'] ?? '').'</div>';
 	$meta = !empty($o['meta']) ? array(mt_meta(isset($o['metaIcon']) ? $o['metaIcon'] : '', $o['meta'])) : array();
 	$titolo = mt_esc(isset($o['title']) ? $o['title'] : '').(isset($o['badge']) ? $o['badge'] : '');
 	return mt_card(isset($o['href']) ? $o['href'] : '#', $testa, $titolo, $meta, $o);

@@ -134,8 +134,14 @@
   position: absolute; width: 1px; height: 1px; overflow: hidden;
   clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
 }
-.mt-crumbs .mt-casa { display: inline-flex; align-items: center; }
-.mt-crumbs .mt-casa .material-symbols-outlined { font-size: 1.15rem; }
+/* Le briciole si allineano sulla LINEA DI BASE del testo, e un glifo d'icona quella
+   linea non ce l'ha dove il testo se l'aspetta: la casa risultava più bassa di
+   «Roma». Si toglie dall'allineamento sulla base e la si centra sulla riga, che per
+   un'icona sola in mezzo a delle parole è l'allineamento che si legge come giusto. */
+.mt-crumbs .mt-casa {
+  display: inline-flex; align-items: center; align-self: center; line-height: 1;
+}
+.mt-crumbs .mt-casa .material-symbols-outlined { font-size: 1.25rem; line-height: 1; display: block; }
 
 /* ---------- Il pulsante di accesso, vestito da Meetoo ----------
    Arriva dal plugin `google-login`, che veste bianco Google — giusto per isotype,

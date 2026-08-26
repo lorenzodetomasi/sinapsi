@@ -67,9 +67,15 @@ foreach((!empty($e->hasPart) ? $e->hasPart : array()) as $voce){
 	$titolo = meetoo_testo($voce, 'name');
 	$id = meetoo_riferimento($voce);
 	$href = $id !== '' ? meetoo_indirizzo($id) : '';
+	/* L'icona la dichiara la collezione, non chi la nomina: il lungomare porta la
+	 * sua onda dovunque compaia. Quella scritta qui nella zona resta per le voci
+	 * che un contenuto ancora non ce l'hanno — «Musica», «Teatro» — dove non c'è
+	 * nessuno a cui chiederla. */
+	$sua = $id !== '' ? meetoo_icona_di($id) : null;
 	$percorsi[] = array(
 		'href' => $href,
-		'icona' => meetoo_testo($voce, 'icon') ?: 'route',
+		'icona' => $sua ? $sua['name'] : (meetoo_testo($voce, 'icon') ?: 'route'),
+		'classe' => $sua ? $sua['class'] : '',
 		'titolo' => $titolo !== '' ? $titolo : ucfirst(str_replace('-', ' ', basename($id))),
 		'nota' => meetoo_testo($voce, 'description'),
 	);
@@ -118,6 +124,7 @@ meetoo_sezione('eventi', $SEZIONI['eventi'], $tutto, '', meetoo_elenco_url($qui,
 		echo mt_card_tile(array(
 			'href' => $p['href'],
 			'icon' => $p['icona'],
+			'iconClass' => $p['classe'],
 			'accent' => true,
 			'title' => $p['titolo'],
 			'meta' => $p['nota'],
@@ -128,7 +135,7 @@ meetoo_sezione('eventi', $SEZIONI['eventi'], $tutto, '', meetoo_elenco_url($qui,
 	 * che sembra cliccabile e non fa niente è peggio di uno spento. */
 ?>
 						<div class="card mt-in-arrivo">
-							<div class="card-icon"><?php echo mt_icona($p['icona']); ?></div>
+							<div class="card-icon"><?php echo mt_icona($p['icona'], $p['classe']); ?></div>
 							<div class="card-body">
 								<h3 class="card-title"><?php echo mt_esc($p['titolo']); ?> <span class="mt-etichetta"><?php _e('In preparazione'); ?></span></h3>
 								<div class="card-meta"><span><?php echo mt_esc($p['nota']); ?></span></div>

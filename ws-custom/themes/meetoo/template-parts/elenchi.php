@@ -229,8 +229,13 @@ function meetoo_voci($quale){
 			if($via !== ''){
 				$note[] = $via;
 			}
-			// L'icona dice di che cosa si tratta: un evento, un gruppo, un posto.
-			if(strpos($id, 'events/') === 0){
+			/* Prima si chiede al contenuto: se ha dichiarato la sua icona, quella è.
+			 * Solo se non l'ha fatto si indovina dal tipo — un evento, un gruppo, un
+			 * posto — che è un ripiego onesto ma resta un ripiego. */
+			$sua = $id !== '' ? meetoo_icona_di($id) : null;
+			if($sua){
+				$icona = $sua['name'];
+			} else if(strpos($id, 'events/') === 0){
 				$icona = 'collections_bookmark';
 			} else if(strpos($id, 'organizations/') === 0){
 				$icona = mt_org_icona((string)($m->{'@type'} ?? ''), $nome);
@@ -240,6 +245,7 @@ function meetoo_voci($quale){
 			$out[] = mt_card_tile(array(
 				'href' => $id !== '' ? meetoo_indirizzo($id) : '',
 				'icon' => $icona,
+				'iconClass' => $sua ? $sua['class'] : '',
 				'title' => $nome,
 				'meta' => implode(' · ', $note),
 			));
@@ -297,9 +303,13 @@ function meetoo_voci($quale){
 				$href = meetoo_indirizzo($c['path'] ?? '');
 				if($href === ''){ continue; }
 				$chi = trim((string)($c['organizer'] ?? ''));
+					// L'icona la dichiara la collezione; `collections_bookmark` è il ripiego
+				// per quelle che ancora non l'hanno detta.
+				$sua = meetoo_icona_di($c['path'] ?? '');
 				$out[] = mt_card_tile(array(
 					'href' => $href,
-					'icon' => 'collections_bookmark',
+					'icon' => $sua ? $sua['name'] : 'collections_bookmark',
+					'iconClass' => $sua ? $sua['class'] : '',
 					'accent' => true,
 					'title' => !empty($c['name']) ? (string)$c['name'] : basename((string)($c['path'] ?? '')),
 					'meta' => $chi !== '' ? $chi : __('Collezione di eventi'),
