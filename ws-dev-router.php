@@ -12,4 +12,24 @@ $file = __DIR__ . $percorso;
 if ($percorso !== '/' && is_file($file)) {
     return false; // lo serve il server, con il suo mime type
 }
+
+/* Una CARTELLA con dentro un indice — `/ws-admin/events/edit/` — in produzione la
+ * serve nginx da sé, e in locale non la serviva nessuno: il pannello e l'editor
+ * rispondevano con la home di isotype, che è quello che fa il CMS quando non
+ * riconosce un indirizzo. Sembrava un problema di instradamento del CMS, ed era
+ * solo il server di sviluppo che non sa cos'è un indice di cartella. */
+if ($percorso !== '/' && is_dir($file)) {
+    if (substr($percorso, -1) !== '/') {
+        header('Location: ' . $percorso . '/', true, 301);
+        return true;
+    }
+    foreach (['index.php', 'index.html'] as $indice) {
+        if (!is_file($file . $indice)) continue;
+        if (substr($indice, -4) === '.php') { require $file . $indice; return true; }
+        header('Content-Type: text/html; charset=UTF-8');
+        readfile($file . $indice);
+        return true;
+    }
+}
+
 require __DIR__ . '/index.php';

@@ -314,8 +314,8 @@ include_template('template-parts/header');
 			<div class="mt-hero">
 				<div class="mt-pagina">
 					<h1 class="mt-h1"><?php echo mt_esc($nome); ?></h1>
-<?php if(!empty($e->description)){ ?>
-					<div class="mt-corpo"><?php ws_echo($e->description->innerHTML()); ?></div>
+<?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
+					<div class="mt-corpo"><?php ws_echo($testo); ?></div>
 <?php } ?>
 				</div>
 			</div>

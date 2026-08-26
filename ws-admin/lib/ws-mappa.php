@@ -60,9 +60,33 @@ if (!function_exists('ws_mappa_wspath')) {
         return null; // users, persons, brand, _index, _trash: non sono pagine
     }
 
+    /**
+     * La frase che finisce nel `<meta name="description">`, presa dal posto giusto.
+     *
+     * Da quando i due testi sono separati, `description` È la frase per i motori:
+     * testo semplice, scritto apposta, e si usa così com'è. Ma i contenuti scritti
+     * prima hanno lì dentro il corpo in XHTML, e quelli nuovi possono avere solo
+     * il Sommario: quindi
+     *
+     *   1. c'è `description`  → si usa quella (ripulita, se contiene marcatura);
+     *   2. c'è solo `abstract` → si usa la sua prima parte.
+     *
+     * Nessun contenuto resta senza, e la migrazione a mano può procedere con calma.
+     */
+    function ws_mappa_meta_descrizione(array $e): string {
+        $seo = trim((string)($e['description'] ?? ''));
+        if ($seo !== '') return ws_mappa_descrizione($seo);
+        return ws_mappa_descrizione($e['abstract'] ?? '');
+    }
+
     /** Prima frase utile di una descrizione XHTML, per il meta description. */
-    function ws_mappa_descrizione($testo, int $max = 200): string {
-        $t = trim(html_entity_decode(strip_tags((string)$testo), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+    function ws_mappa_descrizione($testo, int $max = 160): string {
+        /* La fine di un blocco vale uno spazio. Senza, `strip_tags` incolla le
+         * parole a cavallo dei tag — «in silenziosa compagnia.Goditi un momento» —
+         * e quella frase è esattamente ciò che si legge nel risultato di ricerca. */
+        $testo = preg_replace('#</(p|div|li|h[1-6]|blockquote|section|tr)>#i', ' ', (string)$testo);
+        $testo = preg_replace('#<(br|hr)\s*/?>#i', ' ', $testo);
+        $t = trim(html_entity_decode(strip_tags($testo), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
         $t = preg_replace('/\s+/u', ' ', $t);
         if (mb_strlen($t) <= $max) return $t;
         $tagliato = mb_substr($t, 0, $max);
@@ -102,7 +126,7 @@ if (!function_exists('ws_mappa_wspath')) {
             $voci[] = [
                 'wspath' => '/', 'rel' => 'index', 'template' => 'index', 'tipo' => 'WebSite',
                 'title' => trim((string)($e['name'] ?? 'Meetoo')),
-                'description' => ws_mappa_descrizione($e['description'] ?? ''),
+                'description' => ws_mappa_meta_descrizione($e),
                 'dateModified' => (string)($doc['dateModified'] ?? date('c')),
             ];
             $presi['/'] = 'index';
@@ -136,7 +160,7 @@ if (!function_exists('ws_mappa_wspath')) {
                 'template' => $template,
                 'tipo' => $tipo,
                 'title' => trim((string)($e['name'] ?? ws_mappa_slug($rel))),
-                'description' => ws_mappa_descrizione($e['description'] ?? ''),
+                'description' => ws_mappa_meta_descrizione($e),
                 'dateModified' => (string)($doc['dateModified'] ?? $e['dateModified'] ?? date('c')),
             ];
         }

@@ -111,6 +111,10 @@ export function fromJsonLd(doc) {
     // separata da virgole: i file già scritti non vanno riaperti per forza.
     keywords: dedupeKeywords(asArray(doc.keywords)),
     name: doc.name ?? '',
+    // Sommario e frase SEO: due campi distinti. I contenuti scritti prima che si
+    // separassero hanno il testo formattato dentro `description`; si lasciano
+    // dove sono — la migrazione è a mano — e il campo Descrizione lo segnala.
+    abstract: doc.abstract ?? '',
     description: doc.description ?? '',
     image: doc.image ?? '',
     logo: doc.logo ?? '',
@@ -301,6 +305,7 @@ export function toJsonLd(d) {
     ...(additionalType ? { additionalType } : {}),
     ...(kw.length ? { keywords: kw } : {}),
     name: d.name ?? '',
+    ...(d.abstract ? { abstract: d.abstract } : {}),
     ...(d.description ? { description: d.description } : {}),
     ...(d.image ? { image: d.image } : {}),
     ...(d.logo ? { logo: d.logo } : {}),

@@ -85,6 +85,34 @@ if(!empty($rewrite_rule->wspath)){
 }
 
 /**
+ * Il testo che si legge nella pagina.
+ *
+ * Due campi, due mestieri: il SOMMARIO (`abstract`) è quello che legge una
+ * persona, e può essere formattato; la DESCRIZIONE (`description`) è la frase che
+ * finisce nel risultato di ricerca e nell'anteprima di un link condiviso, ed è
+ * testo semplice. Prima erano lo stesso campo, e la pagina lo mostrava due volte:
+ * una come sommario in cima e una come corpo.
+ *
+ * Finché i contenuti scritti prima non saranno migrati a mano, la regola è
+ * indulgente: si mostra il Sommario se c'è, altrimenti quello che c'è scritto
+ * nella descrizione — che in quei file è ancora il corpo del testo.
+ *
+ * Ritorna XHTML già pronto da stampare (è marcatura validata dall'editor, non
+ * testo di un estraneo), oppure '' se non c'è niente da dire.
+ */
+function meetoo_testo_visibile($e){
+	foreach(array('abstract', 'description') as $campo){
+		if(!empty($e->$campo)){
+			$html = trim($e->$campo->innerHTML());
+			if($html !== ''){
+				return $html;
+			}
+		}
+	}
+	return '';
+}
+
+/**
  * Il contenuto della pagina, così com'è sul disco, dentro uno <script> JSON-LD.
  *
  * Si legge il file invece di ricostruirlo dall'albero XML: qualunque conversione

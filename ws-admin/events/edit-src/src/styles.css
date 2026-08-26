@@ -1031,3 +1031,34 @@ button.primary { margin-top: var(--sp-md); }
 .picker-item { padding: 0; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; background: none; cursor: pointer; aspect-ratio: 16/9; }
 .picker-item:hover { border-color: var(--accent); }
 .picker-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---------- Frase per i motori di ricerca ---------- */
+/* Il contatore sta NELL'ETICHETTA, non sotto il campo: si guarda mentre si
+   scrive, e sotto il campo c'è già la nota che spiega. Il colore dice la misura
+   senza dover leggere: grigio troppo corta, verde comoda, gialla al limite,
+   rossa oltre. Nessuno di questi stati impedisce di salvare — il taglio vero lo
+   fa il motore, in pixel, e la frase spesso se la riscrive. */
+.seo-conta {
+  margin-left: auto; font-variant-numeric: tabular-nums;
+  font-size: var(--fs-small, .8125rem); font-weight: 600;
+  padding: 0 .4em; border-radius: 999px; border: 1px solid currentColor;
+  color: var(--text-dim);
+}
+.seo-conta.buona { color: var(--success); }
+.seo-conta.lunga { color: var(--warning); }
+.seo-conta.troppo { color: var(--danger); }
+.seo-rigenera {
+  background: transparent; border: none; padding: 0 0 0 .25em; cursor: pointer;
+  color: var(--text-dim); display: inline-flex; line-height: 1;
+}
+.seo-rigenera:hover { color: var(--accent); }
+.seo-rigenera .material-symbols-outlined { font-size: 1.125rem; }
+/* Prosa, non codice: le textarea qui dentro nascono monospazio perché servono al
+   JSON, ma questa è una frase che leggerà una persona. */
+.seo-descrizione textarea { width: 100%; resize: vertical; font: inherit; line-height: 1.4; }
+.seo-nota {
+  margin-left: var(--label-indent); margin-top: .25em;
+  font-size: var(--fs-small, .8125rem); color: var(--text-dim);
+}
+.seo-nota .avviso { color: var(--warning); display: inline-flex; align-items: center; gap: .3em; }
+.seo-nota .material-symbols-outlined { font-size: 1rem; }

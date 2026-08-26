@@ -59,15 +59,15 @@ include_template('template-parts/header');
 ?>
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina', 'mt-home'))); ?>>
 				<h1 class="mt-h1"><?php echo htmlspecialchars((string)$e->name, ENT_QUOTES, 'UTF-8'); ?></h1>
-<?php if(!empty($e->description)){ ?>
-				<div class="mt-corpo"><?php ws_echo($e->description->innerHTML()); ?></div>
+<?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
+				<div class="mt-corpo"><?php ws_echo($testo); ?></div>
 <?php } ?>
 
 <?php if($zone){ ?>
 				<section class="mt-scelta-zona" aria-labelledby="zone">
 					<h2 id="zone" class="mt-h2"><?php echo htmlspecialchars((string)($zone->name ?: __('Zone')), ENT_QUOTES, 'UTF-8'); ?></h2>
-<?php if(!empty($zone->description)){ ?>
-					<div class="mt-corpo mt-nota"><?php ws_echo($zone->description->innerHTML()); ?></div>
+<?php $nota = meetoo_testo_visibile($zone); if($nota !== ''){ ?>
+					<div class="mt-corpo mt-nota"><?php ws_echo($nota); ?></div>
 <?php } ?>
 					<ul class="mt-zone">
 <?php

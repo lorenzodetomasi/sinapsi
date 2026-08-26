@@ -112,7 +112,13 @@ export const schema = {
     additionalType: { type: 'array', title: 'additionalType', format: 'tags', items: { type: 'string' } },
     keywords: { type: 'array', title: 'Keywords', format: 'tags', items: { type: 'string' } },
     name: { type: 'string', title: 'Nome evento' },
-    description: { type: 'string', title: 'Descrizione', format: 'xhtml' },
+    /* Due testi, due mestieri: il SOMMARIO è quello che legge una persona quando
+     * apre la pagina (e può essere formattato); la DESCRIZIONE è la frase che
+     * finisce nel risultato di ricerca e nell'anteprima di un link condiviso, ed è
+     * testo semplice perché lì la marcatura non arriva. Prima erano lo stesso
+     * campo, e la pagina lo mostrava due volte. */
+    abstract: { type: 'string', title: 'Sommario', format: 'xhtml' },
+    description: { type: 'string', title: 'Descrizione', format: 'seo' },
     image: { type: 'string', title: 'Immagine', format: 'image' },
     logo: { type: 'string', title: 'Logo', format: 'image' },
     // Il fuso in cui l'evento succede: da qui esce lo scarto (+02:00) che rende
@@ -298,7 +304,7 @@ export const uischema = {
       options: { icon: 'article' },
       elements: [
         ctrl('#/properties/name'),
-        ctrl('#/properties/description', { options: { icon: 'description' } }),
+        ctrl('#/properties/abstract', { options: { icon: 'subject' } }),
         {
           type: 'HorizontalLayout',
           elements: [
@@ -309,6 +315,19 @@ export const uischema = {
       ],
     },
     {
+      /* Quello che il contenuto dice DI SÉ a chi non l'ha ancora aperto: il
+       * risultato su un motore di ricerca, l'anteprima di un link su una chat.
+       * Sta subito dopo il testo perché si scrive guardando quello — e infatti la
+       * frase si propone da sola a partire dal Sommario. */
+      type: 'Group',
+      label: 'Ottimizzazione per i motori di ricerca (SEO)',
+      options: { icon: 'travel_explore' },
+      elements: [
+        ctrl('#/properties/description', { options: { icon: 'description' } }),
+        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
+      ],
+    },
+    {
       type: 'Group',
       label: 'Classificazione',
       options: { icon: 'category' },
@@ -316,7 +335,6 @@ export const uischema = {
         // Tipi = altri @type, scelti dalle opzioni MACROCATEGORY, senza valori custom
         ctrl('#/properties/types', { options: { icon: 'category', select: true, suggestions: MACROCATEGORY } }),
         ctrl('#/properties/additionalType', { options: { icon: 'label' } }),
-        ctrl('#/properties/keywords', { options: { icon: 'sell' } }),
       ],
     },
     {

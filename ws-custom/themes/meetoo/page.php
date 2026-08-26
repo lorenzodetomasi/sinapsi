@@ -26,18 +26,21 @@ include_template('template-parts/header');
 <?php } ?>
 				<h1 class="mt-h1"><?php echo htmlspecialchars($titolo, ENT_QUOTES, 'UTF-8'); ?></h1>
 <?php
-// Il sommario è la stessa frase che sta nel meta description: se c'è, si legge
-// prima del corpo.
-if(!empty($rewrite_rule->description)){
+/* Il testo, una volta sola.
+ *
+ * Qui ne comparivano due: il sommario preso dalla mappa — che è la frase per i
+ * motori di ricerca — e subito sotto il corpo, che in quei contenuti conteneva la
+ * stessa cosa. Adesso i due testi sono campi distinti e questo stampa quello
+ * fatto per essere letto: `abstract` se c'è, la descrizione altrimenti. La frase
+ * SEO resta dov'è il suo posto, nella testa del documento.
+ *
+ * È XHTML già validato dall'editor: si stampa com'è, non si riscappa — è testo
+ * formattato, non l'input di un estraneo.
+ */
+$testo = meetoo_testo_visibile($e);
+if($testo !== ''){
 ?>
-				<p class="mt-sommario"><?php echo htmlspecialchars((string)$rewrite_rule->description, ENT_QUOTES, 'UTF-8'); ?></p>
-<?php } ?>
-<?php
-// La descrizione è XHTML già validato dall'editor: si stampa com'è, non si
-// riscappa — è testo formattato, non input di un estraneo.
-if(!empty($e->description)){
-?>
-				<div class="mt-corpo"><?php ws_echo($e->description->innerHTML()); ?></div>
+				<div class="mt-corpo"><?php ws_echo($testo); ?></div>
 <?php } ?>
 <?php
 if(!empty($e->url)){

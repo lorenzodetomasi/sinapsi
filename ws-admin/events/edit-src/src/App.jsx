@@ -4,6 +4,7 @@ import { vanillaRenderers, vanillaCells } from '@jsonforms/vanilla-renderers';
 import { schema, uischema } from './schema.js';
 import { fromJsonLd, toJsonLd, blankJsonLd, dedupeKeywords } from './jsonld-adapter.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
+import SeoDescrizioneRenderer, { seoDescrizioneTester } from './SeoDescrizioneRenderer.jsx';
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
 import ImageUploadRenderer, { imageUploadTester } from './ImageUploadRenderer.jsx';
 import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
@@ -34,6 +35,7 @@ const renderers = [
   ...vanillaRenderers,
   { tester: groupTester, renderer: GroupRenderer },
   { tester: xhtmlControlTester, renderer: XhtmlRichTextRenderer },
+  { tester: seoDescrizioneTester, renderer: SeoDescrizioneRenderer },
   { tester: labeledEnumTester, renderer: LabeledEnumRenderer },
   { tester: imageUploadTester, renderer: ImageUploadRenderer },
   { tester: tagArrayTester, renderer: TagArrayRenderer },
