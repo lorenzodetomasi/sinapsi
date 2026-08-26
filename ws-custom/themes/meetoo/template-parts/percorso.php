@@ -50,7 +50,10 @@ global $raccolta;
     </div>
   </div>
 
-  <!-- FAB: richiedi l'inserimento di un place / attività -->
+  <!-- Le due azioni della linea, in colonna in basso a destra: la legenda spiega
+       quello che si sta guardando, il «+» chiede di aggiungerci qualcosa. Stavano
+       una nell'header e una qui: sono due gesti sulla stessa cosa, e stanno vicini. -->
+  <button id="legend-fab" class="fab fab-secondario" title="Legenda delle tipologie di spiaggia" aria-label="Legenda delle tipologie di spiaggia"><span class="material-symbols-outlined">list_alt</span></button>
   <button id="add-place-fab" class="fab" title="Richiedi l'inserimento di un luogo o attività"><span class="material-symbols-outlined">add_location</span></button>
 
   <!-- Modale: servizio (a pagamento) di gestione della presenza sulle mappe + form contatti -->

@@ -18,20 +18,11 @@
 const carousel = document.getElementById('carousel');
 if (carousel) {
 
-/* La legenda è un'azione DI QUESTA pagina, e come tale entra nello slot azioni
- * dell'header condiviso invece di essere un pulsante disegnato a parte.
- *
- * Sta DENTRO il blocco, e non è un dettaglio: `apriLegenda` è dichiarata qui
- * dentro, e una funzione dichiarata in un blocco fuori da quel blocco non esiste.
- * Da fuori, `addEventListener('click', apriLegenda)` riceveva `undefined` — nessun
- * errore, nessun ascoltatore, e il pulsante non apriva niente. */
-(function intestazione() {
-  if (!window.Meetoo) { setTimeout(intestazione, 100); return; }
-  Meetoo.setActions(
-    '<button class="mt-icon-btn" id="legend-btn" title="Legenda delle tipologie di spiaggia">' +
-    '<span class="material-symbols-outlined">list_alt</span></button>'
-  );
-  var b = document.getElementById('legend-btn');
+/* La legenda sta in basso a destra, sopra il «+»: sono due gesti sulla stessa
+ * cosa — capire che cosa si guarda, e chiedere di aggiungerci qualcosa — e stanno
+ * vicini. Prima era un'azione dell'header, lontana dalla linea a cui si riferisce. */
+(function legenda() {
+  var b = document.getElementById('legend-fab');
   if (b) b.addEventListener('click', apriLegenda);
 })();
 

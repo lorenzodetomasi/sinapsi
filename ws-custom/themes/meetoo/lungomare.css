@@ -479,6 +479,15 @@ body.mt-percorso .mt-raccolta-pagina { display: none; }
 .fab { position: fixed; right: 20px; bottom: 20px; z-index: 900; width: 56px; height: 56px; border-radius: 50%; border: none; background: #c1272d; color: #fff; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.3); display: inline-flex; align-items: center; justify-content: center; }
 .fab .material-symbols-outlined { font-size: 1.8em; }
 .fab:hover { filter: brightness(1.05); }
+/* La seconda azione sta SOPRA la prima, non accanto: in basso a destra il pollice
+   arriva comodo in verticale, e la colonna dice che sono due gesti sulla stessa
+   cosa. L'azzurro è quello dei collegamenti — «guarda che cosa vuol dire» — mentre
+   il rosso resta all'azione che aggiunge. */
+.fab-secondario {
+  bottom: calc(20px + 56px + 12px);
+  background: var(--color-link);
+  color: var(--color-background-main);
+}
 
 /* --- Form contatti (dentro la modale) --- */
 .contact-intro { line-height: 1.55; margin: 10px 0 4px; }
