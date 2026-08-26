@@ -90,12 +90,11 @@ foreach($figli as $figlio){
 						<div class="card mt-in-arrivo">
 							<div class="card-icon"><?php echo mt_icona('more_horiz'); ?></div>
 							<div class="card-body">
-								<h3 class="card-title"><?php echo mt_esc($nomeF); ?></h3>
+								<h3 class="card-title"><?php echo mt_esc($nomeF); ?> <span class="mt-etichetta"><?php _e('In preparazione'); ?></span></h3>
 <?php if($nota !== ''){ ?>
 								<div class="card-meta"><span><?php echo mt_esc($nota); ?></span></div>
 <?php } ?>
 							</div>
-							<div class="card-arrow"><span class="mt-etichetta"><?php _e('In preparazione'); ?></span></div>
 						</div>
 <?php
 }

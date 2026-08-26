@@ -145,6 +145,23 @@ function meetoo_indirizzo($rel){
 	return isset($tab['perContenuto'][$rel]) ? ws_href($tab['perContenuto'][$rel]) : '';
 }
 
+/**
+ * Il titolo della pagina di un contenuto, dal suo @id.
+ *
+ * Serve alle collezioni che elencano RIFERIMENTI e basta — «Libri e letture» dice
+ * `{"@id": "events/clubdellibro-ostia-reading_party"}` e niente più, ed è giusto
+ * così: il nome sta nel documento di quell'evento, e ripeterlo qui vorrebbe dire
+ * tenerne due copie che prima o poi divergono. La mappa quel nome ce l'ha già.
+ */
+function meetoo_titolo_contenuto($rel){
+	$tab = meetoo_mappa();
+	$rel = trim((string)$rel, '/');
+	if(!isset($tab['perContenuto'][$rel])){
+		return '';
+	}
+	return $tab['perIndirizzo'][$tab['perContenuto'][$rel]] ?? '';
+}
+
 /** Il titolo della pagina che risponde a un indirizzo, '' se non risponde nessuno. */
 function meetoo_titolo($wspath){
 	$tab = meetoo_mappa();

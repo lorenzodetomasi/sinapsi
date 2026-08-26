@@ -36,7 +36,17 @@ include_template('template-parts/header');
 				<h1 class="mt-h1"><?php echo mt_esc($cfg['titolo']); ?></h1>
 				<p class="mt-sommario"><?php echo mt_esc($cfg['sommario']); ?><?php echo $zona !== '' ? ' — '.mt_esc($zona) : ''; ?></p>
 
-<?php meetoo_sezione($quale, $cfg, $tutto); ?>
+<?php
+meetoo_sezione($quale, $cfg, $tutto);
+/* Sulla pagina degli eventi ce ne sono altri due tipi, e sono altre due domande:
+ * che cosa si ripete, e che cosa è già successo. Le collezioni si vedono subito
+ * perché sono poche e sono il modo in cui un quartiere ha un ritmo; l'archivio no,
+ * si apre a chi lo chiede. */
+if($quale === 'eventi'){
+	meetoo_sezione('collezioni', $SEZIONI['collezioni'], $tutto);
+	meetoo_sezione('archivio', $SEZIONI['archivio'], $tutto);
+}
+?>
 			</article>
 <?php
 include_template('template-parts/footer');

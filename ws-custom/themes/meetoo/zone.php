@@ -125,10 +125,9 @@ foreach(array('eventi' => 'event', 'gruppi' => 'groups', 'luoghi' => 'place') as
 						<div class="card mt-in-arrivo">
 							<div class="card-icon"><?php echo mt_icona($p['icona']); ?></div>
 							<div class="card-body">
-								<h3 class="card-title"><?php echo mt_esc($p['titolo']); ?></h3>
+								<h3 class="card-title"><?php echo mt_esc($p['titolo']); ?> <span class="mt-etichetta"><?php _e('In preparazione'); ?></span></h3>
 								<div class="card-meta"><span><?php echo mt_esc($p['nota']); ?></span></div>
 							</div>
-							<div class="card-arrow"><span class="mt-etichetta"><?php _e('In preparazione'); ?></span></div>
 						</div>
 <?php } ?>
 					</div>

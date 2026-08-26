@@ -99,11 +99,15 @@
 .mt-in-arrivo:hover { border-color: var(--color-line); transform: none; }
 .mt-in-arrivo .card-icon { background: transparent; color: var(--color-hint); }
 .mt-in-arrivo .card-title { color: var(--color-hint); }
+/* L'etichetta sta DENTRO il titolo, non in coda alla card: in coda, con il suo
+   `nowrap`, si prendeva metà della larghezza di una colonna e al testo ne restava
+   un terzo — quattro righe di parole spezzate, illeggibili. Qui non toglie spazio
+   a nessuno, e se la riga è stretta va a capo con il titolo. */
 .mt-etichetta {
-  align-self: center; padding: .15em .6em; margin-right: .5rem;
-  font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+  display: inline-block; padding: .1em .5em; vertical-align: middle;
+  font-family: var(--font-family2); font-size: .68rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .04em; white-space: nowrap;
   color: var(--color-hint); border: 1px solid var(--color-line); border-radius: 999px;
-  white-space: nowrap;
 }
 
 /* Il segnaposto in fondo a un elenco che continua: occupa tutta la riga, anche

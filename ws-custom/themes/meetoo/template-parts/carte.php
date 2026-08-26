@@ -77,6 +77,13 @@ function mt_card($href, $testa, $titolo, $meta = array(), $o = array()){
 		.($meta ? '<div class="card-meta">'.implode('', $meta).'</div>' : '')
 		.'</div>';
 	$soc = !empty($o['social']) ? mt_social($o['social']) : '';
+	/* Senza indirizzo la card NON è un link: è una scheda. Capita nelle collezioni,
+	 * dove una voce può essere un posto che una pagina non ce l'ha (una fermata, un
+	 * varco). Mostrarla lo stesso è giusto — è informazione — ma farle finta di
+	 * essere cliccabile no. */
+	if(trim((string)$href) === ''){
+		return '<div class="'.$classe.' mt-scheda">'.$testa.$corpo.'</div>';
+	}
 	$link = '<a class="'.$classe.'" href="'.mt_esc($href).'"'.$attr.'>'
 		.$testa.$corpo
 		.($soc ? '' : '<div class="card-arrow">'.mt_icona($freccia).'</div>')

@@ -14,11 +14,16 @@
 (function () {
   'use strict';
 
+  // Le sezioni che qualcuno ha aperto a mano: da lì in poi si comportano come le
+  // altre.
+  var chiesti = {};
+
   /* Ogni segnaposto si carica una volta sola: senza questa guardia
    * l'osservatore, che scatta anche mentre l'elenco cresce, chiederebbe lo stesso
    * pezzo due volte e le card comparirebbero doppie. */
   function carica(segnaposto) {
     if (!segnaposto || segnaposto.dataset.inCorso) return;
+    chiesti[segnaposto.dataset.parte] = true;
     segnaposto.dataset.inCorso = '1';
     segnaposto.classList.add('caricando');
 
@@ -31,6 +36,10 @@
       .then(function (html) {
         segnaposto.insertAdjacentHTML('afterend', html);
         segnaposto.remove();
+        // Aperto una volta, l'archivio continua da solo come gli altri elenchi:
+        // chi l'ha chiesto lo sta leggendo.
+        var seguente = document.querySelector('.mt-altri[data-manuale]');
+        if (seguente && chiesti[seguente.dataset.parte]) seguente.removeAttribute('data-manuale');
         preferiti();
         osserva();
       })
@@ -53,7 +62,11 @@
 
   function osserva() {
     if (!osservatore) return;
-    var nodi = document.querySelectorAll('.mt-altri:not([data-visto])');
+    /* `data-manuale` = si carica solo se qualcuno lo chiede. È l'archivio degli
+     * eventi passati: chi apre una pagina vuole sapere che cosa succede, non che
+     * cosa è successo, e scaricarglielo comunque sarebbe la parte più pesante
+     * della pagina per la meno guardata. Il click funziona come per gli altri. */
+    var nodi = document.querySelectorAll('.mt-altri:not([data-visto]):not([data-manuale])');
     Array.prototype.forEach.call(nodi, function (s) {
       s.dataset.visto = '1';
       osservatore.observe(s);

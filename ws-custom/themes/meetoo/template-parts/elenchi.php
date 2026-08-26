@@ -51,12 +51,84 @@ function meetoo_sezioni($ampio = false){
 			'sommario' => __('Dove succedono le cose'),
 		),
 		'collezioni' => array(
-			'titolo' => __('Collezioni di eventi'), 'icona' => 'collections_bookmark', 'lista' => 'grid',
+			'titolo' => __('Eventi ricorrenti'), 'icona' => 'collections_bookmark', 'lista' => 'grid',
 			'primi' => $ampio ? 12 : 6,
-			'vuoto' => __('Nessuna collezione.'),
+			'vuoto' => __('Nessun appuntamento che si ripete.'),
 			'sommario' => __('Gli appuntamenti che si ripetono'),
 		),
+		/* L'archivio non si apre da solo: `primi => 0`. Chi arriva su una pagina
+		 * vuole sapere che cosa succede, non che cosa è successo — e su un gruppo
+		 * con dieci anni di attività l'archivio sarebbe la parte più pesante della
+		 * pagina, scaricata da tutti e letta da pochi. Si carica su richiesta, e da
+		 * lì in poi a pezzi come gli altri elenchi. */
+		/* Le voci di una COLLEZIONE: il lungomare, il bookcrossing, una categoria.
+		 * Non vengono da un indice ma dal contenuto della pagina stessa, e sono
+		 * tante (il lungomare ne ha 61): stesso caricamento pigro degli altri. */
+		'raccolta' => array(
+			'titolo' => __('In questa raccolta'), 'icona' => 'list', 'lista' => 'cards',
+			'primi' => 12,
+			'vuoto' => __('Questa raccolta è ancora vuota.'),
+			'sommario' => __('Che cosa c’è dentro'),
+		),
+		'archivio' => array(
+			'titolo' => __('Archivio eventi passati'), 'icona' => 'history', 'lista' => 'cards',
+			'primi' => 0, 'manuale' => true,
+			'vuoto' => __('Nessun evento passato.'),
+			'sommario' => __('Quello che è già successo'),
+			'apri' => __('Carica eventi passati'),
+		),
 	);
+}
+
+/**
+ * L'AMBITO di una pagina: di chi sono gli eventi che si stanno guardando.
+ *
+ * La stessa sezione «Prossimi eventi» compare in tre posti — la zona, la pagina di
+ * un gruppo, la pagina di un luogo — e ogni volta parla di un insieme diverso. Chi
+ * apre la pagina lo dichiara qui una volta, e da quel momento tutte le sezioni
+ * pescano dall'elenco giusto, compreso il pezzo chiesto dal browser mentre si
+ * scorre: se l'ambito non viaggiasse fin lì, il caricamento pigro continuerebbe
+ * con gli eventi di tutti.
+ */
+function meetoo_ambito($tipo = null, $chiave = null){
+	static $ambito = array('tipo' => '', 'chiave' => '');
+	if($tipo !== null){
+		$ambito = array('tipo' => (string)$tipo, 'chiave' => (string)$chiave);
+	}
+	return $ambito;
+}
+
+/**
+ * L'indice degli eventi dell'ambito corrente — i prossimi o l'archivio.
+ *
+ * Per un ORGANIZZATORE c'è già un indice suo (`by-organizer/<chiave>.json`), fatto
+ * apposta perché non si debba leggere tutto per mostrare cinque righe. Per un
+ * LUOGO no: si filtra l'indice generale sul suo @id, che con questi numeri costa
+ * una lettura e un giro di array.
+ */
+function meetoo_indice_eventi($archivio = false){
+	$ambito = meetoo_ambito();
+	$coda = $archivio ? '.archive.json' : '.json';
+	if($ambito['tipo'] === 'organizer' and $ambito['chiave'] !== ''){
+		$dati = meetoo_indice('by-organizer/'.$ambito['chiave'].$coda);
+		if($dati){
+			return $dati;
+		}
+	}
+	if($ambito['tipo'] === 'collection' and $ambito['chiave'] !== ''){
+		$dati = meetoo_indice('by-collection/'.$ambito['chiave'].$coda);
+		if($dati){
+			return $dati;
+		}
+	}
+	$tutti = meetoo_indice($archivio ? 'events.archive.json' : 'events.json');
+	if($ambito['tipo'] === 'place' and $ambito['chiave'] !== ''){
+		$chiave = $ambito['chiave'];
+		return array_values(array_filter($tutti, function($ev) use ($chiave){
+			return (string)($ev['place']['id'] ?? '') === $chiave;
+		}));
+	}
+	return $tutti;
 }
 
 /**
@@ -91,6 +163,20 @@ function meetoo_indice($nome){
 	return $letti[$nome] = (isset($dati['events']) && is_array($dati['events']) ? $dati['events'] : $dati);
 }
 
+/**
+ * L'@id a cui punta un nodo del contenuto: nel passaggio da JSON a XML quello della
+ * radice diventa l'attributo `id`, quello di un nodo interno un `xlink:href`.
+ */
+function meetoo_riferimento_nodo($nodo){
+	$href = $nodo->attributes('http://www.w3.org/1999/xlink');
+	$id = ($href !== null and isset($href->href)) ? (string)$href->href : '';
+	if($id === ''){
+		$suoi = $nodo->attributes();
+		$id = ($suoi !== null and isset($suoi->id)) ? (string)$suoi->id : '';
+	}
+	return trim($id);
+}
+
 /** L'icona di un luogo, dal suo tipo: un parco non è un negozio. */
 function meetoo_icona_luogo($tipi){
 	$t = strtolower(implode(' ', (array)$tipi));
@@ -114,10 +200,70 @@ function meetoo_voci($quale){
 	}
 	$out = array();
 
+	if($quale === 'raccolta'){
+		global $ws_content;
+		$ent = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
+		$voci = !empty($ent->itemListElement) ? $ent->itemListElement : array();
+		foreach($voci as $riga){
+			// Un ListItem porta la cosa dentro `item`; si accetta anche la cosa nuda,
+			// perché una lista scritta a mano può saltare l'involucro.
+			$m = !empty($riga->item) ? $riga->item : $riga;
+			$id = meetoo_riferimento_nodo($m);
+			/* Il nome può non esserci: una collezione di riferimenti — «Libri e
+			 * letture» — dice solo a che cosa punta, e il nome sta nel documento in
+			 * fondo al riferimento. La mappa lo sa già, e chiederglielo evita di
+			 * tenerne una seconda copia qui che prima o poi diverge. */
+			$nome = trim((string)($m->name ?? ''));
+			if($nome === '' and $id !== ''){
+				$nome = meetoo_titolo_contenuto($id);
+			}
+			if($nome === ''){
+				continue;
+			}
+			$note = array();
+			$tipo = trim((string)($m->additionalType ?? ''));
+			if($tipo !== ''){
+				$note[] = $tipo;
+			}
+			$via = trim((string)($m->address->streetAddress ?? ''));
+			if($via !== ''){
+				$note[] = $via;
+			}
+			// L'icona dice di che cosa si tratta: un evento, un gruppo, un posto.
+			if(strpos($id, 'events/') === 0){
+				$icona = 'collections_bookmark';
+			} else if(strpos($id, 'organizations/') === 0){
+				$icona = mt_org_icona((string)($m->{'@type'} ?? ''), $nome);
+			} else {
+				$icona = meetoo_icona_luogo(array((string)($m->{'@type'} ?? ''), $tipo, $nome));
+			}
+			$out[] = mt_card_tile(array(
+				'href' => $id !== '' ? meetoo_indirizzo($id) : '',
+				'icon' => $icona,
+				'title' => $nome,
+				'meta' => implode(' · ', $note),
+			));
+		}
+		return $fatte[$quale] = $out;
+	}
+
+	if($quale === 'archivio'){
+		$passati = meetoo_indice_eventi(true);
+		usort($passati, function($a, $b){
+			return strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''));
+		});
+		foreach($passati as $ev){
+			$href = meetoo_indirizzo($ev['path'] ?? '');
+			if($href === ''){ continue; }
+			$out[] = mt_card_evento($ev, array('href' => $href));
+		}
+		return $fatte[$quale] = $out;
+	}
+
 	if($quale === 'eventi' or $quale === 'collezioni'){
 		$ora = time();
 		$scelti = array();
-		foreach(meetoo_indice('events.json') as $ev){
+		foreach(meetoo_indice_eventi() as $ev){
 			$serie = (($ev['kind'] ?? '') === 'series');
 			if($quale === 'collezioni'){
 				if($serie){ $scelti[] = $ev; }
@@ -215,14 +361,16 @@ function meetoo_voci($quale){
  * con quella sezione stampata per intero. Con JavaScript non ci si arriva quasi
  * mai, perché le card successive arrivano prima, mentre si scorre.
  */
-function meetoo_altri($quale, $da, $totale){
+function meetoo_altri($quale, $da, $totale, $manuale = false, $etichetta = ''){
 	if($da >= $totale){
 		return '';
 	}
 	$restanti = $totale - $da;
-	return '<div class="mt-altri" data-parte="'.mt_esc($quale).'" data-da="'.(int)$da.'" data-totale="'.(int)$totale.'">'
-		.'<a class="card-act" rel="nofollow" href="?tutti='.urlencode($quale).'#'.mt_esc($quale).'">'
-		.mt_icona('expand_more').'<span>'.mt_esc(sprintf(__('Mostra altri %d'), $restanti)).'</span>'
+	$testo = $etichetta !== '' ? $etichetta : sprintf(__('Mostra altri %d'), $restanti);
+	return '<div class="mt-altri" data-parte="'.mt_esc($quale).'" data-da="'.(int)$da.'" data-totale="'.(int)$totale.'"'
+		.($manuale ? ' data-manuale="1"' : '').'>'
+		.'<a class="card-act'.($manuale ? ' primary' : '').'" rel="nofollow" href="?tutti='.urlencode($quale).'#'.mt_esc($quale).'">'
+		.mt_icona($manuale ? 'history' : 'expand_more').'<span>'.mt_esc($testo).'</span>'
 		.'</a></div>';
 }
 
@@ -249,6 +397,7 @@ function meetoo_frammento(){
 
 /** Una sezione a elenco, con il suo conteggio e la sua coda pigra. */
 function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = ''){
+	$manuale = !empty($cfg['manuale']);
 	$voci = meetoo_voci($quale);
 	$totale = count($voci);
 	$quante = ($tutto === $quale) ? $totale : min($totale, (int)$cfg['primi']);
@@ -267,7 +416,7 @@ function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = ''){
 					<div class="<?php echo mt_esc($cfg['lista']); ?>" data-lista="<?php echo mt_esc($quale); ?>">
 <?php
 	echo implode("\n", array_slice($voci, 0, $quante));
-	echo meetoo_altri($quale, $quante, $totale);
+	echo meetoo_altri($quale, $quante, $totale, $manuale, $manuale ? (string)($cfg['apri'] ?? '') : '');
 ?>
 					</div>
 <?php if($quante < $totale and $titoloLink !== ''){ ?>
