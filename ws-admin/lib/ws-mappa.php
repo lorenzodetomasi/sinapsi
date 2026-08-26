@@ -30,34 +30,153 @@ if (!function_exists('ws_mappa_wspath')) {
         return end($p) ?: '';
     }
 
+    /* =======================================================================
+     * L'ALBERO DELLE ZONE
+     *
+     * L'indirizzo di una pagina dice dove sei: `/roma/municipio10/lido-di-ostia`.
+     * Quell'albero è CONTENUTO — sta in `index/index.json`, città dentro cui
+     * municipi dentro cui quartieri — e qui si legge per sapere, di ogni zona, il
+     * percorso completo. Aggiungere un quartiere è aggiungere un nodo lì, non una
+     * riga qui.
+     *
+     * I file NON si spostano: `places/lido-di-ostia` resta dov'è, con il suo @id.
+     * L'indirizzo è una decisione di instradamento, e questo è il posto dove si
+     * prende — che è esattamente il mestiere di questo file.
+     * ===================================================================== */
+
+    /** Ogni nodo dell'albero: slug → [percorso, nome, tipo, profondità, padre]. */
+    function ws_mappa_zone(string $localeDir): array {
+        $f = "$localeDir/index/index.json";
+        if (!is_file($f)) return [];
+        $doc = json_decode((string)@file_get_contents($f), true);
+        if (!is_array($doc)) return [];
+        $e = $doc['mainEntity'] ?? $doc;
+        $radice = $e['hasPart']['itemListElement'] ?? [];
+
+        $zone = [];
+        $scendi = function ($nodo, string $prefisso, int $liv, string $padre) use (&$scendi, &$zone) {
+            $slug = trim((string)($nodo['identifier'] ?? ''));
+            if ($slug === '') return;
+            $percorso = ($prefisso === '' ? '' : "$prefisso/") . $slug;
+            $zone[$slug] = [
+                'percorso' => $percorso,
+                'nome' => (string)($nodo['name'] ?? $slug),
+                'tipo' => (string)(is_array($nodo['@type'] ?? '') ? reset($nodo['@type']) : ($nodo['@type'] ?? 'Place')),
+                'livello' => $liv,
+                'padre' => $padre,
+                'descrizione' => (string)($nodo['description'] ?? ''),
+            ];
+            foreach ((array)($nodo['containsPlace'] ?? []) as $figlio) {
+                if (is_array($figlio)) $scendi($figlio, $percorso, $liv + 1, $slug);
+            }
+        };
+        foreach ($radice as $voce) {
+            $nodo = is_array($voce) ? ($voce['item'] ?? $voce) : null;
+            if (is_array($nodo)) $scendi($nodo, '', 0, '');
+        }
+        return $zone;
+    }
+
     /**
-     * L'indirizzo e il template di un'entità, dal suo percorso e dal suo tipo.
+     * Quale zona rivendica un CAP. Lo dichiara la zona stessa, in
+     * `meetoo:postalCodes`: è l'unico aggancio pulito fra una zona e le sue cose.
+     * La `addressLocality` scritta a mano dice «Ostia», «Ostia Lido», «Lido di
+     * Ostia» e un terzo delle volte niente — con quella non si instrada.
+     */
+    function ws_mappa_cap(string $localeDir, array $zone): array {
+        $out = [];
+        foreach (array_keys($zone) as $slug) {
+            $f = "$localeDir/places/$slug/index.json";
+            if (!is_file($f)) continue;
+            $doc = json_decode((string)@file_get_contents($f), true);
+            if (!is_array($doc)) continue;
+            $e = $doc['mainEntity'] ?? $doc;
+            foreach ((array)($e['meetoo:postalCodes'] ?? []) as $cap) {
+                $cap = trim((string)$cap);
+                if ($cap !== '') $out[$cap] = $slug;
+            }
+        }
+        return $out;
+    }
+
+    /** Il CAP dentro un @id di luogo: `places/IT00122/lamanusa` → `IT00122`. */
+    function ws_mappa_cap_di(string $idLuogo): string {
+        return preg_match('#^places/([A-Z]{2}\d{4,5})/#', trim($idLuogo, '/'), $m) ? $m[1] : '';
+    }
+
+    /**
+     * L'indirizzo e il template di un'entità.
+     *
+     * `$ctx` porta le tabelle che servono a sapere DOVE sta una cosa: l'albero
+     * delle zone, i CAP che ognuna rivendica, e la zona degli organizzatori
+     * (dedotta dagli eventi che organizzano). Un'entità che non si riesce ad
+     * ancorare a nessuna zona non sparisce: prende l'indirizzo piatto di prima e
+     * il generatore lo segnala, perché un contenuto irraggiungibile è peggio di un
+     * contenuto in un posto discutibile.
+     *
      * Ritorna [wspath, template, tipo] oppure null per ciò che pagina non è.
      */
-    function ws_mappa_wspath(string $rel, array $tipi): ?array {
+    function ws_mappa_wspath(string $rel, array $tipi, array $ctx = [], array $e = []): ?array {
         $slug = ws_mappa_slug($rel);
         $lista = in_array('ItemList', $tipi, true);
         $serie = in_array('EventSeries', $tipi, true);
+        $zone = $ctx['zone'] ?? [];
+        $cap = $ctx['cap'] ?? [];
+
+        // Il percorso di una zona, dal suo slug.
+        $dove = function (string $zonaSlug) use ($zone): string {
+            return $zone[$zonaSlug]['percorso'] ?? '';
+        };
 
         if (strpos($rel, 'events/') === 0) {
-            // Una collezione di eventi e un evento singolo vivono nello stesso posto:
-            // per chi legge sono la stessa cosa, un appuntamento che si ripete o no.
-            return ['/eventi/' . $slug, $serie ? 'collection' : 'event', $serie ? 'EventSeries' : 'Event'];
+            // La zona di un evento la sa gia' la tabella: per un evento singolo e'
+            // quella del luogo, per una collezione quella dove stanno le sue
+            // occorrenze — una collezione non ha un luogo suo.
+            $zonaSlug = $ctx['eventi'][$slug] ?? '';
+            $percorso = $zonaSlug ? $dove($zonaSlug) : '';
+            $base = $percorso ? "/$percorso/eventi" : '/eventi';
+            // Una collezione di eventi e un evento singolo vivono nello stesso
+            // posto: per chi legge sono la stessa cosa, un appuntamento che si
+            // ripete o no.
+            return ["$base/$slug", $serie ? 'collection' : 'event', $serie ? 'EventSeries' : 'Event'];
         }
+
         if (strpos($rel, 'places/') === 0) {
-            // Una ZONA — `places/lido-di-ostia/` — è un livello solo sotto places:
-            // non è un posto dove si va, è il territorio dentro cui si sta. Sta alla
-            // radice perché è la porta d'ingresso del sito per chi ci abita.
-            if (substr_count(trim($rel, '/'), '/') === 1) return ['/' . $slug, 'zone', 'AdministrativeArea'];
-            // Le liste curate (Lungomare, BookCrossing) sono percorsi, non luoghi:
-            // stanno alla radice perché è così che le si nomina e le si condivide.
-            if ($lista) return ['/' . $slug, 'collection', 'ItemList'];
-            return ['/luoghi/' . $slug, 'place', 'Place'];
+            $pezzi = explode('/', trim($rel, '/'));
+            // Una ZONA — `places/lido-di-ostia` — non è un posto dove si va: è il
+            // territorio dentro cui si sta, e il suo indirizzo è il percorso intero.
+            if (count($pezzi) === 2 && isset($zone[$pezzi[1]])) {
+                return ['/' . $dove($pezzi[1]), 'zone', 'AdministrativeArea'];
+            }
+            // Le collezioni curate di una zona (il lungomare, il bookcrossing)
+            // stanno dentro la zona, perché è lì che si nominano e si condividono.
+            if ($lista && count($pezzi) === 3 && isset($zone[$pezzi[1]])) {
+                return ['/' . $dove($pezzi[1]) . "/$slug", 'collection', 'ItemList'];
+            }
+            // Un luogo sta nella zona che rivendica il suo CAP.
+            $zonaSlug = $cap[$pezzi[1] ?? ''] ?? '';
+            $percorso = $zonaSlug ? $dove($zonaSlug) : '';
+            return [($percorso ? "/$percorso/luoghi/$slug" : "/luoghi/$slug"), 'place', 'Place'];
         }
+
         if (strpos($rel, 'organizations/') === 0) {
-            return ['/organizzatori/' . $slug, 'organizer', 'Organization'];
+            // Un gruppo non ha un indirizzo suo: la sua zona è quella dove fa le
+            // cose, dedotta dagli eventi che organizza.
+            $zonaSlug = $ctx['org'][$slug] ?? '';
+            $percorso = $zonaSlug ? $dove($zonaSlug) : '';
+            return [($percorso ? "/$percorso/gruppi/$slug" : "/gruppi/$slug"), 'organizer', 'Organization'];
         }
         return null; // users, persons, brand, _index, _trash: non sono pagine
+    }
+
+    /** L'@id di un riferimento, che sia oggetto, stringa o elenco. */
+    function ws_ref_id_semplice($x): string {
+        if (is_string($x)) return $x;
+        if (is_array($x)) {
+            if (isset($x['@id'])) return (string)$x['@id'];
+            foreach ($x as $v) { $id = ws_ref_id_semplice($v); if ($id !== '') return $id; }
+        }
+        return '';
     }
 
     /**
@@ -107,6 +226,141 @@ if (!function_exists('ws_mappa_wspath')) {
     }
 
     /**
+     * La zona di ogni evento.
+     *
+     * Un evento singolo sta dove sta il suo luogo — e il luogo può essere un posto
+     * con un CAP (`places/IT00122/lamanusa`) oppure la ZONA stessa, quando si dice
+     * «a Lido di Ostia» senza precisare dove: sono due scritture legittime della
+     * stessa cosa, e vanno accettate tutte e due.
+     *
+     * Una COLLEZIONE non ha un luogo: si ripete, e ogni volta magari altrove. La
+     * sua zona è quella dove stanno le sue occorrenze. Senza questa regola le
+     * collezioni finivano tutte fuori dall'albero, che è il posto peggiore per una
+     * cosa che invece il territorio ce l'ha eccome.
+     */
+    function ws_mappa_zone_eventi(string $localeDir, array $cap, array $zone): array {
+        $doc = [];
+        foreach (glob("$localeDir/events/*/index.json") as $f) {
+            $j = json_decode((string)@file_get_contents($f), true);
+            if (is_array($j)) $doc[basename(dirname($f))] = $j['mainEntity'] ?? $j;
+        }
+        $zonaDi = function ($e) use ($cap, $zone): string {
+            $id = trim(ws_ref_id_semplice($e['location'] ?? null), '/');
+            $c = ws_mappa_cap_di($id);
+            if ($c !== '' && isset($cap[$c])) return $cap[$c];
+            $pezzi = explode('/', $id);
+            // `places/lido-di-ostia` — la zona nominata direttamente.
+            if (count($pezzi) >= 2 && $pezzi[0] === 'places' && isset($zone[$pezzi[1]])) return $pezzi[1];
+            return '';
+        };
+        $out = [];
+        foreach ($doc as $slug => $e) {
+            $z = $zonaDi($e);
+            if ($z !== '') $out[$slug] = $z;
+        }
+        // Le collezioni: la zona più frequente fra le loro occorrenze.
+        foreach ($doc as $slug => $e) {
+            if (isset($out[$slug])) continue;
+            $conta = [];
+            foreach ((array)($e['subEvent'] ?? []) as $sub) {
+                $occ = ws_mappa_slug(ws_ref_id_semplice($sub));
+                if ($occ !== '' && isset($out[$occ])) $conta[$out[$occ]] = ($conta[$out[$occ]] ?? 0) + 1;
+            }
+            if ($conta) { arsort($conta); $out[$slug] = (string)array_key_first($conta); }
+        }
+        return $out;
+    }
+
+    /**
+     * La zona di ogni organizzatore, dedotta dagli eventi che organizza.
+     *
+     * Un'organizzazione non ha un indirizzo suo — e quando ce l'ha è quello della
+     * sede, che non è dove fa le cose. Quindi si guarda dove succedono i suoi
+     * eventi: la zona più frequente vince. Chi non ha ancora organizzato niente
+     * resta senza, e prende l'indirizzo piatto.
+     */
+    function ws_mappa_zone_organizzatori(string $localeDir, array $eventi): array {
+        $conta = [];
+        foreach (glob("$localeDir/events/*/index.json") as $f) {
+            $doc = json_decode((string)@file_get_contents($f), true);
+            if (!is_array($doc)) continue;
+            $e = $doc['mainEntity'] ?? $doc;
+            $zona = $eventi[basename(dirname($f))] ?? '';
+            if ($zona === '') continue;
+            foreach ((array)($e['organizer'] ?? []) as $org) {
+                $id = ws_ref_id_semplice($org);
+                if (strpos($id, 'organizations/') !== 0) continue;
+                $conta[ws_mappa_slug($id)][$zona] = ($conta[ws_mappa_slug($id)][$zona] ?? 0) + 1;
+            }
+            // `organizer` può essere un oggetto solo: allora il foreach di sopra
+            // scorre le sue CHIAVI, e non trova niente. Si riprova a leggerlo intero.
+            $id = ws_ref_id_semplice($e['organizer'] ?? null);
+            if (strpos($id, 'organizations/') === 0) {
+                $conta[ws_mappa_slug($id)][$zona] = ($conta[ws_mappa_slug($id)][$zona] ?? 0) + 1;
+            }
+        }
+        $out = [];
+        foreach ($conta as $slug => $zone) {
+            arsort($zone);
+            $out[$slug] = (string)array_key_first($zone);
+        }
+        return $out;
+    }
+
+    /**
+     * Le pagine che non nascono da una cartella.
+     *
+     * Due famiglie. I LIVELLI INTERMEDI dell'albero — Roma, Municipio X — che
+     * esistono perché chi accorcia un indirizzo a mano deve trovarci qualcosa, e
+     * perché domani ci cresceranno dentro altri quartieri. E i tre ELENCHI di ogni
+     * zona attiva: eventi, gruppi, luoghi. Prima erano ancore dentro la pagina
+     * della zona; sono pagine, perché sono la risposta a tre domande diverse.
+     *
+     * Il contenuto è quello della zona (o l'indice, per i livelli intermedi): il
+     * template sa già che cosa mostrare, e glielo dice il parametro nella query.
+     */
+    function ws_mappa_generate(string $localeDir, array $zone): array {
+        $voci = [];
+        $elenchi = [
+            'eventi' => ['Eventi', 'Le cose da fare nei prossimi giorni'],
+            'gruppi' => ['Gruppi', 'Chi anima il territorio'],
+            'luoghi' => ['Luoghi', 'Dove succedono le cose'],
+        ];
+        foreach ($zone as $slug => $z) {
+            $attiva = is_file("$localeDir/places/$slug/index.json");
+            if (!$attiva) {
+                // Livello senza un documento suo: la pagina la costruisce l'albero.
+                $voci[] = [
+                    'wspath' => '/' . $z['percorso'],
+                    'rel' => 'index',
+                    'template' => 'area',
+                    'tipo' => $z['tipo'],
+                    'title' => $z['nome'],
+                    'description' => ws_mappa_descrizione($z['descrizione']),
+                    'dateModified' => date('c'),
+                    'extra' => ['zona' => $slug],
+                ];
+                continue;
+            }
+            $doc = json_decode((string)@file_get_contents("$localeDir/places/$slug/index.json"), true);
+            $e = is_array($doc) ? ($doc['mainEntity'] ?? $doc) : [];
+            foreach ($elenchi as $quale => $testi) {
+                $voci[] = [
+                    'wspath' => '/' . $z['percorso'] . '/' . $quale,
+                    'rel' => "places/$slug",
+                    'template' => 'elenco',
+                    'tipo' => 'CollectionPage',
+                    'title' => $testi[0] . ' — ' . $z['nome'],
+                    'description' => $testi[1] . ' a ' . $z['nome'] . '.',
+                    'dateModified' => (string)($doc['dateModified'] ?? date('c')),
+                    'extra' => ['elenco' => $quale],
+                ];
+            }
+        }
+        return $voci;
+    }
+
+    /**
      * Costruisce la mappa. In anteprima non scrive: ritorna che cosa scriverebbe.
      * Ritorna ['changes'=>int, 'voci'=>[[wspath, rel, template]], 'problemi'=>[]].
      */
@@ -132,6 +386,27 @@ if (!function_exists('ws_mappa_wspath')) {
             $presi['/'] = 'index';
         }
 
+        /* Le tabelle che dicono DOVE sta ogni cosa. Si costruiscono una volta, prima
+         * di cominciare: l'albero delle zone dal contenuto, i CAP che ognuna
+         * rivendica, e la zona di ogni organizzatore — che non ce l'ha scritta da
+         * nessuna parte e si deduce dagli eventi che organizza. È il senso di «chi
+         * anima il territorio»: il territorio è quello dove fa le cose. */
+        $zone = ws_mappa_zone($localeDir);
+        $cap = ws_mappa_cap($localeDir, $zone);
+        $eventi = ws_mappa_zone_eventi($localeDir, $cap, $zone);
+        $ctx = [
+            'zone' => $zone, 'cap' => $cap, 'eventi' => $eventi,
+            'org' => ws_mappa_zone_organizzatori($localeDir, $eventi),
+        ];
+
+        // Le pagine che non hanno una cartella: i livelli intermedi dell'albero
+        // (Roma, Municipio X) e i tre elenchi di ogni zona attiva.
+        foreach (ws_mappa_generate($localeDir, $zone) as $g) {
+            if (isset($presi[$g['wspath']])) { $problemi[] = "{$g['wspath']}: indirizzo già occupato"; continue; }
+            $presi[$g['wspath']] = $g['rel'];
+            $voci[] = $g;
+        }
+
         foreach (ws_mappa_entita($localeDir) as $rel) {
             $raw = (string)@file_get_contents("$localeDir/$rel/index.json");
             $doc = json_decode($raw, true);
@@ -139,9 +414,15 @@ if (!function_exists('ws_mappa_wspath')) {
             $e = (isset($doc['mainEntity']) && is_array($doc['mainEntity'])) ? $doc['mainEntity'] : $doc;
             $tipi = array_map('strval', (array)($e['@type'] ?? []));
 
-            $regola = ws_mappa_wspath($rel, $tipi);
+            $regola = ws_mappa_wspath($rel, $tipi, $ctx, $e);
             if ($regola === null) continue;
             list($wspath, $template, $tipo) = $regola;
+            // Fuori da ogni zona: la pagina c'è lo stesso, con l'indirizzo piatto,
+            // ma va detto — un contenuto senza territorio, qui, è un contenuto che
+            // nessuno troverà navigando.
+            if (strpos(ltrim($wspath, '/'), 'eventi/') === 0 || strpos(ltrim($wspath, '/'), 'luoghi/') === 0 || strpos(ltrim($wspath, '/'), 'gruppi/') === 0) {
+                $problemi[] = "$rel: nessuna zona lo rivendica, resta su $wspath";
+            }
 
             // Due entità che chiedono lo stesso indirizzo: la seconda si qualifica
             // con il segmento che le distingue (per i luoghi, il CAP). Meglio un
@@ -183,6 +464,12 @@ if (!function_exists('ws_mappa_wspath')) {
         $out .= "<urlset xml:lang=\"$lang\" xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n";
         foreach ($voci as $v) {
             $q = "/?theme=$sito&amp;template={$v['template']}&amp;content=$sito/$locale/{$v['rel']}";
+            /* I parametri in piu' viaggiano nella query, come tutto il resto: il CMS
+             * li mette in $ws_query e il template li legge da li'. E' cosi' che la
+             * stessa pagina di zona serve tre elenchi diversi senza tre contenuti. */
+            foreach ((array)($v['extra'] ?? []) as $k => $val) {
+                $q .= '&amp;' . rawurlencode((string)$k) . '=' . rawurlencode((string)$val);
+            }
             $out .= "\t<url>\n";
             $out .= "\t\t<wspath>{$v['wspath']}</wspath>\n";
             $out .= "\t\t<query>$q</query>\n";

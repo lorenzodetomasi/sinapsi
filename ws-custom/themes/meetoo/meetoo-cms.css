@@ -92,6 +92,20 @@
 .mt-esplora { margin-top: 0; }
 .mt-esplora .grid { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
 
+/* Quello che ci sarà, ma non ancora: una card che NON è un collegamento, e si deve
+   vedere che non lo è. Un riquadro che sembra cliccabile e non fa niente è peggio
+   di uno spento — e la riga non è un buco, dice di che cosa la zona si occuperà. */
+.mt-in-arrivo { border-style: dashed; background: transparent; }
+.mt-in-arrivo:hover { border-color: var(--color-line); transform: none; }
+.mt-in-arrivo .card-icon { background: transparent; color: var(--color-hint); }
+.mt-in-arrivo .card-title { color: var(--color-hint); }
+.mt-etichetta {
+  align-self: center; padding: .15em .6em; margin-right: .5rem;
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--color-hint); border: 1px solid var(--color-line); border-radius: 999px;
+  white-space: nowrap;
+}
+
 /* Il segnaposto in fondo a un elenco che continua: occupa tutta la riga, anche
    dentro una griglia, perché non è una card ma la fine di un elenco. */
 .mt-altri { grid-column: 1 / -1; display: flex; justify-content: center; padding: .5rem 0; }

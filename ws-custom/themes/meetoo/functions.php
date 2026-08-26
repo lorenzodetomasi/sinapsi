@@ -85,6 +85,73 @@ if(!empty($rewrite_rule->wspath)){
 }
 
 /**
+ * Le due tabelle della mappa, costruite in una passata sola.
+ *
+ * `perContenuto`: da un contenuto (`places/IT00122/lamanusa`) al suo indirizzo.
+ * `perIndirizzo`: da un indirizzo al titolo della pagina che ci risponde.
+ *
+ * Ottanta voci, una lettura. Farne una ricerca XPath per ogni card costerebbe
+ * ottanta volte tanto per la stessa risposta.
+ */
+function meetoo_mappa(){
+	global $ws_sitemap;
+	static $tab = null;
+	if($tab !== null){
+		return $tab;
+	}
+	$tab = array('perContenuto' => array(), 'perIndirizzo' => array());
+	foreach($ws_sitemap->url as $voce){
+		$q = (string)$voce->query;
+		$wspath = trim((string)$voce->wspath, '/');
+		$tab['perIndirizzo'][$wspath] = trim((string)$voce->title);
+		// Le pagine GENERATE (i tre elenchi, i livelli intermedi) condividono il
+		// contenuto della zona: qui si cerca la pagina PROPRIA di un contenuto, e
+		// quelle non lo sono.
+		if(strpos($q, 'elenco=') !== false or strpos($q, 'zona=') !== false){
+			continue;
+		}
+		if(!preg_match('/[?&]content=([^&]*)/', $q, $m)){
+			continue;
+		}
+		$pezzi = explode('/', trim(urldecode($m[1]), '/'));
+		if(count($pezzi) < 3){
+			continue;   // sito/locale/… : meno di così non è un contenuto
+		}
+		array_shift($pezzi);   // sito
+		array_shift($pezzi);   // locale
+		$tab['perContenuto'][implode('/', $pezzi)] = $wspath;
+	}
+	return $tab;
+}
+
+/**
+ * L'indirizzo di un contenuto, chiesto alla MAPPA.
+ *
+ * Da quando gli indirizzi dicono dove sei — `/roma/municipio10/lido-di-ostia/…` —
+ * non si possono più costruire nel template incollando `luoghi/` davanti a uno
+ * slug: la zona di un luogo dipende dal suo CAP, quella di un evento dal luogo,
+ * quella di un gruppo dagli eventi che organizza. Quelle regole stanno in un posto
+ * solo, `ws-mappa.php`, e il loro risultato è la mappa. Qui la si legge.
+ *
+ * Un contenuto senza pagina ritorna '': chi chiama decide se saltarlo o mostrarlo
+ * spento. Meglio che un collegamento che porta a un 404.
+ */
+function meetoo_indirizzo($rel){
+	$rel = trim((string)$rel, '/');
+	if($rel === ''){
+		return '';
+	}
+	$tab = meetoo_mappa();
+	return isset($tab['perContenuto'][$rel]) ? ws_href($tab['perContenuto'][$rel]) : '';
+}
+
+/** Il titolo della pagina che risponde a un indirizzo, '' se non risponde nessuno. */
+function meetoo_titolo($wspath){
+	$tab = meetoo_mappa();
+	return $tab['perIndirizzo'][trim((string)$wspath, '/')] ?? '';
+}
+
+/**
  * Il testo che si legge nella pagina.
  *
  * Due campi, due mestieri: il SOMMARIO (`abstract`) è quello che legge una

@@ -69,6 +69,21 @@ $ws_sito_richiesto = '';    // …e il sito che quel prefisso serve: servono al 
 // «nessuna regola» è un esito normale, non un errore.
 $trovate = $ws_sitemap->xpath('./url[./wspath = "/'.$wspath.'"]');
 $rewrite_rule = $trovate[0] ?? null;
+/* Le pagine di un sito INNESTATO non rispondono anche senza il loro prefisso.
+ * La mappa è una sola, e i wspath di meetoo ci stanno dentro nudi — quindi
+ * `/gruppi/qualcuno` trovava la voce di meetoo e la serviva, senza `/meetoo`
+ * davanti: la stessa pagina a due indirizzi, e quello sbagliato senza nemmeno il
+ * prefisso nei collegamenti. Chi appartiene a un ospite si raggiunge dal suo
+ * prefisso e basta. */
+if(!empty($rewrite_rule) and defined('WS_MOUNTS') and is_array(WS_MOUNTS)){
+	$q = (string)$rewrite_rule->query;
+	foreach(WS_MOUNTS as $sito){
+		if(strpos($q, 'content='.$sito.'/') !== false){
+			$rewrite_rule = null;
+			break;
+		}
+	}
+}
 /* Siti INNESTATI. Più siti convivono in un dominio solo — oggi meetoo dentro
  * isotype.org, domani su meetoo.it — e i loro contenuti non devono saperlo: i
  * wspath restano quelli del giorno in cui avranno un dominio proprio, e il

@@ -21,13 +21,6 @@ $wspath = trim((string)($ws_query['wspath'] ?? ''), '/');
 $entita = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
 $tipo = (string)($rewrite_rule->type ?? '');
 
-$etichette = array(
-	'eventi' => __('Eventi'),
-	'luoghi' => __('Luoghi'),
-	'organizzatori' => __('Chi organizza'),
-	'lungomare' => __('Lungomare'),
-	'bookcrossing' => __('BookCrossing'),
-);
 
 $briciole = array();
 if($wspath !== ''){
@@ -37,7 +30,25 @@ if($wspath !== ''){
 	foreach($pezzi as $i => $pezzo){
 		$corso = ($corso === '') ? $pezzo : $corso.'/'.$pezzo;
 		$ultimo = ($i === count($pezzi) - 1);
-		$nome = ($ultimo and !empty($entita->name)) ? (string)$entita->name : ($etichette[$pezzo] ?? $pezzo);
+		/* L'etichetta la sa la MAPPA: ogni indirizzo ha il suo titolo, e quello è
+		 * il nome che la pagina porta. Prima c'era una tabellina qui dentro con
+		 * dentro «eventi», «luoghi», «organizzatori»: si scriveva a mano, invecchiava
+		 * a ogni cambio di struttura, e con gli indirizzi per zona avrebbe stampato
+		 * «roma» e «municipio10» come se fossero nomi di posti. */
+		$nome = meetoo_titolo($corso);
+		/* Il titolo di una pagina si qualifica — «Eventi — Lido di Ostia» — perché
+		 * nella scheda del browser e nei risultati di ricerca deve reggersi da solo.
+		 * In una briciola no: lì il contesto è la briciola prima, e ripeterlo la
+		 * allunga senza dire niente. */
+		if(strpos($nome, ' — ') !== false){
+			$nome = trim(substr($nome, 0, strpos($nome, ' — ')));
+		}
+		if($nome === '' and $ultimo and !empty($entita->name)){
+			$nome = (string)$entita->name;
+		}
+		if($nome === ''){
+			$nome = ucfirst(str_replace('-', ' ', $pezzo));
+		}
 		$briciole[] = array($corso, $nome);
 	}
 }
