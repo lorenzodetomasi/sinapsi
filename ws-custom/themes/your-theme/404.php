@@ -14,13 +14,17 @@
  * @since 1.0
  */
 
+/* `$ws_content` qui è spesso FALSE: la pagina 404 si raggiunge proprio quando non
+ * c'è un contenuto, e un sito può benissimo non avere un documento «404». Chiedere
+ * una proprietà a `false` stampa un avviso PHP dentro la pagina — e lo stampava,
+ * su ogni indirizzo sbagliato. Da qui in giù si guarda sempre con `!empty()`. */
 global $ws_content;
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'page';
 include_template('template-parts/header');
 ?>
             <div<?php echo ws_html_attributes('main-content'); ?>>
 <?php
-if($ws_content->name){
+if(!empty($ws_content->name)){
 ?>
                 <h1 itemprop="name"><?php echo $ws_content->name->innerHTML(); ?></h1>
 <?php
@@ -31,7 +35,7 @@ if($ws_content->name){
 }
 ?>
 <?php
-if($ws_content->headline){
+if(!empty($ws_content->headline)){
 ?>
                 <h2 itemprop="headline"><?php echo $ws_content->headline->innerHTML(); ?></h2>
 <?php
@@ -43,10 +47,10 @@ if($ws_content->headline){
 ?>
                 <div class="content">
 <?php
-if($ws_content->mainContentOfPage){
+if(!empty($ws_content->mainContentOfPage)){
     echo $ws_content->mainContentOfPage->innerHTML();
 }
-if($ws_content->section){
+if(!empty($ws_content->section)){
     foreach ($ws_content->section as $section) {
         echo $section->innerHTML();
     }

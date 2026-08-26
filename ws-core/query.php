@@ -63,6 +63,8 @@ if($wspath !== '/' or $wspath !== ''){
 }
 // Search for uri/path in rewrite_rules/wspath
 $ws_mount = '';
+$ws_mount_richiesto = '';   // il prefisso sotto cui è arrivata la richiesta…
+$ws_sito_richiesto = '';    // …e il sito che quel prefisso serve: servono al 404
 // `[0]` su una ricerca vuota è un avviso PHP stampato in cima alla pagina: qui
 // «nessuna regola» è un esito normale, non un errore.
 $trovate = $ws_sitemap->xpath('./url[./wspath = "/'.$wspath.'"]');
@@ -81,6 +83,10 @@ if(empty($rewrite_rule) and defined('WS_MOUNTS') and is_array(WS_MOUNTS)){
 		}
 		if($wspath === $nudo or strpos($wspath, $nudo.'/') === 0){
 			$dentro = trim(substr($wspath, strlen($nudo)), '/');
+			// L'indirizzo sta sotto questo prefisso: qualunque cosa succeda dopo,
+			// la risposta è di questo sito. Serve al 404, qui sotto.
+			$ws_mount_richiesto = $nudo;
+			$ws_sito_richiesto = $sito;
 			/* Si cerca DENTRO la parte di mappa del sito innestato, non in tutta la
 			 * mappa: la home di un sito ospite ha lo stesso wspath («/») di quella
 			 * dell'ospitante, e senza questo filtro vincerebbe sempre la prima
@@ -100,11 +106,34 @@ if(empty($rewrite_rule) and defined('WS_MOUNTS') and is_array(WS_MOUNTS)){
 	}
 }
 if(empty($rewrite_rule)){
-	$radice = $ws_sitemap->xpath('./url[./wspath = "/"]');
+	/* Indirizzo che non esiste.
+	 *
+	 * Due cose andavano storte, e tutte e due contavano. La prima: si prendeva la
+	 * PRIMA voce con wspath «/», cioè la home dell'ospitante — quindi ogni
+	 * indirizzo sbagliato sotto /meetoo/ rispondeva con isotype, tema compreso.
+	 * La seconda, peggiore: lo stato restava 200. Per un motore di ricerca
+	 * significa che quella pagina esiste, e ne esistono infinite copie: è il modo
+	 * più efficace di farsi buttare fuori da un indice.
+	 *
+	 * Ora la radice si cerca nel sito a cui l'indirizzo APPARTIENE — lo dice il
+	 * prefisso da cui è entrato — e la risposta dice quello che è: 404. */
+	$radice = array();
+	if(!empty($ws_sito_richiesto)){
+		$radice = $ws_sitemap->xpath('./url[./wspath = "/" and contains(./query, "content='.$ws_sito_richiesto.'/")]');
+		if(!empty($radice[0])){
+			$ws_mount = $ws_mount_richiesto;
+		}
+	}
+	if(empty($radice[0])){
+		$radice = $ws_sitemap->xpath('./url[./wspath = "/"]');
+	}
 	$rewrite_rule = $radice[0] ?? null;
 	$rewrite_rule_query = get_query($rewrite_rule->query);
 	$rewrite_rule_query['template'] = "404";
 	$rewrite_rule_query['content'] = explode_and_remove_last('/', $rewrite_rule_query['content'])."/404";
+	if(!headers_sent()){
+		http_response_code(404);
+	}
 } else {
 	$rewrite_rule_query = get_query($rewrite_rule->query);
 }
