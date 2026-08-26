@@ -60,11 +60,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Le opzioni le dichiara il registro (una spunta per operazione): si passa
-        // ciò che è arrivato, senza che l'endpoint conosca i nomi a memoria.
+        /* Le opzioni le dichiara il REGISTRO: qui si accetta solo ciò che
+         * l'operazione chiesta ha davvero dichiarato. Prima l'elenco delle chiavi
+         * stava scritto a mano proprio qui, e aggiungere una spunta a
+         * un'operazione voleva dire ricordarsi di aggiungerla anche in questa
+         * riga — cioè, prima o poi, dimenticarsene. */
+        $opId = (string)($_POST['op'] ?? '');
         $opts = [];
-        foreach (['adopt', 'create', 'root'] as $k) if (($_POST[$k] ?? '') === '1') $opts[$k] = true;
-        $rep  = ws_maint_run($base, (string)($_POST['op'] ?? ''), ($_POST['apply'] ?? '') === '1', $opts, $user['email'] ?? '');
+        $tutte = ws_maint_ops();
+        $dichiarate = $tutte[$opId]['options'] ?? (isset($tutte[$opId]['option']) ? [$tutte[$opId]['option']] : []);
+        foreach ($dichiarate as $dic) {
+            $k = (string)($dic['key'] ?? '');
+            if ($k !== '' && ($_POST[$k] ?? '') === '1') $opts[$k] = true;
+        }
+        // Da dove è stata lanciata: l'hub governa tutti i tipi, la Gestione eventi
+        // solo i suoi. È l'ambito, e lo decide la pagina, non l'operazione.
+        $opts['ambito'] = 'tutti';
+        $rep  = ws_maint_run($base, $opId, ($_POST['apply'] ?? '') === '1', $opts, $user['email'] ?? '');
         if (isset($rep['error'])) { http_response_code(400); echo json_encode($rep); exit; }
         echo json_encode(['success' => true] + $rep);
         exit;
@@ -250,14 +262,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         az.className = 'card-actions maint-actions';
         az.innerHTML =
           (m.preview ? '<button type="button" class="card-act" data-do="preview">Anteprima</button>' : '') +
-          (m.option ? '<label class="card-act"><input type="checkbox" data-opt> ' + m.option.label + '</label>' : '') +
-          '<button type="button" class="card-act primary" data-do="apply">' + (m.preview ? 'Applica' : 'Esegui') + '</button>';
+          (m.options || []).map((o) =>
+            '<label class="card-act"><input type="checkbox" data-opt="' + o.key + '"> ' + o.label + '</label>').join('') +
+          // Le operazioni che non scrivono non hanno un «Applica»: sarebbe un
+          // pulsante che promette di fare qualcosa e non fa niente.
+          (m.readonly ? '' : '<button type="button" class="card-act primary" data-do="apply">' + (m.preview ? 'Applica' : 'Esegui') + '</button>');
         card.appendChild(az);
         az.querySelectorAll('button[data-do]').forEach((b) => b.addEventListener('click', () => {
           const applica = b.dataset.do === 'apply';
           if (applica && m.confirm && !confirm(m.confirm)) return;
           const extra = {};
-          if (m.option && az.querySelector('[data-opt]')?.checked) extra[m.option.key] = '1';
+          az.querySelectorAll('[data-opt]:checked').forEach((c) => { extra[c.dataset.opt] = '1'; });
           b.disabled = true; b.textContent = '…';
           api('maint', Object.assign({ op: m.id, apply: applica ? '1' : '' }, extra))
             .then((r) => {

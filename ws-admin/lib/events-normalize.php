@@ -68,7 +68,12 @@ if (!function_exists('en_placeholder_occurrence')) {
 }
 
 if (!function_exists('event_normalize')) {
-    function event_normalize(string $base, bool $apply): array {
+    /* $o['rimuoviSerie'] = false → le serie fuori posto si SEGNALANO ma non si
+     * toccano. Serve a «Normalizza i contenuti», che invece di cancellarle le
+     * sposta nel punto di ripristino: cancellare una cartella e' l'unica cosa,
+     * qui dentro, che non si puo' disfare. */
+    function event_normalize(string $base, bool $apply, array $o = []): array {
+        $rimuoviSerie = ($o['rimuoviSerie'] ?? true) !== false;
         $eventsDir = rtrim($base, '/') . '/events';
         $report = ['removedSeries' => [], 'completedOccurrences' => [], 'repairedSuperEvent' => [], 'seriesSubEventUpdated' => [], 'warns' => []];
         if (!is_dir($eventsDir)) { $report['warns'][] = 'cartella events mancante'; return $report; }
@@ -89,7 +94,7 @@ if (!function_exists('event_normalize')) {
         foreach ($docs as $rel => $info) {
             if (en_is_series($info['doc']) && strpos($rel, '/') !== false) {
                 $report['removedSeries'][] = "events/$rel";
-                if ($apply) {
+                if ($apply && $rimuoviSerie) {
                     $dir = dirname($info['file']);
                     en_rrmdir($dir);
                     $parent = dirname($dir); // se ".../events" resta vuoto, rimuovilo

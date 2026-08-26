@@ -69,6 +69,72 @@ if (!function_exists('ws_quando_nome_regolare')) {
     }
 }
 
+if (!function_exists('ws_quando_documento')) {
+    /**
+     * La normalizzazione di UN evento: @id, fuso, date. Non tocca il disco.
+     *
+     * Era chiusa dentro la passata su tutte le cartelle. Sta fuori perché la
+     * stessa regola serve anche a «Normalizza i contenuti», che legge ogni file
+     * una volta sola e gli applica tutte le trasformazioni insieme: due copie
+     * della stessa regola, prima o poi, diventano due regole diverse.
+     *
+     * Ritorna ['e' => entità aggiornata, 'cambi' => [], 'segnalati' => []].
+     */
+    function ws_quando_documento(array $e, string $cartella, string $predefinito = 'Europe/Rome'): array {
+        $cambi = [];
+        $segnalati = [];
+        $nome = $cartella;
+
+        $tipi = (array)($e['@type'] ?? []);
+        $serie = in_array('EventSeries', $tipi, true);
+
+        // 1) L'@id segue la cartella.
+        $atteso = ws_quando_id_atteso($nome);
+        if (($e['@id'] ?? '') !== $atteso) {
+            $cambi[] = '@id: ' . ($e['@id'] ?? '(assente)') . " → $atteso";
+            $e['@id'] = $atteso;
+        }
+        // …e il nome della cartella si guarda, ma non si tocca (lo cambia semmai
+        // «Rinomina le cartelle malformate», che sa anche riscrivere i riferimenti).
+        $perche = ws_quando_nome_regolare($nome, $serie);
+        if ($perche !== '') $segnalati[] = "$nome: $perche";
+
+        // 2) Il fuso: dal luogo, o quello del sito.
+        $zona = ws_quando_fuso_del_luogo($e['location']['@id'] ?? '') ?: $predefinito;
+
+        if (($e['meetoo:timezone'] ?? '') !== $zona && (isset($e['startDate']) || isset($e['endDate']))) {
+            $cambi[] = 'meetoo:timezone: ' . ($e['meetoo:timezone'] ?? '(assente)') . " → $zona";
+            $e['meetoo:timezone'] = $zona;
+        }
+
+        // 3) Le date, con lo scarto.
+        foreach (['startDate', 'endDate'] as $campo) {
+            if (!isset($e[$campo]) || !is_string($e[$campo])) continue;
+            $nuovo = ws_quando_con_offset($e[$campo], $zona);
+            if ($nuovo !== $e[$campo]) {
+                $cambi[] = "$campo: {$e[$campo]} → $nuovo";
+                $e[$campo] = $nuovo;
+            }
+        }
+        // Il programma di un evento singolo (le occorrenze di una serie sono
+        // riferimenti: le loro date stanno nei loro file, non qui).
+        if (!$serie && isset($e['subEvent']) && is_array($e['subEvent'])) {
+            foreach ($e['subEvent'] as $i => $s) {
+                if (!is_array($s)) continue;
+                foreach (['startDate', 'endDate'] as $campo) {
+                    if (!isset($s[$campo]) || !is_string($s[$campo])) continue;
+                    $nuovo = ws_quando_con_offset($s[$campo], $zona);
+                    if ($nuovo !== $s[$campo]) {
+                        $cambi[] = "subEvent[$i].$campo: {$s[$campo]} → $nuovo";
+                        $e['subEvent'][$i][$campo] = $nuovo;
+                    }
+                }
+            }
+        }
+        return ['e' => $e, 'cambi' => $cambi, 'segnalati' => $segnalati];
+    }
+}
+
 if (!function_exists('ws_quando_normalizza')) {
     /**
      * Passa tutti gli eventi. In anteprima non scrive niente.
@@ -89,55 +155,10 @@ if (!function_exists('ws_quando_normalizza')) {
             if (!is_array($doc)) { $segnalati[] = "$nome: JSON illeggibile"; continue; }
 
             $guscio = isset($doc['mainEntity']) && is_array($doc['mainEntity']);
-            $e = $guscio ? $doc['mainEntity'] : $doc;
-            $prima = json_encode($e, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            $cambi = [];
-
-            $tipi = (array)($e['@type'] ?? []);
-            $serie = in_array('EventSeries', $tipi, true);
-
-            // 1) L'@id segue la cartella.
-            $atteso = ws_quando_id_atteso($nome);
-            if (($e['@id'] ?? '') !== $atteso) {
-                $cambi[] = '@id: ' . ($e['@id'] ?? '(assente)') . " → $atteso";
-                $e['@id'] = $atteso;
-            }
-            // …e il nome della cartella si guarda, ma non si tocca.
-            $perche = ws_quando_nome_regolare($nome, $serie);
-            if ($perche !== '') $segnalati[] = "$nome: $perche";
-
-            // 2) Il fuso: dal luogo, o quello del sito.
-            $zona = ws_quando_fuso_del_luogo($e['location']['@id'] ?? '') ?: $predefinito;
-            if (($e['meetoo:timezone'] ?? '') !== $zona && (isset($e['startDate']) || isset($e['endDate']))) {
-                $cambi[] = 'meetoo:timezone: ' . ($e['meetoo:timezone'] ?? '(assente)') . " → $zona";
-                $e['meetoo:timezone'] = $zona;
-            }
-
-            // 3) Le date, con lo scarto.
-            foreach (['startDate', 'endDate'] as $campo) {
-                if (!isset($e[$campo]) || !is_string($e[$campo])) continue;
-                $nuovo = ws_quando_con_offset($e[$campo], $zona);
-                if ($nuovo !== $e[$campo]) {
-                    $cambi[] = "$campo: {$e[$campo]} → $nuovo";
-                    $e[$campo] = $nuovo;
-                }
-            }
-            // Il programma di un evento singolo (le occorrenze di una serie sono
-            // riferimenti: le loro date stanno nei loro file, non qui).
-            if (!$serie && isset($e['subEvent']) && is_array($e['subEvent'])) {
-                foreach ($e['subEvent'] as $i => $s) {
-                    if (!is_array($s)) continue;
-                    foreach (['startDate', 'endDate'] as $campo) {
-                        if (!isset($s[$campo]) || !is_string($s[$campo])) continue;
-                        $nuovo = ws_quando_con_offset($s[$campo], $zona);
-                        if ($nuovo !== $s[$campo]) {
-                            $cambi[] = "subEvent[$i].$campo: {$s[$campo]} → $nuovo";
-                            $e['subEvent'][$i][$campo] = $nuovo;
-                        }
-                    }
-                }
-            }
-
+            $esito = ws_quando_documento($guscio ? $doc['mainEntity'] : $doc, $nome, $predefinito);
+            $e = $esito['e'];
+            $cambi = $esito['cambi'];
+            foreach ($esito['segnalati'] as $s) $segnalati[] = $s;
             if (!$cambi) continue;
             $done[] = ['path' => $nome, 'cambi' => $cambi];
             if (!$apply) continue;
@@ -148,7 +169,6 @@ if (!function_exists('ws_quando_normalizza')) {
                 $segnalati[] = "$nome: scrittura fallita";
                 array_pop($done);
             }
-            unset($prima);
         }
         return ['changes' => count($done), 'done' => $done, 'segnalati' => $segnalati];
     }
@@ -200,7 +220,12 @@ if (!function_exists('ws_quando_nome_proposto')) {
 
 if (!function_exists('ws_quando_riferimenti')) {
     /** I file che citano `events/<id>`: percorso relativo → quante volte.
-     *  `_index/` non si conta: è derivato, si rigenera dopo. */
+     *  `_index/` non si conta: è derivato, si rigenera dopo.
+     *  `_trash/` nemmeno, ed è più importante: lì dentro ci sono le cose com'erano
+     *  — eventi cestinati, copie di riserva della normalizzazione — e riscriverle
+     *  vuol dire falsificare un archivio. Peggio: la copia di riserva di una
+     *  rinomina finiva riscritta dalla rinomina stessa, e il ripristino rimetteva
+     *  a posto file che parlavano già del nome nuovo. */
     function ws_quando_riferimenti(string $base, string $id): array {
         $out = [];
         $radice = rtrim($base, '/');
@@ -211,7 +236,7 @@ if (!function_exists('ws_quando_riferimenti')) {
             $nome = $f->getFilename();
             if ($nome !== 'index.json' && $nome !== 'index.xml') continue;
             $rel = ltrim(str_replace($radice, '', $f->getPathname()), '/');
-            if (strpos($rel, '_index/') !== false) continue;
+            if (strpos($rel, '_index/') !== false || strpos($rel, '_trash/') === 0) continue;
             $raw = (string)file_get_contents($f->getPathname());
             $n = preg_match_all($re, $raw);
             if ($n) $out[$rel] = $n;

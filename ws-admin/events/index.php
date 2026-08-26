@@ -124,7 +124,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!in_array($op, $consentite, true)) {
             http_response_code(400); echo json_encode(['error' => 'Da qui si eseguono solo le operazioni sugli eventi.']); exit;
         }
-        $rep = ws_maint_run($base, $op, ($_POST['apply'] ?? '1') === '1', [], $user['email'] ?? '');
+        /* Le opzioni dichiarate dall'operazione, piu' l'AMBITO: da qui si governano
+         * gli eventi, e solo quelli. La stessa operazione lanciata dall'hub tocca
+         * anche luoghi, organizzazioni e profili — e' la pagina a dire fin dove. */
+        $opts = ['ambito' => 'events'];
+        $tutte = ws_maint_ops();
+        $dichiarate = $tutte[$op]['options'] ?? (isset($tutte[$op]['option']) ? [$tutte[$op]['option']] : []);
+        foreach ($dichiarate as $dic) {
+            $k = (string)($dic['key'] ?? '');
+            if ($k !== '' && ($_POST[$k] ?? '') === '1') $opts[$k] = true;
+        }
+        $rep = ws_maint_run($base, $op, ($_POST['apply'] ?? '1') === '1', $opts, $user['email'] ?? '');
         if (isset($rep['error'])) { http_response_code(400); echo json_encode($rep); exit; }
         echo json_encode(['success' => true] + $rep);
         exit;

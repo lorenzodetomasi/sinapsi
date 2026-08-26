@@ -75,30 +75,77 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
-            'quando-normalize' => [
-                'title' => 'Normalizza date, fusi e @id',
-                'meta'  => 'Scarto da UTC sulle date, meetoo:timezone dal luogo, @id allineato alla cartella',
-                'icon'  => 'schedule', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'confirm' => 'Normalizzare date e fusi? I file degli eventi interessati verranno riscritti.',
+
+            'normalizza' => [
+                'title' => 'Normalizza i contenuti',
+                'meta'  => 'Guscio, keywords, date e fusi, @id, relazioni: una lettura e una scrittura per file',
+                'icon'  => 'auto_fix_high', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Normalizzare i contenuti? I file interessati verranno riscritti, e prima messi da parte in _trash/normalizza/.',
+                'options' => [
+                    ['key' => 'rinomina', 'label' => 'rinomina le cartelle malformate'],
+                    ['key' => 'serie', 'label' => 'sposta nel cestino le serie fuori posto'],
+                ],
                 'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/ws-quando.php';
-                    require_once __DIR__ . '/events-index.php';
-                    $r = ws_quando_normalizza($base, $apply);
-                    // L'indice porta le date: se cambiano, va rifatto.
-                    if ($apply && $r['changes']) event_index_rebuild($base);
+                    require_once __DIR__ . '/ws-normalizza.php';
+                    $r = ws_normalizza($base, $apply, $o);
+                    $f = $r['fasi'];
+                    $pezzi = [];
+                    if ($f['nomi'])      $pezzi[] = $f['nomi'] . ' nomi';
+                    if ($f['documento']) $pezzi[] = $f['documento'] . ' documenti';
+                    if ($f['relazioni']) $pezzi[] = $f['relazioni'] . ' relazioni';
+                    if ($f['serie'])     $pezzi[] = $f['serie'] . ' serie fuori posto';
+                    $sommario = $r['changes']
+                        ? implode(' · ', $pezzi) . ($apply ? ' — fatto' : ' da sistemare')
+                        : 'I contenuti sono gia\' normalizzati.';
+                    if ($apply && $r['punto']) $sommario .= ' · ripristinabile (' . $r['punto'] . ')';
+                    return [
+                        'changes' => $r['changes'],
+                        'summary' => $sommario . (count($r['segnalati']) ? ' · ⚠ ' . count($r['segnalati']) . ' da guardare a mano' : ''),
+                        'lines' => array_merge($r['righe'], array_map(fn($x) => "⚠ $x", $r['segnalati'])),
+                    ];
+                },
+            ],
+
+            'migrazione' => [
+                'title' => 'Contenuti da migrare',
+                'meta'  => 'Chi ha ancora il testo formattato dentro la descrizione, e in che ordine prenderlo',
+                'icon'  => 'fact_check', 'scope' => 'events', 'preview' => true, 'readonly' => true, 'since' => '2026.08',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-migrazione.php';
+                    $r = ws_migrazione_stato($base);
                     return [
                         'changes' => $r['changes'],
                         'summary' => $r['changes']
-                            ? $r['changes'] . ' event' . ($r['changes'] > 1 ? 'i' : 'o')
-                              . ($apply ? ' normalizzat' . ($r['changes'] > 1 ? 'i' : 'o') : ' da normalizzare')
-                              . (count($r['segnalati']) ? ' · ⚠ ' . count($r['segnalati']) . ' da guardare a mano' : '')
-                            : 'Date, fusi e @id sono già a posto.'
-                              . (count($r['segnalati']) ? ' ⚠ ' . count($r['segnalati']) . ' da guardare a mano.' : ''),
-                        'lines' => array_merge(
-                            array_map(fn($d) => $d['path'] . ': ' . implode(' · ', array_slice($d['cambi'], 0, 4))
-                                . (count($d['cambi']) > 4 ? ' … (+' . (count($d['cambi']) - 4) . ')' : ''), $r['done']),
-                            array_map(fn($x) => "⚠ $x", $r['segnalati'])
+                            ? $r['changes'] . ' da migrare · ' . $r['ok'] . ' gia\' a posto (il Sommario si sposta a mano dall\'editor)'
+                            : 'Nessun contenuto da migrare: ' . $r['ok'] . ' hanno la descrizione al posto giusto.',
+                        'lines' => array_map(
+                            fn($v) => $v['rel'] . ' — ' . $v['motivo'] . ' (' . $v['caratteri'] . ' caratteri)'
+                                . ($v['sommario'] ? ' · il Sommario c\'e\' gia\'' : ''),
+                            $r['voci']
                         ),
+                    ];
+                },
+            ],
+
+            'ripristina' => [
+                'title' => 'Ripristina una normalizzazione',
+                'meta'  => 'Rimette i file com\'erano prima dell\'ultima passata di normalizzazione',
+                'icon'  => 'settings_backup_restore', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Ripristinare i file dell\'ultima normalizzazione? Le modifiche fatte dopo su quei file andranno perse.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-normalizza.php';
+                    $punti = ws_norm_punti($base);
+                    if (!$punti) {
+                        return ['changes' => 0, 'summary' => 'Nessun punto di ripristino: la normalizzazione non e\' ancora stata eseguita.', 'lines' => []];
+                    }
+                    $ultimo = $punti[0]['quando'];
+                    $r = ws_norm_ripristina($base, $ultimo, $apply);
+                    return [
+                        'changes' => $r['changes'],
+                        'summary' => ($apply ? 'Ripristinate ' : 'Da ripristinare: ') . $r['changes'] . ' cose dal punto ' . $ultimo
+                            . ($r['problemi'] ? ' · ⚠ ' . $r['problemi'] . ' non ripristinabili' : '')
+                            . (count($punti) > 1 ? ' · ' . (count($punti) - 1) . ' punti piu\' vecchi restano nel cestino' : ''),
+                        'lines' => $r['righe'],
                     ];
                 },
             ],
@@ -142,83 +189,8 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
-            'quando-rinomina' => [
-                'title' => 'Rinomina le cartelle malformate',
-                'meta'  => 'Nome ricavato dal contenuto, e i riferimenti che le citano riscritti',
-                'icon'  => 'drive_file_rename_outline', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'confirm' => 'Rinominare le cartelle? Verranno spostate e ogni file che le cita verrà riscritto. Guarda prima l\'anteprima.',
-                'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/ws-quando.php';
-                    require_once __DIR__ . '/events-index.php';
-                    $r = ws_quando_rinomina($base, $apply);
-                    if ($apply && $r['changes']) event_index_rebuild($base);
-                    $righe = [];
-                    foreach ($r['piano'] as $p) {
-                        $righe[] = "{$p['da']} → {$p['a']}  ({$p['perche']})";
-                        foreach ($p['file'] as $rel => $n) {
-                            $righe[] = "      " . ($apply ? 'riscritto' : 'da riscrivere') . ": $rel ($n riferiment" . ($n > 1 ? 'i' : 'o') . ')';
-                        }
-                        if (!$p['file']) $righe[] = '      nessun file la cita';
-                    }
-                    return [
-                        'changes' => $r['changes'],
-                        'summary' => $r['changes']
-                            ? $r['changes'] . ' cartell' . ($r['changes'] > 1 ? 'e' : 'a')
-                              . ($apply ? ' rinominat' . ($r['changes'] > 1 ? 'e' : 'a') : ' da rinominare')
-                              . (count($r['problemi']) ? ' · ⚠ ' . count($r['problemi']) . ' da decidere a mano' : '')
-                            : 'Nessuna cartella da rinominare.'
-                              . (count($r['problemi']) ? ' ⚠ ' . count($r['problemi']) . ' da decidere a mano.' : ''),
-                        'lines' => array_merge($righe, array_map(fn($x) => "⚠ $x", $r['problemi'])),
-                    ];
-                },
-            ],
 
-            'events-normalize' => [
-                'title' => 'Normalizza i contenuti degli eventi',
-                'meta'  => 'Ripara serie annidate, occorrenze mancanti, subEvent↔superEvent',
-                'icon'  => 'healing', 'scope' => 'events', 'preview' => true, 'since' => '2026.06',
-                'confirm' => 'Normalizzare i contenuti? I file degli eventi interessati verranno riscritti.',
-                'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/events-normalize.php';
-                    require_once __DIR__ . '/events-index.php';
-                    $n = event_normalize($base, $apply);
-                    $tot = count($n['removedSeries']) + count($n['completedOccurrences'])
-                         + count($n['repairedSuperEvent']) + count($n['seriesSubEventUpdated']);
-                    if ($apply) event_index_rebuild($base);
-                    return [
-                        'changes' => $tot,
-                        'summary' => $tot ? "$tot riparazioni" : 'Niente da riparare.',
-                        'lines' => array_merge(
-                            array_map(fn($x) => 'serie annidata rimossa: ' . json_encode($x), $n['removedSeries']),
-                            array_map(fn($x) => 'occorrenza completata: ' . json_encode($x), $n['completedOccurrences']),
-                            array_map(fn($x) => 'superEvent riparato: ' . json_encode($x), $n['repairedSuperEvent']),
-                            array_map(fn($x) => "serie riallineata: {$x['series']} ({$x['count']} occorrenze)", $n['seriesSubEventUpdated'])
-                        ),
-                    ];
-                },
-            ],
 
-            'keywords-array' => [
-                'title' => 'Keywords come elenco',
-                'meta'  => 'Da stringa separata da virgole ad array, senza doppioni',
-                'icon'  => 'sell', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'confirm' => 'Convertire le keywords in elenco? I file interessati (JSON e XML) verranno riscritti.',
-                'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/ws-keywords.php';
-                    $r = ws_keywords_migrate($base, $apply);
-                    return [
-                        'changes' => count($r['done']),
-                        'summary' => count($r['done'])
-                            ? count($r['done']) . ' file' . ($r['removed'] ? " · {$r['removed']} doppioni tolti" : '')
-                            : 'Tutte le keywords sono già un elenco.',
-                        'lines' => array_merge(
-                            array_map(fn($d) => "{$d['path']}: {$d['before']} → " . count($d['after']) . ' voci'
-                                . ($d['xml'] ? '' : ' (XML non rigenerato)'), $r['done']),
-                            array_map(fn($x) => "⚠ {$x['path']} → {$x['why']}", $r['failed'])
-                        ),
-                    ];
-                },
-            ],
 
             'lists' => [
                 'title' => 'Rigenera le liste con regola',
@@ -243,26 +215,6 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
-            'wrap' => [
-                'title' => 'Guscio ItemPage per tutti',
-                'meta'  => 'Metadati di pagina fuori, entità dentro: come i contenuti del CMS',
-                'icon'  => 'inventory_2', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'confirm' => 'Avvolgere le entità nel guscio ItemPage? I file interessati verranno riscritti.',
-                'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/ws-wrap.php';
-                    $r = ws_wrap_migrate($base, $apply);
-                    return [
-                        'changes' => count($r['done']),
-                        'summary' => count($r['done'])
-                            ? count($r['done']) . ' entità da avvolgere'
-                            : 'Tutte le entità hanno già il guscio.',
-                        'lines' => array_merge(
-                            array_map(fn($d) => "{$d['path']} ({$d['type']})", $r['done']),
-                            array_map(fn($x) => "⚠ {$x['path']}: {$x['why']}", $r['failed'])
-                        ),
-                    ];
-                },
-            ],
 
             'xml-rebuild' => [
                 'title' => 'Riallinea gli XML al JSON',
@@ -433,6 +385,11 @@ if (!function_exists('ws_maint_ops')) {
         foreach (ws_maint_ops() as $id => $op) {
             if ($scope !== null && $op['scope'] !== $scope) continue;
             unset($op['run']);
+            /* Una spunta o piu' d'una: chi legge l'elenco ne trova sempre una lista.
+             * Prima il registro conosceva solo `option` al singolare, e
+             * «Normalizza i contenuti» ne ha due — le fasi che possono far male. */
+            if (isset($op['option'])) { $op['options'] = [$op['option']]; unset($op['option']); }
+            if (!isset($op['options'])) $op['options'] = [];
             $out[] = $op + ['id' => $id, 'last' => $st[$id] ?? null];
         }
         return $out;
