@@ -1,0 +1,504 @@
+/* Il lungomare: la linea delle fermate.
+ *
+ * È il foglio di stile che stava dentro `waterfront.html`, spostato qui perché ora
+ * la pagina la serve il CMS. Non è stato riscritto: quella pagina funziona, e
+ * riscriverla sarebbe stato il modo più sicuro di perderne dei pezzi — è già
+ * successo con l'header. Le uniche modifiche sono due, ed è scritto dove stanno:
+ * la regola su `body` vale solo a linea accesa, e i contenitori del CMS imparano a
+ * lasciarle l'altezza.
+ */
+
+
+/* --- Base del carosello ---------------------------------------------------
+   meetoo.css (caricato per l'header condiviso) applica a TUTTO il sito
+   `box-sizing: border-box` e un'interlinea di base. Le card del lungomare sono
+   invece costruite in `cqw` sul modello di scatola predefinito, con l'opt-in a
+   border-box dichiarato caso per caso più sotto: con la regola comune il testo e
+   l'immagine uscivano dalla card su telefono. Sta in cima apposta — è una base,
+   e ogni regola successiva di questa pagina la sovrascrive. */
+.carousel-container, .carousel-container * { box-sizing: content-box; }
+.carousel-container { line-height: normal; }
+
+/* La linea prende tutto lo schermo e scorre in orizzontale — ma SOLO quando è in
+   funzione. La classe la mette il JavaScript dopo aver disegnato le fermate: prima
+   di allora, e per sempre se il JavaScript non arriva, questa è una pagina normale
+   con sotto l'elenco delle fermate, che scorre in verticale come tutte le altre. */
+body.mt-percorso {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family2);
+  background-color: var(--color-background-main);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+}
+/* Il guscio del CMS sta in mezzo fra il body e la linea: senza questo, «prendi
+   tutta l'altezza» si ferma al primo contenitore che non lo sa. */
+body.mt-percorso #page,
+body.mt-percorso .main-container,
+body.mt-percorso #main,
+body.mt-percorso .mt-percorso-app { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+/* A linea accesa la pagina È la linea, come in `waterfront.html`: il titolo,
+   il sommario e l'elenco delle fermate hanno già fatto il loro lavoro — dire a un
+   motore di ricerca, e a chi non ha JavaScript, che cosa c'è qui — e ora si tolgono
+   di mezzo per lasciarle tutta l'altezza. Dove sei lo dicono le briciole. */
+body.mt-percorso .mt-raccolta-pagina { display: none; }
+
+.carousel-container {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  align-items: center;
+  padding: 0 calc(50vw - var(--base-vw) * 0.5vw);
+  -webkit-overflow-scrolling: touch;
+}
+
+.carousel-container::-webkit-scrollbar { display: none; }
+.carousel-container { -ms-overflow-style: none; scrollbar-width: none; }
+
+.station-wrapper {
+  scroll-snap-align: center;
+  display: grid;
+  /* 9 righe: card mare · tab · line-waterfront · gap(4) · metro-line · gap(4) · line-waterfrontStreet · tab · card strada.
+     Le righe-tab sono ESTERNE alla card (il quadrato sta tra la card e la line). */
+  grid-template-rows:
+    var(--card-slot) var(--line-h) var(--line-h) 4px var(--line-h) 4px var(--line-h) var(--line-h) var(--card-slot);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.3s;
+}
+
+.wf-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+.slot-top { align-items: flex-end; padding-bottom: 0; }   /* card a filo del tab sotto */
+.slot-bottom { align-items: flex-start; padding-top: 0; }  /* card a filo del tab sopra */
+
+/* Binari esterni (line-waterfront / line-waterfrontStreet): banda #8ba5c2 con
+   il containedInPlace della fermata + tab connettore verso la card. */
+.rail { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 12px; box-sizing: border-box; background: var(--rail); }
+.rail .zone { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; font-size: var(--font-size-small); color: var(--rail-text); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+/* Righe-tab ESTERNE: stanno tra la card e la line, senza sovrapporsi alla card.
+   Quadrato --line-h nel colore del bordo card + triangolo equilatero bianco verso la card. */
+.tab-row { position: relative; display: flex; align-items: center; justify-content: center; height: 100%; }
+.tab-row .tab { width: var(--line-h); height: var(--line-h); background: var(--tab, #8ba5c2); display: none; align-items: center; justify-content: center; }
+.station-wrapper.active .tab-row .tab { display: flex; }   /* solo per la card al centro */
+/* triangolo equilatero: base 16px → altezza ≈14px */
+.tab-row .tab::after { content: ''; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; }
+.tab-top .tab::after { border-bottom: 14px solid #fff; }   /* punta su (verso la card mare) */
+.tab-bottom .tab::after { border-top: 14px solid #fff; }   /* punta giù (verso la card strada) */
+
+/* Metro-line (binario centrale): banda blu-grigia con stop ai bordi, distanze e indirizzo */
+.line-track { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--metro); }
+/* Punto (stop) unico, centrato = al centro della card sopra/sotto */
+.line-track .node { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; border-radius: 50%; background: #fff; z-index: 1; }
+/* Distanza: posizionata (via JS) a metà strada tra due fermate */
+.line-dist { position: absolute; top: 50%; transform: translate(-50%, -50%); font-size: var(--font-size-small); color: #fff; font-weight: 700; pointer-events: none; white-space: nowrap; }
+.line-address { display: inline-flex; align-items: center; gap: 6px; max-width: 74%; background: light-dark(#ffffff, #e6e0e9); color: #2e3192; border-radius: 999px; padding: 5px 14px; font-size: var(--font-size-small); font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.25); opacity: 0; transition: opacity .2s; z-index: 2; }
+.line-address .material-symbols-outlined { font-size: 1.05em; color: #c1272d; }
+.line-address .addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.station-wrapper.active .line-address { opacity: 1; }   /* indirizzo solo sulla card a fuoco */
+
+/* --- Capolinea (City) agli estremi: card centrata verticalmente + freccia sulla metro-line --- */
+.terminus-wrapper { scroll-snap-align: center; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; box-sizing: border-box; width: calc(var(--base-vw) * 0.9vw); padding: 0 12px; }
+/* stub metro-line a 50% (allineato alle stazioni), dalla card verso l'interno */
+.terminus-wrapper::before { content: ''; position: absolute; top: 50%; transform: translateY(-50%); height: var(--line-h); background: var(--metro); z-index: 0; }
+.term-start::before { left: 50%; right: -1px; }   /* verso destra (stazioni) */
+.term-end::before { right: 50%; left: -1px; }      /* verso sinistra (stazioni) */
+.wf-terminus { --cat: var(--metro); position: relative; z-index: 2; width: min(calc(var(--base-vw) * 0.72vw), 190px); background: var(--card-background); border: 2px solid var(--cat); box-shadow: 0 2px 6px rgba(0,0,0,.16); }
+.terminus-head { display: flex; align-items: stretch; border-bottom: 2px solid var(--cat); }
+.terminus-head .t-label { flex: 1 1 auto; min-width: 0; align-self: center; padding: 0 8px 0 10px; font-family: 'Roboto Slab', Georgia, serif; font-weight: 500; color: var(--cat); font-size: var(--font-size-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.terminus-head .t-sq { flex: 0 0 auto; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: var(--cat); color: #fff; }
+.terminus-head .t-sq .material-symbols-outlined { font-size: 1.3em; }
+.wf-terminus .t-name { margin: 0; padding: 8px 10px; font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--color1); font-size: var(--font-size); line-height: 1.2; }
+/* freccia bianca sulla metro-line, punta verso le stazioni */
+/* marker del confine: quadrato alto quanto la metro-line (estensione della linea),
+   TRA la card e la metro-line, senza sovrapporsi alla card. Icona stop centrata. */
+.term-marker { position: absolute; top: 50%; transform: translateY(-50%); width: var(--line-h); height: var(--line-h); display: flex; align-items: center; justify-content: center; background: var(--metro); color: #fff; z-index: 3; }
+.term-marker .material-symbols-outlined { font-size: 26px; font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.term-start .term-marker { right: calc(-1 * var(--line-h) - 2px); }   /* a filo del bordo destro card (compensa il border 2px) */
+.term-end .term-marker { left: calc(-1 * var(--line-h) - 2px); }      /* a filo del bordo sinistro card */
+
+
+
+.wf-card {
+  width: 100%;
+  min-width: 0;
+  /* La card non eredita lo scarto-distanza del wrapper: resta a larghezza "base"
+     e centrata (lo scarto è solo spazio/linea). Evita card enormi e non centrate. */
+  max-width: calc(var(--base-vw, 33.33) * 1vw);
+  max-height: 100%;              /* non superare lo slot: il contenuto extra scorre */
+  background-color: var(--card-background);
+  border-radius: 20px;
+  padding: 18px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.92);
+  opacity: 1;   /* le card non-attive NON sono trasparenti: solo rimpicciolite */
+  position: relative;
+}
+/* Contenuto scrollabile verticalmente quando è troppo (es. molti containsPlace) */
+.wf-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+}
+/* I figli non si comprimono verticalmente: il contenuto extra scorre (niente chip schiacciate) */
+.wf-scroll > * { flex-shrink: 0; }
+
+/* Indicatore di scroll verticale: sfumatura + chevron, visibile SOLO quando c'è
+   contenuto nascosto sotto (classe .scroll-more sul contenitore .wf-card / .modal). */
+.scroll-hint {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 36px;
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2px;
+  background: linear-gradient(to bottom, transparent, var(--card-background) 78%);
+  color: var(--color-line-track);
+  pointer-events: none;
+  opacity: 0; transition: opacity .2s;
+  z-index: 3;
+  border-radius: 0 0 18px 18px;
+}
+.scroll-more .scroll-hint { opacity: 1; }
+.scroll-hint .material-symbols-outlined { font-size: 1.4em; animation: scrollhint-bob 1.5s ease-in-out infinite; }
+@keyframes scrollhint-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+.wf-scroll::-webkit-scrollbar { width: 6px; }
+.wf-scroll::-webkit-scrollbar-thumb { background: var(--color-hint); border-radius: 3px; }
+
+
+.additional-type {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+
+.address {
+  font-size: var(--font-size-small);
+  color: var(--color-text);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
+.spacer { flex: 1; }
+
+.actions { display: flex; flex-direction: row; gap: 8px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  padding: var(--button-padding);
+  border-radius: var(--button-border-radius);
+  font-weight: 600;
+  font-size: var(--button-font-size);
+  transition: transform 0.1s, background-color 0.2s;
+  background-color: var(--button-background); color: var(--button-color);
+}
+.btn:hover { background-color: #0d1629; }
+.btn:active { transform: scale(0.97); }
+
+.station-wrapper.active .wf-card {
+  transform: scale(1);
+  opacity: 1;
+  border-color: var(--card-focus-border-color);
+  box-shadow: 0 8px 24px rgba(20, 33, 61, 0.15);
+}
+
+/* Struttura invisibile dei triangoli per il focus */
+.slot-top .wf-card::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-style: solid;
+  border-color: var(--card-border-color) transparent transparent transparent;
+  transition: border-color 0.3s;
+}
+
+.slot-bottom .wf-card::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 8px 8px 8px;
+  border-style: solid;
+  border-color: var(--card-border-color);
+  transition: border-color 0.3s;
+}
+
+/* Triangoli colorati quando la card è attiva (selezionata) */
+.station-wrapper.active .slot-top .wf-card::after {
+  border-color: var(--card-focus-border-color) transparent transparent transparent;
+}
+
+.station-wrapper.active .slot-bottom .wf-card::after {
+  border-color: transparent transparent var(--card-focus-border-color) transparent;
+}
+
+/* L'icona come componente sta in meetoo.css. Qui cambia solo la MISURA: sul
+   lungomare le icone si misurano sul testo che accompagnano (--icon-size), e la
+   regola vale SOLO nelle aree di questa pagina — l'header e il menu condivisi
+   devono restare uguali a tutte le altre pagine. */
+.carousel-container .material-symbols-outlined,
+.modal-overlay .material-symbols-outlined,
+#app-loader .material-symbols-outlined,
+.fab .material-symbols-outlined { font-size: var(--icon-size); }
+/* Icone "piene" dove serve (stelle rating, cuore preferito attivo) */
+
+#loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; color: var(--md-sys-color-on-surface-variant); }
+
+/* Categoria (tipo tradotto + additionalType) sopra al nome della spiaggia */
+/* Chip UNICA: tipo (icona) + tipologia (Comune). Colorata per tipologia. */
+
+/* Stato della fermata (badge in alto): libera / concessione / non accessibile / chiuso */
+.beach-status { display: inline-flex; align-items: center; gap: 5px; font-size: var(--font-size-small); font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 8px; align-self: flex-start; }
+.beach-status .material-symbols-outlined { font-size: 1.05em; }
+.status-chiusa { background: #b71c1c; color: #ffcdd2; }
+
+/* Stabilimento precedente (managementHistory) */
+
+/* --- Attività contenute nella spiaggia (containsPlace) --- */
+/* Luogo che contiene la fermata (containedInPlace), prima dell'indirizzo */
+/* Rating del contenitore + Maps, prima della linea dei containsPlace */
+.container-actions { display: flex; align-items: center; gap: 10px; margin: 6px 0 2px; }
+/* Il blocco di un luogo (.place-block) sta in places.css: qui solo la misura
+   della fascia, che esce fino ai bordi della card come fa l'immagine. */
+.wf-card .contained { --place-bleed: 4.5cqw; }
+.wf-card .place-block { display: flex; flex-direction: column; gap: 1cqw; }
+/* Il nome di un'attività ospitata scala con la card come tutto il resto, ma
+   entro limiti LEGGIBILI: mai sotto 0.8rem su una card stretta, mai sopra 1rem
+   su una larga. È l'unico dato che si deve poter leggere sempre. */
+.wf-card .place-block .place-name { font-size: clamp(.8rem, 5.5cqw, 1rem); }
+/* Servizi: strip a tutta larghezza card, scrollabile orizzontalmente se molti */
+
+/* --- Scheda dettagli in sovrimpressione (modale) --- */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; box-sizing: border-box; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card-background); color: var(--color-text); border-radius: 20px; padding: 0; max-width: 440px; width: 100%; max-height: 82vh; overflow: hidden; position: relative; box-shadow: 0 12px 40px rgba(0,0,0,.45); }
+.modal-scroll { padding: 26px; max-height: 82vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.modal-scroll::-webkit-scrollbar { width: 6px; }
+.modal-scroll::-webkit-scrollbar-thumb { background: var(--color-hint); border-radius: 3px; }
+.modal-close { position: absolute; top: 10px; right: 10px; border: none; background: transparent; color: var(--color-text); cursor: pointer; padding: 4px; }
+.modal-title { margin: 0 28px 8px 0; font-size: 1.3em; line-height: 1.25; }
+.modal-sub { font-size: var(--font-size-small); font-weight: 600; margin-bottom: 14px; color: var(--color-text); }
+/* Il voto nella modale è la stessa pastiglia delle card (.rating-pill): qui si
+   decide solo DOVE sta, non com'è fatto. Prima aveva un aspetto suo — pillola
+   ambra con angoli diversi — ed era l'unico posto in cui il voto si vedeva in
+   un altro modo. */
+.modal-rating { display: block; margin-bottom: 16px; }
+.modal-desc { line-height: 1.55; margin: 16px 0; }
+.modal-line { display: flex; align-items: center; gap: 8px; font-size: var(--font-size-small); margin: 12px 0; }
+.modal-actions { display: flex; gap: 10px; margin-top: 24px; flex-wrap: wrap; }
+.modal-loading { padding: 24px; text-align: center; color: var(--color-hint); }
+.modal-services { margin-top: 22px; }
+.modal-services-label { font-size: var(--font-size-small); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-hint); margin-bottom: 10px; }
+.modal-amenities { display: flex; flex-wrap: wrap; gap: 12px 22px; }
+.amenity { display: inline-flex; align-items: center; gap: 6px; font-size: var(--font-size-small); color: var(--color-text); }
+.amenity .material-symbols-outlined { font-size: 1.15em; }
+.amenity.amenity-no { color: var(--color-hint); text-decoration: line-through; }
+.amenity.amenity-no .material-symbols-outlined { color: var(--color-hint); }
+
+/* La chip non deve sforare su card strette */
+
+/* L'header (2 righe, logo, breadcrumb, Impostazioni, login) è quello CONDIVISO:
+   markup e comportamento stanno in header.js, gli stili .mt-* in meetoo.css.
+   Qui restano solo .icon-btn e .crumb, che servono ancora dentro le modali e
+   nelle card del lungomare. */
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: none; border-radius: 999px; background: transparent; color: var(--color-link); cursor: pointer; }
+.icon-btn:hover { background: rgba(128,128,128,.14); }
+.crumb { white-space: nowrap; text-decoration: none; }
+
+/* Legenda (contenuti nella modale) */
+.legend-list { display: flex; flex-direction: column; gap: 16px; margin-top: 18px; }
+.legend-row { display: flex; align-items: flex-start; gap: 12px; }
+.legend-swatch { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; }
+.legend-swatch .material-symbols-outlined { font-size: 1.15em; }
+.legend-row b { display: block; font-size: var(--font-size); margin-bottom: 2px; }
+.legend-row > div > span { display: block; font-size: var(--font-size-small); color: var(--color-hint); line-height: 1.4; }
+.legend-note { margin-top: 20px; font-size: var(--font-size-small); color: var(--color-hint); font-style: italic; }
+
+/* --- Mobile: card con margine, così si vedono le distanze verso i vicini --- */
+@media (max-width: 768px) {
+  :root { --base-vw: 66; }
+}
+@media (max-width: 560px) {
+  .icon-btn { width: 34px; height: 34px; }
+}
+@media (max-width: 480px) {
+  :root { --base-vw: 66; }
+  .modal { max-width: 92vw; }
+}
+
+/* ============================================================
+   REDESIGN CARD (mockup): testata colorata + immagine footer.
+   I colori arrivano dal const CATEGORY/STATUS via la variabile --cat.
+   ============================================================ */
+/* Sfondo carosello: layer ONDA (tila su repeat-x e resta fissa al viewport, non
+   scorre coi wrapper) + gradiente mare→arenile→verde. L'onda è a metà del top-card. */
+.carousel-container {
+  background-image:
+    var(--wave-url),
+    linear-gradient(to bottom,
+      var(--color-sea) 0, var(--color-sea) calc(var(--card-slot) / 2),
+      var(--color-sand) calc(var(--card-slot) / 2), var(--color-sand) calc(var(--card-slot) + 2.5 * var(--line-h) + 4px),
+      var(--color-park) calc(var(--card-slot) + 2.5 * var(--line-h) + 4px), var(--color-park) 100%);
+  background-repeat: repeat-x, no-repeat;
+  background-position: left calc(var(--card-slot) / 2 - 15px), left top;
+  background-size: auto 30px, auto;
+  position: relative;
+}
+/* Onda scura: auto se sistema dark (salvo forzatura light), o forzata via data-theme */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --wave-url: url('media-sources/meetoo-wave-band-dark.svg'); }
+}
+:root[data-theme="dark"] { --wave-url: url('media-sources/meetoo-wave-band-dark.svg'); }
+:root[data-theme="light"] { --wave-url: url('media-sources/meetoo-wave-band.svg'); }
+/* Toggle tema manuale: forza color-scheme (i token light-dark() seguono) */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+
+/* Card quadrata ad ANGOLI VIVI (mockup). I corpi/spaziature scalano col container
+   (cqw = 1% della larghezza card) per restare proporzionali a qualsiasi dimensione. */
+.wf-card {
+  container-type: inline-size;
+  padding: 0;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  max-width: min(calc(var(--base-vw, 33.33) * 1vw), calc(var(--card-slot, 260px) - 16px));
+  max-height: calc(var(--card-slot, 260px) - 16px);
+  border: 2px solid var(--cat, transparent);
+  border-radius: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.14);
+}
+.station-wrapper.active .wf-card {
+  border-color: var(--cat, var(--card-focus-border-color));
+  box-shadow: 0 10px 26px rgba(20, 33, 61, .22);
+}
+.slot-top .wf-card::after,
+.slot-bottom .wf-card::after { display: none; }
+
+/* HEADER FISSO = barra categoria (label + quadrato) + Name. Il resto scrolla. */
+.wf-head { flex: 0 0 auto; height: 13%; display: flex; align-items: stretch; padding: 0; border-bottom: 2px solid var(--cat); background: var(--card-background); }
+.wf-head-label { flex: 1 1 auto; min-width: 0; align-self: center; padding: 0 2cqw 0 4cqw; font-family: 'Roboto Slab', Georgia, serif; font-weight: 500; color: var(--cat); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 5cqw; line-height: 1.05; }
+.wf-head-icon { flex: 0 0 auto; aspect-ratio: 1 / 1; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--cat); color: #fff; border-radius: 0; }
+.wf-head-icon .material-symbols-outlined { font-size: 8cqw; }
+/* Riga 1 del contenitore: il nome e, a destra, il pulsante dei dettagli. Resta
+   FISSA insieme alla barra colorata — è l'identità della card; scorre solo ciò
+   che viene dopo. */
+.wf-card .wf-name { flex: 0 0 auto; margin: 0; padding: 3cqw 4.5cqw 2.5cqw; background: var(--card-background); }
+.wf-card .wf-name .place-name { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--color1); font-size: 6cqw; line-height: 1.15; }
+
+/* CORPO SCROLLABILE = tutto il resto (descrizione, azioni, attività, immagine) */
+.wf-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
+.wf-scroll { padding: 0 4.5cqw; }
+.wf-card .ex-operator { font-size: 4.2cqw; font-style: normal; line-height: 1.3; margin: 0 0 1.5cqw; }
+.wf-card .ex-operator b { color: var(--color1); font-weight: 700; }
+.wf-card .ex-operator span { color: var(--color-hint); }
+/* La descrizione condivisa (meetoo.css) qui non si tronca a due righe: la card
+   scorre, quindi il testo si legge tutto. */
+.wf-card .description { display: block; font-size: 4.2cqw; line-height: 1.4; margin: 0 0 1.5cqw; overflow: visible; -webkit-line-clamp: none; }
+
+/* Riga azione: sottotipo (blu) a sx, poi Info/Mappa (icona) + rating */
+/* La riga azione e i suoi pulsanti sono i COMPONENTI CONDIVISI (.card-actions,
+   .card-act, .rating-pill): qui cambia solo la MISURA, che in una card quadrata
+   è proporzionale alla larghezza (cqw) invece che al testo. Le regole comuni
+   sono scritte in `em` apposta: basta dare loro un font-size. */
+.wf-card .card-actions {
+  display: flex; align-items: center; align-self: stretch; flex-wrap: nowrap;
+  gap: 2.5cqw; padding: 1cqw 0 2.5cqw;
+  /* Nelle pagine di gestione la striscia azioni prende un terzo della card
+     (`flex: 0 0 33.333%`), perché lì la card è in riga. Qui la card è a colonna:
+     quel terzo diventerebbe ALTEZZA, e la riga si gonfiava da 30 a 67px. */
+  flex: 0 0 auto;
+}
+.wf-card .card-actions .subtype { color: var(--color-link); flex: 0 0 auto; display: inline-flex; }
+.wf-card .card-actions .subtype .material-symbols-outlined { font-size: 8cqw; }
+.wf-card .card-actions .spacer { flex: 1 1 auto; }
+.wf-card .card-act { font-size: 4.6cqw; border: none; font-weight: 700; }
+/* Le attività ospitate sono contenuto della card: si misurano come il resto, in
+   proporzione alla sua larghezza. Restavano a 16px fissi, e dentro una card
+   piccola risultavano più grandi del titolo. */
+.wf-card .contained { font-size: 4.2cqw; }
+.wf-card .rating-pill { font-size: 4.6cqw; }
+
+/* Immagine del luogo (places.css): qui esce dai margini del testo e va a filo
+   dei bordi della card — il rientro negativo pareggia il padding di .wf-scroll. */
+.wf-card .place-media { margin: 2cqw -4.5cqw 0; }
+.wf-card .place-media .credit { font-size: 2.8cqw; }
+/* La velatura per i crediti sta in places.css: qui solo la misura in cqw. */
+.wf-card .media-bar { padding: 0 3cqw 1.5cqw; min-height: 11cqw; }
+
+/* PIEDE FISSO card: share + like SEMPRE visibili + freccia scroll, su scrim NERO
+   (light e dark) così le icone bianche si leggono su qualunque contenuto sottostante. */
+.wf-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; min-height: 15cqw; padding: 0 3cqw 1.5cqw; display: flex; align-items: flex-end; justify-content: flex-end; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,.2) 55%, transparent); pointer-events: none; }
+.wf-foot .card-social { pointer-events: auto; display: flex; gap: 3cqw; }
+.card-social button { border: none; background: transparent; color: #fff; cursor: pointer; padding: 0; line-height: 0; filter: drop-shadow(0 1px 3px rgba(0,0,0,.85)); }
+.card-social .material-symbols-outlined { font-size: 7cqw; }
+.card-social .fav.on { color: #ff5a7a; }
+.wf-foot .scroll-arrow { position: absolute; left: 50%; bottom: 1.5cqw; transform: translateX(-50%); color: #fff; opacity: 0; transition: opacity .2s; }
+.wf-foot .scroll-arrow .material-symbols-outlined { font-size: 6.5cqw; animation: scrollhint-bob 1.5s ease-in-out infinite; }
+.scroll-more .wf-foot .scroll-arrow { opacity: 1; }
+
+.scroll-hint { border-radius: 0; }
+
+/* --- FAB "richiedi inserimento" (add_location) --- */
+.fab { position: fixed; right: 20px; bottom: 20px; z-index: 900; width: 56px; height: 56px; border-radius: 50%; border: none; background: #c1272d; color: #fff; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.3); display: inline-flex; align-items: center; justify-content: center; }
+.fab .material-symbols-outlined { font-size: 1.8em; }
+.fab:hover { filter: brightness(1.05); }
+
+/* --- Form contatti (dentro la modale) --- */
+.contact-intro { line-height: 1.55; margin: 10px 0 4px; }
+.contact-highlight { background: rgba(245,166,35,.14); border-radius: 10px; padding: 10px 12px; margin: 12px 0 18px; font-size: var(--font-size-small); color: var(--color-text); }
+.contact-form { display: flex; flex-direction: column; gap: 12px; }
+.contact-form label { display: flex; flex-direction: column; gap: 5px; font-size: var(--font-size-small); font-weight: 600; color: var(--color-text); }
+.contact-form input, .contact-form select, .contact-form textarea { font: inherit; font-size: var(--font-size); padding: 9px 11px; border: 1px solid var(--color-hint); border-radius: 10px; background: var(--card-background); color: var(--color-text); }
+.contact-form textarea { resize: vertical; min-height: 74px; }
+.contact-submit { margin-top: 6px; align-self: flex-start; }
+
+/* --- Impostazioni: toggle tema (Auto/Chiaro/Scuro) --- */
+.settings-group { margin-top: 18px; }
+.settings-label { font-size: var(--font-size-small); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--color-hint); margin-bottom: 10px; }
+
+/* --- Loader iniziale (coprente finché la linea non è pronta) --- */
+/* Copre la pagina sotto l'header condiviso: due righe alte --mt-h, la misura
+   che usa meetoo.css — non più il --line-h dell'header disegnato qui. */
+#app-loader { position: fixed; inset: calc(2 * var(--mt-h)) 0 0 0; z-index: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--color-background-main); color: var(--color-hint); transition: opacity .35s; }
+#app-loader.hide { opacity: 0; pointer-events: none; }
+#app-loader .spin { font-size: 46px; color: #406abf; animation: spin 1.1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* --- Toast "Link copiato" --- */

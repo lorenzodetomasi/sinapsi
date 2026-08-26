@@ -85,11 +85,20 @@ if(empty($briciole) and empty($azioni)){
 <?php foreach($briciole as $i => $b){
 	$ultimo = ($i === count($briciole) - 1);
 	if($i > 0){ echo '<span class="sep">|</span>'; }
+	/* La prima briciola è una casa, e si disegna come tale: la parola «Home» è
+	 * l'unica dell'intera riga che non dice dove sei, e su uno schermo stretto è
+	 * anche la prima a rubare spazio a quelle che invece lo dicono. Il nome resta
+	 * per chi legge con la voce e per chi ci passa sopra. */
+	$etichetta = htmlspecialchars((string)$b[1], ENT_QUOTES, 'UTF-8');
+	$casa = ($i === 0 and trim((string)$b[0]) === '');
+	$dentro = $casa
+		? '<span class="material-symbols-outlined" aria-hidden="true">home</span><span class="mt-solo-voce">'.$etichetta.'</span>'
+		: $etichetta;
 	if($ultimo){
 ?>
-						<span class="c cur" aria-current="page"><?php echo htmlspecialchars((string)$b[1], ENT_QUOTES, 'UTF-8'); ?></span>
+						<span class="c cur" aria-current="page"><?php echo $dentro; ?></span>
 <?php } else { ?>
-						<a class="c" href="<?php echo ws_href($b[0]); ?>"><?php echo htmlspecialchars((string)$b[1], ENT_QUOTES, 'UTF-8'); ?></a>
+						<a class="c<?php echo $casa ? ' mt-casa' : ''; ?>" href="<?php echo ws_href($b[0]); ?>"<?php echo $casa ? ' title="'.$etichetta.'"' : ''; ?>><?php echo $dentro; ?></a>
 <?php }
 } ?>
 					</div>

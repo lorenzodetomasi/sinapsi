@@ -22,6 +22,44 @@ $titolo = !empty($e->name) ? (string)$e->name : (string)($rewrite_rule->title ??
 $tipi = strtolower((string)($rewrite_rule->type ?? ''));
 $serie = (strpos($tipi, 'eventseries') !== false);
 
+/**
+ * Questa raccolta è un PERCORSO?
+ *
+ * Lo dicono i dati, non un campo apposta: se le sue fermate dichiarano quanto
+ * distano dall'inizio, allora hanno un ordine nello spazio — e una cosa che ha un
+ * ordine nello spazio si guarda come una linea, non come un elenco. Vale per il
+ * lungomare di Ostia e varrà per qualunque altro percorso, senza aggiungere niente
+ * al contenuto.
+ */
+function meetoo_e_percorso($ent){
+	foreach((!empty($ent->itemListElement) ? $ent->itemListElement : array()) as $riga){
+		$m = !empty($riga->item) ? $riga->item : $riga;
+		/* `children('meetoo', true)`: quel campo è in un NAMESPACE, e con
+		 * `$m->{'meetoo:…'}` SimpleXML non lo trova — cerca un elemento che si chiama
+		 * proprio così, con i due punti dentro, e non esiste. Il `true` dice di
+		 * risolvere il prefisso, che è l'unica cosa stabile: l'indirizzo del
+		 * namespace cambia a seconda di come il contenuto dichiara il contesto. */
+		$suoi = $m->children('meetoo', true);
+		if($suoi !== null and isset($suoi->m_from_border_south)){
+			return true;
+		}
+	}
+	return false;
+}
+$percorso = (!$serie and meetoo_e_percorso($e));
+if($percorso){
+	/* Il vestito e il comportamento della linea si caricano SOLO qui: sono
+	 * cinquecento righe di stile e mille di programma, e su una raccolta qualunque
+	 * sarebbero peso scaricato per niente. */
+	$ws_theme_url = ws_theme_url();
+	$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'lungomare.css" />';
+	$GLOBALS['ws_scripts']['bodyend']['meetoo_lungomare'] = '<script defer="defer" src="'.$ws_theme_url.'js/lungomare.js"></script>';
+	/* Quale raccolta disegnare: l'@id, che è anche la cartella dei suoi dati.
+	 * Va nei GLOBALS, non in una variabile qui: i template si includono dentro una
+	 * funzione del CMS, e da lì le variabili di questo file non si vedono. */
+	$GLOBALS['raccolta'] = preg_replace('#^[^/]+/[^/]+/#', '', trim((string)($ws_query['content'] ?? ''), '/'));
+}
+
 if($serie){
 	// Le occorrenze di questa serie: l'indice per collezione esiste apposta.
 	$pezzi = explode('/', trim((string)($ws_query['content'] ?? ''), '/'));
@@ -50,11 +88,17 @@ if($serie){
 	meetoo_sezione('eventi', $SEZIONI['eventi'] ?? null, $tutto);
 	meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
 } else {
-	// `?? null`: se il file delle sezioni sul server fosse più vecchio di questo
-	// template, la sezione si arrangia invece di far stampare avvisi.
+	/* L'elenco delle fermate c'è SEMPRE: è quello che legge un motore di ricerca, e
+	 * quello che resta a chi il JavaScript non ce l'ha. Quando la linea si accende,
+	 * si toglie di mezzo da solo (`body.mt-percorso`).
+	 * `?? null`: se il file delle sezioni sul server fosse più vecchio di questo
+	 * template, la sezione si arrangia invece di far stampare avvisi. */
+	if($percorso){ echo '<div class="mt-percorso-elenco">'; }
 	meetoo_sezione('raccolta', $SEZIONI['raccolta'] ?? null, $tutto);
+	if($percorso){ echo '</div>'; }
 }
 ?>
 			</article>
+<?php if($percorso){ include_template('template-parts/percorso'); } ?>
 <?php
 include_template('template-parts/footer');

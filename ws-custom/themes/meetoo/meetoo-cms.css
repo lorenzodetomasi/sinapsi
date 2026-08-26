@@ -125,3 +125,39 @@
 .mt-footer-voci a { color: var(--color-link); text-decoration: none; }
 .mt-footer-voci a:hover { text-decoration: underline; }
 .mt-footer-firma { margin: 0; font-size: .9rem; }
+
+/* ---------- Briciole: la casa è un'icona ---------- */
+/* Il nome resta nel markup, ma non a schermo: chi legge con la voce lo sente, chi
+   guarda vede una casa. `clip` e non `display:none`, che le tecnologie assistive
+   saltano insieme a tutto il resto. */
+.mt-solo-voce {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+}
+.mt-crumbs .mt-casa { display: inline-flex; align-items: center; }
+.mt-crumbs .mt-casa .material-symbols-outlined { font-size: 1.15rem; }
+
+/* ---------- Il pulsante di accesso, vestito da Meetoo ----------
+   Arriva dal plugin `google-login`, che veste bianco Google — giusto per isotype,
+   che è chiaro. Dentro l'header scuro di Meetoo diventava una scheda bianca con un
+   punto elenco davanti. Qui si riveste con i token del tema; il plugin resta
+   com'è, perché lo usano tutti e due i siti. */
+.mt-actions .google-avatar,
+.mt-actions .google-avatar > li { list-style: none; margin: 0; padding: 0; }
+.mt-actions .google-avatar { display: flex; align-items: center; }
+/* L'avatar non è il logo: l'header compatto rimpicciolisce le immagini che ha
+   dentro fino all'altezza del marchio, e all'avatar toccava 24 pixel. */
+.mt-actions img.avatar-circle { width: 2.25rem; height: 2.25rem; max-width: none; object-fit: cover; }
+.mt-actions .profile-popup {
+  background: var(--color-background-section1); color: var(--color-text);
+  border: 1px solid var(--color-line); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.35);
+}
+.mt-actions .popup-name { color: var(--color-heading); }
+.mt-actions .popup-email { color: var(--color-hint); }
+.mt-actions .popup-actions { border-top-color: var(--color-line); }
+.mt-actions .meta-pill { border-color: var(--color-line); color: var(--color-hint); background: transparent; }
+.mt-actions .google-logout-btn,
+.mt-actions .google-action-btn.edit-btn {
+  background: var(--color-background-section2); color: var(--color-text); border-color: var(--color-line);
+}
+.mt-actions .popup-big-avatar { width: 4.5rem; height: 4.5rem; max-width: none; }
