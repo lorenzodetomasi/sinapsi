@@ -44,18 +44,33 @@ $GLOBALS['ws_metas']['og_type'] = '<meta property="og:type" content="website" />
 if(!empty($rewrite_rule->title)){
 	$GLOBALS['ws_metas']['og_title'] = '<meta property="og:title" content="'.$rewrite_rule->title.'" />';
 }
-$GLOBALS['ws_metas']['og_description'] = '<meta property="og:description" content="'.$rewrite_rule->description.'" />';
+// Una descrizione che non c'è non si annuncia: `<meta name="description">` qui
+// sopra si guarda dall'essere vuoto, e `og:description` faceva l'opposto — le
+// pagine senza sommario (per esempio i luoghi di Meetoo) spedivano un
+// `content=""`, che a chi legge la scheda del collegamento dice meno di niente.
+if(!empty($rewrite_rule->description)){
+	$GLOBALS['ws_metas']['og_description'] = '<meta property="og:description" content="'.$rewrite_rule->description.'" />';
+}
 if(!empty($ws_content->og->image[0])){
-	$GLOBALS['ws_metas']['og_image'] = '<meta property="og:image" content="'.get_media($$ws_content->og->image[0], array('output' => 'src')).'" />';
+	// `$$ws_content` era un doppio dollaro di troppo: PHP ci leggeva il nome di
+	// un'altra variabile, e la pagina moriva. Non è mai successo solo perché
+	// nessun contenuto, finora, ha un `og/image`.
+	$GLOBALS['ws_metas']['og_image'] = '<meta property="og:image" content="'.get_media($ws_content->og->image[0], array('output' => 'src')).'" />';
 	$GLOBALS['ws_metas']['twitter_card'] = '<meta name="twitter:card" content="'.get_media($ws_content->og->image[0], array('output' => 'src')).'" />';
 }
 if(!empty($current_url)){
 	$GLOBALS['ws_metas']['og_url'] = '<meta property="og:url" content="'.$current_url.'" />';
 }
-if(!empty($current_url)){
-	$GLOBALS['ws_metas']['og_url'] = '<meta property="og:url" content="'.$current_url.'" />';
-}
-$GLOBALS['ws_metas'][] = '<link rel="alternate" hreflang="lang_code" href="url_of_page" />';
+/* Qui c'era anche un `<link rel="alternate" hreflang="lang_code" href="url_of_page">`:
+ * il segnaposto di una cosa da fare, che però ogni pagina di ogni sito spediva
+ * tale e quale ai motori di ricerca — un hreflang che dichiara una lingua di nome
+ * «lang_code» in un indirizzo di nome «url_of_page».
+ *
+ * Non si può riempirlo con quello che il CMS sa oggi: per dire «questa pagina è la
+ * traduzione di quella» serve un legame FRA due voci della mappa, e nella mappa
+ * quel legame non c'è (ogni `<url>` sa la propria lingua, non chi sono i suoi
+ * gemelli). Il giorno che ci sarà, l'hreflang si scrive da lì; finché non c'è,
+ * non dichiarare niente è più corretto che dichiarare una cosa falsa. */
 
 $GLOBALS['ws_scripts'] = array(
 	'body_end' => '',
