@@ -23,20 +23,28 @@ $logo = ws_contents_url().'meetoo/'.ws_locale().'/brand/media/logo-h.svg';
 /**
  * Le voci del menu principale, dal CONTENUTO.
  *
- * Stesso posto e stessa forma del menu di isotype — `nav1` nella radice dei
- * contenuti, voci con nome, icona e `wspath` — perché un menu è una decisione
- * editoriale, non una riga di programma. Prima era una lista dentro `header.js`;
- * ora si aggiunge una voce senza aprire un file di codice.
+ * Stesso posto del menu di isotype — `nav1` nella radice dei contenuti — perché un
+ * menu è una decisione editoriale, non una riga di programma.
  *
- * Il `wspath` può portarsi dietro un'ancora (`/lido-di-ostia#eventi`): si stacca
- * prima di passare da `ws_href`, che normalizza i percorsi e si mangerebbe il
- * cancelletto, e si riattacca dopo.
+ * Ma una voce dice CHE COSA, non DOVE: `<content>places/lido-di-ostia</content>`,
+ * non `/roma/municipio10/lido-di-ostia`. L'indirizzo lo chiede alla mappa. Prima
+ * erano scritti a mano, e il giorno in cui gli indirizzi sono diventati un albero
+ * il menu ha continuato a offrire i vecchi: sette voci, sette 404. Con il
+ * riferimento al contenuto quel guasto non è più possibile — e se un contenuto non
+ * ha (o non ha più) una pagina, la voce non si stampa affatto: meglio una voce in
+ * meno di una che porta a una pagina che non c'è.
+ *
+ * `<elenco>eventi</elenco>` accanto a un contenuto punta a uno dei tre elenchi di
+ * quella zona: anche quello è derivato, non scritto.
+ *
+ * Resta accettato un `<wspath>` per le voci che una pagina di contenuto non ce
+ * l'hanno, ma solo se la mappa la conosce: si controlla prima di stamparla.
  *
  * (Candidata a diventare `ws_nav_voci()` in your-theme, condivisa con
  * `ws_nav_items()`: la fonte è la stessa, cambia solo come si veste.)
  */
 function meetoo_voci_nav(){
-	global $ws_query, $ws_content_root, $ws_content_root_abspath, $ws_contentmap;
+	global $ws_query, $ws_content_root;
 	$nav = null;
 	foreach(array($ws_content_root.'/'.ws_locale().'/nav1', $ws_content_root.'/nav1') as $forse){
 		if(file_exists(ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/'.$forse.'.xml')){
@@ -47,27 +55,39 @@ function meetoo_voci_nav(){
 	if(empty($nav) or !count($nav->item)){
 		return array();
 	}
+	$qui = trim((string)($ws_query['wspath'] ?? ''), '/');
 	$voci = array();
 	foreach($nav->item as $item){
-		$wspath = trim((string)$item->wspath);
-		if($wspath === '' or empty($item->name)){
+		if(empty($item->name)){
 			continue;
 		}
-		$pezzi = explode('#', $wspath, 2);
-		$href = ws_href($pezzi[0]);
-		if(isset($pezzi[1])){
-			$href .= '#'.$pezzi[1];
+		$contenuto = trim((string)$item->content);
+		$elenco = trim((string)$item->elenco);
+		$destinazione = '';
+
+		if($contenuto !== ''){
+			$indirizzo = meetoo_indirizzo($contenuto);
+			if($indirizzo === ''){
+				continue;   // quel contenuto una pagina non ce l'ha: niente voce
+			}
+			$destinazione = $elenco !== '' ? rtrim($indirizzo, '/').'/'.$elenco : $indirizzo;
+		} else {
+			$wspath = trim((string)$item->wspath);
+			if($wspath === '' or meetoo_titolo($wspath) === ''){
+				continue;   // indirizzo scritto a mano che la mappa non conosce
+			}
+			$destinazione = ws_href(ltrim($wspath, '/'));
 		}
+
+		// «Sei qui»: si confronta l'indirizzo, non il contenuto — due voci possono
+		// nascere dallo stesso contenuto (la zona e i suoi elenchi).
+		$suo = trim(parse_url($destinazione, PHP_URL_PATH) ?: '', '/');
+		$mio = trim(ws_mount().'/'.$qui, '/');
 		$voci[] = array(
 			'nome' => (string)$item->name,
 			'icona' => trim((string)$item->icon) ?: 'chevron_right',
-			'href' => $href,
-			/* Il segno «sei qui»: lo stesso confronto che fa your-theme, ma solo per
-			 * le voci che puntano a una PAGINA. Le voci con l'ancora portano a un
-			 * pezzo di questa stessa pagina, e se fossero «correnti» anche loro ce
-			 * ne sarebbero cinque — mentre a chi legge con la voce se ne deve
-			 * annunciare una sola. */
-			'corrente' => (!isset($pezzi[1]) and ws_normalize_relpath($pezzi[0]) === $ws_query['wspath']),
+			'href' => $destinazione,
+			'corrente' => ($suo !== '' and $suo === $mio),
 		);
 	}
 	return $voci;
