@@ -26,8 +26,27 @@ $mode       = (string)($_POST['mode'] ?? 'offline');
 
 function fail(int $code, string $msg) { http_response_code($code); echo json_encode(['error' => $msg]); exit; }
 
-// --- Utente (token) ---
+/* --- Chi sei: token o sessione ---
+ *
+ * Due strade, una sola risposta. Il TOKEN nel corpo è quella dell'archivio e
+ * dell'editor: chi ce l'ha lo manda, e vale un'ora. La SESSIONE è quella del sito
+ * servito dal CMS: il cookie dice chi sei senza chiedere niente a Google a ogni
+ * gesto, e dura quanto il cookie.
+ *
+ * Il token ha la precedenza perché è più esplicito: se una richiesta se lo porta
+ * dietro, è quello che vuole usare. La sessione interviene quando non c'è.
+ *
+ * Con la sessione serve il gettone: il cookie il browser lo manda da solo, anche
+ * per conto di un sito che non è questo. Senza gettone, un'altra pagina potrebbe
+ * far mettere «mi interessa» — o peggio, iscrivere a un evento — a tua insaputa.
+ */
 $user = $credential !== '' ? ws_authenticate($credential) : null;
+if (!$user) {
+    $user = ws_autentica_sessione();
+    if ($user && !ws_gettone_valido((string)($_POST['csrf'] ?? ''))) {
+        fail(403, 'Richiesta non riconosciuta: ricarica la pagina e riprova.');
+    }
+}
 if ($action === 'me') {
     if (!$user) fail(401, 'Login Google fallito o scaduto.');
     $p = ws_user_upsert($base, $user);

@@ -95,10 +95,22 @@
     subscribe: function (cb) { subs.push(cb); try { cb(S.user, S.token); } catch (e) {} },
     requireLogin: function () { try { google.accounts.id.prompt(); } catch (e) {} },
     renderButton: function (el) { var g = win_gis(); if (g && el) { el.innerHTML = ''; g.renderButton(el, { type: 'standard', theme: 'outline', size: 'medium', text: 'signin', shape: 'pill' }); } },
-    logout: function () { S.user = null; S.token = null; S.prefs = {}; store.clear(); try { google.accounts.id.disableAutoSelect(); } catch (e) {} notify(); },
+    logout: function () {
+      // Con la sessione PHP l'uscita è un fatto del server: il cookie lo può
+      // cancellare solo lui. Qui si va all'indirizzo che lo fa, e si torna.
+      if (CFG.sessione === 'php') { location.href = CFG.logoutUrl || (location.pathname + '?logout=1'); return; }
+      S.user = null; S.token = null; S.prefs = {}; store.clear();
+      try { google.accounts.id.disableAutoSelect(); } catch (e) {}
+      notify();
+    },
     api: function (action, fields) {
       var body = new URLSearchParams(Object.assign({ action: action }, fields || {}));
       if (S.token) body.set('credential', S.token);
+      /* Sessione PHP: chi sei lo dice il cookie, che il browser manda da solo —
+       * anche se a chiedere fosse un altro sito. Per questo va accompagnato da un
+       * gettone che solo questa pagina conosce: senza, una pagina qualunque
+       * potrebbe mettere «mi interessa» al posto tuo. */
+      if (!S.token && CFG.csrf) body.set('csrf', CFG.csrf);
       return fetch(RSVP_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
         .then(function (r) { return r.json().then(function (j) { return { status: r.status, body: j }; }, function () { return { status: r.status, body: {} }; }); });
     },
@@ -122,8 +134,17 @@
   })();
 
 
-  /* ============ Header HTML ============ */
-  var header = document.createElement('header');
+  /* ============ Header HTML ============
+   * Se l'header c'è già — lo serve il CMS, con dentro logo, briciole e voci di
+   * menu che devono esistere anche senza JavaScript — lo si ADOTTA. Altrimenti lo
+   * si costruisce, come per le pagine che il CMS non serve: l'archivio e l'editor
+   * in ws-admin. Il markup è lo stesso nei due casi, ed è questo che rende lecita
+   * l'adozione: gli `id` sono l'appiglio del comportamento, le classi quello degli
+   * stili, e nessuno dei due cambia a seconda di chi scrive l'HTML. */
+  var header = document.querySelector('header.mt-header');
+  var servito = !!header;   // «servito»: l'ha scritto il server
+  if (!servito) {
+  header = document.createElement('header');
   header.className = 'mt-header';
   header.innerHTML =
     '<div class="mt-row mt-row-1">' +
@@ -137,13 +158,22 @@
   // Rimuove un eventuale vecchio #session-header e inserisce l'header in cima.
   var old = document.getElementById('session-header'); if (old) old.remove();
   document.body.insertBefore(header, document.body.firstChild);
-  // La riga 2 (breadcrumb) parte nascosta: si mostra solo quando la pagina la
-  // popola via setBreadcrumb. Le pagine senza breadcrumb (es. editor eventi) NON
-  // hanno una riga vuota — la loro "riga 2" è la toolbar della pagina.
-  (function () { var r = header.querySelector('.mt-row-2'); if (r) r.style.display = 'none'; })();
+  }
+  /* La riga 2 (briciole) si vede solo se ha qualcosa da dire: la pagina la popola
+   * con setBreadcrumb, oppure arriva già piena dal server. Le pagine che non ne
+   * hanno — l'editor eventi, per dire — non si portano dietro una riga vuota. */
+  (function () {
+    var r = header.querySelector('.mt-row-2');
+    if (r && !r.textContent.trim()) r.style.display = 'none';
+  })();
 
-  /* ============ Modale Impostazioni ============ */
-  var modal = document.createElement('div');
+  /* ============ Modale Impostazioni ============
+   * Questa NON la scrive mai il server: non è contenuto, è un pannello di
+   * comandi. A un motore di ricerca non serve, e a chi legge senza JavaScript
+   * nemmeno — non ci sarebbe niente da comandare. */
+  var modal = document.getElementById('mt-settings-modal');
+  if (!modal) {
+  modal = document.createElement('div');
   modal.className = 'mt-ov'; modal.id = 'mt-settings-modal';
   modal.innerHTML =
     '<div class="mt-modal"><button class="mt-modal-close" id="mt-set-close"><span class="material-symbols-outlined">close</span></button>' +
@@ -159,26 +189,44 @@
       '<div id="mt-page-settings" class="mt-page-settings"></div>' +
     '</div></div>';
   document.body.appendChild(modal);
+  }
   modal.addEventListener('click', function (e) { if (e.target === modal) closeSettings(); });
   document.getElementById('mt-set-close').onclick = closeSettings;
   document.getElementById('mt-settings').onclick = openSettings;
 
   /* ============ Drawer (hamburger) ============ */
-  var drawerOv = document.createElement('div'); drawerOv.className = 'mt-drawer-ov';
-  var drawer = document.createElement('nav'); drawer.className = 'mt-drawer';
+  var drawer = document.querySelector('.mt-drawer');
+  var drawerOv = document.querySelector('.mt-drawer-ov');
+  if (!drawer) {
+  drawerOv = document.createElement('div'); drawerOv.className = 'mt-drawer-ov';
+  drawer = document.createElement('nav'); drawer.className = 'mt-drawer';
   drawer.innerHTML = '<div class="mt-drawer-head"><a class="mt-brand" href="' + esc(THEME_DIR + 'index.html') + '"><img src="' + esc(LOGO_URL) + '" alt="Meetoo" onerror="this.replaceWith(Object.assign(document.createElement(\'b\'),{textContent:\'Meetoo\',style:\'font-family:Roboto Slab,serif;color:var(--mt-red);font-size:1.1rem\'}))"></a>' +
     '<button class="mt-icon-btn" id="mt-drawer-close" aria-label="Chiudi"><span class="material-symbols-outlined">close</span></button></div><div class="mt-nav" id="mt-nav"></div>';
   document.body.appendChild(drawerOv); document.body.appendChild(drawer);
+  }
+  function voceNav(it) {
+    return '<a href="' + esc(it.href) + '"' + (it.target ? ' target="' + esc(it.target) + '"' : '') +
+      (it.data ? ' data-nav="' + esc(it.data) + '"' : '') +
+      '><span class="material-symbols-outlined">' + esc(it.icon || 'chevron_right') + '</span>' + esc(it.label) + '</a>';
+  }
   function renderNav() {
-    var items = (NAV || []).slice();
-    // Amministrazione: solo per chi è loggato con un ruolo redazionale. Il menu si
-    // ridisegna a ogni apertura, quindi la voce compare appena si accede.
-    if (S.user && ['admin', 'super-admin'].indexOf(S.user.role) !== -1) {
-      items.push({ label: 'Amministrazione', icon: 'admin_panel_settings', href: SITE_ROOT + 'ws-admin/index.php' });
+    var box = document.getElementById('mt-nav');
+    if (!box) return;
+    /* Le voci servite dal server NON si riscrivono: sono collegamenti veri, li ha
+     * già letti chi indicizza, e vengono dal menu del sito (nav1) invece che da
+     * una lista dentro questo file. Qui si aggiunge solo ciò che dipende da CHI
+     * sei, e che il server non può sapere in anticipo. */
+    if (!servito) box.innerHTML = (NAV || []).map(voceNav).join('');
+    // Amministrazione: solo per chi è collegato con un ruolo redazionale. Il menu
+    // si ridisegna a ogni apertura, quindi la voce compare appena si accede — e
+    // sparisce appena si esce.
+    var voce = box.querySelector('[data-nav="admin"]');
+    var puo = S.user && ['admin', 'super-admin'].indexOf(S.user.role) !== -1;
+    if (puo && !voce) {
+      box.insertAdjacentHTML('beforeend', voceNav({ label: 'Amministrazione', icon: 'admin_panel_settings', href: SITE_ROOT + 'ws-admin/index.php', data: 'admin' }));
+    } else if (!puo && voce) {
+      voce.remove();
     }
-    document.getElementById('mt-nav').innerHTML = items.map(function (it) {
-      return '<a href="' + esc(it.href) + '"' + (it.target ? ' target="' + esc(it.target) + '"' : '') + '><span class="material-symbols-outlined">' + esc(it.icon || 'chevron_right') + '</span>' + esc(it.label) + '</a>';
-    }).join('');
   }
   function openDrawer() { renderNav(); drawerOv.classList.add('open'); drawer.classList.add('open'); }
   function closeDrawer() { drawerOv.classList.remove('open'); drawer.classList.remove('open'); }
@@ -241,6 +289,11 @@
   /* ============ Account (riga 1) ============ */
   function renderAccount() {
     var el = document.getElementById('mt-account');
+    if (!el) return;
+    // Sessione PHP: quel posto l'ha già riempito il server, che sa chi sei prima
+    // ancora di mandare la pagina. Sovrascriverlo vorrebbe dire far lampeggiare
+    // l'avatar a ogni caricamento.
+    if (CFG.sessione === 'php') return;
     if (CFG.noAuth) { el.innerHTML = ''; return; } // pagine admin: nessun login qui
     if (S.user) {
       el.innerHTML = S.user.picture
@@ -305,7 +358,22 @@
       notify();
     }).catch(function () { notify(); });
   }
-  if (CFG.noAuth) { renderAccount(); }
+  /* Chi sei, e chi lo dice.
+   *
+   * `sessione: 'php'` — la strada del CMS — vuol dire che l'ha già deciso il
+   * server: l'utente arriva scritto nella pagina, e qui non si chiede niente a
+   * Google. È la differenza che conta, perché il token di Google dura un'ora: era
+   * quello a far ricomparire la richiesta di accesso di continuo, non un difetto
+   * di questo file. Una sessione, invece, dura quanto il suo cookie.
+   *
+   * Senza quella dichiarazione si resta alla strada di prima: token in memoria,
+   * verificato a ogni caricamento. La usano l'archivio e le pagine di ws-admin. */
+  if (CFG.sessione === 'php') {
+    S.user = CFG.utente || null;
+    S.prefs = (CFG.utente && CFG.utente.prefs) || {};
+    notify();
+  }
+  else if (CFG.noAuth) { renderAccount(); }
   else if (!win_gis()) { var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true; s.onload = init; document.head.appendChild(s); renderAccount(); }
   else init();
 })();

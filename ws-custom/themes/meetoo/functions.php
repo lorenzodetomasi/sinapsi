@@ -110,9 +110,60 @@ function meetoo_jsonld(){
 }
 $GLOBALS['ws_scripts']['head']['meetoo_jsonld'] = meetoo_jsonld();
 
-// I gesti dell'header (cassetto, condividi): quel poco che resta al browser ora
-// che il markup arriva già scritto.
-$GLOBALS['ws_scripts']['bodyend']['meetoo_header'] = '<script defer="defer" src="'.$ws_theme_url.'js/header.js"></script>';
+/* ---------------------------------------------------------------------------
+ * Chi sei, detto dal server.
+ *
+ * Il comportamento dell'header — cassetto, impostazioni, tema, «mi interessa» —
+ * sta tutto in `header.js`, che è il lavoro finito e non si riscrive. Quello che
+ * cambia qui è da dove viene la SESSIONE: non più un token di Google tenuto nel
+ * browser e verificato a ogni caricamento (dura un'ora: era quello a far
+ * ricomparire di continuo la richiesta di accesso), ma la sessione PHP che apre
+ * il plugin `google-login`. La pagina parte già sapendo chi sei — niente attesa,
+ * niente avatar che lampeggia — e le richieste si autenticano con il cookie più
+ * un gettone, che il cookie da solo non basta.
+ * ------------------------------------------------------------------------- */
+require_once ws_root_abspath().'/ws-admin/lib/ws-auth.php';
+require_once ws_root_abspath().'/ws-admin/lib/ws-users.php';
+
+$meetoo_utente = ws_autentica_sessione();
+if($meetoo_utente){
+	// Le preferenze stanno sul profilo, non nel browser: valgono anche da un altro
+	// computer. Se il profilo non c'è ancora, restano quelle di partenza.
+	$profilo = ws_user_get(ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/meetoo/'.ws_locale(), $meetoo_utente['uid']);
+	$meetoo_utente = array(
+		'uid' => $meetoo_utente['uid'],
+		'name' => $meetoo_utente['name'] ?: $meetoo_utente['email'],
+		'email' => $meetoo_utente['email'],
+		'picture' => $meetoo_utente['picture'],
+		'role' => $meetoo_utente['role'],
+		'prefs' => (is_array($profilo) and isset($profilo['meetoo:preferences'])) ? $profilo['meetoo:preferences'] : new stdClass(),
+	);
+}
+$meetoo_cfg = array(
+	'sessione' => 'php',
+	'utente' => $meetoo_utente ?: null,
+	'csrf' => $meetoo_utente ? ws_gettone_sessione() : '',
+	// L'uscita la esegue il plugin, su qualunque indirizzo: il cookie può
+	// cancellarlo solo il server.
+	'logoutUrl' => ws_href(ltrim((string)($rewrite_rule->wspath ?? ''), '/')).'?logout=1',
+);
+$GLOBALS['ws_scripts']['head']['meetoo_sessione'] = '<script>window.MEETOO_HEADER = '
+	.json_encode($meetoo_cfg, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+	.';</script>';
+
+/* Dove sta il sito e dove stanno i contenuti: DICHIARATI, non indovinati.
+ * `header.js` li cerca proprio con questi due nomi — li aveva previsti per il
+ * giorno in cui il CMS avrebbe servito le pagine, che è oggi. Senza, dedurrebbe
+ * la radice tagliando l'indirizzo su `/ws-custom/`, che negli indirizzi puliti
+ * non compare. */
+$GLOBALS['ws_metas']['meetoo_site_root'] = '<meta name="meetoo:site-root" content="'.ws_root_url().'/" />';
+$GLOBALS['ws_metas']['meetoo_content_base'] = '<meta name="meetoo:content-base" content="'.ws_contents_url().'meetoo/'.ws_locale().'/" />';
+
+// Il comportamento dell'header: lo stesso file delle pagine dell'archivio e
+// dell'editor. Qui trova il markup già scritto e lo adotta invece di crearlo.
+$GLOBALS['ws_scripts']['bodyend']['meetoo_header'] = '<script defer="defer" src="'.$ws_theme_url.'header.js"></script>';
+// Le azioni della riga contestuale (condividi), che dell'header non fanno parte.
+$GLOBALS['ws_scripts']['bodyend']['meetoo_azioni'] = '<script defer="defer" src="'.$ws_theme_url.'js/azioni.js"></script>';
 // I gesti delle card — condividi, «mi interessa» — sono già scritti una volta
 // sola in `cards.js`, che li intercetta sul documento: valgono anche per le card
 // che arrivano dal server, senza doverle costruire in JavaScript.

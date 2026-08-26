@@ -20,15 +20,59 @@ $nome_sito = !empty($ws_headings->mainEntity->name) ? (string)$ws_headings->main
 // cerca anche l'header in JavaScript.
 $logo = ws_contents_url().'meetoo/'.ws_locale().'/brand/media/logo-h.svg';
 
-// Le porte d'ingresso del sito. Le pagine vere arrivano dalla mappa; queste sono
-// le poche che devono esserci sempre.
-$menu = array(
-	array('eventi', __('Eventi'), 'event'),
-	array('lungomare', __('Lungomare'), 'beach_access'),
-	array('bookcrossing', __('BookCrossing'), 'menu_book'),
-	array('luoghi', __('Luoghi'), 'place'),
-	array('organizzatori', __('Chi organizza'), 'groups'),
-);
+/**
+ * Le voci del menu principale, dal CONTENUTO.
+ *
+ * Stesso posto e stessa forma del menu di isotype — `nav1` nella radice dei
+ * contenuti, voci con nome, icona e `wspath` — perché un menu è una decisione
+ * editoriale, non una riga di programma. Prima era una lista dentro `header.js`;
+ * ora si aggiunge una voce senza aprire un file di codice.
+ *
+ * Il `wspath` può portarsi dietro un'ancora (`/lido-di-ostia#eventi`): si stacca
+ * prima di passare da `ws_href`, che normalizza i percorsi e si mangerebbe il
+ * cancelletto, e si riattacca dopo.
+ *
+ * (Candidata a diventare `ws_nav_voci()` in your-theme, condivisa con
+ * `ws_nav_items()`: la fonte è la stessa, cambia solo come si veste.)
+ */
+function meetoo_voci_nav(){
+	global $ws_query, $ws_content_root, $ws_content_root_abspath, $ws_contentmap;
+	$nav = null;
+	foreach(array($ws_content_root.'/'.ws_locale().'/nav1', $ws_content_root.'/nav1') as $forse){
+		if(file_exists(ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/'.$forse.'.xml')){
+			$nav = ws_content($forse);
+			break;
+		}
+	}
+	if(empty($nav) or !count($nav->item)){
+		return array();
+	}
+	$voci = array();
+	foreach($nav->item as $item){
+		$wspath = trim((string)$item->wspath);
+		if($wspath === '' or empty($item->name)){
+			continue;
+		}
+		$pezzi = explode('#', $wspath, 2);
+		$href = ws_href($pezzi[0]);
+		if(isset($pezzi[1])){
+			$href .= '#'.$pezzi[1];
+		}
+		$voci[] = array(
+			'nome' => (string)$item->name,
+			'icona' => trim((string)$item->icon) ?: 'chevron_right',
+			'href' => $href,
+			/* Il segno «sei qui»: lo stesso confronto che fa your-theme, ma solo per
+			 * le voci che puntano a una PAGINA. Le voci con l'ancora portano a un
+			 * pezzo di questa stessa pagina, e se fossero «correnti» anche loro ce
+			 * ne sarebbero cinque — mentre a chi legge con la voce se ne deve
+			 * annunciare una sola. */
+			'corrente' => (!isset($pezzi[1]) and ws_normalize_relpath($pezzi[0]) === $ws_query['wspath']),
+		);
+	}
+	return $voci;
+}
+$menu = meetoo_voci_nav();
 ?>
 <!DOCTYPE html>
 <html<?php echo ws_html_attributes('html'); ?>>
@@ -60,19 +104,30 @@ echo ws_links();
 <?php include_template('template-parts/bottom-header'); ?>
 			</header>
 
-			<div class="mt-drawer-ov" id="mt-drawer-ov" hidden="hidden"></div>
-			<nav class="mt-drawer" id="mt-drawer" aria-label="<?php _e('Menu'); ?>" hidden="hidden">
+<?php
+/* Il cassetto del menu: STESSO markup che costruisce `header.js` quando la pagina
+ * non gliel'ha già dato — `.mt-drawer-head` con il marchio, `#mt-nav` con i
+ * collegamenti diretti. Non è un vezzo: `meetoo.css` veste `.mt-nav a`, e una
+ * lista `<ul><li>` lì dentro non la tocca nessuna regola.
+ *
+ * Niente `hidden`: chiuso e aperto li decide il CSS (il cassetto sta fuori
+ * schermo, il velo è trasparente), e `hidden` bloccherebbe la transizione. */
+?>
+			<div class="mt-drawer-ov" id="mt-drawer-ov"></div>
+			<nav class="mt-drawer" id="mt-drawer" aria-label="<?php _e('Menu'); ?>">
 				<div class="mt-drawer-head">
-					<span><?php echo htmlspecialchars($nome_sito, ENT_QUOTES, 'UTF-8'); ?></span>
+					<a class="mt-brand" href="<?php echo $home; ?>">
+						<img src="<?php echo htmlspecialchars($logo, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($nome_sito, ENT_QUOTES, 'UTF-8'); ?>" />
+					</a>
 					<button class="mt-icon-btn" id="mt-drawer-close" title="<?php _e('Chiudi'); ?>" aria-label="<?php _e('Chiudi'); ?>">
 						<span class="material-symbols-outlined" aria-hidden="true">close</span>
 					</button>
 				</div>
-				<ul>
+				<div class="mt-nav" id="mt-nav">
 <?php foreach($menu as $voce){ ?>
-					<li><a href="<?php echo ws_href($voce[0]); ?>"><span class="material-symbols-outlined" aria-hidden="true"><?php echo $voce[2]; ?></span> <?php echo $voce[1]; ?></a></li>
+					<a href="<?php echo htmlspecialchars($voce['href'], ENT_QUOTES, 'UTF-8'); ?>"<?php echo $voce['corrente'] ? ' aria-current="page"' : ''; ?>><span class="material-symbols-outlined" aria-hidden="true"><?php echo htmlspecialchars($voce['icona'], ENT_QUOTES, 'UTF-8'); ?></span><?php echo htmlspecialchars($voce['nome'], ENT_QUOTES, 'UTF-8'); ?></a>
 <?php } ?>
-				</ul>
+				</div>
 			</nav>
 
 			<div<?php echo ws_html_attributes('main-container'); ?>>
