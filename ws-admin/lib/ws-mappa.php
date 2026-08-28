@@ -205,6 +205,15 @@ if (!function_exists('ws_mappa_wspath')) {
             // Un gruppo non ha un indirizzo suo: la sua zona è quella dove fa le
             // cose, dedotta dagli eventi che organizza.
             $zonaSlug = $ctx['org'][$slug] ?? '';
+            /* Se di eventi non ne ha ancora, può DIRLO: `containedInPlace` con
+             * l'@id di una zona. Un gruppo che non organizza niente non è un gruppo
+             * che non sta da nessuna parte — e senza questo la sua pagina esiste ma
+             * dagli elenchi della sua zona non ci si arriva. Chi opera solo in rete
+             * non lo dichiara, e resta giustamente senza territorio. */
+            if ($zonaSlug === '') {
+                $dichiarata = ws_mappa_slug(ws_ref_id_semplice($e['containedInPlace'] ?? null));
+                if ($dichiarata !== '' && isset($zone[$dichiarata])) $zonaSlug = $dichiarata;
+            }
             $percorso = $zonaSlug ? $dove($zonaSlug) : '';
             return [($percorso ? "/$percorso/gruppi/$slug" : "/gruppi/$slug"), 'organizer', 'Organization'];
         }

@@ -109,17 +109,14 @@ function meetoo_ambito($tipo = null, $chiave = null){
 function meetoo_indice_eventi($archivio = false){
 	$ambito = meetoo_ambito();
 	$coda = $archivio ? '.archive.json' : '.json';
+	/* L'indice suo, anche quando è VUOTO. Se un gruppo non ha eventi la risposta è
+	 * «nessuno», non «quelli di tutti»: ripiegare sull'indice generale metteva sulla
+	 * pagina di Serenlibrità gli eventi del Club del libro, con il suo nome sopra. */
 	if($ambito['tipo'] === 'organizer' and $ambito['chiave'] !== ''){
-		$dati = meetoo_indice('by-organizer/'.$ambito['chiave'].$coda);
-		if($dati){
-			return $dati;
-		}
+		return meetoo_indice('by-organizer/'.$ambito['chiave'].$coda);
 	}
 	if($ambito['tipo'] === 'collection' and $ambito['chiave'] !== ''){
-		$dati = meetoo_indice('by-collection/'.$ambito['chiave'].$coda);
-		if($dati){
-			return $dati;
-		}
+		return meetoo_indice('by-collection/'.$ambito['chiave'].$coda);
 	}
 	$tutti = meetoo_indice($archivio ? 'events.archive.json' : 'events.json');
 	if($ambito['tipo'] === 'place' and $ambito['chiave'] !== ''){
@@ -129,6 +126,26 @@ function meetoo_indice_eventi($archivio = false){
 		}));
 	}
 	return $tutti;
+}
+
+/**
+ * Questa cosa sta nella zona che si sta guardando?
+ *
+ * Lo si chiede al suo INDIRIZZO, non a un campo: la mappa mette ogni contenuto
+ * sotto la zona che gli compete — `/roma/municipio10/lido-di-ostia/eventi/…` — e
+ * quindi l'indirizzo dice già dove sta. È l'unica risposta che non può divergere
+ * da quella che dà la mappa, perché è la stessa.
+ *
+ * Fuori da una pagina di zona non filtra niente: un gruppo, un luogo, una
+ * raccolta mostrano le loro cose, che è un'altra domanda.
+ */
+function meetoo_di_qui($href){
+	$ambito = meetoo_ambito();
+	if($ambito['tipo'] !== 'zone' or $ambito['chiave'] === '' or $href === ''){
+		return true;
+	}
+	$base = rtrim($ambito['chiave'], '/');
+	return ($href === $base or strpos($href, $base.'/') === 0);
 }
 
 /**
@@ -187,6 +204,123 @@ function meetoo_evento_indicizzato($id){
 	return $per_id[trim((string)$id, '/')] ?? null;
 }
 
+/**
+ * La PARTE N di una raccolta: «Adatto ai bambini» è la parte 0 di «Bambini e
+ * famiglie». Una raccolta divisa in parti è una pagina sola con più liste dentro,
+ * e il numero è il modo in cui una lista si nomina — anche nel pezzo chiesto dal
+ * browser mentre si scorre.
+ */
+function meetoo_parte($ent, $n){
+	$parti = !empty($ent->hasPart) ? $ent->hasPart : array();
+	$i = 0;
+	foreach($parti as $x){
+		if($i === $n){
+			return $x;
+		}
+		$i++;
+	}
+	return null;
+}
+
+/** Le voci di una lista, nude: il ListItem è un involucro, e può non esserci. */
+function meetoo_righe($ent){
+	$out = array();
+	foreach((!empty($ent->itemListElement) ? $ent->itemListElement : array()) as $riga){
+		$out[] = !empty($riga->item) ? $riga->item : $riga;
+	}
+	return $out;
+}
+
+/**
+ * Questa lista è fatta di EVENTI?
+ *
+ * Se sì non si mostra come un elenco piatto di titoli: si mostra come si mostrano
+ * gli eventi dappertutto — i prossimi, quelli che si ripetono, e il passato solo
+ * su richiesta. La differenza la fanno i dati, non un campo apposta: una lista di
+ * `events/…` è una lista di appuntamenti, e chi la guarda vuole sapere quando.
+ */
+function meetoo_lista_di_eventi($ent){
+	$righe = meetoo_righe($ent);
+	if(!count($righe)){
+		return false;   // vuota: una sezione sola che spiega, non tre che tacciono
+	}
+	foreach($righe as $m){
+		if(strpos(meetoo_riferimento_nodo($m), 'events/') !== 0){
+			return false;
+		}
+	}
+	return true;
+}
+
+/**
+ * Gli eventi di una lista, divisi come nel resto del sito.
+ *
+ * `eventi` i prossimi singoli, `collezioni` quelli che si ripetono, `archivio` il
+ * passato. Le date non stanno nella lista — la lista dice solo `{"@id": …}` — ma
+ * nell'indice, che è già in memoria.
+ */
+function meetoo_eventi_lista($ent, $quale){
+	$ora = time();
+	$scelti = array();
+	foreach(meetoo_righe($ent) as $m){
+		$id = meetoo_riferimento_nodo($m);
+		if(strpos($id, 'events/') !== 0){
+			continue;
+		}
+		$ev = meetoo_evento_indicizzato($id);
+		if(!$ev){
+			continue;
+		}
+		$serie = (($ev['kind'] ?? '') === 'series');
+		// Un evento è «prossimo» finché non è finito: quello di stasera resta in
+		// elenco anche se è cominciato un'ora fa.
+		$fine = strtotime((string)(!empty($ev['endDate']) ? $ev['endDate'] : ($ev['startDate'] ?? '')));
+		$passato = ($fine and $fine < $ora);
+		$suo = $serie ? 'collezioni' : ($passato ? 'archivio' : 'eventi');
+		if($suo === $quale){
+			$scelti[] = $ev;
+		}
+	}
+	if($quale === 'archivio'){
+		usort($scelti, function($a, $b){
+			return strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''));
+		});
+	} else if($quale === 'collezioni'){
+		usort($scelti, function($a, $b){
+			return strcasecmp((string)($a['name'] ?? ''), (string)($b['name'] ?? ''));
+		});
+	} else {
+		usort($scelti, function($a, $b){
+			return strcmp((string)($a['startDate'] ?? ''), (string)($b['startDate'] ?? ''));
+		});
+	}
+	$out = array();
+	foreach($scelti as $ev){
+		$href = meetoo_indirizzo($ev['path'] ?? '');
+		if($href === ''){
+			continue;
+		}
+		/* Una collezione non ha una data: non si disegna con il blocchetto del
+		 * giorno — sarebbe vuoto — ma come le altre collezioni, dovunque compaiano. */
+		if($quale === 'collezioni'){
+			$chi = trim((string)($ev['organizer'] ?? ''));
+			$sua = meetoo_icona_di($ev['path'] ?? '');
+			$out[] = mt_card_tile(array(
+				'href' => $href,
+				'icon' => $sua ? $sua['name'] : 'collections_bookmark',
+				'iconClass' => $sua ? $sua['class'] : '',
+				'accent' => true,
+				'title' => !empty($ev['name']) ? (string)$ev['name'] : basename((string)($ev['path'] ?? '')),
+				'meta' => $chi !== '' ? $chi : __('Collezione di eventi'),
+				'metaIcon' => $chi !== '' ? mt_org_icona($ev['organizerType'] ?? '', $chi) : '',
+			));
+			continue;
+		}
+		$out[] = mt_card_evento($ev, array('href' => $href));
+	}
+	return $out;
+}
+
 /** L'icona di un luogo, dal suo tipo: un parco non è un negozio. */
 function meetoo_icona_luogo($tipi){
 	$t = strtolower(implode(' ', (array)$tipi));
@@ -218,19 +352,21 @@ function meetoo_voci($quale){
 		 * parte è una lista con la sua regola: qui si sceglie quale disegnare. Il
 		 * numero viaggia anche nel pezzo chiesto mentre si scorre, se no il
 		 * caricamento pigro continuerebbe con le voci di un'altra sezione. */
+		$sotto = '';
 		if(strpos($quale, 'raccolta:') === 0){
-			$n = (int)substr($quale, strlen('raccolta:'));
-			$parti = !empty($ent->hasPart) ? $ent->hasPart : array();
-			$parte = null;
-			$i = 0;
-			foreach($parti as $x){
-				if($i === $n){ $parte = $x; break; }
-				$i++;
-			}
+			/* `raccolta:1:archivio` = l'archivio della seconda parte. Il pezzo dopo il
+			 * numero c'è solo quando la parte è fatta di eventi, e allora la parte non
+			 * è una lista ma tre. */
+			$pezzi = explode(':', substr($quale, strlen('raccolta:')));
+			$parte = meetoo_parte($ent, (int)$pezzi[0]);
 			if($parte === null){
 				return $fatte[$quale] = $out;
 			}
 			$ent = $parte;
+			$sotto = (string)($pezzi[1] ?? '');
+		}
+		if($sotto !== ''){
+			return $fatte[$quale] = meetoo_eventi_lista($ent, $sotto);
 		}
 		$voci = !empty($ent->itemListElement) ? $ent->itemListElement : array();
 		foreach($voci as $riga){
@@ -300,7 +436,7 @@ function meetoo_voci($quale){
 		});
 		foreach($passati as $ev){
 			$href = meetoo_indirizzo($ev['path'] ?? '');
-			if($href === ''){ continue; }
+			if($href === '' or !meetoo_di_qui($href)){ continue; }
 			$out[] = mt_card_evento($ev, array('href' => $href));
 		}
 		return $fatte[$quale] = $out;
@@ -332,7 +468,7 @@ function meetoo_voci($quale){
 			});
 			foreach($scelti as $ev){
 				$href = meetoo_indirizzo($ev['path'] ?? '');
-				if($href === ''){ continue; }
+				if($href === '' or !meetoo_di_qui($href)){ continue; }
 				$out[] = mt_card_evento($ev, array('href' => $href));
 			}
 		} else {
@@ -341,7 +477,7 @@ function meetoo_voci($quale){
 			});
 			foreach($scelti as $c){
 				$href = meetoo_indirizzo($c['path'] ?? '');
-				if($href === ''){ continue; }
+				if($href === '' or !meetoo_di_qui($href)){ continue; }
 				$chi = trim((string)($c['organizer'] ?? ''));
 					// L'icona la dichiara la collezione; `collections_bookmark` è il ripiego
 				// per quelle che ancora non l'hanno detta.
@@ -366,7 +502,7 @@ function meetoo_voci($quale){
 		foreach(meetoo_indice('gruppi.json') as $g){
 			$id = (string)($g['@id'] ?? '');
 			$href = meetoo_indirizzo($id);
-			if($href === ''){ continue; }
+			if($href === '' or !meetoo_di_qui($href)){ continue; }
 			$out[] = mt_card_tile(array(
 				'href' => $href,
 				'icon' => mt_org_icona($g['@type'] ?? '', $g['name'] ?? ''),
@@ -389,7 +525,7 @@ function meetoo_voci($quale){
 			}
 			$id = (string)($l['@id'] ?? '');
 			$href = meetoo_indirizzo($id);
-			if($href === ''){ continue; }
+			if($href === '' or !meetoo_di_qui($href)){ continue; }
 			$out[] = mt_card_tile(array(
 				'href' => $href,
 				'icon' => meetoo_icona_luogo($l['@type'] ?? ''),
@@ -436,7 +572,12 @@ function meetoo_frammento(){
 	$sezioni = meetoo_sezioni();
 	// `raccolta:N` non sta nell'elenco delle sezioni — ce n'è una per ogni parte di
 	// una raccolta — ma la forma è chiusa: `raccolta:` più un numero, e niente altro.
-	$sezione = preg_match('/^raccolta:\d+$/', $parte) ? 'raccolta' : $parte;
+	$sezione = $parte;
+	if(preg_match('/^raccolta:\d+(?::(eventi|collezioni|archivio))?$/', $parte, $m)){
+		// Una sottosezione tiene il nome della sezione di cui ha la forma: l'archivio
+		// di una parte si carica su richiesta come l'archivio di un gruppo.
+		$sezione = ($m[1] ?? '') !== '' ? $m[1] : 'raccolta';
+	}
 	if($sezione === '' or !isset($sezioni[$sezione])){
 		return;
 	}
@@ -470,19 +611,23 @@ function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = '', $vediTutti = '')
 		$cfg = $tutte[$quale];
 	}
 	$cfg += array('titolo' => $quale, 'icona' => 'list', 'lista' => 'cards', 'primi' => 12, 'vuoto' => __('Niente da mostrare.'));
+	/* Il livello del titolo. Una sezione è normalmente un `h2`; dentro una parte di
+	 * raccolta è un `h3`, perché lì il titolo di rango due è il nome della parte —
+	 * e una gerarchia saltata la sente chi legge con lo schermo spento. */
+	$tag = 'h'.max(2, min(4, (int)($cfg['livello'] ?? 2)));
 	$manuale = !empty($cfg['manuale']);
 	$voci = meetoo_voci($quale);
 	$totale = count($voci);
 	$quante = ($tutto === $quale) ? $totale : min($totale, (int)$cfg['primi']);
 ?>
 				<section id="<?php echo mt_esc($quale); ?>" class="mt-sezione">
-					<h2 class="sec-head"><?php echo mt_icona($cfg['icona']); ?><?php
+					<<?php echo $tag; ?> class="sec-head"><?php echo mt_icona($cfg['icona']); ?><?php
 						if($titoloLink !== ''){
 							echo '<a href="'.mt_esc($titoloLink).'">'.mt_esc($cfg['titolo']).'</a>';
 						} else {
 							echo mt_esc($cfg['titolo']);
 						}
-					?><span class="count"><?php echo $totale ? (int)$totale : ''; ?></span></h2>
+					?><span class="count"><?php echo $totale ? (int)$totale : ''; ?></span></<?php echo $tag; ?>>
 <?php if(!$totale){ ?>
 					<div class="empty"><?php echo mt_esc($cfg['vuoto']); ?></div>
 <?php } else { ?>

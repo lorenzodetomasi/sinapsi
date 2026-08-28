@@ -16,6 +16,13 @@ global $ws_content, $ws_query, $rewrite_rule;
 include_template('template-parts/carte');
 include_template('template-parts/elenchi');
 
+/* DI CHI SONO le cose che si stanno guardando: di questa zona. Va dichiarato prima
+ * del frammento, se no il pezzo di elenco chiesto mentre si scorre continuerebbe
+ * con le cose di tutti — e su una pagina di zona «tutti» vuol dire un altro
+ * quartiere. La chiave è l'indirizzo della zona, che la mappa conosce: è lo stesso
+ * con cui costruisce l'indirizzo di ogni cosa che ci sta dentro. */
+meetoo_ambito('zone', ws_href(trim((string)$ws_query['wspath'], '/')));
+
 // Il pezzo di elenco chiesto dal browser (caricamento pigro): si risponde e basta.
 meetoo_frammento();
 
@@ -79,6 +86,15 @@ foreach((!empty($e->hasPart) ? $e->hasPart : array()) as $voce){
 		'nota' => $nota,
 	);
 }
+
+/* PRIMA QUELLO CHE SI PUÒ APRIRE. Le categorie dichiarate ma non ancora aperte
+ * restano — dicono che cosa sta arrivando — ma in fondo: chi guarda cerca dove
+ * andare, e trovarsi davanti tre riquadri spenti prima del primo che funziona fa
+ * sembrare vuota una zona che vuota non è. L'ordine dichiarato si conserva dentro
+ * i due gruppi: `usort` in PHP è stabile. */
+usort($percorsi, function($a, $b){
+	return (int)($a['href'] === '') <=> (int)($b['href'] === '');
+});
 
 include_template('template-parts/header');
 ?>

@@ -16,6 +16,11 @@ global $ws_content, $ws_query, $rewrite_rule;
 include_template('template-parts/carte');
 include_template('template-parts/elenchi');
 
+/* Un elenco è un modo di guardare LA ZONA, e mostra le cose di quella zona: il suo
+ * indirizzo lo dà la mappa, dal contenuto della pagina — non lo si ricava tagliando
+ * l'ultimo pezzo dell'indirizzo corrente, che è un modo di indovinare. */
+meetoo_ambito('zone', meetoo_indirizzo(preg_replace('#^[^/]+/[^/]+/#', '', trim((string)($ws_query['content'] ?? ''), '/'))));
+
 meetoo_frammento();
 
 $e = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;

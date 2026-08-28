@@ -110,6 +110,35 @@ if($serie){
 			$cfg['vuoto'] = $nota !== ''
 				? sprintf(__('Ancora niente qui. %s'), $nota)
 				: __('Ancora niente in questa parte.');
+			/* UNA PARTE FATTA DI EVENTI non è un elenco di titoli: è la stessa cosa
+			 * che si vede sulla pagina di un gruppo — i prossimi, quelli che si
+			 * ripetono, e il passato solo se lo si chiede. Un elenco piatto mette
+			 * insieme quello che c'è stato e quello che ci sarà, che è l'unica cosa
+			 * che a chi guarda serve tenere separata. */
+			if(function_exists('meetoo_lista_di_eventi') and meetoo_lista_di_eventi($parte)){
+?>
+				<section class="mt-parte">
+					<h2 class="sec-head"><?php echo mt_icona('list'); ?><?php echo mt_esc($cfg['titolo']); ?></h2>
+<?php if($nota !== ''){ ?>
+					<p class="mt-sommario"><?php echo mt_esc($nota); ?></p>
+<?php } ?>
+<?php
+				foreach(array('eventi', 'collezioni', 'archivio') as $sotto){
+					$sez = ($SEZIONI[$sotto] ?? array());
+					$sez['livello'] = 3;
+					// «Prossimi eventi» c'è sempre: che non ce ne siano è una risposta.
+					// Le altre due compaiono se hanno qualcosa da dire.
+					if($sotto !== 'eventi' and !count(meetoo_voci('raccolta:'.$n.':'.$sotto))){
+						continue;
+					}
+					meetoo_sezione('raccolta:'.$n.':'.$sotto, $sez, $tutto);
+				}
+?>
+				</section>
+<?php
+				$n++;
+				continue;
+			}
 			meetoo_sezione('raccolta:'.$n, $cfg, $tutto);
 			$n++;
 		}
