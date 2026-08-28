@@ -80,6 +80,41 @@ section { margin-top: 32px; }
   margin: 0 0 14px;
 }
 .sec-head .material-symbols-outlined { font-size: 1.4rem; }
+
+/* ---------- La gerarchia dei titoli si vede ----------
+ *
+ * `.sec-head` è la classe di un titolo di sezione, ma le sezioni non stanno
+ * tutte allo stesso piano: dentro una categoria, «Adatto ai bambini» contiene
+ * «Prossimi eventi». Se i due titoli hanno lo stesso corpo e lo stesso peso, chi
+ * legge non ha modo di sapere che il secondo sta dentro il primo — l'unico posto
+ * dove è scritto è il tag, e quello lo sente solo chi naviga con lo schermo
+ * spento.
+ *
+ * Tre gradini, e si distinguono per DUE cose insieme (corpo e peso), non per una
+ * sola: 2rem/700 il titolo della pagina, 1.35rem/700 una sezione, 1.05rem/600
+ * una sottosezione. L'icona e il pallino del conteggio scendono con loro, se no
+ * un titolo piccolo con l'icona grande sembra di nuovo grande. */
+h2.sec-head { font-size: 1.35rem; font-weight: 700; margin-bottom: 16px; }
+h2.sec-head .material-symbols-outlined { font-size: 1.55rem; }
+
+h3.sec-head { font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; }
+h3.sec-head .material-symbols-outlined { font-size: 1.2rem; }
+h3.sec-head .count { font-size: .78rem; border-width: 1px; }
+
+/* E la parte CONTIENE le sue sezioni, in un modo che si vede da lontano: un filo
+ * verticale a sinistra. È il segnale più economico che c'è per dire «questo sta
+ * dentro quello» — più del rientro da solo, che a schermo stretto costa colonna
+ * e non si nota. */
+.mt-parte { margin-top: 40px; }
+.mt-parte > .mt-sommario { margin-bottom: 1.25rem; }
+.mt-parte > .mt-sezione {
+  margin-top: 24px;
+  padding-left: 1rem;
+  border-left: 2px solid var(--color-line);
+}
+@media (max-width: 640px) {
+  .mt-parte > .mt-sezione { padding-left: .6rem; }
+}
 /* Un conteggio vuoto non è "zero": è "non lo so ancora" (es. l'archivio prima di
    caricarlo). Senza numero il pallino non si mostra. */
 .count:empty { display: none; }
