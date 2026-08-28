@@ -84,6 +84,15 @@
     clear: function () { try { localStorage.removeItem(TOKEN_KEY); sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} },
   };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]; }); };
+  /* Chiaro o scuro, adesso: la scelta se c'è, se no quella di sistema. Le stesse
+   * due cose che guardano i colori — e che deve sapere anche chi disegna un
+   * pulsante per conto suo, come Google. */
+  function temaScuro() {
+    var scelto = document.documentElement.getAttribute('data-theme');
+    if (scelto === 'dark') { return true; }
+    if (scelto === 'light') { return false; }
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
 
   /* ============ Sessione (logica) ============ */
   var subs = [];
@@ -94,7 +103,9 @@
     getPrefs: function () { return S.prefs || {}; },
     subscribe: function (cb) { subs.push(cb); try { cb(S.user, S.token); } catch (e) {} },
     requireLogin: function () { try { google.accounts.id.prompt(); } catch (e) {} },
-    renderButton: function (el) { var g = win_gis(); if (g && el) { el.innerHTML = ''; g.renderButton(el, { type: 'standard', theme: 'outline', size: 'medium', text: 'signin', shape: 'pill' }); } },
+    /* `theme` è l'unico modo per dire a Google com'è vestita la pagina: il
+     * pulsante lo disegna lui. `outline` sul chiaro, `filled_black` sullo scuro. */
+    renderButton: function (el) { var g = win_gis(); if (g && el) { el.innerHTML = ''; g.renderButton(el, { type: 'standard', theme: temaScuro() ? 'filled_black' : 'outline', size: 'medium', text: 'signin', shape: 'pill' }); } },
     logout: function () {
       // Con la sessione PHP l'uscita è un fatto del server: il cookie lo può
       // cancellare solo lui. Qui si va all'indirizzo che lo fa, e si torna.
@@ -258,6 +269,8 @@
       ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
       : mode;
     try { document.dispatchEvent(new CustomEvent('meetoo:theme', { detail: { mode: mode, resolved: resolved } })); } catch (e) {}
+    // Il pulsante di Google non segue i colori della pagina: va ridisegnato.
+    try { if (!S.user) { renderAccount(); } } catch (e) {}
   }
   (function initTheme() { var m = 'auto'; try { m = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {} setTheme(m); })();
 
@@ -298,7 +311,7 @@
      * arrivassero sul server in momenti diversi — uno nuovo e uno vecchio — perché
      * il pulsante di accesso venisse cancellato da qui e la pagina restasse senza
      * login. È successo. Adesso l'ordine di caricamento non conta più. */
-    if (CFG.sessione === 'php' || el.children.length) return;
+    if (CFG.sessione === 'php' || (el.children.length && !el.dataset.mtNostro)) return;
     if (CFG.noAuth) { el.innerHTML = ''; return; } // pagine admin: nessun login qui
     if (S.user) {
       el.innerHTML = S.user.picture
@@ -307,6 +320,10 @@
       el.firstChild.onclick = openSettings; // clic sull'avatar → impostazioni/logout
     } else {
       el.innerHTML = '';
+      /* Segnato come NOSTRO: la guardia qui sopra non tocca ciò che ha scritto il
+       * server, ma quello che abbiamo scritto noi dobbiamo poterlo rifare — se no
+       * il pulsante non cambierebbe mai tema. */
+      el.dataset.mtNostro = '1';
       S.renderButton(el);
     }
   }

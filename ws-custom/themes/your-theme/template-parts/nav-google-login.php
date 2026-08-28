@@ -29,8 +29,55 @@ if ($is_registered_user && isset($xml_user->person)) {
 <ul class="google-avatar">
     <?php if (!$is_google_user): ?>
         <li class="google-login-trigger" title="Clicca per accedere">
-            <div class="g_id_signin" data-type="icon" data-shape="circle" data-theme="outline" data-size="large"></div>
+            <div id="g_id_signin_btn" class="g_id_signin" data-type="icon" data-shape="circle" data-theme="outline" data-size="large"></div>
         </li>
+        <script>
+        /* Il pulsante di Google segue il tema della pagina.
+         *
+         * Il disegno lo fa Google, non noi, e l'unico modo per dirgli com'è
+         * vestita la pagina è `theme`: `outline` sul chiaro, `filled_black` sullo
+         * scuro — un pulsante bianco su fondo nero e' l'unica cosa che si vede,
+         * e si vede male. L'attributo si mette PRIMA che la libreria arrivi, cosi'
+         * il primo disegno e' gia' quello giusto; dopo, se il tema cambia, si
+         * ridisegna.
+         *
+         * Come si sa qual e' il tema: l'attributo `data-theme` sulla radice quando
+         * qualcuno ha scelto, la preferenza di sistema quando non ha scelto. Sono
+         * le stesse due cose che guardano i colori. */
+        (function () {
+            var bottone = function () { return document.getElementById('g_id_signin_btn'); };
+            var scuro = function () {
+                var scelto = document.documentElement.getAttribute('data-theme');
+                if (scelto === 'dark') { return true; }
+                if (scelto === 'light') { return false; }
+                return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+            };
+            var tema = function () { return scuro() ? 'filled_black' : 'outline'; };
+            var el = bottone();
+            if (el) { el.setAttribute('data-theme', tema()); }
+
+            function ridisegna() {
+                var el = bottone();
+                var gis = window.google && google.accounts && google.accounts.id;
+                if (!el) { return; }
+                el.setAttribute('data-theme', tema());
+                // Senza la libreria non c'e' niente da ridisegnare: l'attributo
+                // basta, e al primo disegno ci pensera' lei.
+                if (!gis || !el.firstChild) { return; }
+                el.innerHTML = '';
+                gis.renderButton(el, { type: 'icon', shape: 'circle', size: 'large', theme: tema() });
+            }
+
+            // Il tema cambia in due modi: qualcuno lo sceglie (l'header lo annuncia)
+            // oppure cambia quello di sistema, mentre la pagina e' aperta.
+            document.addEventListener('meetoo:theme', ridisegna);
+            if (window.matchMedia) {
+                var q = window.matchMedia('(prefers-color-scheme: dark)');
+                if (q.addEventListener) { q.addEventListener('change', ridisegna); }
+                else if (q.addListener) { q.addListener(ridisegna); }
+            }
+        })();
+        </script>
     <?php else: ?>
         <li class="avatar-wrapper">
             <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar-circle logged-in" onclick="toggleGoogleProfileCard(event)">
