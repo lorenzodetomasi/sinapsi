@@ -203,11 +203,26 @@ function meetoo_icona_nodo($nodo){
 	 * direttamente (`$ico->name`) SimpleXML li cerca ancora fra i `meetoo:`, e non
 	 * trova niente: una stringa vuota che sembrava «icona non dichiarata». */
 	$dentro = $ico->children();
-	$nome = trim((string)(isset($dentro->name) ? $dentro->name : $ico));
+	/* E si accettano tutte e due le grafie, `name` e `meetoo:name`: dentro
+	 * `meetoo:icon` non c'è ambiguità da sciogliere — quei due campi non vogliono
+	 * dire niente altrove — ma un contenuto scritto con il prefisso non deve
+	 * diventare un'icona che sparisce. */
+	$pref = $ico->children('meetoo', true);
+	$campo = function($come) use ($dentro, $pref){
+		if(isset($dentro->$come)){
+			return trim((string)$dentro->$come);
+		}
+		return ($pref !== null and isset($pref->$come)) ? trim((string)$pref->$come) : '';
+	};
+	$nome = $campo('name');
+	if($nome === ''){
+		// `<meetoo:icon>museum</meetoo:icon>`: l'icona detta e basta, senza campi.
+		$nome = trim((string)$ico);
+	}
 	if($nome === ''){
 		return null;
 	}
-	return array('name' => $nome, 'class' => isset($dentro->class) ? trim((string)$dentro->class) : '');
+	return array('name' => $nome, 'class' => $campo('class'));
 }
 
 /**
@@ -248,14 +263,26 @@ function meetoo_contenuto($rel){
  * cambiarla si tocca un posto solo. Chi non ce l'ha ancora ritorna null, e chi
  * chiama mette la sua.
  */
-function meetoo_icona_di($rel){
+function meetoo_icona_di($rel, $salti = 0){
 	$doc = meetoo_contenuto($rel);
 	$ico = is_array($doc) ? ($doc['meetoo:icon'] ?? null) : null;
 	if(is_string($ico) and trim($ico) !== ''){
 		return array('name' => trim($ico), 'class' => '');
 	}
-	if(is_array($ico) and !empty($ico['name'])){
-		return array('name' => (string)$ico['name'], 'class' => (string)($ico['class'] ?? ''));
+	if(is_array($ico)){
+		$nome = (string)($ico['name'] ?? $ico['meetoo:name'] ?? '');
+		if($nome !== ''){
+			return array('name' => $nome, 'class' => (string)($ico['class'] ?? $ico['meetoo:class'] ?? ''));
+		}
+	}
+	/* Niente icona qui: la si chiede a ciò di cui questo contenuto PARLA.
+	 * «BookCrossing a Ostia» non ha un'icona sua — è un BookCrossing, e l'icona
+	 * del BookCrossing sta scritta una volta sola, nel catalogo delle categorie.
+	 * Il salto è uno solo: `about` porta a una definizione, non a una catena. */
+	$about = is_array($doc) ? ($doc['about'] ?? null) : null;
+	$verso = is_array($about) ? ($about['@id'] ?? '') : (string)$about;
+	if($salti < 1 and is_string($verso) and trim($verso, '/') !== '' and trim($verso, '/') !== trim((string)$rel, '/')){
+		return meetoo_icona_di(trim($verso, '/'), $salti + 1);
 	}
 	return null;
 }

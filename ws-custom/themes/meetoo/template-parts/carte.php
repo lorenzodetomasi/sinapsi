@@ -191,6 +191,15 @@ function mt_card_evento($ev, $o = array()){
 	if($luogo !== ''){
 		$meta[] = mt_meta('location_on', $luogo);
 	}
+	/* La fascia d'età, quando l'evento la dichiara: dice PER CHI è, ed è la prima
+	 * cosa che legge chi cerca qualcosa da fare con i figli. «All Ages» si scrive
+	 * come si direbbe parlando. */
+	$eta = trim((string)($ev['ageRange'] ?? ''));
+	if($eta !== ''){
+		$meta[] = mt_meta('escalator_warning', strcasecmp($eta, 'All Ages') === 0 ? __('Tutte le età') : $eta);
+	} else if(!empty($ev['isChildrens'])){
+		$meta[] = mt_meta('escalator_warning', __('Adatto ai bambini'));
+	}
 
 	$href = isset($o['href']) ? $o['href'] : ws_href('eventi/'.basename($path));
 	$titolo = mt_esc(!empty($ev['name']) ? $ev['name'] : __('(senza titolo)'))

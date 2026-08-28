@@ -178,6 +178,13 @@ if (!function_exists('event_index_item')) {
             // "{place.name}, {place.address.addressLocality}".
             'place'        => event_index_place_ref($doc['location'] ?? null, $base),
             'cap'          => $cap,
+            /* La fascia d'età: si mostra SEMPRE sulla card, quando c'è. Un evento che
+             * dice per chi è lo dice a chi lo guarda, non solo alla regola che lo
+             * mette nelle categorie — e chi cerca qualcosa per i figli quella riga la
+             * legge prima del resto. */
+            'ageRange'     => (string)($doc['typicalAgeRange'] ?? ''),
+            // Nei contenuti il campo porta il prefisso: `meetoo:isChildrensEvent`.
+            'isChildrens'  => !empty($doc['meetoo:isChildrensEvent']) || !empty($doc['isChildrensEvent']),
             'status'       => (string)($doc['eventStatus'] ?? ''),
             'image'        => $img,
             // Cover risolta (dalla radice), con ripiego sulla serie: vedi event_index_cover.

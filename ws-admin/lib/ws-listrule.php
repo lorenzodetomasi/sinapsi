@@ -70,9 +70,22 @@ if (!function_exists('ws_listrule_match')) {
         return is_string($a) && is_string($b) ? $a === $b : $a === $b;
     }
 
+    /** Il nome con cui il campo sta DAVVERO nell'entità: `isChildrensEvent` oppure
+     * `meetoo:isChildrensEvent`. I campi nostri nei contenuti portano il prefisso;
+     * chi scrive una regola non deve doverselo ricordare, e una regola che cerca il
+     * nome nudo non deve selezionare il vuoto in silenzio. */
+    function ws_listrule_campo(array $e, string $campo): string {
+        if ($campo === '' || array_key_exists($campo, $e)) return $campo;
+        if (strpos($campo, ':') !== false) {
+            $nudo = substr($campo, strrpos($campo, ':') + 1);
+            return array_key_exists($nudo, $e) ? $nudo : $campo;
+        }
+        return array_key_exists("meetoo:$campo", $e) ? "meetoo:$campo" : $campo;
+    }
+
     /** Una clausola è vera per questa entità? */
     function ws_listrule_clause(array $e, array $c): bool {
-        $campo = (string)($c['field'] ?? '');
+        $campo = ws_listrule_campo($e, (string)($c['field'] ?? ''));
         $presente = array_key_exists($campo, $e);
         if (array_key_exists('exists', $c)) return $c['exists'] ? $presente : !$presente;
         if (!$presente) return false;                      // il `required` del compilato
@@ -214,6 +227,9 @@ if (!function_exists('ws_listrule_match')) {
         $out = ['liste' => [], 'cambiate' => 0];
         foreach (ws_listrule_lists($base) as $f => $doc) {
             $cambiato = false;
+            // Quali righe del resoconto parlano di QUESTO file: la scrittura avviene
+            // dopo averle compilate, e devono poterlo dire.
+            $righe = [];
             // Un documento può contenere più liste: quella in cima e quelle delle
             // sue sezioni. Si sistemano tutte, e il file si scrive una volta sola.
             foreach (ws_listrule_posizioni($doc) as $pos) {
@@ -245,10 +261,12 @@ if (!function_exists('ws_listrule_match')) {
                     'diversa' => $diverso,
                     'scritta' => false,
                 ];
+                $righe[] = count($out['liste']) - 1;
             }
             if ($apply && $cambiato) {
                 $doc['dateModified'] = date('c');
-                @file_put_contents($f, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                $ok = @file_put_contents($f, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+                foreach ($righe as $i) $out['liste'][$i]['scritta'] = $ok;
             }
         }
         return $out;
