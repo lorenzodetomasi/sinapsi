@@ -22,8 +22,9 @@
   font-family: var(--font-family1); font-weight: 700; font-size: 2rem;
   color: var(--color-heading); margin: .5rem 0 .75rem; line-height: 1.15;
 }
+/* Stessa scala dei titoli di sezione: 32 / 24 / 16, a passi di 8px. */
 .mt-h2 {
-  font-family: var(--font-family1); font-weight: 600; font-size: 1.25rem;
+  font-family: var(--font-family1); font-weight: 700; font-size: 1.5rem;
   color: var(--color-heading); margin: 2rem 0 .75rem;
   display: flex; align-items: center; gap: .5rem;
 }

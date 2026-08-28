@@ -76,8 +76,8 @@ section { margin-top: 32px; }
 
 .sec-head {
   display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-family1); font-weight: 600; font-size: 1.15rem;
-  margin: 0 0 14px;
+  font-family: var(--font-family1); font-weight: 600; font-size: 1.25rem;
+  margin: 0 0 16px;
 }
 .sec-head .material-symbols-outlined { font-size: 1.4rem; }
 
@@ -91,15 +91,21 @@ section { margin-top: 32px; }
  * spento.
  *
  * Tre gradini, e si distinguono per DUE cose insieme (corpo e peso), non per una
- * sola: 2rem/700 il titolo della pagina, 1.35rem/700 una sezione, 1.05rem/600
- * una sottosezione. L'icona e il pallino del conteggio scendono con loro, se no
- * un titolo piccolo con l'icona grande sembra di nuovo grande. */
-h2.sec-head { font-size: 1.35rem; font-weight: 700; margin-bottom: 16px; }
-h2.sec-head .material-symbols-outlined { font-size: 1.55rem; }
+ * sola: 2rem/700 il titolo della pagina, 1.5rem/700 una sezione, 1rem/600 una
+ * sottosezione.
+ *
+ * I corpi stanno su una scala regolare — 16, 24, 32 — a passi di 8px. Le misure
+ * tonde non sono un vezzo: a 16px di radice cadono tutte su numeri interi, e un
+ * titolo che non finisce a metà di un pixel resta nitido su qualunque schermo.
+ * L'icona sta sempre un gradino sopra il suo testo (+4px), perché un simbolo
+ * disegnato dentro il suo quadrato sembra più piccolo di una lettera alta
+ * uguale; il pallino del conteggio scende con il titolo. */
+h2.sec-head { font-size: 1.5rem; font-weight: 700; margin-bottom: 16px; }
+h2.sec-head .material-symbols-outlined { font-size: 1.75rem; }
 
-h3.sec-head { font-size: 1.05rem; font-weight: 600; margin-bottom: 10px; }
-h3.sec-head .material-symbols-outlined { font-size: 1.2rem; }
-h3.sec-head .count { font-size: .78rem; border-width: 1px; }
+h3.sec-head { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+h3.sec-head .material-symbols-outlined { font-size: 1.25rem; }
+h3.sec-head .count { font-size: .75rem; border-width: 1px; }
 
 /* E la parte CONTIENE le sue sezioni, in un modo che si vede da lontano: un filo
  * verticale a sinistra. È il segnale più economico che c'è per dire «questo sta
