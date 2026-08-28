@@ -107,20 +107,13 @@ h3.sec-head { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
 h3.sec-head .material-symbols-outlined { font-size: 1.25rem; }
 h3.sec-head .count { font-size: .75rem; border-width: 1px; }
 
-/* E la parte CONTIENE le sue sezioni, in un modo che si vede da lontano: un filo
- * verticale a sinistra. È il segnale più economico che c'è per dire «questo sta
- * dentro quello» — più del rientro da solo, che a schermo stretto costa colonna
- * e non si nota. */
-.mt-parte { margin-top: 40px; }
+/* Che le sezioni stiano DENTRO la parte lo dicono i titoli — 24 contro 16, 700
+ * contro 600 — e lo spazio: la parte se ne prende il doppio sopra di sé rispetto
+ * alle sezioni che contiene, e uno stacco che raddoppia è una gerarchia che si
+ * legge anche senza una riga disegnata. */
+.mt-parte { margin-top: 48px; }
 .mt-parte > .mt-sommario { margin-bottom: 1.25rem; }
-.mt-parte > .mt-sezione {
-  margin-top: 24px;
-  padding-left: 1rem;
-  border-left: 2px solid var(--color-line);
-}
-@media (max-width: 640px) {
-  .mt-parte > .mt-sezione { padding-left: .6rem; }
-}
+.mt-parte > .mt-sezione { margin-top: 24px; }
 /* Un conteggio vuoto non è "zero": è "non lo so ancora" (es. l'archivio prima di
    caricarlo). Senza numero il pallino non si mostra. */
 .count:empty { display: none; }
