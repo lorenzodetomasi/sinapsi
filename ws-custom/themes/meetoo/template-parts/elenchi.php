@@ -177,6 +177,30 @@ function meetoo_riferimento_nodo($nodo){
 	return trim($id);
 }
 
+/**
+ * Una voce dell'indice eventi, dal suo @id — prossimi e archivio insieme.
+ *
+ * Serve alle raccolte che elencano eventi: la collezione dice solo `{"@id": …}`, e
+ * il quando e il dove stanno nell'indice. Una tabella sola, costruita alla prima
+ * domanda: una raccolta con dentro cinquanta eventi non deve rileggere l'indice
+ * cinquanta volte.
+ */
+function meetoo_evento_indicizzato($id){
+	static $per_id = null;
+	if($per_id === null){
+		$per_id = array();
+		foreach(array(meetoo_indice('events.json'), meetoo_indice('events.archive.json')) as $elenco){
+			foreach($elenco as $ev){
+				$p = trim((string)($ev['path'] ?? ''), '/');
+				if($p !== '' and !isset($per_id[$p])){
+					$per_id[$p] = $ev;
+				}
+			}
+		}
+	}
+	return $per_id[trim((string)$id, '/')] ?? null;
+}
+
 /** L'icona di un luogo, dal suo tipo: un parco non è un negozio. */
 function meetoo_icona_luogo($tipi){
 	$t = strtolower(implode(' ', (array)$tipi));
@@ -200,9 +224,28 @@ function meetoo_voci($quale){
 	}
 	$out = array();
 
-	if($quale === 'raccolta'){
+	if($quale === 'raccolta' or strpos($quale, 'raccolta:') === 0){
 		global $ws_content;
 		$ent = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
+		/* `raccolta:2` = la terza SEZIONE di questa raccolta. Una categoria può essere
+		 * divisa in parti — «Adatto ai bambini», «Progettato per i bambini» — e ogni
+		 * parte è una lista con la sua regola: qui si sceglie quale disegnare. Il
+		 * numero viaggia anche nel pezzo chiesto mentre si scorre, se no il
+		 * caricamento pigro continuerebbe con le voci di un'altra sezione. */
+		if(strpos($quale, 'raccolta:') === 0){
+			$n = (int)substr($quale, strlen('raccolta:'));
+			$parti = !empty($ent->hasPart) ? $ent->hasPart : array();
+			$parte = null;
+			$i = 0;
+			foreach($parti as $x){
+				if($i === $n){ $parte = $x; break; }
+				$i++;
+			}
+			if($parte === null){
+				return $fatte[$quale] = $out;
+			}
+			$ent = $parte;
+		}
 		$voci = !empty($ent->itemListElement) ? $ent->itemListElement : array();
 		foreach($voci as $riga){
 			// Un ListItem porta la cosa dentro `item`; si accetta anche la cosa nuda,
@@ -228,6 +271,17 @@ function meetoo_voci($quale){
 			$via = trim((string)($m->address->streetAddress ?? ''));
 			if($via !== ''){
 				$note[] = $via;
+			}
+			/* Se la voce è un EVENTO, si disegna come un evento: il blocchetto della
+			 * data, l'ora, chi organizza, dove. Una categoria di eventi con dentro
+			 * righe che dicono solo il nome è un elenco di titoli, e a chi guarda
+			 * serve sapere QUANDO. I dati stanno nell'indice, che è già in memoria. */
+			if(strpos($id, 'events/') === 0){
+				$riga = meetoo_evento_indicizzato($id);
+				if($riga){
+					$out[] = mt_card_evento($riga, array('href' => meetoo_indirizzo($id)));
+					continue;
+				}
 			}
 			/* Prima si chiede al contenuto: se ha dichiarato la sua icona, quella è.
 			 * Solo se non l'ha fatto si indovina dal tipo — un evento, un gruppo, un
@@ -394,7 +448,10 @@ function meetoo_altri($quale, $da, $totale, $manuale = false, $etichetta = ''){
 function meetoo_frammento(){
 	$parte = (string)($_GET['parte'] ?? '');
 	$sezioni = meetoo_sezioni();
-	if($parte === '' or !isset($sezioni[$parte])){
+	// `raccolta:N` non sta nell'elenco delle sezioni — ce n'è una per ogni parte di
+	// una raccolta — ma la forma è chiusa: `raccolta:` più un numero, e niente altro.
+	$sezione = preg_match('/^raccolta:\d+$/', $parte) ? 'raccolta' : $parte;
+	if($sezione === '' or !isset($sezioni[$sezione])){
 		return;
 	}
 	$voci = meetoo_voci($parte);

@@ -213,33 +213,43 @@ if (!function_exists('ws_listrule_match')) {
     function ws_listrule_sync(string $base, bool $apply): array {
         $out = ['liste' => [], 'cambiate' => 0];
         foreach (ws_listrule_lists($base) as $f => $doc) {
-            $ent = $doc['mainEntity'] ?? $doc;
-            $regola = $ent['meetoo:listRule'];
-            $trovati = ws_listrule_collect($base, $regola);
-            $r = ws_listrule_merge($regola, $ent['itemListElement'] ?? [], $trovati);
+            $cambiato = false;
+            // Un documento può contenere più liste: quella in cima e quelle delle
+            // sue sezioni. Si sistemano tutte, e il file si scrive una volta sola.
+            foreach (ws_listrule_posizioni($doc) as $pos) {
+                $lista = ws_listrule_prendi($doc, $pos);
+                $regola = $lista['meetoo:listRule'] ?? [];
+                $trovati = ws_listrule_collect($base, $regola);
+                $r = ws_listrule_merge($regola, $lista['itemListElement'] ?? [], $trovati);
 
-            // Si scrive solo se qualcosa è davvero cambiato: una rigenerazione a
-            // vuoto non deve toccare dateModified né sporcare il diff dei contenuti.
-            $diverso = json_encode($ent['itemListElement'] ?? []) !== json_encode($r['itemListElement']);
-            $scritta = false;
-            if ($apply && $diverso) {
-                $ent['itemListElement'] = $r['itemListElement'];
-                $ent['numberOfItems'] = count($r['itemListElement']);
-                if (isset($doc['mainEntity'])) $doc['mainEntity'] = $ent; else $doc = $ent;
-                $doc['dateModified'] = date('c');
-                $scritta = @file_put_contents($f, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+                // Si scrive solo se qualcosa è davvero cambiato: una rigenerazione a
+                // vuoto non deve toccare dateModified né sporcare il diff dei contenuti.
+                $diverso = json_encode($lista['itemListElement'] ?? []) !== json_encode($r['itemListElement']);
+                if ($diverso) {
+                    $lista['itemListElement'] = $r['itemListElement'];
+                    $lista['numberOfItems'] = count($r['itemListElement']);
+                    $doc = ws_listrule_metti($doc, $pos, $lista);
+                    $cambiato = true;
+                    $out['cambiate']++;
+                }
+                $out['liste'][] = [
+                    // Il nome della lista è quello del DOCUMENTO, più la sezione se
+                    // è una sezione: «bambini-e-famiglie › Adatto ai bambini».
+                    'id' => (($doc['mainEntity']['@id'] ?? $doc['@id'] ?? $f))
+                        . ($pos === null ? '' : ' › ' . ($lista['name'] ?? "parte $pos")),
+                    'trovati' => count($trovati),
+                    'voci' => count($r['itemListElement']),
+                    'aggiunte' => $r['aggiunte'],
+                    'orfane' => $r['orfane'],
+                    'incomplete' => $r['incomplete'],
+                    'diversa' => $diverso,
+                    'scritta' => false,
+                ];
             }
-            if ($diverso) $out['cambiate']++;
-            $out['liste'][] = [
-                'id' => $ent['@id'] ?? $f,
-                'trovati' => count($trovati),
-                'voci' => count($r['itemListElement']),
-                'aggiunte' => $r['aggiunte'],
-                'orfane' => $r['orfane'],
-                'incomplete' => $r['incomplete'],
-                'diversa' => $diverso,
-                'scritta' => $scritta,
-            ];
+            if ($apply && $cambiato) {
+                $doc['dateModified'] = date('c');
+                @file_put_contents($f, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            }
         }
         return $out;
     }
@@ -251,11 +261,53 @@ if (!function_exists('ws_listrule_match')) {
             foreach (glob(rtrim($base, '/') . "/$g/index.json") as $f) {
                 $j = json_decode((string)@file_get_contents($f), true);
                 if (!is_array($j)) continue;
-                $e = $j['mainEntity'] ?? $j;
-                if (!empty($e['meetoo:listRule'])) $out[$f] = $j;
+                if (ws_listrule_dentro($j)) $out[$f] = $j;
             }
         }
         return $out;
+    }
+
+    /**
+     * Le liste con regola dentro un documento: quella in cima e quelle nelle SEZIONI.
+     *
+     * Una raccolta può essere divisa in parti — «Adatto ai bambini» e «Progettato per
+     * i bambini» — e ogni parte ha la sua regola. Sono liste a tutti gli effetti, e
+     * l'unica differenza è che non stanno in un file per conto loro: dividere una
+     * categoria in due non deve costare due indirizzi e due pagine.
+     *
+     * Ritorna un elenco di posizioni: `null` = l'entità in cima, un intero = quel
+     * `hasPart`. Le posizioni servono a riscrivere ognuna al suo posto.
+     */
+    function ws_listrule_posizioni(array $doc): array {
+        $e = $doc['mainEntity'] ?? $doc;
+        $pos = [];
+        if (!empty($e['meetoo:listRule'])) $pos[] = null;
+        foreach ((array)($e['hasPart'] ?? []) as $i => $parte) {
+            if (is_array($parte) && !empty($parte['meetoo:listRule'])) $pos[] = $i;
+        }
+        return $pos;
+    }
+
+    /** Il documento contiene almeno una lista con regola? */
+    function ws_listrule_dentro(array $doc): bool {
+        return !empty(ws_listrule_posizioni($doc));
+    }
+
+    /** La lista in una data posizione (null = l'entità in cima). */
+    function ws_listrule_prendi(array $doc, $pos): array {
+        $e = $doc['mainEntity'] ?? $doc;
+        return $pos === null ? $e : (array)($e['hasPart'][$pos] ?? []);
+    }
+
+    /** Rimette la lista al suo posto dentro il documento. */
+    function ws_listrule_metti(array $doc, $pos, array $lista): array {
+        if ($pos === null) {
+            if (isset($doc['mainEntity'])) $doc['mainEntity'] = $lista; else $doc = $lista;
+            return $doc;
+        }
+        if (isset($doc['mainEntity'])) $doc['mainEntity']['hasPart'][$pos] = $lista;
+        else $doc['hasPart'][$pos] = $lista;
+        return $doc;
     }
 
     /** Tipo da mettere nella voce di lista: il primo, per non copiare tutto. */

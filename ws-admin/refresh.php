@@ -192,7 +192,7 @@ $ws_logs = array();
 	</li>
 <?php
 	}
-	if($_POST['json'] == 'on'){
+	if(isset($_POST['json']) and $_POST['json'] == 'on'){
 	?>
 	<li>
 		<strong><?php _e('Converting .xml files to .json'); ?></strong>
@@ -214,7 +214,7 @@ foreach ($ws_logs as $ws_log) {
 	</li>
 <?php
 	}
-	if($_POST['google_place_details'] == 'on'){
+	if(isset($_POST['google_place_details']) and $_POST['google_place_details'] == 'on'){
 ?>
 	<li>
 		<strong>
@@ -269,12 +269,12 @@ if(!empty(GOOGLE_API_KEY)){
 	</li>
 <?php
 	}
-	if($_POST['images'] == 'on'){
+	if(isset($_POST['images']) and $_POST['images'] == 'on'){
 
 	}
 ?>
 <?php
-if($_POST['css'] == 'on'){
+if(isset($_POST['css']) and $_POST['css'] == 'on'){
 ?>
 <li>
 	<strong><?php _e('Refreshing CSS files'); ?></strong>

@@ -75,7 +75,14 @@ const SOCIAL_SUGGEST = [
   'Facebook', 'Instagram', 'LinkedIn', 'TikTok', 'YouTube', 'X',
   'Telegram', 'WhatsApp', 'Threads', 'Pinterest', 'Blog', 'Sito web',
 ];
-// Fasce d'età suggerite (il campo accetta anche valori personalizzati).
+/* Fasce d'età: suggerite, non obbligate — il campo accetta anche valori propri.
+ *
+ * Il suggerimento però adesso conta: le categorie che si popolano da sole leggono
+ * QUESTO campo. «Bambini e famiglie › Progettato per i bambini» prende chi dichiara
+ * una fascia che comprende gli anni fra 0 e 14, e per farlo confronta valori esatti.
+ * Una fascia scritta a mano — «da 3 a 6 anni» — resta valida per chi legge, ma la
+ * regola non la riconosce: chi la scrive deve sapere che quell'evento nella
+ * categoria non ci entra da solo. */
 const AGE_RANGES = [
   'All Ages', 
   '0-3', 

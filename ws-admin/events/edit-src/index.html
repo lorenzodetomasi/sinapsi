@@ -3,6 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      QUESTA pagina non si tiene in cache. È il guscio dell'editor: dentro non c'è
+      niente, solo il rimando al programma, e il nome di quel file cambia a ogni
+      rilascio (porta l'impronta del contenuto). Se il browser si tiene il guscio
+      vecchio, quel rimando punta a un file che sul server non c'è più: l'editor non
+      parte e si vede un modulo con tutti i campi vuoti — che è esattamente quello
+      che succedeva, e che si «risolveva» svuotando la cache.
+      Il programma e gli stili invece restano in cache quanto vogliono: cambiando
+      nome a ogni rilascio, una copia vecchia non viene più chiesta da nessuno.
+    -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Form Editor PoC — JSON Forms + JSON-LD</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link

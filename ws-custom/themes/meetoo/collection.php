@@ -94,7 +94,28 @@ if($serie){
 	 * `?? null`: se il file delle sezioni sul server fosse più vecchio di questo
 	 * template, la sezione si arrangia invece di far stampare avvisi. */
 	if($percorso){ echo '<div class="mt-percorso-elenco">'; }
-	meetoo_sezione('raccolta', $SEZIONI['raccolta'] ?? null, $tutto);
+	/* Una raccolta può essere DIVISA IN PARTI — «Adatto ai bambini» e «Progettato
+	 * per i bambini» — e ogni parte ha il suo nome, il suo sommario e la sua regola.
+	 * Sono sezioni della stessa pagina, non pagine diverse: dividere una categoria
+	 * in due non deve costare due indirizzi. */
+	$parti = !empty($e->hasPart) ? $e->hasPart : array();
+	if(count($parti)){
+		$n = 0;
+		foreach($parti as $parte){
+			$cfg = ($SEZIONI['raccolta'] ?? array());
+			$nome = trim((string)($parte->name ?? ''));
+			$nota = trim((string)($parte->description ?? ''));
+			$cfg['titolo'] = $nome !== '' ? $nome : sprintf(__('Parte %d'), $n + 1);
+			$cfg['icona'] = 'list';
+			$cfg['vuoto'] = $nota !== ''
+				? sprintf(__('Ancora niente qui. %s'), $nota)
+				: __('Ancora niente in questa parte.');
+			meetoo_sezione('raccolta:'.$n, $cfg, $tutto);
+			$n++;
+		}
+	} else {
+		meetoo_sezione('raccolta', $SEZIONI['raccolta'] ?? null, $tutto);
+	}
 	if($percorso){ echo '</div>'; }
 }
 ?>
