@@ -1,94 +1,106 @@
 <?php
 /**
- * Un livello dell'albero che non è (ancora) una zona: Roma, Municipio X.
+ * Un livello che contiene altri livelli: una città, un municipio.
  *
- * Esiste per due ragioni concrete. Chi accorcia un indirizzo a mano —
- * `…/roma/municipio10/lido-di-ostia` → `…/roma/municipio10` — deve trovarci
- * qualcosa, non un 404: è il modo in cui si risale, ed è una cosa che le persone
- * fanno. E perché lì dentro cresceranno gli altri quartieri: quando ce ne sarà un
- * secondo, questa pagina lo mostrerà senza che nessuno tocchi una riga.
+ * Non è un posto dove si va — è quello che contiene i posti — e la sua pagina serve
+ * a due cose concrete. Chi accorcia un indirizzo a mano
+ * (`…/roma/municipio10/lido-di-ostia` → `…/roma/municipio10`) deve trovarci
+ * qualcosa, non un 404: è il modo in cui si risale. E lì dentro cresceranno gli
+ * altri quartieri: quando ce ne sarà un secondo, questa pagina lo mostrerà senza
+ * che nessuno tocchi una riga.
  *
- * Il contenuto è l'albero delle zone (`index/index.json`); quale nodo mostrare lo
- * dice la mappa, nel parametro `zona` della query.
+ * COME SI CHIAMANO LE SUE PARTI lo dice il contenuto, non il codice: Roma ha
+ * «Municipi», il Municipio X ha «Quartieri», e una città di un altro paese avrà
+ * un'altra parola ancora. Sta in `meetoo:childrenHeading`, sul nodo che le contiene.
  */
 global $ws_content, $ws_query;
 
 include_template('template-parts/carte');
 
-$e = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
-$slug = (string)($ws_query['zona'] ?? '');
+$doc = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
+$slug = trim((string)($ws_query['zona'] ?? ''));
 
 /**
- * Cerca un nodo dell'albero per identificativo, e se ne ricorda il percorso.
- * Ricorsiva perché l'albero è ricorsivo: città, municipio, quartiere.
+ * Il nodo da mostrare, e il percorso per arrivarci.
+ *
+ * Senza `zona` è la radice del documento (la città); con `zona` è quel nodo dentro
+ * il suo albero — un municipio non ha un file suo, vive dentro quello della città.
  */
-function meetoo_nodo($nodi, $slug, $prefisso = ''){
-	foreach($nodi as $nodo){
-		$n = !empty($nodo->item) ? $nodo->item : $nodo;
-		$id = trim((string)($n->identifier ?? ''));
-		if($id === ''){
-			continue;
-		}
-		$percorso = ($prefisso === '' ? '' : $prefisso.'/').$id;
-		if($id === $slug){
-			return array('nodo' => $n, 'percorso' => $percorso);
-		}
-		if(!empty($n->containsPlace)){
-			$dentro = meetoo_nodo($n->containsPlace, $slug, $percorso);
-			if($dentro){
-				return $dentro;
-			}
+function meetoo_nodo($nodo, $slug, $prefisso = ''){
+	$id = trim(meetoo_riferimento_nodo($nodo));
+	$mio = $id !== '' ? basename($id) : '';
+	$percorso = ($prefisso === '' ? '' : $prefisso.'/').$mio;
+	if($mio !== '' and ($slug === '' or $mio === $slug)){
+		return array('nodo' => $nodo, 'percorso' => $percorso);
+	}
+	foreach((!empty($nodo->containsPlace) ? $nodo->containsPlace : array()) as $figlio){
+		$dentro = meetoo_nodo($figlio, $slug, $percorso);
+		if($dentro){
+			return $dentro;
 		}
 	}
 	return null;
 }
 
-$radice = !empty($e->hasPart->itemListElement) ? $e->hasPart->itemListElement : array();
-$trovato = meetoo_nodo($radice, $slug);
-$nodo = $trovato ? $trovato['nodo'] : null;
-$percorso = $trovato ? $trovato['percorso'] : '';
-$nome = $nodo ? (string)$nodo->name : $slug;
+$trovato = meetoo_nodo($doc, $slug);
+$nodo = $trovato ? $trovato['nodo'] : $doc;
+$percorso = $trovato ? $trovato['percorso'] : trim((string)$ws_query['wspath'], '/');
+$nome = (string)($nodo->name ?? '');
+$figli = !empty($nodo->containsPlace) ? $nodo->containsPlace : array();
+
+/** L'intestazione delle parti: la dichiara il nodo, se no si dice quello che sono. */
+$intestazione = trim((string)(meetoo_campo_meetoo($nodo, 'childrenHeading') ?: ''));
+if($intestazione === ''){
+	$intestazione = __('Zone');
+}
 
 include_template('template-parts/header');
 ?>
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina', 'mt-area-pagina'))); ?>>
 				<h1 class="mt-h1"><?php echo mt_esc($nome); ?></h1>
-<?php if($nodo and !empty($nodo->description)){ ?>
+<?php
+$testo = meetoo_testo_visibile($nodo);
+if($testo !== ''){
+?>
+				<div class="mt-corpo"><?php ws_echo($testo); ?></div>
+<?php } else if(!empty($nodo->description)){ ?>
 				<p class="mt-sommario"><?php echo mt_esc((string)$nodo->description); ?></p>
 <?php } ?>
 
-<?php
-$figli = ($nodo and !empty($nodo->containsPlace)) ? $nodo->containsPlace : array();
-if(count($figli)){
-?>
+<?php if(count($figli)){ ?>
 				<section class="mt-sezione">
-					<h2 class="sec-head"><?php echo mt_icona('place'); ?><?php _e('Zone'); ?></h2>
+					<h2 class="sec-head"><?php echo mt_icona('place'); ?><?php echo mt_esc($intestazione); ?></h2>
 					<div class="grid">
 <?php
 foreach($figli as $figlio){
-	$id = trim((string)($figlio->identifier ?? ''));
+	$id = meetoo_riferimento_nodo($figlio);
 	if($id === ''){
 		continue;
 	}
-	$suo = $percorso.'/'.$id;
-	// Attiva = la mappa le ha dato un indirizzo, cioè il suo contenuto esiste.
-	$href = meetoo_indirizzo('places/'.$id);
-	$nomeF = (string)($figlio->name ?? $id);
+	$mio = basename($id);
+	$nomeF = (string)($figlio->name ?? $mio);
 	$nota = trim((string)($figlio->description ?? ''));
-	if($href !== ''){
-		echo mt_card_tile(array('href' => $href, 'icon' => 'place', 'title' => $nomeF, 'meta' => $nota));
-		continue;
-	}
-	// Un livello intermedio senza contenuto proprio ha comunque la sua pagina:
-	// dentro ci sono i suoi figli, ed è lì che si continua a scendere.
+	$ico = meetoo_icona_nodo($figlio) ?: meetoo_icona_di($id);
 	$sotto = !empty($figlio->containsPlace) ? count($figlio->containsPlace) : 0;
-	if($sotto){
-		echo mt_card_tile(array('href' => ws_href($suo), 'icon' => 'account_tree', 'title' => $nomeF, 'meta' => $nota));
+	// Attivo = la mappa gli ha dato un indirizzo (ha un contenuto suo), oppure ha
+	// dentro qualcosa: in tutti e due i casi c'è dove andare.
+	$href = meetoo_indirizzo($id);
+	if($href === '' and ($sotto or meetoo_titolo($percorso.'/'.$mio) !== '')){
+		$href = ws_href($percorso.'/'.$mio);
+	}
+	if($href !== ''){
+		echo mt_card_tile(array(
+			'href' => $href,
+			'icon' => $ico ? $ico['name'] : ($sotto ? 'account_tree' : 'place'),
+			'iconClass' => $ico ? $ico['class'] : '',
+			'title' => $nomeF,
+			'meta' => $nota,
+		));
 		continue;
 	}
 ?>
 						<div class="card mt-in-arrivo">
-							<div class="card-icon"><?php echo mt_icona('more_horiz'); ?></div>
+							<div class="card-icon"><?php echo mt_icona($ico ? $ico['name'] : 'more_horiz', $ico ? $ico['class'] : ''); ?></div>
 							<div class="card-body">
 								<h3 class="card-title"><?php echo mt_esc($nomeF); ?> <span class="mt-etichetta"><?php _e('In preparazione'); ?></span></h3>
 <?php if($nota !== ''){ ?>

@@ -22,6 +22,9 @@ meetoo_frammento();
 $e = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
 $nome = (string)($e->name ?? '');
 $qui = trim((string)$ws_query['wspath'], '/');
+// Lo slug di questa zona: l'ultimo pezzo del suo indirizzo, che è anche il nome
+// della sua cartella — è lì che stanno le istanze delle sue categorie.
+$zonaSlug = basename($qui);
 $tutto = (string)($_GET['tutti'] ?? '');
 $SEZIONI = meetoo_sezioni();
 
@@ -35,24 +38,6 @@ function meetoo_testo($nodo, $campo){
 	return isset($nodo->$campo) ? trim((string)$nodo->$campo) : '';
 }
 
-/**
- * L'@id a cui punta un nodo del contenuto.
- *
- * Nel passaggio da JSON a XML l'`@id` della radice diventa l'attributo `id`, quello
- * di un nodo interno un `xlink:href` — perché lì è un RIFERIMENTO ad altro, non il
- * nome di questo. Si guardano tutti e due: chi legge un contenuto non deve sapere
- * in che punto dell'albero si trova.
- */
-function meetoo_riferimento($nodo){
-	$href = $nodo->attributes('http://www.w3.org/1999/xlink');
-	$id = ($href !== null and isset($href->href)) ? (string)$href->href : '';
-	if($id === ''){
-		$suoi = $nodo->attributes();
-		$id = ($suoi !== null and isset($suoi->id)) ? (string)$suoi->id : '';
-	}
-	return trim($id);
-}
-
 /* Categorie e Percorsi: le dichiara il contenuto della zona.
  *
  * Sono la stessa cosa vista da due lati — un percorso è una collezione ordinata (il
@@ -64,20 +49,34 @@ function meetoo_riferimento($nodo){
  * si occuperà, ed è un'informazione, non un buco. */
 $percorsi = array();
 foreach((!empty($e->hasPart) ? $e->hasPart : array()) as $voce){
-	$titolo = meetoo_testo($voce, 'name');
-	$id = meetoo_riferimento($voce);
-	$href = $id !== '' ? meetoo_indirizzo($id) : '';
-	/* L'icona la dichiara la collezione, non chi la nomina: il lungomare porta la
-	 * sua onda dovunque compaia. Quella scritta qui nella zona resta per le voci
-	 * che un contenuto ancora non ce l'hanno — «Musica», «Teatro» — dove non c'è
-	 * nessuno a cui chiederla. */
-	$sua = $id !== '' ? meetoo_icona_di($id) : null;
+	$id = meetoo_riferimento_nodo($voce);
+	if($id === ''){
+		continue;
+	}
+	$slug = basename($id);
+	/* Una CATEGORIA è generale — «Musica» è musica a Ostia come altrove — e sta nel
+	 * catalogo (`categories/…`), dichiarata una volta sola. Qui la zona dice
+	 * soltanto quali categorie ha; nome, sommario e icona si chiedono al catalogo.
+	 *
+	 * La sua ISTANZA di zona, se esiste, è `places/<zona>/<slug>`: è lì che stanno i
+	 * suoi membri, ed è quella la pagina. Se non c'è, la categoria è dichiarata ma
+	 * non ancora aperta: si vede spenta.
+	 *
+	 * Un PERCORSO invece è di questa zona e basta — il lungomare di Ostia non è il
+	 * lungomare di nessun altro — e sta dove sta. */
+	$categoria = (strpos($id, 'categories/') === 0);
+	$istanza = $categoria ? 'places/'.$zonaSlug.'/'.$slug : $id;
+	$href = meetoo_indirizzo($istanza);
+	$def = $categoria ? meetoo_contenuto($id) : null;
+	$sua = meetoo_icona_di($istanza) ?: ($categoria ? meetoo_icona_di($id) : null);
+	$titolo = meetoo_testo($voce, 'name') ?: (string)($def['name'] ?? '');
+	$nota = meetoo_testo($voce, 'description') ?: (string)($def['description'] ?? '');
 	$percorsi[] = array(
 		'href' => $href,
-		'icona' => $sua ? $sua['name'] : (meetoo_testo($voce, 'icon') ?: 'route'),
+		'icona' => $sua ? $sua['name'] : 'route',
 		'classe' => $sua ? $sua['class'] : '',
-		'titolo' => $titolo !== '' ? $titolo : ucfirst(str_replace('-', ' ', basename($id))),
-		'nota' => meetoo_testo($voce, 'description'),
+		'titolo' => $titolo !== '' ? $titolo : ucfirst(str_replace('-', ' ', $slug)),
+		'nota' => $nota,
 	);
 }
 

@@ -146,6 +146,71 @@ function meetoo_indirizzo($rel){
 }
 
 /**
+ * L'@id a cui punta un nodo del contenuto.
+ *
+ * Nel passaggio da JSON a XML l'`@id` della radice diventa l'attributo `id`, quello
+ * di un nodo interno un `xlink:href` — perché lì è un RIFERIMENTO ad altro, non il
+ * nome di questo. Si guardano tutti e due: chi legge un contenuto non deve sapere
+ * in che punto dell'albero si trova.
+ */
+function meetoo_riferimento_nodo($nodo){
+	if(!is_object($nodo)){
+		return '';
+	}
+	$href = $nodo->attributes('http://www.w3.org/1999/xlink');
+	$id = ($href !== null and isset($href->href)) ? (string)$href->href : '';
+	if($id === ''){
+		$suoi = $nodo->attributes();
+		$id = ($suoi !== null and isset($suoi->id)) ? (string)$suoi->id : '';
+	}
+	return trim($id);
+}
+
+/**
+ * Un campo del namespace `meetoo:` su un nodo del contenuto.
+ *
+ * Nel passaggio da JSON a XML `meetoo:childrenHeading` diventa un elemento in un
+ * NAMESPACE, e `$nodo->{'meetoo:childrenHeading'}` non lo trova: SimpleXML cerca un
+ * elemento che si chiama proprio così, con i due punti dentro. Si risolve il
+ * prefisso, che è l'unica cosa stabile — l'indirizzo del namespace cambia a seconda
+ * di come il contenuto dichiara il contesto.
+ */
+function meetoo_campo_meetoo($nodo, $campo){
+	if(!is_object($nodo)){
+		return '';
+	}
+	$suoi = $nodo->children('meetoo', true);
+	return ($suoi !== null and isset($suoi->$campo)) ? trim((string)$suoi->$campo) : '';
+}
+
+/**
+ * L'icona dichiarata su un NODO del contenuto (non su un documento a parte).
+ *
+ * La usano le voci di un albero — un municipio, un quartiere — che vivono dentro il
+ * file di qualcun altro e non hanno un documento da cui andare a leggerla.
+ */
+function meetoo_icona_nodo($nodo){
+	if(!is_object($nodo)){
+		return null;
+	}
+	$suoi = $nodo->children('meetoo', true);
+	if($suoi === null or !isset($suoi->icon)){
+		return null;
+	}
+	$ico = $suoi->icon;
+	/* `children()` a mani nude: l'icona sta nel namespace `meetoo:`, ma i suoi campi
+	 * — `class`, `name` — no, stanno in quello predefinito. Chiedendoli
+	 * direttamente (`$ico->name`) SimpleXML li cerca ancora fra i `meetoo:`, e non
+	 * trova niente: una stringa vuota che sembrava «icona non dichiarata». */
+	$dentro = $ico->children();
+	$nome = trim((string)(isset($dentro->name) ? $dentro->name : $ico));
+	if($nome === ''){
+		return null;
+	}
+	return array('name' => $nome, 'class' => isset($dentro->class) ? trim((string)$dentro->class) : '');
+}
+
+/**
  * Un contenuto, letto dal disco e tenuto da parte.
  *
  * Serve alle card che linkano a qualcos'altro e vogliono sapere una cosa sola —

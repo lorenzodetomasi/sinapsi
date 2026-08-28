@@ -44,37 +44,72 @@ if (!function_exists('ws_mappa_wspath')) {
      * prende — che è esattamente il mestiere di questo file.
      * ===================================================================== */
 
-    /** Ogni nodo dell'albero: slug → [percorso, nome, tipo, profondità, padre]. */
+    /**
+     * Ogni nodo dell'albero delle zone: slug → percorso, nome, tipo, contenitore.
+     *
+     * L'albero di una città sta NELLA SUA CARTELLA — `places/roma/index.json` — e non
+     * più nell'indice del sito: Roma è un contenuto, e le sue parti sono cosa sua.
+     * L'indice si limita a dire quali città ci sono.
+     *
+     * Ogni nodo si identifica con `@id`, non con un `identifier`: l'@id è il modo in
+     * cui in tutto Meetoo una cosa dice chi è, e un secondo modo per dirlo — valido
+     * solo qui dentro — era una parola in più da ricordare e un posto in più dove
+     * sbagliare. Il pezzo di indirizzo è il suo ultimo segmento.
+     */
     function ws_mappa_zone(string $localeDir): array {
-        $f = "$localeDir/index/index.json";
-        if (!is_file($f)) return [];
-        $doc = json_decode((string)@file_get_contents($f), true);
-        if (!is_array($doc)) return [];
-        $e = $doc['mainEntity'] ?? $doc;
-        $radice = $e['hasPart']['itemListElement'] ?? [];
-
         $zone = [];
         $scendi = function ($nodo, string $prefisso, int $liv, string $padre) use (&$scendi, &$zone) {
-            $slug = trim((string)($nodo['identifier'] ?? ''));
+            $id = trim((string)($nodo['@id'] ?? ''), '/');
+            $slug = ws_mappa_slug($id);
             if ($slug === '') return;
             $percorso = ($prefisso === '' ? '' : "$prefisso/") . $slug;
+            $figli = (array)($nodo['containsPlace'] ?? []);
             $zone[$slug] = [
+                'id' => $id,
                 'percorso' => $percorso,
                 'nome' => (string)($nodo['name'] ?? $slug),
                 'tipo' => (string)(is_array($nodo['@type'] ?? '') ? reset($nodo['@type']) : ($nodo['@type'] ?? 'Place')),
                 'livello' => $liv,
                 'padre' => $padre,
                 'descrizione' => (string)($nodo['description'] ?? ''),
+                // Un nodo che ne contiene altri è un CONTENITORE: una città, un
+                // municipio. Non ha eventi propri — ha dentro chi li ha.
+                'contenitore' => count($figli) > 0,
             ];
-            foreach ((array)($nodo['containsPlace'] ?? []) as $figlio) {
+            foreach ($figli as $figlio) {
                 if (is_array($figlio)) $scendi($figlio, $percorso, $liv + 1, $slug);
             }
         };
-        foreach ($radice as $voce) {
-            $nodo = is_array($voce) ? ($voce['item'] ?? $voce) : null;
-            if (is_array($nodo)) $scendi($nodo, '', 0, '');
-        }
+        foreach (ws_mappa_citta($localeDir) as $citta) $scendi($citta, '', 0, '');
         return $zone;
+    }
+
+    /**
+     * Le città: quelle che l'indice del sito dichiara, o — se non ne dichiara — tutti
+     * i `places/<slug>` che sono una City. La seconda strada serve perché un albero
+     * che esiste sul disco non deve sparire dal sito solo perché qualcuno ha
+     * dimenticato di elencarlo.
+     */
+    function ws_mappa_citta(string $localeDir): array {
+        $out = [];
+        $doc = json_decode((string)@file_get_contents("$localeDir/index/index.json"), true);
+        $e = is_array($doc) ? ($doc['mainEntity'] ?? $doc) : [];
+        foreach ((array)($e['hasPart']['itemListElement'] ?? []) as $voce) {
+            $rif = is_array($voce) ? ($voce['item'] ?? $voce) : [];
+            $id = trim((string)($rif['@id'] ?? ''), '/');
+            if ($id === '') continue;
+            $j = json_decode((string)@file_get_contents("$localeDir/$id/index.json"), true);
+            if (is_array($j)) $out[] = $j['mainEntity'] ?? $j;
+        }
+        if ($out) return $out;
+
+        foreach (glob("$localeDir/places/*/index.json") as $f) {
+            $j = json_decode((string)@file_get_contents($f), true);
+            if (!is_array($j)) continue;
+            $e = $j['mainEntity'] ?? $j;
+            if (in_array('City', (array)($e['@type'] ?? []), true)) $out[] = $e;
+        }
+        return $out;
     }
 
     /**
@@ -146,7 +181,14 @@ if (!function_exists('ws_mappa_wspath')) {
             // Una ZONA — `places/lido-di-ostia` — non è un posto dove si va: è il
             // territorio dentro cui si sta, e il suo indirizzo è il percorso intero.
             if (count($pezzi) === 2 && isset($zone[$pezzi[1]])) {
-                return ['/' . $dove($pezzi[1]), 'zone', 'AdministrativeArea'];
+                /* Una città o un municipio non è un posto dove si va: è quello che
+                 * contiene i posti. Ha la sua pagina — chi accorcia l'indirizzo deve
+                 * trovarci qualcosa — ma è la pagina di un'AREA, che mostra le sue
+                 * parti, non quella di un quartiere con eventi e luoghi propri. */
+                $z = $zone[$pezzi[1]];
+                return empty($z['contenitore'])
+                    ? ['/' . $dove($pezzi[1]), 'zone', 'AdministrativeArea']
+                    : ['/' . $dove($pezzi[1]), 'area', $z['tipo'] ?: 'AdministrativeArea'];
             }
             // Le collezioni curate di una zona (il lungomare, il bookcrossing)
             // stanno dentro la zona, perché è lì che si nominano e si condividono.
@@ -327,18 +369,28 @@ if (!function_exists('ws_mappa_wspath')) {
             'luoghi' => ['Luoghi', 'Dove succedono le cose'],
         ];
         foreach ($zone as $slug => $z) {
-            $attiva = is_file("$localeDir/places/$slug/index.json");
+            $attiva = is_file("$localeDir/places/$slug/index.json") && empty($z['contenitore']);
+            if (!empty($z['contenitore'])) {
+                // Contenitore CON un documento suo (una città): la pagina la fa la
+                // mappa dalle entità, non serve generarla. Senza documento (un
+                // municipio, che vive dentro l'albero della sua città) sì.
+                if (is_file("$localeDir/places/$slug/index.json")) continue;
+            }
             if (!$attiva) {
                 // Livello senza un documento suo: la pagina la costruisce l'albero.
+                // Il contenuto è l'albero della città in cima a questo ramo: è lì
+                // che il nodo sta scritto.
+                $radice = $slug;
+                while (($zone[$radice]['padre'] ?? '') !== '') $radice = $zone[$radice]['padre'];
                 $voci[] = [
                     'wspath' => '/' . $z['percorso'],
-                    'rel' => 'index',
+                    'rel' => is_file("$localeDir/places/$radice/index.json") ? "places/$radice" : 'index',
                     'template' => 'area',
                     'tipo' => $z['tipo'],
                     'title' => $z['nome'],
                     'description' => ws_mappa_descrizione($z['descrizione']),
                     'dateModified' => date('c'),
-                    'extra' => ['zona' => $slug],
+                    'extra' => ['zona' => $slug],   // quale nodo dell'albero mostrare
                 ];
                 continue;
             }

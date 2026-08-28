@@ -164,20 +164,6 @@ function meetoo_indice($nome){
 }
 
 /**
- * L'@id a cui punta un nodo del contenuto: nel passaggio da JSON a XML quello della
- * radice diventa l'attributo `id`, quello di un nodo interno un `xlink:href`.
- */
-function meetoo_riferimento_nodo($nodo){
-	$href = $nodo->attributes('http://www.w3.org/1999/xlink');
-	$id = ($href !== null and isset($href->href)) ? (string)$href->href : '';
-	if($id === ''){
-		$suoi = $nodo->attributes();
-		$id = ($suoi !== null and isset($suoi->id)) ? (string)$suoi->id : '';
-	}
-	return trim($id);
-}
-
-/**
  * Una voce dell'indice eventi, dal suo @id — prossimi e archivio insieme.
  *
  * Serve alle raccolte che elencano eventi: la collezione dice solo `{"@id": …}`, e
