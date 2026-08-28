@@ -43,7 +43,7 @@ export default function OpenEventModal({ open, onClose, onOpen }) {
     const hay = `${it.name || ''} ${it['@id'] || it.path || ''} ${it.organizer || ''} ${it.cap || ''}`.toLowerCase();
     return hay.includes(term);
   });
-  const submitPaste = () => input.trim() && onOpen(input.trim());
+  const submitPaste = (asCopy = false) => input.trim() && onOpen(input.trim(), asCopy);
 
   return (
     <div className="modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -63,11 +63,15 @@ export default function OpenEventModal({ open, onClose, onOpen }) {
               value={input}
               autoFocus
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && submitPaste()}
+              onKeyDown={(e) => e.key === 'Enter' && submitPaste(false)}
               placeholder="events/20260825T1845-IT00122  ·  https://…/index.json"
             />
-            <button type="button" className="btn-save" disabled={!input.trim()} onClick={submitPaste}>
+            <button type="button" className="btn-save" disabled={!input.trim()} onClick={() => submitPaste(false)}>
               <span className="material-symbols-outlined">open_in_new</span> Apri
+            </button>
+            <button type="button" className="btn-ghost" disabled={!input.trim()} onClick={() => submitPaste(true)}
+              title="Apri come base per un evento nuovo, senza il suo @id">
+              <span className="material-symbols-outlined">content_copy</span> Duplica
             </button>
           </div>
 
@@ -87,19 +91,31 @@ export default function OpenEventModal({ open, onClose, onOpen }) {
               </div>
             )}
             {Array.isArray(list) && filtered.length === 0 && <div className="modal-note">Nessun evento trovato.</div>}
-            {filtered.map((it, i) => (
-              <button
-                type="button"
-                key={it['@id'] || it.path || i}
-                className="modal-item"
-                onClick={() => onOpen(it['@id'] || it.path)}
-              >
-                <span className="modal-item-name">{it.name || it['@id'] || it.path}</span>
-                <span className="modal-item-meta">
-                  {[it.startDate?.slice(0, 16)?.replace('T', ' '), it.organizer, it.cap].filter(Boolean).join(' · ')}
-                </span>
-              </button>
-            ))}
+            {filtered.map((it, i) => {
+              const id = it['@id'] || it.path;
+              return (
+                <div className="modal-item-row" key={id || i}>
+                  <button type="button" className="modal-item" onClick={() => onOpen(id)}>
+                    <span className="modal-item-name">{it.name || id}</span>
+                    <span className="modal-item-meta">
+                      {[it.startDate?.slice(0, 16)?.replace('T', ' '), it.organizer, it.cap].filter(Boolean).join(' · ')}
+                    </span>
+                  </button>
+                  {/* Duplicare è un gesto a sé: apre questo evento come BASE per uno
+                      nuovo, senza il suo @id e senza le sue iscrizioni. Prima si
+                      poteva fare solo scrivendo `?from=…` nell'indirizzo — cioè
+                      sapendolo. */}
+                  <button
+                    type="button"
+                    className="icon-btn modal-item-copia"
+                    title={'Duplica: nuovo evento a partire da ' + (it.name || id)}
+                    onClick={() => onOpen(id, true)}
+                  >
+                    <span className="material-symbols-outlined">content_copy</span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

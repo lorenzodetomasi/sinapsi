@@ -31,6 +31,16 @@ $credential = (string)($_POST['credential'] ?? '');
 $action     = (string)($_POST['action'] ?? 'save');
 $payload    = (string)($_POST['payload'] ?? '');
 $relPath    = trim((string)($_POST['path'] ?? ''), '/');
+/* L'originale da cestinare quando un @id cambia.
+ *
+ * Salvare crea SEMPRE una cartella nuova, perché la cartella È l'@id: cambiando
+ * l'identificativo di un evento aperto restavano due cartelle, due eventi negli
+ * indici e nelle categorie, e nessun modo di sapere quale fosse quello buono.
+ *
+ * La scelta però non si indovina qui — rinominare e duplicare sono due gesti
+ * legittimi — quindi la fa chi salva, nell'editor, e arriva qui già decisa. Se non
+ * arriva niente, non si tocca niente: è il comportamento di prima. */
+$cestina    = trim((string)($_POST['cestina'] ?? ''), '/');
 
 // --- Autenticazione ---
 $user = ws_authenticate($credential);
@@ -193,6 +203,24 @@ if (!$jsonOk || !$xmlOk) {
     exit;
 }
 
+/* 5-bis) l'originale, se l'editor ha chiesto di rinominare.
+ *
+ * SPOSTATO nel cestino, non cancellato: la cartella resta com'era — media
+ * compresi — e «Ripristina» la rimette al suo posto. Si fa DOPO la scrittura del
+ * nuovo: se qualcosa fosse andato storto sopra, qui non si arriva, e il documento
+ * di partenza è ancora dov'era.
+ *
+ * Se fallisce non si dichiara fallito il salvataggio, che è già avvenuto: si dice
+ * nella risposta, così chi ha salvato lo sa e può cestinare a mano. */
+$cestinato = null;
+if ($cestina !== '' && $cestina !== $relPath) {
+    require_once __DIR__ . '/../lib/events-trash.php';
+    $r = ws_trash_move($base, $cestina, $user);
+    $cestinato = !empty($r['ok'])
+        ? ['path' => $cestina, 'id' => $r['entry']['id'] ?? '']
+        : ['path' => $cestina, 'error' => $r['error'] ?? 'spostamento fallito'];
+}
+
 // 6) aggiorna l'indice SOLO per l'evento salvato (prossimi/archivio, per-organizer,
 // per-collection, per-CAP), ripulendo i raggruppamenti che non lo riguardano più e
 // riattribuendo le occorrenze se si è salvata una serie: sono le tre derive che
@@ -203,9 +231,15 @@ if (!$jsonOk || !$xmlOk) {
 // salvataggio sia fallito, e non deve rompere la risposta JSON. Se la libreria sul
 // server è più vecchia dell'endpoint (deploy parziale) si ripiega sul rebuild.
 try {
-    $index = function_exists('event_index_sync')
-        ? event_index_sync($base, $relPath, $doc['mainEntity'] ?? $doc)
-        : ['mode' => 'rebuild (lib non aggiornata)'] + event_index_rebuild($base);
+    /* Se l'originale è uscito da `events/`, l'indice va rifatto per intero: la
+     * sincronizzazione mirata sa aggiornare l'evento salvato, non sa che un altro
+     * è sparito — e quello resterebbe negli elenchi e nelle pagine pubbliche.
+     * È la stessa scelta che fa «Gestione eventi» quando si cestina a mano. */
+    $index = (!empty($cestinato) && empty($cestinato['error']))
+        ? ['mode' => 'rebuild (originale cestinato)'] + event_index_rebuild($base)
+        : (function_exists('event_index_sync')
+            ? event_index_sync($base, $relPath, $doc['mainEntity'] ?? $doc)
+            : ['mode' => 'rebuild (lib non aggiornata)'] + event_index_rebuild($base));
 } catch (\Throwable $e) {
     $index = ['error' => 'evento salvato, ma indice non aggiornato: ' . $e->getMessage()];
 }
@@ -229,6 +263,7 @@ try {
 echo json_encode([
     'success'       => true,
     'path'          => $relPath,
+    'cestinato'     => $cestinato,
     'folderCreated' => $created,
     'wrote'         => ['index.json', 'index.xml'],
     'index'         => $index,

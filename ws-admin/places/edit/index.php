@@ -105,6 +105,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
                 <input type="text" id="saved-search" list="places-datalist" placeholder="Cerca un luogo salvato per nome…" style="flex:1 1 320px;">
                 <datalist id="places-datalist"></datalist>
                 <button type="button" id="saved-open"><span class="material-symbols-outlined">folder_open</span> Apri salvato</button>
+                <button type="button" id="saved-copy" title="Apri come base per una scheda nuova: senza @id e senza Google Place ID"><span class="material-symbols-outlined">content_copy</span> Duplica</button>
                 <button type="button" id="btn-refresh-google" style="display:none;"><span class="material-symbols-outlined">refresh</span> Aggiorna da Google Maps</button>
             </div>
             <div id="saved-msg" style="font-size:13px; color:var(--color-hint);"></div>
@@ -654,10 +655,17 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         return byName ? byName['@id'] : '';
     }
     // Apre un luogo salvato (action=load): riempie l'editor SENZA toccare Google.
-    function openSaved() {
+    /* `comeCopia`: apre il documento come BASE per uno nuovo.
+     *
+     * Che cosa si toglie, e perché: l'@id (è il percorso — tenerlo vorrebbe dire
+     * riscrivere l'originale) e il Google Place ID (identifica UN posto sulla mappa:
+     * due schede con lo stesso finirebbero per essere lo stesso luogo salvato due
+     * volte, ed è la ragione per cui il salvataggio le rifiuta). Resta tutto il
+     * resto: è quello che si voleva riusare. */
+    function openSaved(comeCopia) {
         const id = resolveSavedId(document.getElementById('saved-search').value);
         if (!id) { savedMsg('Scegli un luogo dall\'elenco (o scrivi il nome esatto).', 'err'); return; }
-        savedMsg('Apertura…');
+        savedMsg(comeCopia ? 'Duplicazione…' : 'Apertura…');
         fetch('../google_place-json.php', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'load', credential: userJwtToken, id: id })
@@ -669,6 +677,15 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             loadedId = d.id || id;
             const ent = (d.json && (d.json.mainEntity || d.json)) || {};
             loadedPlaceId = ent['meetoo:google_place_id'] || ent['meetoo:googlePlaceId'] || '';
+            if (comeCopia) {
+                delete ent['@id'];
+                delete ent['meetoo:google_place_id'];
+                delete ent['meetoo:googlePlaceId'];
+                delete ent['dateCreated'];
+                delete ent['dateModified'];
+                loadedId = '';
+                loadedPlaceId = '';
+            }
             document.getElementById('json-wscms').value = JSON.stringify(d.json, null, 4);
             document.getElementById('json-google').value = '';
             lastMedia = {};
@@ -679,6 +696,10 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
             const kindNow = /^organizations\//.test(loadedId) ? 'organization' : 'place';
             const rad = document.querySelector('input[name="kind"][value="' + kindNow + '"]');
             if (rad) rad.checked = true;
+            if (comeCopia) {
+                savedMsg('Copia di «' + id + '»: dài un @id nuovo (e, se serve, cercalo su Google per riagganciare la mappa), poi salva.', 'ok');
+                return;
+            }
             savedMsg('✓ Caricato: ' + loadedId + (loadedPlaceId
                 ? '. Modifica e Salva, oppure «Aggiorna da Google Maps».'
                 : ' (nessun Google Place ID salvato: per aggiornarlo cercalo su Google per nome).'), 'ok');
@@ -706,10 +727,11 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
         })
         .catch(function () { savedMsg('Errore di rete nell\'aggiornamento.', 'err'); });
     }
-    document.getElementById('saved-open').addEventListener('click', openSaved);
+    document.getElementById('saved-open').addEventListener('click', function () { openSaved(false); });
+    document.getElementById('saved-copy').addEventListener('click', function () { openSaved(true); });
     document.getElementById('btn-refresh-google').addEventListener('click', refreshFromGoogle);
     document.getElementById('saved-search').addEventListener('change', function () {
-        if (resolveSavedId(this.value)) openSaved(); // scelta dalla datalist → apri
+        if (resolveSavedId(this.value)) openSaved(false); // scelta dalla datalist → apri
     });
 </script>
 

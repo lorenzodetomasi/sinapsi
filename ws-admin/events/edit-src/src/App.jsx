@@ -26,6 +26,7 @@ import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import PageSettings from './PageSettings.jsx';
 import OpenEventModal from './OpenEventModal.jsx';
 import DiffModal from './DiffModal.jsx';
+import RinominaModal from './RinominaModal.jsx';
 import { diffForm, mergeChoices, pathToClass } from './diff.js';
 import { difettoId, percorsoDa } from './eventId.js';
 import { API_BASE, CONTENT_BASE, SAVE_EVENT_URL } from './config.js';
@@ -333,6 +334,20 @@ export default function App() {
   // altrimenti salva direttamente. Il salvataggio vero avviene in doSaveWeb.
   const [savingWeb, setSavingWeb] = useState(false);
   const [diff, setDiff] = useState(null); // { changes, rel } | null
+  const [rinomina, setRinomina] = useState(null); // { da, a, payload } | null
+
+  /* Da dove è stato APERTO questo documento.
+   *
+   * Sta nell'URL (`?id=…`), che è anche l'unico posto dove sopravvive a un
+   * ricaricamento. Una copia (`?from=…`) l'URL non ce l'ha: una copia non ha un
+   * originale da sostituire, ed è giusto che salvi e basta. */
+  function apertoDa() {
+    try {
+      const v = (new URLSearchParams(window.location.search).get('id') || '').trim();
+      if (!v) return '';
+      return v.includes('/') ? v.replace(/^\/+|\/+$/g, '') : 'events/' + v;
+    } catch { return ''; }
+  }
   const [changedPaths, setChangedPaths] = useState(() => new Set()); // per i marcatori inline
 
   async function saveWeb() {
@@ -358,7 +373,26 @@ export default function App() {
       if (changes.length) { setDiff({ changes, rel }); return; } // apre il pannello; salva dopo la scelta
       showFlash('Nessuna modifica rispetto al web: salvo comunque (aggiorna data)…', 'ok');
     }
+    /* L'@id è cambiato rispetto a com'era stato aperto: non si decide per conto
+     * suo. Le due strade — rinominare o duplicare — sono tutte e due legittime, e
+     * indovinare male vuol dire o perdere l'originale o lasciarne due in giro. */
+    const da = apertoDa();
+    if (da && da !== rel) { setRinomina({ da, a: rel, payload }); return; }
     doSaveWeb(rel, payload);
+  }
+
+  /* La scelta fatta nel dialogo. Rinominando, l'URL segue il documento: da lì in
+   * poi «aperto» è il nuovo, e un secondo salvataggio non richiede più niente. */
+  function confermaRinomina(cestinaOriginale) {
+    const { da, a, payload } = rinomina;
+    setRinomina(null);
+    doSaveWeb(a, payload, () => {
+      try {
+        const q = new URLSearchParams(window.location.search);
+        q.set('id', a);
+        history.replaceState(null, '', window.location.pathname + '?' + q.toString());
+      } catch { /* URL non modificabile: ignora */ }
+    }, cestinaOriginale ? da : '');
   }
 
   // Conferma dal pannello diff: costruisce i dati uniti e salva.
@@ -369,12 +403,16 @@ export default function App() {
     doSaveWeb(rel, mergedPayload, () => { setData(deriveCapacities(merged)); setDiff(null); });
   }
 
-  async function doSaveWeb(rel, payloadToSave, onDone) {
+  async function doSaveWeb(rel, payloadToSave, onDone, origine) {
     if (savingWeb) return;
     if (!authToken) { showFlash('Accedi con Google per salvare sul web', 'err'); return; }
     setSavingWeb(true);
     try {
       const body = new URLSearchParams({ payload: payloadToSave, path: rel, credential: authToken });
+      /* L'ORIGINALE da cestinare: si manda solo quando l'utente ha scelto di
+       * rinominare. Senza questo, il server non ha modo di sapere che quella
+       * cartella non serve più — e infatti restava lì. */
+      if (origine) body.set('cestina', origine);
       const res = await fetch(SAVE_EVENT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -385,7 +423,10 @@ export default function App() {
       if (out.success) {
         setChangedPaths(new Set());
         onDone?.();
-        showFlash(`Salvato sul web in ${out.path}/ — index.json + index.xml${out.folderCreated ? ' (cartella creata)' : ''} · da ${out.by || ''}`, 'ok');
+        const c = out.cestinato;
+        const coda = !c ? ''
+          : (c.error ? ` · ⚠ ${c.path} NON cestinato: ${c.error}` : ` · ${c.path} spostato nel cestino`);
+        showFlash(`Salvato sul web in ${out.path}/ — index.json + index.xml${out.folderCreated ? ' (cartella creata)' : ''}${coda} · da ${out.by || ''}`, c && c.error ? 'err' : 'ok');
       } else {
         const first = out.errors?.[0]?.message?.replace(/<[^>]+>/g, '') || '';
         showFlash(`Salvataggio web fallito${out.stage ? ` [${out.stage}]` : ''}: ${out.error || ''}${first ? ' — ' + first : ''}`, 'err');
@@ -654,6 +695,15 @@ export default function App() {
         </div>
       )}
 
+      <RinominaModal
+        open={!!rinomina}
+        da={rinomina?.da}
+        a={rinomina?.a}
+        saving={savingWeb}
+        onSposta={() => confermaRinomina(true)}
+        onCopia={() => confermaRinomina(false)}
+        onCancel={() => setRinomina(null)}
+      />
       <DiffModal
         open={!!diff}
         changes={diff?.changes || []}

@@ -1062,3 +1062,23 @@ button.primary { margin-top: var(--sp-md); }
 }
 .seo-nota .avviso { color: var(--warning); display: inline-flex; align-items: center; gap: .3em; }
 .seo-nota .material-symbols-outlined { font-size: 1rem; }
+
+/* ---------- Dialogo «l'identificativo è cambiato» ---------- */
+.rinomina-scelte { margin: .75rem 0 0; padding-left: 1.1rem; line-height: 1.5; }
+.rinomina-scelte li + li { margin-top: .4rem; }
+.rinomina-scelte code { font-size: .9em; }
+.modal-foot { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; padding: var(--sp-md); border-top: 1px solid var(--border); }
+.modal-foot .btn-primary {
+  display: inline-flex; align-items: center; gap: .35em;
+  background: var(--accent); color: var(--on-accent); border: 1px solid transparent;
+  border-radius: var(--radius, 8px); padding: .45em .9em; font: inherit; cursor: pointer;
+}
+.modal-foot .btn-ghost { display: inline-flex; align-items: center; gap: .35em; }
+
+/* ---------- Elenco «Apri evento»: aprire, oppure duplicare ---------- */
+/* Duplicare è un gesto a sé, e sta accanto alla riga invece che dentro: dentro
+   sarebbe un pulsante dentro un pulsante, che non si fa. */
+.modal-item-row { display: flex; align-items: stretch; gap: .25rem; }
+.modal-item-row > .modal-item { flex: 1 1 auto; min-width: 0; }
+.modal-item-copia { flex: 0 0 auto; align-self: center; }
+.modal-item-row:hover .modal-item-copia { color: var(--accent); }
