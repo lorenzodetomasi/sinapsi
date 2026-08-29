@@ -706,12 +706,27 @@ button.primary { margin-top: var(--sp-md); }
 .repeat-head .field-label { margin: 0; font-size: var(--fs-label); color: var(--text); }
 .repeat-object .cards { display: flex; flex-direction: column; }
 
+/* `overflow: visible`, DETTO A VOCE ALTA.
+ *
+ * Qui c'era `hidden`, per tenere la striscia laterale dentro gli angoli tondi —
+ * ma tagliava anche tutto il resto, e l'elenco dei suggerimenti
+ * dell'organizzatore finiva ritagliato dentro la card: se ne intravedeva una
+ * riga e non si poteva leggere. Gli angoli si arrotondano dove servono davvero,
+ * cioè sulla striscia (`.card-rail`, qui sotto).
+ *
+ * E non basta toglierlo: questa pagina carica anche `meetoo.css`, il foglio del
+ * sito, che ha un `.card { overflow: hidden }` per le card degli eventi — la
+ * stessa parola per due cose diverse. Finché i due fogli convivono, qui il
+ * valore va scritto, non omesso. */
 .repeat-object .card {
   position: relative; display: flex; align-items: stretch; gap: var(--sp-md);
   background: var(--surface-2);
   border: 1px solid transparent; border-radius: var(--r-md);
-  margin: 0; padding: 0; overflow: hidden;
+  margin: 0; padding: 0; overflow: visible;
   transition: border-color 0.15s ease;
+}
+.repeat-object .card > .card-rail {
+  border-radius: var(--r-md) 0 0 var(--r-md);
 }
 .repeat-object .card:hover { border-color: var(--border); }
 .card-rail {
