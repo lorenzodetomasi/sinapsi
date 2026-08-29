@@ -10,9 +10,20 @@ $is_registered_user = ($xml_user !== null);
 $display_locale = $xml_user->locale ?? $google_session->locale ?? 'it';
 $display_role   = $xml_user->role ?? 'User';
 
+/* Come si chiama chi non ha acconsentito a farsi chiamare per nome.
+ *
+ * `get_consented_data()` ritorna il valore solo se il consenso c'è, se no questo
+ * ripiego — e va bene che sia un'etichetta neutra, perché è esattamente il caso
+ * in cui il nome vero non si può mostrare. Non era definito da nessuna parte:
+ * su PHP 8 un «Undefined variable» in cima alla pagina, a ogni accesso di un
+ * utente registrato. Serve anche a `page-protected.php`, che da `$portal_name`
+ * ricava le iniziali quando manca la foto: una stringa vuota darebbe un
+ * dischetto senza lettere. */
+$anon_handle = function_exists('__') ? __('Utente') : 'Utente';
+
 if ($is_registered_user && isset($xml_user->person)) {
     $person = $xml_user->person;
-    
+
     $portal_name  = get_consented_data($person->name, $anon_handle);
     $portal_email = get_consented_data($xml_user->email, null); // Email resta fuori da person in XML
     $portal_image = get_consented_data($xml_user->image, null);
