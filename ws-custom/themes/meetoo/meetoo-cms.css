@@ -209,3 +209,61 @@
   background: var(--color-background-section2); color: var(--color-text); border-color: var(--color-line);
 }
 .mt-actions .popup-big-avatar { width: 4.5rem; height: 4.5rem; max-width: none; }
+
+/* ---------- La pagina di un evento ----------
+   Le informazioni prima, le azioni subito dopo: chi apre un evento vuole sapere
+   quando e dove, e poi decidere. */
+.mt-evento-pagina .mt-copertina { position: relative; }
+.mt-evento-pagina .mt-credito {
+  font-size: .8rem; color: var(--color-hint); margin-top: .35rem;
+}
+/* La scheda: una riga per informazione, con l'icona che la nomina. Le stesse
+   righe delle card, perché è la stessa cosa detta per esteso. */
+.mt-scheda {
+  display: flex; flex-direction: column; gap: .4rem;
+  margin: 1rem 0; color: var(--color-text);
+}
+.mt-scheda > span { display: flex; align-items: center; gap: .5rem; }
+.mt-scheda .material-symbols-outlined { font-size: 1.25rem; color: var(--color-hint); }
+.mt-scheda a { color: var(--color-link); }
+
+.mt-organizza { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 1rem; }
+.mt-organizza > span:first-child { color: var(--color-hint); }
+.mt-chip {
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .25rem .6rem; border: 1px solid var(--color-line); border-radius: 999px;
+  font-size: .9rem; text-decoration: none; color: var(--color-text);
+}
+a.mt-chip:hover { border-color: var(--color-link); color: var(--color-link); }
+.mt-chip .material-symbols-outlined { font-size: 1.1rem; }
+
+/* Le azioni: bottoni veri, e si vede quando sono accesi. */
+.mt-azioni { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+.mt-azione {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .5rem .9rem; border: 1px solid var(--color-line); border-radius: 999px;
+  background: transparent; color: var(--color-text); font: inherit; cursor: pointer;
+}
+.mt-azione:hover:not(:disabled) { border-color: var(--color-link); color: var(--color-link); }
+.mt-azione:disabled { opacity: .5; cursor: not-allowed; }
+.mt-azione .material-symbols-outlined { font-size: 1.25rem; }
+.mt-azione.on { border-color: var(--color-link); color: var(--color-link); }
+.mt-azione.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+.mt-azione-forte { background: var(--color-link); color: var(--color-background-main); border-color: transparent; }
+.mt-azione-forte:hover:not(:disabled) { filter: brightness(1.08); color: var(--color-background-main); }
+.mt-azione-forte.on { background: transparent; color: var(--color-link); border-color: var(--color-link); }
+.mt-conto:not(:empty) { font-size: .8rem; opacity: .8; }
+.mt-azioni-nota { font-size: .9rem; color: var(--color-hint); margin: -.5rem 0 1rem; }
+.mt-azioni-nota.avviso { color: var(--color-past, #c0392b); }
+
+/* Il programma: l'ora a sinistra, la cosa a destra. */
+.mt-programma { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.mt-programma li { display: flex; gap: .75rem; align-items: baseline; }
+.mt-prog-ora { flex: none; min-width: 3.2rem; font-variant-numeric: tabular-nums; color: var(--color-hint); }
+.mt-prog-cosa { display: flex; flex-direction: column; gap: .15rem; }
+.mt-prog-nota { color: var(--color-hint); font-size: .92rem; }
+
+.mt-scheda-fondo { display: flex; flex-direction: column; gap: .5rem; }
+.mt-scheda-fondo .mt-nota { display: flex; align-items: center; gap: .4rem; margin: 0; }
+.mt-tag { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; }
+.mt-link { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }

@@ -92,11 +92,27 @@ function save_rsvp(string $f, array $d): bool {
 
 // «Mi interessa»: file separato dalle registrazioni perché è un dato pubblico
 // (il conteggio si legge senza login) e contiene SOLO gli uid, mai nomi o email.
+/* DUE SEGNALI, non uno.
+ *
+ * «Mi interessa» e «Mi piace» rispondono a due domande diverse: la prima e' un
+ * segnaposto — voglio ritrovarlo, forse ci vado — la seconda un giudizio, e vale
+ * anche per un evento gia' passato a cui non si poteva andare. Tenerle nello
+ * stesso elenco vorrebbe dire non poter piu' rispondere ne' all'una ne' all'altra.
+ *
+ * `users` resta il nome della prima: era gia' li' e i file scritti finora la
+ * chiamano cosi'. */
+const LIKE_LISTE = ['interesse' => 'users', 'piace' => 'loves'];
+const LIKE_CAMPI = ['interesse' => 'meetoo:interestedIn', 'piace' => 'meetoo:likes'];
+
+function likes_kind(string $k): string { return isset(LIKE_LISTE[$k]) ? $k : 'interesse'; }
+
 function likes_file(string $base, string $rel): string { return "$base/$rel/likes.json"; }
 function load_likes(string $f): array {
     $d = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
     if (!is_array($d)) $d = [];
-    if (!isset($d["users"]) || !is_array($d["users"])) $d["users"] = [];
+    foreach (LIKE_LISTE as $lista) {
+        if (!isset($d[$lista]) || !is_array($d[$lista])) $d[$lista] = [];
+    }
     $d["count"] = count($d["users"]);
     return $d;
 }
@@ -152,6 +168,8 @@ if ($action === 'status') {
         'count' => count($rsvp['registrations']),
         'likes' => count(load_likes(likes_file($base, $relPath))['users']),
         'liked' => $user ? in_array($user['uid'], load_likes(likes_file($base, $relPath))['users'], true) : false,
+        'loves' => count(load_likes(likes_file($base, $relPath))['loves']),
+        'loved' => $user ? in_array($user['uid'], load_likes(likes_file($base, $relPath))['loves'], true) : false,
     ]);
     exit;
 }
@@ -164,19 +182,28 @@ if (!$user) fail(401, 'Accedi con Google per registrarti.');
 // quanto interessarsi a una sua data. Il like resta anche sul profilo dell utente,
 // così "gli eventi che mi interessano" è una domanda a cui si può rispondere.
 if ($action === 'like') {
+    // `kind` sceglie il segnale: senza, e' «mi interessa» — com'era prima che ne
+    // esistesse un secondo, cosi' chi chiamava non deve cambiare.
+    $kind = likes_kind((string)($_POST['kind'] ?? 'interesse'));
+    $lista = LIKE_LISTE[$kind];
     ws_user_upsert($base, $user);
     $lf = likes_file($base, $relPath);
     $likes = load_likes($lf);
     $uid = $user['uid'];
-    $era = in_array($uid, $likes['users'], true);
-    $likes['users'] = $era
-        ? array_values(array_filter($likes['users'], fn($u) => $u !== $uid))
-        : array_merge($likes['users'], [$uid]);
+    $era = in_array($uid, $likes[$lista], true);
+    $likes[$lista] = $era
+        ? array_values(array_filter($likes[$lista], fn($u) => $u !== $uid))
+        : array_merge($likes[$lista], [$uid]);
     $likes['@type'] = 'meetoo:InterestList';
     $likes['event'] = $relPath;
     if (!save_likes($lf, $likes)) fail(500, 'Non riesco a salvare: il server ha i permessi sulla cartella dell evento?');
-    ws_user_toggle_like($base, $uid, $relPath, !$era);
-    echo json_encode(['success' => true, 'liked' => !$era, 'likes' => count($likes['users'])]);
+    ws_user_toggle_like($base, $uid, $relPath, !$era, LIKE_CAMPI[$kind]);
+    echo json_encode([
+        'success' => true, 'kind' => $kind, 'on' => !$era, 'count' => count($likes[$lista]),
+        // I nomi di prima, per chi legge ancora quelli (le card del sito).
+        'liked' => $kind === 'interesse' ? !$era : in_array($uid, $likes['users'], true),
+        'likes' => count($likes['users']),
+    ]);
     exit;
 }
 

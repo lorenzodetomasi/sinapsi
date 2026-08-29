@@ -288,6 +288,30 @@ function meetoo_icona_di($rel, $salti = 0){
 }
 
 /**
+ * L'indirizzo web di un file che sta NELLA CARTELLA di un contenuto.
+ *
+ * Nei documenti l'immagine si scrive relativa a sé — `media-sources/cover.jpg` —
+ * perché è lì che sta, accanto al file che la nomina, e resta valida anche se il
+ * contenuto viene spostato. Ma una pagina la serve da un altro indirizzo
+ * (`/meetoo/roma/…/eventi/<slug>`), e un percorso relativo letto di lì punta
+ * altrove: era un 404 sulla copertina di ogni evento.
+ *
+ * Chi ha già un indirizzo suo — assoluto, o che comincia con uno slash — si
+ * lascia com'è.
+ */
+function meetoo_media($rel, $file){
+	$f = trim((string)$file);
+	if($f === '' or preg_match('#^(https?:)?//#', $f) or $f[0] === '/'){
+		return $f;
+	}
+	global $ws_query;
+	$pezzi = explode('/', (string)$ws_query['content']);
+	$sito = $pezzi[0];
+	$locale = $pezzi[1] ?? ws_locale();
+	return ws_contents_url().$sito.'/'.$locale.'/'.trim((string)$rel, '/').'/'.$f;
+}
+
+/**
  * Il titolo della pagina di un contenuto, dal suo @id.
  *
  * Serve alle collezioni che elencano RIFERIMENTI e basta — «Libri e letture» dice
