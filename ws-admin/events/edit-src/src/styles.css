@@ -363,3 +363,34 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 .modal-item-row > .modal-item { flex: 1 1 auto; min-width: 0; }
 .modal-item-copia { flex: 0 0 auto; align-self: center; }
 .modal-item-row:hover .modal-item-copia { color: var(--accent); }
+
+
+/* ---------- La barra delle azioni, in fondo ----------
+   Alta come una riga dell'header e ferma lì: un modulo lungo si scrive
+   scorrendo, e il salvataggio dev'essere raggiungibile da qualunque punto. Non
+   è `position: fixed` ma l'ultima riga di una colonna alta quanto lo schermo —
+   che è la stessa cosa vista da chi guarda, senza i guai di un elemento che
+   galleggia sopra il contenuto. */
+.ed-foot {
+  /* `sticky` e non l'ultima riga di una colonna alta quanto lo schermo: quel
+     guscio qui non regge, perché la pagina carica anche `meetoo.css` e le sue
+     regole su `body` arrivano dopo le nostre. Appiccicata in basso funziona in
+     tutti e due i casi, e non galleggia sopra il contenuto come farebbe
+     `fixed`: gli lascia il suo spazio in fondo. */
+  position: sticky; bottom: 0; z-index: 30;
+  flex: none; display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-md); padding: 0 var(--sp-lg); min-height: 2.75rem;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgb(0 0 0 / 0.18);
+}
+.ed-foot-sx, .ed-foot-dx { display: flex; align-items: center; gap: var(--sp-sm); }
+@media (max-width: 40rem) {
+  /* Stretto: le etichette sparirebbero comunque a metà. Restano le icone. */
+  .ed-foot { padding: 0 var(--sp-md); }
+  .ed-foot .btn-ghost span:not(.material-symbols-outlined) { display: none; }
+}
+
+/* Le schede vivono nella riga 2 dell'header condiviso, dentro #mt-admin. */
+.ed-tabs { display: flex; align-items: center; gap: var(--sp-xs); }
+.ed-tabs .tabs { display: flex; gap: var(--sp-xs); }

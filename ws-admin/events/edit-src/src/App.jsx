@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal as creaPortale } from 'react-dom';
 import { JsonForms } from '@jsonforms/react';
 import { vanillaRenderers, vanillaCells } from '@jsonforms/vanilla-renderers';
 import { schema, uischema } from './schema.js';
@@ -17,6 +18,7 @@ import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import SmartDateRenderer, { smartDateTester } from './SmartDateRenderer.jsx';
 import PlaceLocationRenderer, { placeLocationTester } from './PlaceLocationRenderer.jsx';
+import { urlPagina } from './pagina.js';
 import EventIdRenderer, { eventIdTester } from './EventIdRenderer.jsx';
 import TimezoneRenderer, { timezoneTester } from './TimezoneRenderer.jsx';
 import CoerenzaRenderer, { coerenzaTester } from './CoerenzaRenderer.jsx';
@@ -348,6 +350,58 @@ export default function App() {
       return v.includes('/') ? v.replace(/^\/+|\/+$/g, '') : 'events/' + v;
     } catch { return ''; }
   }
+  /* L'ospite delle schede: un nodo che creiamo noi e che riattacchiamo dentro
+   * `#mt-admin` ogni volta che le briciole si riscrivono. `setBreadcrumb` svuota
+   * quel posto — è casa sua — e senza questo trucco le schede sparirebbero al
+   * primo aggiornamento delle briciole, senza che React se ne accorga. */
+  // Dichiarati QUI, prima degli effetti che li nominano fra le dipendenze: una
+  // `const` non esiste prima della sua riga, e l'array delle dipendenze si valuta
+  // durante il disegno — non dopo. (Messi più in basso, la pagina restava nera.)
+  const [urlPubblica, setUrlPubblica] = useState('');
+  const ospiteTab = useMemo(() => {
+    const d = document.createElement('div');
+    d.className = 'ed-tabs';
+    return d;
+  }, []);
+
+  /* LE BRICIOLE E L'OCCHIO, nell'header condiviso.
+   *
+   * Le briciole con il vestito del sito, così la Gestione e il sito si leggono
+   * allo stesso modo — e l'ultima dice il NOME dell'evento aperto, che è come si
+   * riconosce dove si è. L'occhio porta alla pagina pubblica e sta dove sul sito
+   * sta la penna, in mezzo alle azioni della prima riga: sono lo stesso gesto
+   * visto dai due lati, andare a vedere e tornare a scrivere.
+   */
+  useEffect(() => {
+    const M = window.Meetoo;
+    if (!M) return;
+    const nome = (data && data.name || '').trim();
+    M.setBreadcrumb([
+      { label: 'Gestione', href: ADMIN_ROOT + 'index.php' },
+      { label: 'Eventi', href: ADMIN_ROOT + 'events/index.php' },
+      { label: nome || 'Nuovo evento', current: true },
+    ]);
+    // Le schede tornano al loro posto: `setBreadcrumb` ha appena svuotato #mt-admin.
+    const admin = document.getElementById('mt-admin');
+    if (admin && ospiteTab.parentNode !== admin) admin.appendChild(ospiteTab);
+    M.setActions(urlPubblica
+      ? '<a class="mt-icon-btn" id="mt-vedi" href="' + urlPubblica + '" title="Vedi la pagina" aria-label="Vedi la pagina">'
+        + '<span class="material-symbols-outlined" aria-hidden="true">visibility</span></a>'
+      : '');
+  }, [data && data.name, urlPubblica, ospiteTab]);
+
+  /* Dove sta la pagina di questo evento, se una pagina ce l'ha: lo dice la mappa
+   * del sito, non un indirizzo composto qui — la regola che li costruisce vive
+   * nel server e cambia. Un evento appena creato non ce l'ha ancora, e l'occhio
+   * non compare. */
+  useEffect(() => {
+    const rel = eventRelPath(data);
+    if (!rel) { setUrlPubblica(''); return; }
+    let vivo = true;
+    urlPagina(rel).then((u) => { if (vivo) setUrlPubblica(u); });
+    return () => { vivo = false; };
+  }, [data && data['@id'], data && data.startDate, data && data.name]);
+
   const [changedPaths, setChangedPaths] = useState(() => new Set()); // per i marcatori inline
 
   async function saveWeb() {
@@ -584,64 +638,28 @@ export default function App() {
 
   return (
     <div className={'app tab-' + tab}>
-      <header className="appbar appbar-row2">
-        <div className="appbar-actions">
-          {/* Breadcrumb: da qui si torna all'elenco. Sta nella riga delle azioni e
-              non nell'header condiviso, altrimenti le righe tornerebbero tre. */}
-          <nav className="crumbs">
-            <a href={ADMIN_ROOT + 'index.php'} title="Amministrazione">Gestione</a>
-            <span className="sep">|</span>
-            <a href={ADMIN_ROOT + 'events/index.php'} title="Elenco degli eventi">Eventi</a>
-            <span className="sep">|</span>
-            <span className="cur">Modifica</span>
-          </nav>
-          <button type="button" className="btn-ghost" onClick={newEvent} title="Nuovo evento: svuota il form (configurazione base)">
-            <span className="material-symbols-outlined">note_add</span> Nuovo
+      {/* Le briciole stanno nell'header condiviso (riga 2), con lo stesso vestito
+          del sito: qui non se ne disegnano altre. Le schede Form/Validazione
+          vanno a destra della stessa riga; le azioni sul documento in fondo alla
+          pagina, dove si guarda quando si è finito di scrivere. */}
+      {creaPortale(
+        <div className="tabs">
+          <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
+            <span className="material-symbols-outlined">edit_document</span> Form
           </button>
-          <button type="button" className="btn-ghost" onClick={pickFile} title="Carica un evento da un file JSON (.json)">
-            <span className="material-symbols-outlined">upload_file</span> Carica
+          <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
+            <span className="material-symbols-outlined">fact_check</span> Validazione
           </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".json,application/json,application/ld+json"
-            hidden
-            onChange={(e) => loadFromFile(e.target.files?.[0])}
-          />
-          <button type="button" className="btn-ghost" onClick={() => setOpenWeb(true)} title="Apri un evento salvato sul web">
-            <span className="material-symbols-outlined">cloud_download</span> Apri
-          </button>
-          <button
-            type="button"
-            className="btn-save"
-            onClick={savePc}
-            disabled={!canSave}
-            title={canSave ? 'Salva index.json su questo computer (nella cartella events/<id>/)' : 'Salvataggio disponibile solo a validazione perfetta'}
-          >
-            <span className="material-symbols-outlined">save</span> Salva su PC
-          </button>
-          <button
-            type="button"
-            className="btn-save"
-            onClick={saveWeb}
-            disabled={!canSave || savingWeb}
-            title={canSave ? 'Salva sul web: valida JSON→XML e scrive index.json + index.xml nella cartella' : 'Disponibile solo a validazione perfetta'}
-          >
-            <span className="material-symbols-outlined">cloud_upload</span> {savingWeb ? 'Salvo…' : 'Salva sul web'}
-          </button>
-          {/* La manutenzione (Rigenera indice, Normalizza) sta in Gestione eventi:
-              qui si scrive un evento, non si amministrano gli indici. */}
-          {/* Tab: a destra della riga 2 (visibili quando le due colonne non stanno affiancate) */}
-          <div className="tabs">
-            <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
-              <span className="material-symbols-outlined">edit_document</span> Form
-            </button>
-            <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
-              <span className="material-symbols-outlined">fact_check</span> Validazione
-            </button>
-          </div>
-        </div>
-      </header>
+        </div>,
+        ospiteTab
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".json,application/json,application/ld+json"
+        hidden
+        onChange={(e) => loadFromFile(e.target.files?.[0])}
+      />
 
       {/* Impostazioni proprie dell'editor: montate nella modale Impostazioni
           dell'header (riga 1), sotto Aspetto e Preferenze. */}
@@ -750,6 +768,46 @@ export default function App() {
           />
         </section>
       </div>
+
+      {/* LE AZIONI SUL DOCUMENTO, in fondo.
+          Stanno dove si guarda quando si è finito di scrivere, non in cima dove
+          si guarda per capire dove si è. La barra è alta come una riga
+          dell'header, e non scorre: un salvataggio dev'essere raggiungibile da
+          qualunque punto di un modulo lungo. A sinistra il documento (nuovo,
+          carica, apri), a destra il salvataggio — l'ordine in cui si lavora. */}
+      <footer className="ed-foot">
+        <div className="ed-foot-sx">
+          <button type="button" className="btn-ghost" onClick={newEvent} title="Nuovo evento: svuota il form (configurazione base)">
+            <span className="material-symbols-outlined">note_add</span> Nuovo
+          </button>
+          <button type="button" className="btn-ghost" onClick={pickFile} title="Carica un evento da un file JSON (.json)">
+            <span className="material-symbols-outlined">upload_file</span> Carica
+          </button>
+          <button type="button" className="btn-ghost" onClick={() => setOpenWeb(true)} title="Apri un evento salvato sul web">
+            <span className="material-symbols-outlined">cloud_download</span> Apri
+          </button>
+        </div>
+        <div className="ed-foot-dx">
+          <button
+            type="button"
+            className="btn-save"
+            onClick={savePc}
+            disabled={!canSave}
+            title={canSave ? 'Salva index.json su questo computer (nella cartella events/<id>/)' : 'Salvataggio disponibile solo a validazione perfetta'}
+          >
+            <span className="material-symbols-outlined">save</span> Salva su PC
+          </button>
+          <button
+            type="button"
+            className="btn-save"
+            onClick={saveWeb}
+            disabled={!canSave || savingWeb}
+            title={canSave ? 'Salva sul web: valida JSON→XML e scrive index.json + index.xml nella cartella' : 'Disponibile solo a validazione perfetta'}
+          >
+            <span className="material-symbols-outlined">cloud_upload</span> {savingWeb ? 'Salvo…' : 'Salva sul web'}
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }

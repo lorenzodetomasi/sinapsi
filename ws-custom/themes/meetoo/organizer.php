@@ -31,9 +31,16 @@ $SEZIONI = meetoo_sezioni(true);
 include_template('template-parts/header');
 ?>
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina', 'mt-entita-pagina'))); ?>>
-<?php if(!empty($e->logo) or !empty($e->image)){ ?>
-				<figure class="mt-copertina mt-logo-entita">
-					<img src="<?php echo mt_esc((string)(!empty($e->logo) ? $e->logo : $e->image)); ?>" alt="" loading="lazy" decoding="async" />
+<?php
+/* La copertina: il percorso nel documento è relativo alla SUA cartella
+ * (`media-sources/cover.jpg`), e questa pagina la serve da un altro indirizzo —
+ * `meetoo_media()` fa i conti. Senza, era un 404 su ogni scheda. */
+/* Per un gruppo l'immagine viene prima del logo: una foto racconta che cosa fa,
+ * un marchio dice solo come si chiama — e il nome è già scritto sopra. */
+$cover = meetoo_media(meetoo_rel_corrente(), (string)($e->image ?? '') ?: (string)($e->logo ?? ''));
+if($cover !== ''){ ?>
+				<figure class="mt-copertina<?php echo empty($e->image) ? ' mt-logo-entita' : ''; ?>">
+					<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
 				</figure>
 <?php } ?>
 				<h1 class="mt-h1"><?php echo mt_esc($titolo); ?></h1>

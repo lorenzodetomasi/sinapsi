@@ -66,7 +66,14 @@
   --gutter-w: 1.25rem;       /* colonna delle icone di sezione */
   --label-gap: 0.5rem;       /* aria sotto le etichette (ridotta in compatta) */
   --field-pad-x: 0.75rem;    /* padding orizzontale dei campi */
-  --label-indent: var(--field-pad-x); /* allinea l'etichetta al testo del campo */
+  /* L'etichetta a filo con il CAMPO, non con il testo dentro il campo.
+   *
+   * Prima valeva il margine interno del campo (12px), così l'etichetta partiva
+   * dove parte il testo che si scrive. È una scelta legittima, ma a schermo si
+   * legge male: il riquadro sporge a sinistra dell'etichetta di dodici pixel e
+   * un modulo lungo sembra una fila di cose spostate. Il filo comune è il bordo
+   * sinistro dei campi, che è quello che l'occhio segue scorrendo. */
+  --label-indent: 0px;
 
   --fs-sm: 0.75rem;
   --fs-label: 0.875rem;

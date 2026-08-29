@@ -73,9 +73,14 @@ $SEZIONI = meetoo_sezioni(true);
 include_template('template-parts/header');
 ?>
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina', 'mt-raccolta-pagina'))); ?>>
-<?php if(!empty($e->image)){ ?>
+<?php
+/* La copertina: il percorso nel documento è relativo alla SUA cartella
+ * (`media-sources/cover.jpg`), e questa pagina la serve da un altro indirizzo —
+ * `meetoo_media()` fa i conti. Senza, era un 404 su ogni scheda. */
+$cover = meetoo_media(meetoo_rel_corrente(), (string)($e->image ?? ''));
+if($cover !== ''){ ?>
 				<figure class="mt-copertina">
-					<img src="<?php echo mt_esc((string)$e->image); ?>" alt="" loading="lazy" decoding="async" />
+					<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
 				</figure>
 <?php } ?>
 				<h1 class="mt-h1"><?php echo mt_esc($titolo); ?></h1>
