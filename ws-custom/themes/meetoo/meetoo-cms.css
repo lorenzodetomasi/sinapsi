@@ -281,3 +281,22 @@ a.mt-chip:hover { border-color: var(--color-link); color: var(--color-link); }
 /* La penna sta accanto alle impostazioni e si comporta come loro, anche se è un
    collegamento e non un pulsante. */
 a#mt-modifica { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+
+/* Com'è andata: una riga per ciò che si valuta, le stelle a destra. */
+.mt-valuta-elenco { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.mt-valuta-elenco li {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .75rem;
+  padding: .6rem .8rem; border: 1px solid var(--color-line); border-radius: var(--border-radius);
+}
+.mt-v-tipo { color: var(--color-hint); font-size: .85rem; flex: 0 0 100%; }
+.mt-v-nome { font-weight: 600; }
+.mt-stelle { margin-left: auto; display: inline-flex; }
+.mt-v-media { color: var(--color-hint); font-size: .88rem; min-width: 3.5rem; text-align: right; }
+.mt-stella {
+  background: none; border: 0; padding: .1rem; cursor: pointer; line-height: 1;
+  color: var(--color-hint);
+}
+.mt-stella:disabled { cursor: default; }
+.mt-stella.on { color: var(--color1); }
+.mt-stella.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+.mt-stelle:hover .mt-stella:not(:disabled) { color: var(--color-hint); }

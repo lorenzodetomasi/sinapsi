@@ -48,6 +48,7 @@
       segna(bottoni.piace, d.loved, d.loves);
       // Chi organizza vede anche chi ha detto che verrà.
       if (d.isAdmin) partecipanti();
+      valutazioni(d);
       if (bottoni.iscrizione) {
         segna(bottoni.iscrizione, d.registered, d.count);
         var cap = d.capacity || {};
@@ -99,6 +100,77 @@
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
       return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
+    });
+  }
+
+  /* LE STELLE.
+   *
+   * Compaiono a evento finito. Le medie le vede chiunque — sono il racconto di
+   * chi c'è stato, ed è un'informazione per chi deve ancora decidere se andare a
+   * un'altra data —, ma votare può solo chi era iscritto: se il server dice di
+   * no, le stelle si mostrano spente e non si toccano.
+   *
+   * Cliccando la stella che si è già data, il voto si ritira: ci si può
+   * ripensare, e ritirare un giudizio dev'essere facile quanto darlo.
+   */
+  function valutazioni(d) {
+    var sez = document.getElementById('mt-valuta');
+    if (!sez) return;
+    var bersagli;
+    try { bersagli = JSON.parse(sez.getAttribute('data-bersagli') || '[]'); } catch (e) { return; }
+    if (!bersagli.length || !d.past) return;
+    var medie = d.ratings || {};
+    var miei = d.myRatings || {};
+    var puo = !!d.canRate;
+    // Senza il diritto di votare e senza nemmeno un voto altrui non c'è niente
+    // da dire: la sezione resta chiusa invece di mostrare cinque stelle vuote.
+    if (!puo && !Object.keys(medie).length) return;
+
+    function stelle(t) {
+      var mio = miei[t.id] || 0;
+      var media = medie[t.id];
+      var s = '';
+      for (var i = 1; i <= 5; i++) {
+        s += '<button type="button" class="mt-stella' + (i <= mio ? ' on' : '') + '"' +
+          (puo ? '' : ' disabled') + ' data-voto="' + i + '" aria-label="' + i + ' su 5">' +
+          '<span class="material-symbols-outlined">star</span></button>';
+      }
+      return '<li data-bersaglio="' + esc(t.id) + '">' +
+        '<span class="mt-v-tipo">' + esc(t.tipo) + '</span>' +
+        '<span class="mt-v-nome">' + esc(t.nome) + '</span>' +
+        '<span class="mt-stelle">' + s + '</span>' +
+        '<span class="mt-v-media">' + (media ? esc(media.value + ' (' + media.count + ')') : '') + '</span>' +
+        '</li>';
+    }
+
+    sez.innerHTML =
+      '<h2 class="sec-head"><span class="material-symbols-outlined">star</span>Com\'è andata' + '</h2>' +
+      '<p class="mt-nota">' + (puo
+        ? 'Eri fra gli iscritti: la tua voce vale. Tocca una stella per votare, tocca la stessa per ritirare il voto.'
+        : 'Le valutazioni di chi c\'era.') + '</p>' +
+      '<ul class="mt-valuta-elenco">' + bersagli.map(stelle).join('') + '</ul>';
+    sez.hidden = false;
+
+    if (!puo) return;
+    sez.addEventListener('click', function (ev) {
+      var st = ev.target.closest && ev.target.closest('.mt-stella');
+      if (!st || st.disabled) return;
+      var riga = st.closest('li');
+      var target = riga.getAttribute('data-bersaglio');
+      var voto = parseInt(st.getAttribute('data-voto'), 10);
+      // La stessa stella una seconda volta = ritiro il voto.
+      if ((miei[target] || 0) === voto) voto = 0;
+      S.api('rate', { path: evento, target: target, value: String(voto) }).then(function (r) {
+        var b = r.body || {};
+        if (r.status !== 200 || !b.success) { dillo(b.error || 'Non ha funzionato.', 'avviso'); return; }
+        miei[target] = voto;
+        Array.prototype.forEach.call(riga.querySelectorAll('.mt-stella'), function (x, i) {
+          x.classList.toggle('on', i + 1 <= voto);
+        });
+        var m = (b.ratings || {})[target];
+        var box = riga.querySelector('.mt-v-media');
+        if (box) box.textContent = m ? m.value + ' (' + m.count + ')' : '';
+      });
     });
   }
 

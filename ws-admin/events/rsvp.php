@@ -122,6 +122,59 @@ function save_likes(string $f, array $d): bool {
     return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
 }
 
+/* ---------------------------------------------------------------------------
+ * LE VALUTAZIONI: dopo, e solo da chi c'era.
+ *
+ * Un giudizio vale per quello che è: il racconto di chi c'è stato. Quindi si può
+ * dare solo quando l'evento è finito e solo se ci si era iscritti — non e' un
+ * sondaggio d'opinione, e non e' un modo per dire la propria su una cosa che
+ * non si e' vista.
+ *
+ * Si valutano tre cose diverse, perché sono tre esperienze diverse: l'evento
+ * (com'era), chi l'ha organizzato (come l'ha tenuto) e il luogo (com'era stare
+ * lì). Un posto scomodo non è colpa di chi organizza, e un bell'incontro in una
+ * sala fredda resta un bell'incontro.
+ *
+ * Stanno in `ratings.json` accanto all'evento, una riga per bersaglio: chi ha
+ * votato e quanto. La media si ricalcola leggendo, che è l'unico modo perché non
+ * possa divergere dai voti.
+ * ------------------------------------------------------------------------- */
+function ratings_file(string $base, string $rel): string { return "$base/$rel/ratings.json"; }
+function load_ratings(string $f): array {
+    $d = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
+    if (!is_array($d) || !isset($d['targets']) || !is_array($d['targets'])) $d = ['targets' => []];
+    return $d;
+}
+function save_ratings(string $f, array $d): bool {
+    @mkdir(dirname($f), 0775, true);
+    return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
+}
+/** Le medie, bersaglio per bersaglio: {id: {value, count}}. */
+function ratings_medie(array $d): array {
+    $out = [];
+    foreach ($d['targets'] as $id => $voti) {
+        if (!is_array($voti) || !count($voti)) continue;
+        $n = count($voti);
+        $out[$id] = ['value' => round(array_sum($voti) / $n, 1), 'count' => $n];
+    }
+    return $out;
+}
+/** I voti di questa persona: {id: value}. */
+function ratings_miei(array $d, ?array $user): array {
+    if (!$user) return [];
+    $out = [];
+    foreach ($d['targets'] as $id => $voti) {
+        if (isset($voti[$user['uid']])) $out[$id] = (int)$voti[$user['uid']];
+    }
+    return $out;
+}
+/** L'evento è già stato? Conta la fine, se c'è; se no l'inizio. */
+function evento_passato(array $event): bool {
+    $fine = (string)($event['endDate'] ?? $event['startDate'] ?? '');
+    $t = $fine !== '' ? strtotime($fine) : 0;
+    return $t > 0 && $t < time();
+}
+
 // Capienze dal fieldset "Pubblico".
 function capacity(array $event, array $regs): array {
     $m = (string)($event['eventAttendanceMode'] ?? '');
@@ -170,6 +223,12 @@ if ($action === 'status') {
         'liked' => $user ? in_array($user['uid'], load_likes(likes_file($base, $relPath))['users'], true) : false,
         'loves' => count(load_likes(likes_file($base, $relPath))['loves']),
         'loved' => $user ? in_array($user['uid'], load_likes(likes_file($base, $relPath))['loves'], true) : false,
+        // Le valutazioni: le medie le vedono tutti, il proprio voto solo chi l'ha
+        // dato, e la possibilità di darlo solo chi c'era, a cose finite.
+        'past' => evento_passato($event),
+        'canRate' => $user && !$isSeries && evento_passato($event) && my_reg($rsvp['registrations'], $user) !== null,
+        'ratings' => ratings_medie(load_ratings(ratings_file($base, $relPath))),
+        'myRatings' => ratings_miei(load_ratings(ratings_file($base, $relPath)), $user),
     ]);
     exit;
 }
@@ -204,6 +263,33 @@ if ($action === 'like') {
         'liked' => $kind === 'interesse' ? !$era : in_array($uid, $likes['users'], true),
         'likes' => count($likes['users']),
     ]);
+    exit;
+}
+
+// --- VALUTA (solo a evento finito, solo da chi era iscritto) ---
+if ($action === 'rate') {
+    if ($isSeries) fail(400, 'Si valuta una data, non la rassegna.');
+    if (!evento_passato($event)) fail(400, 'L\'evento non è ancora finito: si valuta dopo.');
+    if (my_reg($rsvp['registrations'], $user) === null) fail(403, 'Puoi valutare gli eventi a cui ti eri iscritto.');
+    $target = trim((string)($_POST['target'] ?? ''));
+    $valore = (int)($_POST['value'] ?? 0);
+    if ($target === '') fail(400, 'Manca che cosa stai valutando.');
+    // Il bersaglio è un @id del sito (l'evento stesso, un organizzatore, il luogo):
+    // niente barre iniziali, niente risalite di cartella.
+    if (!preg_match('#^[A-Za-z0-9._/-]+$#', $target) || strpos($target, '..') !== false) fail(400, 'Bersaglio non valido.');
+    if ($valore < 0 || $valore > 5) fail(400, 'Il voto va da 1 a 5.');
+
+    $rf = ratings_file($base, $relPath);
+    $r = load_ratings($rf);
+    if (!isset($r['targets'][$target]) || !is_array($r['targets'][$target])) $r['targets'][$target] = [];
+    // Zero significa «tolgo il voto»: ci si può ripensare, e un voto ritirato non
+    // deve restare a pesare sulla media.
+    if ($valore === 0) unset($r['targets'][$target][$user['uid']]);
+    else $r['targets'][$target][$user['uid']] = $valore;
+    $r['@type'] = 'meetoo:RatingList';
+    $r['event'] = $relPath;
+    if (!save_ratings($rf, $r)) fail(500, 'Non riesco a salvare la valutazione.');
+    echo json_encode(['success' => true, 'target' => $target, 'value' => $valore, 'ratings' => ratings_medie($r)]);
     exit;
 }
 

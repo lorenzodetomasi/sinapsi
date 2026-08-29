@@ -307,15 +307,15 @@ function meetoo_rel_corrente(){
  * amministratore vede tutto.
  */
 function meetoo_puo_modificare(){
-	global $meetoo_utente;
-	if(!is_array($meetoo_utente) or !function_exists('ws_can_edit')){
+	$utente = meetoo_utente();
+	if(!is_array($utente) or !function_exists('ws_can_edit')){
 		return false;
 	}
 	$doc = meetoo_contenuto(meetoo_rel_corrente());
 	if(!is_array($doc)){
 		return false;
 	}
-	return ws_can_edit($doc, (string)$meetoo_utente['uid'], (string)$meetoo_utente['role']);
+	return ws_can_edit($doc, (string)$utente['uid'], (string)$utente['role']);
 }
 
 /**
@@ -450,20 +450,42 @@ $GLOBALS['ws_scripts']['head']['meetoo_jsonld'] = meetoo_jsonld();
 require_once ws_root_abspath().'/ws-admin/lib/ws-auth.php';
 require_once ws_root_abspath().'/ws-admin/lib/ws-users.php';
 
-$meetoo_utente = ws_autentica_sessione();
-if($meetoo_utente){
+/**
+ * Chi sta guardando, chiesto QUANDO SERVE e non lasciato in una variabile.
+ *
+ * Era `$meetoo_utente`, scritto qui in cima — e non funzionava fuori di qui: i
+ * template si includono DENTRO una funzione (`load_template`), quindi quella
+ * variabile è locale a quella funzione e `global $meetoo_utente` altrove non
+ * trova niente. È lo stesso tranello che teneva la pagina protetta convinta che
+ * nessuno fosse collegato, ed è per questo che la penna della modifica non
+ * compariva a nessuno.
+ *
+ * Una funzione non ha questo problema. La risposta si tiene da parte perché
+ * leggere la sessione e il profilo costa, e in una pagina la si chiede più volte.
+ */
+function meetoo_utente(){
+	static $chi = false;
+	if($chi !== false){
+		return $chi;
+	}
+	$u = function_exists('ws_autentica_sessione') ? ws_autentica_sessione() : null;
+	if(!$u){
+		return $chi = null;
+	}
 	// Le preferenze stanno sul profilo, non nel browser: valgono anche da un altro
 	// computer. Se il profilo non c'è ancora, restano quelle di partenza.
-	$profilo = ws_user_get(ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/meetoo/'.ws_locale(), $meetoo_utente['uid']);
-	$meetoo_utente = array(
-		'uid' => $meetoo_utente['uid'],
-		'name' => $meetoo_utente['name'] ?: $meetoo_utente['email'],
-		'email' => $meetoo_utente['email'],
-		'picture' => $meetoo_utente['picture'],
-		'role' => $meetoo_utente['role'],
+	$profilo = ws_user_get(ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/meetoo/'.ws_locale(), $u['uid']);
+	return $chi = array(
+		'uid' => $u['uid'],
+		'name' => $u['name'] ?: $u['email'],
+		'email' => $u['email'],
+		'picture' => $u['picture'],
+		'role' => $u['role'],
 		'prefs' => (is_array($profilo) and isset($profilo['meetoo:preferences'])) ? $profilo['meetoo:preferences'] : new stdClass(),
 	);
 }
+
+$meetoo_utente = meetoo_utente();
 $meetoo_cfg = array(
 	'sessione' => 'php',
 	'utente' => $meetoo_utente ?: null,

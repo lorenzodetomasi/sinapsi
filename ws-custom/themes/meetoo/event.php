@@ -203,6 +203,30 @@ include_template('template-parts/header');
 				</div>
 				<p class="mt-azioni-nota" hidden></p>
 
+<?php
+/* CHE COSA SI PUÒ VALUTARE: l'evento, chi l'ha organizzato, il luogo.
+ *
+ * L'elenco lo compone il server, perché è il server a sapere come si chiamano e
+ * che @id hanno; quando e da chi si possa votare lo decide il server pure, e il
+ * browser si limita a chiedere. Tre bersagli distinti perché sono tre esperienze
+ * distinte: un posto scomodo non è colpa di chi organizza. */
+$bersagli = array(array('id' => $rel, 'nome' => $titolo, 'tipo' => __('L’evento')));
+foreach($organizzatori as $o){
+	$oid = meetoo_riferimento_nodo($o);
+	$onome = mt_ev($o, 'name') ?: ($oid !== '' ? meetoo_titolo_contenuto($oid) : '');
+	if($oid !== '' and $onome !== ''){
+		$bersagli[] = array('id' => $oid, 'nome' => $onome, 'tipo' => __('Chi ha organizzato'));
+	}
+}
+if($luogoId !== '' and $luogoNome !== ''){
+	$bersagli[] = array('id' => $luogoId, 'nome' => $luogoNome, 'tipo' => __('Il luogo'));
+}
+if(!$serie){
+?>
+				<section id="mt-valuta" class="mt-sezione" hidden
+					data-bersagli="<?php echo mt_esc(json_encode($bersagli, JSON_UNESCAPED_UNICODE)); ?>"></section>
+<?php } ?>
+
 				<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e lo
 				          ottiene solo chi ha i permessi, perché a decidere è il server. I nomi
 				          non stanno nel file dell'evento: li ricompone l'archivio privato. */ ?>
