@@ -397,7 +397,24 @@ function meetoo_media($rel, $file){
 	$pezzi = explode('/', (string)$ws_query['content']);
 	$sito = $pezzi[0];
 	$locale = $pezzi[1] ?? ws_locale();
-	return ws_contents_url().$sito.'/'.$locale.'/'.trim((string)$rel, '/').'/'.$f;
+	$radice = ws_contents_url().$sito.'/'.$locale.'/';
+	/* DUE CONVENZIONI, tutte e due in giro per i contenuti.
+	 *
+	 * C'è chi scrive il percorso relativo alla PROPRIA cartella
+	 * (`media-sources/cover.jpg`) e chi lo scrive relativo alla radice dei
+	 * contenuti (`events/<slug>/media/foto.jpg`) — quest'ultima è quella che
+	 * lascia il caricatore di immagini dell'editor. Trattandole allo stesso modo,
+	 * la seconda diventava `events/<slug>/events/<slug>/media/foto.jpg`: la
+	 * copertina non si vedeva.
+	 *
+	 * Si distinguono da sole: un file dentro la cartella di un evento non si
+	 * chiama mai `events/…`. Se il primo pezzo è una delle cartelle di primo
+	 * livello, il percorso parte dalla radice. */
+	$primo = strtok($f, '/');
+	if(in_array($primo, array('events', 'places', 'organizations', 'categories', 'index', 'users', 'brand'), true)){
+		return $radice.$f;
+	}
+	return $radice.trim((string)$rel, '/').'/'.$f;
 }
 
 /**
