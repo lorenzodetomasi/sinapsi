@@ -65,6 +65,7 @@
   --rail-w: 1.75rem;
   --gutter-w: 1.25rem;       /* colonna delle icone di sezione */
   --label-gap: 0.5rem;       /* aria sotto le etichette (ridotta in compatta) */
+  --label-h: 1.375rem;       /* la riga dell'etichetta: uguale per tutti i campi */
   --field-pad-x: 0.75rem;    /* padding orizzontale dei campi */
   /* L'etichetta a filo con il CAMPO, non con il testo dentro il campo.
    *
@@ -98,6 +99,7 @@
 :root[data-density='compact'] {
   --control-h: 2rem;
   --label-gap: 0.25rem;
+  --label-h: 1.25rem;
   --sp-md: 0.5rem;
   --sp-lg: 0.75rem;
   --sp-xl: 1rem;
@@ -152,6 +154,28 @@
 .group-title,
 .pane .control:has(> input[type='checkbox']) > label { margin-left: 0; }
 .field-label .material-symbols-outlined { font-size: 1.125rem; color: inherit; }
+
+/* ---------- La riga dell'etichetta è alta uguale per tutti ----------
+ *
+ * Due campi affiancati sono disegnati da due renderer diversi — un menu, un
+ * campo con icona, una ricerca, una data — e ognuno metteva la sua etichetta con
+ * spaziature proprie: quattro pixel di scarto fra «Tipo di evento» e «Appartiene
+ * a una Collezione», due fra i campi sotto. Poco, ma in un modulo lungo l'occhio
+ * lo legge come disordine.
+ *
+ * Il rimedio non è correggere le coppie una per una — la prossima nasce storta
+ * uguale — ma dare a tutte le etichette la STESSA altezza e appoggiarle in
+ * basso: da lì in giù il campo parte sempre alla stessa quota, qualunque cosa ci
+ * sia scritto sopra e qualunque renderer l'abbia disegnata. */
+.pane .control > .field-label,
+.pane .rf > .field-label,
+.pane .control > label:not(.dropzone):not(.ent-menu) {
+  display: flex; align-items: flex-end;
+  min-height: var(--label-h); margin-top: 0; margin-bottom: 0;
+  line-height: 1.25;
+}
+/* Le spunte hanno l'etichetta ACCANTO, non sopra: lì la riga non c'entra. */
+.pane .control:has(> input[type='checkbox']) > label { min-height: 0; display: inline; }
 
 .horizontal-layout { display: flex; gap: var(--sp-md); align-items: flex-start; }
 .horizontal-layout-item { flex: 1; min-width: 0; }
@@ -208,7 +232,9 @@
 
 /* ---------- Campo con elenco (sito + Google) ---------- */
 .ent-picker { position: relative; }
-.ent-picker > input { width: 100%; box-sizing: border-box; }
+/* Alto come tutti gli altri: era l'unico a 44px in una riga da 36, e in
+ * «Nome · @type · @id» si vedeva. */
+.ent-picker > input { width: 100%; box-sizing: border-box; height: var(--control-h); margin: 0; }
 .ent-menu {
   /* Il campo Luogo vive in una colonna da un terzo: largo quanto l'input, il menu
      manderebbe a capo ogni nome. Può debordare, è un menu. */
@@ -258,9 +284,12 @@
 
 /* Data con precisione + pulsanti (calendario / cancella) */
 .smart-date .sd-row { display: flex; gap: var(--sp-xs); align-items: center; margin-top: var(--label-gap); }
+/* «Data e ora / Solo data / Solo ora» è un campo, e deve sembrarlo: prima era
+ * più piccolo del resto (12px contro 16) e con un margine interno suo, e in
+ * mezzo a una riga di campi si leggeva come un'etichetta cliccabile. */
 .smart-date .sd-precision {
-  flex: none; width: auto; max-width: 8rem; margin: 0;
-  padding: 0 1.25rem 0 var(--sp-xs); font-size: var(--fs-sm); color: var(--text-dim);
+  flex: none; width: auto; max-width: 10rem; margin: 0;
+  padding: 0 1.5rem 0 var(--field-pad-x); font-size: var(--fs-base); color: var(--text);
 }
 .smart-date .sd-input-wrap { position: relative; flex: 1 1 8rem; min-width: 0; }
 .smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 4rem; background-image: none; }

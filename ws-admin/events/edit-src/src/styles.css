@@ -218,7 +218,18 @@ body {
   /* Form | divisore | Validazione. Default 50/50 (--split), regolabile col
      divisore. minmax(0,…) impedisce il grid blowout del codice lungo. */
   grid-template-columns: minmax(0, var(--split, 50%)) var(--divider-w, 0.75rem) minmax(0, 1fr);
-  gap: 0; padding: var(--sp-lg) var(--sp-xl) var(--sp-xl);
+  /* Poco in alto: i due titoli dei pannelli non ci sono più — quello che si sta
+     guardando lo dicono le schede — e la prima domanda del modulo deve trovarsi
+     sotto l'header, non dopo una fascia di vuoto. */
+  gap: 0; padding: var(--sp-sm) var(--sp-xl) var(--sp-xl);
+}
+/* Il foglio del sito, che questa pagina carica, dà 32px di stacco in cima a ogni
+   `section` — e `.pane` è una section. Sommati a quelli del primo gruppo facevano
+   una fascia vuota alta 76px fra l'header e la prima domanda. */
+.layout > .pane { margin-top: 0; }
+.pane > .vertical-layout > .group:first-child,
+.pane > .group:first-child {
+  margin-top: 0; padding-top: 0; border-top: 0;
   align-items: stretch;
 }
 
@@ -391,6 +402,43 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   .ed-foot .btn-ghost span:not(.material-symbols-outlined) { display: none; }
 }
 
-/* Le schede vivono nella riga 2 dell'header condiviso, dentro #mt-admin. */
-.ed-tabs { display: flex; align-items: center; gap: var(--sp-xs); }
-.ed-tabs .tabs { display: flex; gap: var(--sp-xs); }
+/* ---------- Schede e interruttore, nella riga 2 dell'header ----------
+ *
+ * Sono due comandi per due situazioni, e a schermo ne compare uno solo.
+ *
+ * STRETTO: le due colonne non ci stanno, e allora le schede sono schede vere —
+ * una vista per volta, con la linea sotto quella attiva, attaccata al contenuto.
+ * LARGO: le colonne ci stanno tutte e due, e una scheda non avrebbe niente da
+ * commutare: sarebbe un comando che finge di fare qualcosa. Diventa un
+ * interruttore che mostra o nasconde la validazione — e questo lo fa davvero. */
+.ed-tabs { display: flex; align-items: center; gap: var(--sp-xs); align-self: stretch; }
+.ed-tabs .tabs { display: none; }
+
+.ed-toggle {
+  display: inline-flex; align-items: center; gap: var(--sp-xs);
+  background: transparent; color: var(--text-dim);
+  border: 1px solid transparent; border-radius: var(--r-pill);
+  padding: var(--sp-xs) var(--sp-md);
+  font-size: var(--fs-label); font-weight: 600; cursor: pointer;
+}
+.ed-toggle:hover { color: var(--accent); }
+.ed-toggle.active { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+.ed-toggle .material-symbols-outlined { font-size: 1.125rem; }
+
+/* Validazione spenta: il modulo si prende tutta la larghezza. */
+.senza-validazione .layout { grid-template-columns: minmax(0, 1fr); }
+.senza-validazione .pane-validation,
+.senza-validazione .col-divider { display: none; }
+
+@media (max-width: 62.5rem) {
+  .ed-tabs .tabs { display: flex; gap: 0; align-self: stretch; }
+  .ed-toggle { display: none; }
+  /* Schede, non pillole: la linea sotto quella attiva la lega al contenuto. */
+  .ed-tabs .tabs button {
+    border: 0; border-radius: 0; background: transparent;
+    border-bottom: 2px solid transparent; padding: 0 var(--sp-md);
+  }
+  .ed-tabs .tabs button.active {
+    background: transparent; color: var(--text); border-bottom-color: var(--accent);
+  }
+}

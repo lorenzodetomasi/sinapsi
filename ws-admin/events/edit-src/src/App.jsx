@@ -358,6 +358,7 @@ export default function App() {
   // `const` non esiste prima della sua riga, e l'array delle dipendenze si valuta
   // durante il disegno — non dopo. (Messi più in basso, la pagina restava nera.)
   const [urlPubblica, setUrlPubblica] = useState('');
+  const [mostraValidazione, setMostraValidazione] = useState(true);
   const ospiteTab = useMemo(() => {
     const d = document.createElement('div');
     d.className = 'ed-tabs';
@@ -637,20 +638,36 @@ export default function App() {
   }
 
   return (
-    <div className={'app tab-' + tab}>
+    <div className={'app tab-' + tab + (mostraValidazione ? '' : ' senza-validazione')}>
       {/* Le briciole stanno nell'header condiviso (riga 2), con lo stesso vestito
           del sito: qui non se ne disegnano altre. Le schede Form/Validazione
           vanno a destra della stessa riga; le azioni sul documento in fondo alla
           pagina, dove si guarda quando si è finito di scrivere. */}
       {creaPortale(
-        <div className="tabs">
-          <button className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
-            <span className="material-symbols-outlined">edit_document</span> Form
-          </button>
-          <button className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
+        <>
+          {/* STRETTO: due schede vere, una vista per volta. */}
+          <div className="tabs" role="tablist" aria-label="Vista">
+            <button role="tab" aria-selected={tab === 'form'} className={tab === 'form' ? 'active' : ''} onClick={() => setTab('form')}>
+              <span className="material-symbols-outlined">edit_document</span> Form
+            </button>
+            <button role="tab" aria-selected={tab === 'validation'} className={tab === 'validation' ? 'active' : ''} onClick={() => setTab('validation')}>
+              <span className="material-symbols-outlined">fact_check</span> Validazione
+            </button>
+          </div>
+          {/* LARGO: le due colonne ci stanno, e la scheda non avrebbe niente da
+              commutare — sarebbe un comando che finge. Diventa un interruttore:
+              mostra o nasconde la validazione, e quando è spenta il modulo si
+              prende tutta la larghezza. */}
+          <button
+            type="button"
+            className={'ed-toggle' + (mostraValidazione ? ' active' : '')}
+            aria-pressed={mostraValidazione}
+            onClick={() => setMostraValidazione((v) => !v)}
+            title={mostraValidazione ? 'Nascondi la validazione: il modulo si prende tutta la larghezza' : 'Mostra la validazione accanto al modulo'}
+          >
             <span className="material-symbols-outlined">fact_check</span> Validazione
           </button>
-        </div>,
+        </>,
         ospiteTab
       )}
       <input
@@ -734,7 +751,6 @@ export default function App() {
 
       <div className="layout" ref={layoutRef} style={{ '--split': split + '%' }}>
         <section className="pane pane-form" onBlur={syncKeywords} onClick={openDatePicker}>
-          <h2>Form (JSON Forms, schema-driven)</h2>
           <JsonForms
             schema={schema}
             uischema={uischema}
@@ -755,7 +771,6 @@ export default function App() {
         />
 
         <section className="pane pane-validation">
-          <h2>Validazione <small>(validate_json)</small></h2>
           <JsonValidationPane
             payload={payload}
             validation={validation}
