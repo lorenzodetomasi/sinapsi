@@ -10,6 +10,19 @@
  */
 ?>
 						<span id="mt-slot"></span>
+<?php
+/* La penna: c'è solo per chi può davvero modificare QUESTA cosa, e solo se
+ * esiste un editor che sappia aprirla. Il permesso lo decide la stessa funzione
+ * che risponde al momento del salvataggio, così la penna non è mai una porta
+ * che si apre su un muro. Chi non può modificare non la vede: un pulsante
+ * spento sarebbe un modo per dire «questo non è tuo» a chi non l'aveva chiesto. */
+$mt_modifica = function_exists('meetoo_url_modifica') ? meetoo_url_modifica() : '';
+if($mt_modifica !== '' and function_exists('meetoo_puo_modificare') and meetoo_puo_modificare()){
+?>
+						<a class="mt-icon-btn" id="mt-modifica" href="<?php echo mt_esc($mt_modifica); ?>" title="<?php _e('Modifica'); ?>" aria-label="<?php _e('Modifica'); ?>">
+							<span class="material-symbols-outlined" aria-hidden="true">edit</span>
+						</a>
+<?php } ?>
 						<button class="mt-icon-btn" id="mt-settings" title="<?php _e('Impostazioni'); ?>" aria-label="<?php _e('Impostazioni'); ?>">
 							<span class="material-symbols-outlined" aria-hidden="true">settings</span>
 						</button>

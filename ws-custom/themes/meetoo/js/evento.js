@@ -46,6 +46,8 @@
       var d = r.body;
       segna(bottoni.interesse, d.liked, d.likes);
       segna(bottoni.piace, d.loved, d.loves);
+      // Chi organizza vede anche chi ha detto che verrà.
+      if (d.isAdmin) partecipanti();
       if (bottoni.iscrizione) {
         segna(bottoni.iscrizione, d.registered, d.count);
         var cap = d.capacity || {};
@@ -54,6 +56,49 @@
           dillo('I posti sono esauriti.', 'avviso');
         }
       }
+    });
+  }
+
+  /* L'ELENCO DEI PARTECIPANTI, per chi organizza.
+   *
+   * Il permesso lo decide il server: qui si chiede e basta, e se la risposta è
+   * «no» la sezione resta chiusa. Non c'è niente da nascondere lato browser,
+   * perché non c'è niente da mostrare finché il server non lo manda.
+   *
+   * Nomi ed email non stanno nel file dell'evento — quello lo serve il web — ma
+   * nell'archivio privato: chi ha diritto di vederli li riceve ricomposti. */
+  function partecipanti() {
+    var sez = document.getElementById('mt-partecipanti');
+    if (!sez || !S) return;
+    S.api('participants', { path: evento }).then(function (r) {
+      if (r.status !== 200 || !r.body || !r.body.success) return;
+      var d = r.body;
+      var righe = (d.participants || []).map(function (p) {
+        var quando = p.date ? new Date(p.date).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' }) : '';
+        return '<li><span class="mt-p-nome">' + esc(p.name || '—') + '</span>' +
+          (p.email ? '<a class="mt-p-mail" href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a>' : '') +
+          '<span class="mt-p-nota">' + esc(p.mode === 'online' ? 'da remoto' : 'in presenza') +
+          (quando ? ' · ' + esc(quando) : '') + '</span></li>';
+      }).join('');
+      sez.innerHTML =
+        '<h2 class="sec-head"><span class="material-symbols-outlined">groups</span>Partecipanti' +
+        '<span class="count">' + (d.count || 0) + '</span></h2>' +
+        (d.newCount ? '<p class="mt-nota">' + d.newCount + ' dall’ultima volta che hai guardato.</p>' : '') +
+        (righe ? '<ul class="mt-partecipanti-elenco">' + righe + '</ul>'
+               : '<div class="empty">Ancora nessuno.</div>') +
+        '<p class="mt-nota"><label><input type="checkbox" id="mt-avvisami"' +
+        (d.notifyEnabled ? ' checked' : '') + '> Avvisami quando qualcuno si iscrive</label></p>';
+      sez.hidden = false;
+      var av = document.getElementById('mt-avvisami');
+      if (av) av.addEventListener('change', function () {
+        S.api('notify', { path: evento, enabled: av.checked ? '1' : '0' });
+      });
+    });
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c];
     });
   }
 
@@ -82,6 +127,8 @@
       if (azione === 'iscrizione') {
         var cap = d.capacity || {};
         segna(b, d.registered, cap.registered);
+        var sez = document.getElementById('mt-partecipanti');
+        if (sez && !sez.hidden) partecipanti();
       } else {
         segna(b, d.on, d.count);
       }

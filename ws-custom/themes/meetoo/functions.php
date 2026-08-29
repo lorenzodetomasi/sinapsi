@@ -288,6 +288,53 @@ function meetoo_icona_di($rel, $salti = 0){
 }
 
 /**
+ * Il contenuto di QUESTA pagina, come percorso: `events/2026…`, `places/…`.
+ *
+ * È l'@id della cosa che si sta guardando, senza il sito e la lingua davanti —
+ * la forma con cui la conoscono la mappa, gli indici e gli editor.
+ */
+function meetoo_rel_corrente(){
+	global $ws_query;
+	return preg_replace('#^[^/]+/[^/]+/#', '', trim((string)($ws_query['content'] ?? ''), '/'));
+}
+
+/**
+ * Questa persona può modificare quello che sta guardando?
+ *
+ * La domanda la decide `ws_can_edit()`, la stessa funzione che risponde quando
+ * si tenta di salvare: se qui dicesse di sì e là di no, la penna sarebbe una
+ * porta che si apre su un muro. Un redattore vede l'evento che ha creato, un
+ * amministratore vede tutto.
+ */
+function meetoo_puo_modificare(){
+	global $meetoo_utente;
+	if(!is_array($meetoo_utente) or !function_exists('ws_can_edit')){
+		return false;
+	}
+	$doc = meetoo_contenuto(meetoo_rel_corrente());
+	if(!is_array($doc)){
+		return false;
+	}
+	return ws_can_edit($doc, (string)$meetoo_utente['uid'], (string)$meetoo_utente['role']);
+}
+
+/**
+ * Dove si va per modificare questo contenuto, '' se non c'è dove andare.
+ *
+ * Solo per ciò che un editor sa aprire per nome: oggi gli eventi, che l'editor
+ * carica con `?id=`. Per i luoghi e le organizzazioni l'editor esiste ma si apre
+ * vuoto, e una penna che porta a un modulo bianco promette una cosa e ne fa
+ * un'altra — meglio nessuna penna finché non sa aprire la scheda giusta.
+ */
+function meetoo_url_modifica(){
+	$rel = meetoo_rel_corrente();
+	if(strpos($rel, 'events/') !== 0){
+		return '';
+	}
+	return ws_root_url().'ws-admin/events/edit/?id='.rawurlencode($rel);
+}
+
+/**
  * L'indirizzo web di un file che sta NELLA CARTELLA di un contenuto.
  *
  * Nei documenti l'immagine si scrive relativa a sé — `media-sources/cover.jpg` —

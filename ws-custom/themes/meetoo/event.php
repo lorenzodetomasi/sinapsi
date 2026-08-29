@@ -203,6 +203,11 @@ include_template('template-parts/header');
 				</div>
 				<p class="mt-azioni-nota" hidden></p>
 
+				<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e lo
+				          ottiene solo chi ha i permessi, perché a decidere è il server. I nomi
+				          non stanno nel file dell'evento: li ricompone l'archivio privato. */ ?>
+				<section id="mt-partecipanti" class="mt-sezione" hidden></section>
+
 <?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
 				<div class="mt-corpo"><?php ws_echo($testo); ?></div>
 <?php } else if(mt_ev($e, 'description') !== ''){ ?>

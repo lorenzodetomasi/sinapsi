@@ -267,3 +267,17 @@ a.mt-chip:hover { border-color: var(--color-link); color: var(--color-link); }
 .mt-scheda-fondo .mt-nota { display: flex; align-items: center; gap: .4rem; margin: 0; }
 .mt-tag { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; }
 .mt-link { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0; }
+
+/* L'elenco dei partecipanti, per chi organizza: nomi e contatti, non numeri. */
+.mt-partecipanti-elenco { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.mt-partecipanti-elenco li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .25rem 1rem;
+  padding: .6rem .8rem; border: 1px solid var(--color-line); border-radius: var(--border-radius);
+}
+.mt-p-nome { font-weight: 600; }
+.mt-p-mail { color: var(--color-link); }
+.mt-p-nota { color: var(--color-hint); font-size: .88rem; margin-left: auto; }
+#mt-partecipanti label { display: inline-flex; align-items: center; gap: .45rem; cursor: pointer; }
+/* La penna sta accanto alle impostazioni e si comporta come loro, anche se è un
+   collegamento e non un pulsante. */
+a#mt-modifica { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
