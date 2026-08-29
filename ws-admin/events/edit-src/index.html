@@ -22,6 +22,16 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Source+Code+Pro:wght@400;600&display=swap"
       rel="stylesheet"
     />
+    <!--
+      Il foglio dei MODULI arriva dal tema, non dal bundle: e' lo stesso file che
+      un giorno vestira' un modulo pubblicato sul sito, e due copie dello stesso
+      foglio divergono al primo ritocco.
+      Il percorso e' assoluto dalla radice del sito apposta: scritto relativo,
+      la build lo inglobava fra i propri asset — cioe' ne faceva una copia, che
+      e' esattamente la cosa da non fare. Un indirizzo assoluto Vite lo lascia
+      stare, e resta un rimando a QUEL file.
+    -->
+    <link rel="stylesheet" href="/ws-custom/themes/meetoo/form.css" />
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>

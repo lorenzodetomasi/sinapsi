@@ -146,9 +146,9 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
         </button>
       </div>
 
-      <div className="cards" data-reorder-root>
+      <div className="rip-cards" data-reorder-root>
         {items.map((item, i) => {
-          const classes = ['card'];
+          const classes = ['rip-card'];
           if (dragIndex === i) classes.push('dragging');
           if (overIndex === i && dragIndex !== null) classes.push('insert-before');
           if (overIndex === items.length && i === items.length - 1 && dragIndex !== null)
@@ -158,17 +158,17 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
             <Fragment key={i}>
               {i > 0 && <InsertGap onInsert={() => insertAtIndex(i)} />}
               <fieldset className={classes.join(' ')} data-reorder-index={i}>
-                <div className="card-rail">
+                <div className="rip-rail">
                   <button
                     type="button"
-                    className="icon-btn card-remove"
+                    className="icon-btn rip-remove"
                     title="Rimuovi"
                     onClick={() => update(items.filter((_, j) => j !== i))}
                   >
                     <span className="material-symbols-outlined">close</span>
                   </button>
                   <span
-                    className="card-handle"
+                    className="rip-handle"
                     title="Trascina per riordinare"
                     onPointerDown={(e) => onHandlePointerDown(e, i)}
                   >
@@ -176,7 +176,7 @@ const RepeatableObject = ({ data, handleChange, path, label, schema, uischema, v
                   </span>
                 </div>
 
-                <div className="card-fields">
+                <div className="rip-fields">
                   {Object.entries(props)
                     .filter(([, sub]) => sub.format !== 'hidden')
                     .map(([key, sub]) => (
