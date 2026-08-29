@@ -21,7 +21,7 @@ async function esisteGia(id) {
   const rel = percorsoDa(id);
   if (!rel) return false;
   try {
-    const res = await fetch(CONTENT_BASE + rel + '/index.json', { headers: { Accept: 'application/json' } });
+    const res = await fetch(CONTENT_BASE + rel + '/index.json', { headers: { Accept: 'application/json' }, cache: 'no-store' });
     return res.ok && (res.headers.get('content-type') || '').includes('json');
   } catch {
     return false; // offline: non è il momento di dare giudizi

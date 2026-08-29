@@ -15,7 +15,9 @@ export default function OpenEventModal({ open, onClose, onOpen }) {
     setQ('');
     setList(null);
     let alive = true;
-    fetch(EVENTS_INDEX_URL, { headers: { Accept: 'application/json' } })
+    // `no-store`: l'elenco da aprire dev'essere quello di adesso, non quello
+    // che il browser si è tenuto — un evento appena pubblicato deve esserci.
+    fetch(EVENTS_INDEX_URL, { headers: { Accept: 'application/json' }, cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((idx) => {
         if (!alive) return;

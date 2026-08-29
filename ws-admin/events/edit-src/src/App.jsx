@@ -357,7 +357,7 @@ export default function App() {
     // Confronto col web: scaricabile senza login (contenuto pubblico); il login serve al salvataggio.
     let stored = null;
     try {
-      const res = await fetch(resolveEventUrl(rel), { headers: { Accept: 'application/json' } });
+      const res = await fetch(resolveEventUrl(rel), { headers: { Accept: 'application/json' }, cache: 'no-store' });
       // Come sopra: senza controllare il tipo, la pagina HTML del CMS verrebbe
       // scambiata per un evento esistente e il confronto direbbe sciocchezze.
       if (res.ok && (res.headers.get('content-type') || '').includes('json')) {
@@ -503,7 +503,7 @@ export default function App() {
     const url = resolveEventUrl(input);
     if (!url) return;
     try {
-      const res = await fetch(url, { headers: { Accept: 'application/json' } });
+      const res = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       // Un file che non c'è NON dà 404: il CMS risponde con la propria pagina e
       // stato 200, quindi `res.ok` è vero e il parse fallisce con un oscuro

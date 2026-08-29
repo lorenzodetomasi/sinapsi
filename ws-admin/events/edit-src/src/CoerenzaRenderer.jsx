@@ -20,7 +20,7 @@ const URL_ARCHIVIO = EVENTS_INDEX_URL.replace(/events\.json$/, 'events.archive.j
 
 async function leggi(url) {
   try {
-    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    const r = await fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' });
     if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) return [];
     const idx = await r.json();
     return Array.isArray(idx) ? idx : Array.isArray(idx?.events) ? idx.events : [];

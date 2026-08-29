@@ -136,6 +136,11 @@ export const schema = {
     typicalAgeRange: { type: 'string', title: "Fascia d'età" },
     eventStatus: { type: 'string', title: 'Stato evento', oneOf: EVENT_STATUS },
     eventAttendanceMode: { type: 'string', title: 'Modalità', oneOf: ATTENDANCE_MODE },
+    /* «Posti limitati» non finisce nel contenuto: e' una domanda che si fa
+     * all'editor, non un dato dell'evento. Se l'evento ha un tetto lo dicono le
+     * capienze; se non ce l'ha, non c'e' niente da dire. Al caricamento la
+     * spunta si accende da sola quando una capienza c'e' gia'. */
+    hasLimitedCapacity: { type: 'boolean', title: 'Posti limitati' },
     maximumPhysicalAttendeeCapacity: { type: 'integer', title: 'Posti in presenza' },
     maximumVirtualAttendeeCapacity: { type: 'integer', title: 'Posti da remoto' },
     maximumAttendeeCapacity: { type: 'integer', title: 'Posti totali' },
@@ -280,6 +285,7 @@ const PRIMARY_SCOPE = '#/properties/primaryType';
 const showIfSeries = { effect: 'SHOW', condition: { scope: PRIMARY_SCOPE, schema: { const: 'EventSeries' } } };
 const showIfNotSeries = { effect: 'SHOW', condition: { scope: PRIMARY_SCOPE, schema: { not: { const: 'EventSeries' } } } };
 const showIfChildren = { effect: 'SHOW', condition: { scope: '#/properties/isChildrensEvent', schema: { const: true } } };
+const showIfLimited = { effect: 'SHOW', condition: { scope: '#/properties/hasLimitedCapacity', schema: { const: true } } };
 
 export const uischema = {
   type: 'VerticalLayout',
@@ -383,6 +389,10 @@ export const uischema = {
             }),
           ],
         },
+        // I posti si contano solo se sono contati: la spunta apre i campi, e finche'
+        // e' spenta cinque caselle vuote non stanno li' a farsi guardare. Un evento
+        // senza tetto e' il caso normale, e il caso normale non deve chiedere niente.
+        ctrl('#/properties/hasLimitedCapacity', { options: { inline: true } }),
         // Capienze in griglia 3 colonne. I due calcolati (totale, rimasti) stanno
         // nella stessa colonna (3ª); uno spaziatore tiene libera la 2ª nella riga 2:
         //   presenza | remoto  | totale(calcolato)
@@ -390,6 +400,7 @@ export const uischema = {
         {
           type: 'HorizontalLayout',
           options: { cols: 3 },
+          rule: showIfLimited,
           elements: [
             ctrl('#/properties/maximumPhysicalAttendeeCapacity'),
             ctrl('#/properties/maximumVirtualAttendeeCapacity'),

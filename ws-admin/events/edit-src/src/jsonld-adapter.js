@@ -96,6 +96,18 @@ export function fromJsonLd(doc) {
   const maxVirtual = doc.maximumVirtualAttendeeCapacity ?? 0;
   const maxTotal = doc.maximumAttendeeCapacity ?? maxPhysical + maxVirtual;
   const remaining = doc.remainingAttendeeCapacity ?? maxTotal;
+  /* «Posti limitati» si deduce dal DOCUMENTO, non da un campo suo: se una capienza
+   * c'e' scritta, quell'evento i posti li conta. Si guarda il documento originale e
+   * non i valori qui sopra, che un numero ce l'hanno sempre (zero) anche quando nel
+   * file non c'era niente — e aprendo un evento vecchio i suoi posti devono
+   * comparire, non nascondersi dietro una spunta spenta. */
+  const haCapienza = [
+    'maximumPhysicalAttendeeCapacity',
+    'maximumVirtualAttendeeCapacity',
+    'maximumAttendeeCapacity',
+    'bookedAttendeeCapacity',
+    'remainingAttendeeCapacity',
+  ].some((k) => Number(doc[k]) > 0);
   return {
     id: doc['@id'] ?? '',
     url: doc.url ?? '',
@@ -170,6 +182,7 @@ export function fromJsonLd(doc) {
       bestRating: rating.bestRating ?? '',
     },
     // Flag pubblico (booleani meetoo dedicati)
+    hasLimitedCapacity: haCapienza,
     isChildrensEvent: asBool(doc['meetoo:isChildrensEvent']),
     childrenMustBeAccompanied: asBool(doc['meetoo:childrenMustBeAccompanied']),
     forSeparatedParents: asBool(doc['meetoo:forSeparatedParents']),
@@ -252,7 +265,10 @@ export function toJsonLd(d) {
   // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
   const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
 
-  const num = (v) => Number(v) || 0;
+  /* Spunta spenta = nessun tetto, e allora nel file non si scrive nessuna
+   * capienza: un `maximumAttendeeCapacity: 0` direbbe «zero posti», che e' un'altra
+   * cosa. I numeri restano nel form, cosi' riaccendendo la spunta si ritrovano. */
+  const num = (v) => (d.hasLimitedCapacity ? Number(v) || 0 : 0);
   const physical = num(d.maximumPhysicalAttendeeCapacity);
   const virtual = num(d.maximumVirtualAttendeeCapacity);
   const total = num(d.maximumAttendeeCapacity);

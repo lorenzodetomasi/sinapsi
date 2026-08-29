@@ -29,6 +29,18 @@ const AMBITI = {
 export const descrizioneEntita = (e) =>
   [e.kind === 'org' ? 'Organizzazione' : e['@type'], e.locality].filter(Boolean).join(' · ');
 
+/* Fra due che corrispondono uguale, chi organizza viene prima.
+ *
+ * Un organizzatore di solito e' un'organizzazione; i luoghi ci sono perche' anche
+ * una biblioteca o una libreria organizzano, ma sono l'eccezione — e sono anche
+ * la maggioranza dell'indice, quindi lasciati in ordine alfabetico riempivano
+ * l'elenco di chioschi prima di arrivare a un gruppo. Nel «Dove» non serve: li'
+ * le organizzazioni non entrano proprio. */
+function ordina(voci, ambito) {
+  if (ambito !== 'organizer') return voci;
+  return [...voci.filter((e) => e.kind === 'org'), ...voci.filter((e) => e.kind !== 'org')];
+}
+
 function filtra(lista, testo, ambito) {
   const ammesso = AMBITI[ambito] || AMBITI.organizer;
   // Le liste (ItemList: Lungomare, BookCrossing) stanno sotto places/ ma non sono
@@ -45,7 +57,7 @@ function filtra(lista, testo, ambito) {
     if (n.startsWith(q)) inizia.push(e);
     else if (n.includes(q)) contiene.push(e);
   }
-  return [...inizia, ...contiene].slice(0, 8);
+  return [...ordina(inizia, ambito), ...ordina(contiene, ambito)].slice(0, 8);
 }
 
 export default function EntityPicker({

@@ -278,7 +278,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     })();
 
     /* ---------- Dati ---------- */
-    const getJson = (url) => fetch(url, { headers: { Accept: 'application/json' } })
+    /* `cache: 'no-store'`: gli indici e i contenuti si leggono SEMPRE dal server.
+     * In un pannello di gestione una risposta vecchia non è un risparmio, è un
+     * bugia: si pubblicava un evento e per vederlo comparire bisognava svuotare la
+     * cache del browser, perché `events.json` era ancora quello di prima. Sono
+     * pochi kilobyte, e chi apre questa pagina la apre per sapere com'è ADESSO. */
+    const getJson = (url) => fetch(url, { headers: { Accept: 'application/json' }, cache: 'no-store' })
       .then((r) => {
         const ct = r.headers.get('content-type') || '';
         return (r.ok && ct.includes('json')) ? r.json() : Promise.reject(r.status);
