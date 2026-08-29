@@ -5,6 +5,31 @@
 // @since WS 1.0
 global $ws_content, $ws_headings;
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'page';
+
+/* CHI STA GUARDANDO, chiesto da qui.
+ *
+ * Questa pagina leggeva `$is_google_user`, `$portal_name` e compagnia contando
+ * che glieli lasciasse per strada il partial dell'accesso, incluso dall'header.
+ * Non succedeva: `load_template()` fa il `require` DENTRO una funzione, e le
+ * variabili di un template non escono da lì. Erano sempre indefinite — su PHP 8
+ * una fila di avvisi, e soprattutto `!$is_google_user` sempre vero, cioè
+ * «effettua l'accesso» mostrato anche a chi l'accesso l'aveva fatto.
+ *
+ * Adesso il profilo si chiede al plugin, che è il posto che lo sa. Se il plugin
+ * non c'è la pagina non esplode: si comporta come davanti a uno sconosciuto, che
+ * per una pagina protetta è il modo giusto di sbagliare. */
+$profilo = function_exists('google_login_profilo') ? google_login_profilo() : array(
+    'collegato' => false, 'registrato' => false, 'name' => '', 'email' => null,
+    'image' => null, 'org_name' => null, 'org_logo' => null,
+);
+$is_google_user     = $profilo['collegato'];
+$is_registered_user = $profilo['registrato'];
+$portal_name     = $profilo['name'];
+$portal_email    = $profilo['email'];
+$portal_image    = $profilo['image'];
+$portal_org_name = $profilo['org_name'];
+$portal_org_logo = $profilo['org_logo'];
+
 include_template('template-parts/header');
 ?>
 		<div<?php echo ws_html_attributes('main-content'); ?>>

@@ -1,37 +1,31 @@
 <?php
 // Google Login Nav
-// 1. Acquisizione Dati
-$google_session = GoogleAuth::getSession();       
-$xml_user       = GoogleAuth::getRegisteredUser(); 
+/* Chi sta guardando: lo dice `google_login_profilo()` (functions.php del tema),
+ * che è lo stesso posto da cui lo chiede la pagina protetta. Il controllo serve
+ * a un caso solo: i file del tema che arrivano sul server in momenti diversi —
+ * questo nuovo e `functions.php` ancora vecchio. È già successo, e allora la
+ * pagina resta senza accesso invece di non esserci proprio. */
+$profilo = function_exists('google_login_profilo') ? google_login_profilo() : array(
+    'sessione' => null, 'utente' => null, 'collegato' => false, 'registrato' => false,
+    'locale' => 'it', 'role' => 'User', 'anon' => 'Utente', 'name' => 'Utente',
+    'email' => null, 'image' => null, 'org_name' => null, 'org_logo' => null,
+);
 
-$is_google_user     = ($google_session !== null);
-$is_registered_user = ($xml_user !== null);
+$google_session = $profilo['sessione'];
+$xml_user       = $profilo['utente'];
 
-$display_locale = $xml_user->locale ?? $google_session->locale ?? 'it';
-$display_role   = $xml_user->role ?? 'User';
+$is_google_user     = $profilo['collegato'];
+$is_registered_user = $profilo['registrato'];
 
-/* Come si chiama chi non ha acconsentito a farsi chiamare per nome.
- *
- * `get_consented_data()` ritorna il valore solo se il consenso c'è, se no questo
- * ripiego — e va bene che sia un'etichetta neutra, perché è esattamente il caso
- * in cui il nome vero non si può mostrare. Non era definito da nessuna parte:
- * su PHP 8 un «Undefined variable» in cima alla pagina, a ogni accesso di un
- * utente registrato. Serve anche a `page-protected.php`, che da `$portal_name`
- * ricava le iniziali quando manca la foto: una stringa vuota darebbe un
- * dischetto senza lettere. */
-$anon_handle = function_exists('__') ? __('Utente') : 'Utente';
+$display_locale = $profilo['locale'];
+$display_role   = $profilo['role'];
 
-if ($is_registered_user && isset($xml_user->person)) {
-    $person = $xml_user->person;
-
-    $portal_name  = get_consented_data($person->name, $anon_handle);
-    $portal_email = get_consented_data($xml_user->email, null); // Email resta fuori da person in XML
-    $portal_image = get_consented_data($xml_user->image, null);
-    
-    // Accesso a worksFor -> organization
-    $portal_org_name = get_consented_data($person->worksFor->organization->name, null);
-    $portal_org_logo = get_consented_data($person->worksFor->organization->logo, null);
-}
+$anon_handle     = $profilo['anon'];
+$portal_name     = $profilo['name'];
+$portal_email    = $profilo['email'];
+$portal_image    = $profilo['image'];
+$portal_org_name = $profilo['org_name'];
+$portal_org_logo = $profilo['org_logo'];
 ?>
 <?php if (!$is_google_user): ?>
     <div id="g_id_onload" data-client_id="<?= GoogleAuth::getClientId() ?>" data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>

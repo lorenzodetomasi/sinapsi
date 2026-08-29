@@ -359,3 +359,57 @@ ob_start();
 include_template('template-parts/header-compatto');
 $GLOBALS['ws_styles']['head']['header_compatto'] = ob_get_clean();
 ?>
+
+/**
+ * Il profilo di chi sta guardando, in un posto solo.
+ *
+ * Serve a due template — la voce di accesso nell'header e la pagina protetta —
+ * e ognuno se lo ricavava per conto suo. Con una conseguenza che non si vedeva:
+ * i template si includono DENTRO una funzione (`load_template`), quindi le
+ * variabili che il primo lasciava per strada al secondo non arrivavano mai. La
+ * pagina protetta leggeva `$portal_name` e `$is_google_user` sempre indefiniti,
+ * e mostrava «effettua l'accesso» anche a chi l'accesso l'aveva fatto.
+ *
+ * Una funzione non ha questo problema: la si chiama da dove serve e risponde
+ * uguale. Sta QUI e non nel plugin perché il plugin non è versionato: una
+ * funzione da cui dipendono due template deve viaggiare insieme a loro.
+ *
+ * I campi che dipendono dal CONSENSO passano da `get_consented_data()`, che li
+ * dà solo se il consenso c'è — se no restano al ripiego, e per il nome il
+ * ripiego è un'etichetta neutra, mai il nome vero. Senza il plugin di accesso
+ * la risposta è «uno sconosciuto», che è il modo giusto di sbagliare.
+ */
+if(!function_exists('google_login_profilo')){
+function google_login_profilo(){
+	$anon = function_exists('__') ? __('Utente') : 'Utente';
+	// `&&`, non `and`: `and` ha precedenza più bassa dell'uguale, e $vivo si
+	// prenderebbe solo la prima metà della condizione.
+	$vivo = class_exists('GoogleAuth') && function_exists('get_consented_data');
+	$sessione = $vivo ? GoogleAuth::getSession() : null;
+	$utente   = $vivo ? GoogleAuth::getRegisteredUser() : null;
+	$p = array(
+		'sessione'   => $sessione,
+		'utente'     => $utente,
+		'collegato'  => ($sessione !== null),
+		'registrato' => ($utente !== null),
+		'locale'     => isset($utente->locale) ? (string)$utente->locale : (isset($sessione->locale) ? $sessione->locale : 'it'),
+		'role'       => isset($utente->role) ? (string)$utente->role : 'User',
+		'anon'       => $anon,
+		'name'       => $anon,
+		'email'      => null,
+		'image'      => null,
+		'org_name'   => null,
+		'org_logo'   => null,
+	);
+	if($utente !== null and isset($utente->person)){
+		$persona = $utente->person;
+		$p['name']  = get_consented_data($persona->name, $anon);
+		// L'email sta fuori da `person`, nel documento dell'utente.
+		$p['email'] = get_consented_data($utente->email, null);
+		$p['image'] = get_consented_data($utente->image, null);
+		$p['org_name'] = get_consented_data($persona->worksFor->organization->name, null);
+		$p['org_logo'] = get_consented_data($persona->worksFor->organization->logo, null);
+	}
+	return $p;
+}
+}
