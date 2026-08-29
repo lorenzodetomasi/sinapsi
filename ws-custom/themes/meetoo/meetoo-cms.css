@@ -149,6 +149,47 @@
    che è chiaro. Dentro l'header scuro di Meetoo diventava una scheda bianca con un
    punto elenco davanti. Qui si riveste con i token del tema; il plugin resta
    com'è, perché lo usano tutti e due i siti. */
+/* Il fondo del pulsante lo tinge QUESTA regola, non `#container-div`.
+ *
+ * `#container-div` (e il `body` che stava qui accanto) sono elementi dentro
+ * l'iframe di Google — accounts.google.com — e da un'altra origine il nostro CSS
+ * non passa: quella regola non ha mai dipinto niente. Il pulsante che si vede,
+ * invece, Google lo disegna nel NOSTRO documento, ed è raggiungibile.
+ *
+ * Si punta a `[role="button"]`, non alla sua classe: le classi di Google sono
+ * generate (`nsm7Bb-HzV7m-LgbsSe`) e cambiano senza preavviso, il ruolo no.
+ * Resta bianco il dischetto da 36px con la G dentro: è il marchio, e quello si
+ * lascia stare. */
+#mt-account .g_id_signin [role="button"] {
+  background-color: var(--color-background-header);
+  border-color: transparent;
+  box-shadow: none;
+}
+/* E la G torna a vedersi: il widget di Google misura a modo suo.
+ *
+ * In cima a questo tema c'è `* { box-sizing: border-box }`, che è la scelta
+ * giusta per il codice nostro — ma quell'asterisco entra anche nel pulsante che
+ * disegna Google, e Google lo ha scritto per `content-box`. Il quadratino che
+ * porta il simbolo è 20 di lato con 10 di margine interno: contando alla nostra
+ * maniera i 20 comprendono i margini, lo spazio per il contenuto diventa ZERO, e
+ * la G resta larga niente. Si vedeva solo nel tema chiaro perché in quello scuro
+ * il simbolo sta dentro il dischetto bianco, che è un altro elemento e si misura
+ * da sé.
+ *
+ * Non si rimedia dando misure al simbolo — sarebbero i numeri di Google copiati
+ * a mano, che cambiano quando vuole lui. Si rimedia togliendo la nostra regola
+ * di casa da casa sua. */
+#mt-account .g_id_signin,
+#mt-account .g_id_signin * {
+  box-sizing: content-box;
+}
+/* Resta l'altra regola di casa: l'header compatto rimpicciolisce il LOGO DEL
+ * SITO con `.header-compatto img, .header-compatto svg`, e quel `svg` prende
+ * anche il marchio di Google — che nell'header ci sta per un altro motivo. Il
+ * simbolo torna a riempire il quadratino che Google gli ha preparato: due misure
+ * su due, perché a un `<svg>` scritto nella pagina se ne lasci una in `auto`
+ * quella viene zero. */
+#mt-account .g_id_signin svg { width: 100%; height: 100%; }
 .mt-actions .google-avatar,
 .mt-actions .google-avatar > li { list-style: none; margin: 0; padding: 0; }
 .mt-actions .google-avatar { display: flex; align-items: center; }
