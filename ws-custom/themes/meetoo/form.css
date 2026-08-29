@@ -355,9 +355,30 @@
   transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .pane input:hover, .pane select:hover, .pane textarea:hover { border-color: var(--border); }
-.pane input:focus, .pane select:focus {
+.pane input:focus, .pane select:focus, .pane textarea:focus {
   outline: none; border-color: var(--accent);
   box-shadow: 0 0 0 0.125rem color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+/* LA TEXTAREA È UN CAMPO COME GLI ALTRI.
+ *
+ * Non lo era: nell'elenco qui sopra `textarea` non c'è mai stata, e restava con
+ * il vestito predefinito del browser — fondo grigio, bordo grigio, angoli vivi,
+ * due pixel di margine interno — in mezzo a campi scuri con gli angoli tondi.
+ * Ha una regola sua e non è nell'elenco per una ragione sola: l'altezza. Un
+ * campo è alto `--control-h`, una textarea è alta quante righe le hai chiesto,
+ * e imporgliela la schiaccerebbe a una riga. Tutto il resto è identico. */
+.pane textarea {
+  width: 100%;
+  padding: calc(var(--sp-xs) + 0.125rem) var(--field-pad-x);
+  margin: var(--label-gap) 0 var(--sp-md);
+  background: var(--field-bg);
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font: inherit; line-height: 1.45;
+  resize: vertical;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .pane .rf input, .pane .rf select { margin: var(--label-gap) 0 0; }
 .pane label { font-size: var(--fs-label); font-weight: 500; color: var(--text-dim); margin-left: var(--label-indent); }
@@ -843,7 +864,8 @@ button.primary { margin-top: var(--sp-md); }
 .seo-rigenera .material-symbols-outlined { font-size: 1.125rem; }
 /* Prosa, non codice: le textarea qui dentro nascono monospazio perché servono al
    JSON, ma questa è una frase che leggerà una persona. */
-.seo-descrizione textarea { width: 100%; resize: vertical; font: inherit; line-height: 1.4; }
+/* (Il vestito ce l'ha da `.pane textarea`: qui resta solo ciò che è suo.) */
+.seo-descrizione textarea { min-height: 4.5rem; }
 .seo-nota {
   margin-left: var(--label-indent); margin-top: .25em;
   font-size: var(--fs-small, .8125rem); color: var(--text-dim);
