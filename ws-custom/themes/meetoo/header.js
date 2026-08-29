@@ -61,7 +61,7 @@
   var TOKEN_KEY = 'meetoo_gid_token', THEME_KEY = 'meetoo:theme';
   /* Dove si tiene il token dell'accesso.
    * Stava in sessionStorage, che vive UNA SCHEDA: aprendo il sito in una scheda
-   * nuova non risultavi più collegato e il menu perdeva la voce Amministrazione —
+   * nuova non risultavi più collegato e il menu perdeva la voce Gestione —
    * la stessa pagina sembrava comportarsi in due modi. Tema e preferiti stavano
    * già in localStorage, quindi l'incoerenza era anche fra le due memorie.
    * Prezzo dichiarato: un token in localStorage sopravvive alla chiusura del
@@ -228,13 +228,13 @@
      * una lista dentro questo file. Qui si aggiunge solo ciò che dipende da CHI
      * sei, e che il server non può sapere in anticipo. */
     if (!servito) box.innerHTML = (NAV || []).map(voceNav).join('');
-    // Amministrazione: solo per chi è collegato con un ruolo redazionale. Il menu
+    // Gestione: solo per chi è collegato con un ruolo redazionale. Il menu
     // si ridisegna a ogni apertura, quindi la voce compare appena si accede — e
     // sparisce appena si esce.
     var voce = box.querySelector('[data-nav="admin"]');
     var puo = S.user && ['admin', 'super-admin'].indexOf(S.user.role) !== -1;
     if (puo && !voce) {
-      box.insertAdjacentHTML('beforeend', voceNav({ label: 'Amministrazione', icon: 'admin_panel_settings', href: SITE_ROOT + 'ws-admin/index.php', data: 'admin' }));
+      box.insertAdjacentHTML('beforeend', voceNav({ label: 'Gestione', icon: 'admin_panel_settings', href: SITE_ROOT + 'ws-admin/index.php', data: 'admin' }));
     } else if (!puo && voce) {
       voce.remove();
     }

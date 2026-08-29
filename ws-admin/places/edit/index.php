@@ -743,7 +743,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
   if (!window.Meetoo) { setTimeout(crumb, 100); return; }
   var root = location.pathname.replace(/\/ws-admin\/.*/, "/");
   Meetoo.setBreadcrumb([
-    { label: "Gestione", href: root + "ws-admin/index.php", title: "Amministrazione" },
+    { label: "Gestione", href: root + "ws-admin/index.php" },
     { label: "Luoghi", current: true },
   ]);
 })();

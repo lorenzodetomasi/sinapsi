@@ -555,7 +555,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   if (!window.Meetoo) { setTimeout(crumb, 100); return; }
   var root = location.pathname.replace(/\/ws-admin\/.*/, "/");
   Meetoo.setBreadcrumb([
-    { label: "Gestione", href: root + "ws-admin/index.php", title: "Amministrazione" },
+    { label: "Gestione", href: root + "ws-admin/index.php" },
     { label: "Convertitore", current: true },
   ]);
 })();

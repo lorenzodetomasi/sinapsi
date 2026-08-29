@@ -1,6 +1,6 @@
 <?php
 /*
- * Amministrazione — punto d'ingresso agli strumenti redazionali di Meetoo.
+ * Gestione — punto d'ingresso agli strumenti redazionali di Meetoo.
  *
  * Solo elenco e collegamenti: ogni strumento gestisce da sé i propri permessi.
  * La pagina però si mostra solo a chi è autenticato con un ruolo abilitato, così
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             http_response_code(403); echo json_encode(['error' => 'Solo admin/super-admin possono eseguire migrazioni.']); exit;
         }
         // Il registro è una libreria a parte: se manca (deploy incompleto) si perde
-        // la manutenzione, NON l'accesso all'amministrazione. Per questo il require
+        // la manutenzione, NON l'accesso alla Gestione. Per questo il require
         // sta qui dentro ed è controllato, non in cima al file.
         $registro = __DIR__ . '/lib/ws-maintenance.php';
         if (!is_file($registro)) {
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amministrazione — Meetoo</title>
+  <title>Gestione — Meetoo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="wrap">
     <div id="gate">
       <span class="material-symbols-outlined">lock</span>
-      <p id="gate-msg">Accedi con Google (in alto a destra) per entrare nell'amministrazione.</p>
+      <p id="gate-msg">Accedi con Google (in alto a destra) per entrare nella Gestione.</p>
     </div>
 
     <div id="app">
@@ -168,13 +168,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   (function () {
     const SITE_ROOT = location.pathname.replace(/\/ws-admin\/.*/, '/');
     const ADMIN = SITE_ROOT + 'ws-admin/';
-    const THEME = SITE_ROOT + 'ws-custom/themes/meetoo/';
 
     (function crumb() {
       if (!window.Meetoo) { setTimeout(crumb, 100); return; }
       // Nell'admin il breadcrumb dice dove sei DENTRO la gestione: "Gestione" è la
       // radice (questa pagina), il sito si raggiunge dal logo.
       Meetoo.setBreadcrumb([{ label: 'Gestione', current: true }]);
+      /* E il menu dice dove si può andare DA QUI.
+       *
+       * Senza questa riga l'hamburger mostrava la lista di riserva che sta dentro
+       * header.js: le pagine di prova del tema, `index.html` e `waterfront.html`,
+       * che nella Gestione non c'entrano niente e come indirizzi sono superate dal
+       * sito vero. Qui le voci sono gli strumenti di questa pagina, più la via
+       * d'uscita verso il sito. La voce «Gestione» non si mette: la aggiunge
+       * header.js a chi ha il ruolo per vederla, su tutte le pagine. */
+      Meetoo.setNav([
+        { label: 'Gestione eventi', icon: 'event_note', href: ADMIN + 'events/index.php' },
+        { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/edit/' },
+        { label: 'Luoghi e organizzazioni', icon: 'place', href: ADMIN + 'places/edit/' },
+        { label: 'Convertitore JSON ⇄ XML', icon: 'sync_alt', href: ADMIN + 'json-xml/index.php' },
+        { label: 'Vai al sito', icon: 'public', href: SITE_ROOT + 'meetoo/' },
+      ]);
     })();
 
     const api = (action, extra) => {
@@ -208,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       ],
       'sec-tools': [
         { href: ADMIN + 'json-xml/index.php', icon: 'sync_alt', title: 'Convertitore JSON ⇄ XML', meta: 'Converte e valida i contenuti' },
-        { href: THEME + 'index.html', icon: 'public', title: 'Vai al sito', meta: 'Lido di Ostia (pagina pubblica)', external: true },
+        { href: SITE_ROOT + 'meetoo/', icon: 'public', title: 'Vai al sito', meta: 'Meetoo, come lo vede chi lo legge', external: true },
       ],
     };
 
@@ -320,7 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!window.meetooSession) { setTimeout(auth, 100); return; }
       meetooSession.subscribe((user) => {
         if (!user) {
-          document.getElementById('gate-msg').textContent = 'Accedi con Google (in alto a destra) per entrare nell\'amministrazione.';
+          document.getElementById('gate-msg').textContent = 'Accedi con Google (in alto a destra) per entrare nella Gestione.';
           return;
         }
         api('auth').then((r) => {
@@ -330,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             render(r.body.isAdmin);
           } else {
             document.getElementById('gate-msg').textContent =
-              'Il tuo account (' + (r.body.email || '') + ', ruolo ' + (r.body.role || '?') + ') non è abilitato all\'amministrazione.';
+              'Il tuo account (' + (r.body.email || '') + ', ruolo ' + (r.body.role || '?') + ') non è abilitato alla Gestione.';
           }
         });
       });

@@ -18,7 +18,7 @@ ma la cura è caricare le librerie insieme al resto:
 `lib/{ws-auth,ws-users,events-index,events-migrate,events-normalize,events-check,events-trash}.php`.
 Le pagine che leggono il **registro della manutenzione** ora si difendono da sole: se
 `lib/ws-maintenance.php` manca, si perde la sezione Manutenzione (con un errore che lo dice) ma
-**non l'accesso all'amministrazione** — prima il require fallito uccideva anche il login, che
+**non l'accesso alla Gestione** — prima il require fallito uccideva anche il login, che
 rispondeva *«Il tuo account (, ruolo ?) non è abilitato»*.
 
 ## 1) Build dell'editor
@@ -35,14 +35,14 @@ cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servi
 | **Backend – lib** | `ws-admin/lib/ws-maintenance.php` (registro delle migrazioni: caricalo PRIMA delle due pagine che lo leggono) + `ws-admin/lib/ws-listrule.php` (liste con regola: la usano il salvataggio eventi E quello dei luoghi) | `ws-admin/lib/` |
 | **Backend – events** | `ws-admin/events/{save-event,rsvp,rebuild-index,migrate-refs,normalize-content,check-refs}.php` | `ws-admin/events/` |
 | **Gestione eventi** | `ws-admin/events/index.php` (nuova pagina) | `ws-admin/events/` |
-| **Amministrazione** | `ws-admin/index.php` (hub) + `ws-admin/lib/events-trash.php` | `ws-admin/` e `ws-admin/lib/` |
+| **Gestione** | `ws-admin/index.php` (hub) + `ws-admin/lib/events-trash.php` | `ws-admin/` e `ws-admin/lib/` |
 | **Convertitore** | `ws-admin/json-xml/functions.php` | `ws-admin/json-xml/` |
 | **Editor (dist)** | `ws-admin/events/edit/` (tutto: `index.html` + `assets/`) | `ws-admin/events/edit/` |
 | **Temi** | `ws-custom/themes/meetoo/{index,organizer,collection,event,placecollection,waterfront}.html` + **`header.js`** + **`cards.js`** + **`meetoo.css`** + **`meetoo-tokens.css`** + **`places.css`** | `ws-custom/themes/meetoo/` |
 
-**Hub «Amministrazione»** `ws-admin/index.php`: sezioni Eventi · **Luoghi e attività** · **Organizzazioni**
+**Hub «Gestione»** `ws-admin/index.php`: sezioni Eventi · **Luoghi e attività** · **Organizzazioni**
 (ognuna con la sua card «Nuovo…») · Utenti · Strumenti; visibile solo da autenticati con ruolo redazionale.
-La voce **Amministrazione** compare nel menu hamburger di TUTTE le pagine, ma solo per
+La voce **Gestione** compare nel menu hamburger di TUTTE le pagine, ma solo per
 **admin/super-admin** (`header.js`, `renderNav`). La card «Utenti e ruoli» è segnata *in arrivo*:
 non esiste ancora uno strumento, i ruoli si cambiano a mano in `users/users.xml`.
 
@@ -383,7 +383,7 @@ riallinearle.
 
 **L'accesso sopravvive alla scheda.** Il token Google stava in `sessionStorage`, che vive UNA
 scheda: aprendo il sito in una scheda nuova non risultavi più collegato e il menu perdeva la voce
-«Amministrazione» — la stessa pagina sembrava comportarsi in due modi, ed era l'unica cosa a non
+«Gestione» — la stessa pagina sembrava comportarsi in due modi, ed era l'unica cosa a non
 sopravvivere (tema, preferiti e densità erano già in `localStorage`). Ora sta in `localStorage`, con
 migrazione automatica per chi era collegato prima. Prezzo dichiarato: vive più a lungo ed è leggibile
 da qualunque script della stessa origine — resta però un token Google a scadenza breve (~1h),

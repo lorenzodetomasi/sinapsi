@@ -56,16 +56,35 @@ if ($is_registered_user && isset($xml_user->person)) {
             var el = bottone();
             if (el) { el.setAttribute('data-theme', tema()); }
 
+            /* Ridisegnare vuol dire RIFARE IL POSTO, non svuotarlo.
+             *
+             * Chiedendo a Google di disegnare una seconda volta dentro l'elemento
+             * dove ha gia' disegnato, cambia modo: invece del pulsante nella
+             * pagina mette un iframe di accounts.google.com, che e' un'altra
+             * origine — la nostra riga di CSS sul fondo non lo raggiunge piu', e
+             * quello che si vede resta vestito come dice Google. Su un elemento
+             * NUOVO ricomincia da capo e il pulsante torna nella pagina. Verificato
+             * dal vivo: stesso nodo → iframe, nodo nuovo → pulsante.
+             *
+             * Gli attributi si copiano da quello vecchio, cosi' com'e' scritto qui
+             * sopra resta l'unico posto dove il pulsante e' descritto. */
             function ridisegna() {
-                var el = bottone();
+                var vecchio = bottone();
                 var gis = window.google && google.accounts && google.accounts.id;
-                if (!el) { return; }
-                el.setAttribute('data-theme', tema());
-                // Senza la libreria non c'e' niente da ridisegnare: l'attributo
-                // basta, e al primo disegno ci pensera' lei.
-                if (!gis || !el.firstChild) { return; }
-                el.innerHTML = '';
-                gis.renderButton(el, { type: 'icon', shape: 'circle', size: 'large', theme: tema() });
+                if (!vecchio) { return; }
+                // Senza la libreria, o prima del primo disegno, l'attributo basta:
+                // al disegno ci pensera' lei, e lo leggera' di li'.
+                if (!gis || !vecchio.firstChild) { vecchio.setAttribute('data-theme', tema()); return; }
+                var nuovo = document.createElement('div');
+                nuovo.id = vecchio.id;
+                nuovo.className = vecchio.className;
+                for (var i = 0; i < vecchio.attributes.length; i++) {
+                    var a = vecchio.attributes[i];
+                    if (a.name.indexOf('data-') === 0) { nuovo.setAttribute(a.name, a.value); }
+                }
+                nuovo.setAttribute('data-theme', tema());
+                vecchio.parentNode.replaceChild(nuovo, vecchio);
+                gis.renderButton(nuovo, { type: 'icon', shape: 'circle', size: 'large', theme: tema() });
             }
 
             // Il tema cambia in due modi: qualcuno lo sceglie (l'header lo annuncia)

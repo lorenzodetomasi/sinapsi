@@ -272,7 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if (!window.Meetoo) { setTimeout(crumb, 100); return; }
       // "Gestione" risale all'hub, "Eventi" è dove sei.
       Meetoo.setBreadcrumb([
-        { label: 'Gestione', href: SITE_ROOT + 'ws-admin/index.php', title: 'Amministrazione' },
+        { label: 'Gestione', href: SITE_ROOT + 'ws-admin/index.php' },
         { label: 'Eventi', current: true },
       ]);
     })();
