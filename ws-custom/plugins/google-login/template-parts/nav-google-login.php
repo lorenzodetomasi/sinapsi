@@ -73,13 +73,15 @@ $portal_org_logo = $profilo['org_logo'];
              *
              * Gli attributi si copiano da quello vecchio, cosi' com'e' scritto qui
              * sopra resta l'unico posto dove il pulsante e' descritto. */
-            function ridisegna() {
+            function ridisegna(forza) {
                 var vecchio = bottone();
                 var gis = window.google && google.accounts && google.accounts.id;
                 if (!vecchio) { return; }
-                // Senza la libreria, o prima del primo disegno, l'attributo basta:
-                // al disegno ci pensera' lei, e lo leggera' di li'.
-                if (!gis || !vecchio.firstChild) { vecchio.setAttribute('data-theme', tema()); return; }
+                /* Senza la libreria, o prima del suo primo disegno, l'attributo
+                 * basta: al disegno ci pensera' lei, e lo leggera' di li'. Con
+                 * `forza` si disegna comunque — serve al caso in cui lei non
+                 * disegni affatto. */
+                if (!gis || (!forza && !vecchio.firstChild)) { vecchio.setAttribute('data-theme', tema()); return; }
                 var nuovo = document.createElement('div');
                 nuovo.id = vecchio.id;
                 nuovo.className = vecchio.className;
@@ -91,6 +93,31 @@ $portal_org_logo = $profilo['org_logo'];
                 vecchio.parentNode.replaceChild(nuovo, vecchio);
                 gis.renderButton(nuovo, { type: 'icon', shape: 'circle', size: 'large', theme: tema() });
             }
+
+            /* IL PRIMO DISEGNO LO RIFACCIAMO NOI, sempre — non solo quando il tema
+             * cambia.
+             *
+             * Lasciata fare da sola, la libreria sceglie da sé come disegnare, e
+             * sul sito vero sceglie l'iframe: un riquadro bianco con dentro il
+             * pulsante nero di Google, che nell'header scuro si vede come un
+             * cerchio nero dentro una scheda bianca. In locale sceglieva il
+             * pulsante nella pagina, ed è per questo che la differenza non si era
+             * vista prima. Chiamandola noi su un elemento nuovo disegna nella
+             * pagina — verificato in produzione — e da lì il fondo glielo diamo
+             * noi, con il colore dell'header.
+             *
+             * Si aspetta che abbia finito il SUO disegno: rifarlo prima vorrebbe
+             * dire che poi lo rifà lei sopra il nostro, e si torna all'iframe. Se
+             * dopo dieci secondi non ha disegnato niente si lascia stare: meglio il
+             * pulsante che c'è di nessun pulsante. */
+            var attese = 0;
+            (function aspetta() {
+                var el = bottone();
+                var gis = window.google && google.accounts && google.accounts.id;
+                if (el && gis && (el.firstChild || attese > 40)) { ridisegna(true); return; }
+                if (++attese > 100) { return; }
+                setTimeout(aspetta, 100);
+            })();
 
             // Il tema cambia in due modi: qualcuno lo sceglie (l'header lo annuncia)
             // oppure cambia quello di sistema, mentre la pagina e' aperta.
