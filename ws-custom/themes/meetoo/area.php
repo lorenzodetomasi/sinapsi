@@ -16,6 +16,7 @@
 global $ws_content, $ws_query;
 
 include_template('template-parts/carte');
+include_template('template-parts/elenchi');
 
 $doc = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
 $slug = trim((string)($ws_query['zona'] ?? ''));
@@ -114,6 +115,13 @@ foreach($figli as $figlio){
 					</div>
 				</section>
 <?php } ?>
+
+<?php
+/* I PERCORSI DI UN'AREA. Il Lungotevere attraversa mezza Roma e sconfina a
+ * Fiumicino: non è di un quartiere, è della città — e la sua pagina si raggiunge
+ * da qui, con le stesse card della zona. */
+meetoo_sezione_percorsi(meetoo_percorsi($nodo, basename($percorso)));
+?>
 			</article>
 <?php
 include_template('template-parts/footer');

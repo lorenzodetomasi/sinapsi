@@ -97,7 +97,26 @@ $menu = meetoo_voci_nav();
 <!DOCTYPE html>
 <html<?php echo ws_html_attributes('html'); ?>>
 	<head>
-		<title><?php echo htmlspecialchars((string)$rewrite_rule->title, ENT_QUOTES, 'UTF-8'); ?></title>
+<?php
+/* IL TITOLO DELLA SCHEDA: «Bambini e famiglie | Meetoo».
+ *
+ * Il nome della pagina prima, quello del sito dopo. È l'ordine in cui serve: in
+ * una fila di venti schede aperte si legge il primo pezzo, e venti schede che
+ * cominciano tutte con «Meetoo» non si distinguono. Vale anche per un risultato
+ * di ricerca e per un titolo condiviso in chat.
+ *
+ * Il nome del sito NON si aggiunge quando la pagina è già il sito — la home si
+ * chiama «Meetoo», non «Meetoo | Meetoo». Il nome della pagina viene dalla mappa
+ * (`ws_sitemap.wsx`), dove resta nudo: quello stesso testo fa da etichetta ai
+ * collegamenti, e lì il suffisso sarebbe rumore. */
+$mt_titolo = trim((string)$rewrite_rule->title);
+if($mt_titolo === '' or strcasecmp($mt_titolo, $nome_sito) === 0){
+	$mt_titolo = $nome_sito;
+} else {
+	$mt_titolo .= ' | '.$nome_sito;
+}
+?>
+		<title><?php echo htmlspecialchars($mt_titolo, ENT_QUOTES, 'UTF-8'); ?></title>
 <?php
 echo ws_metas();
 echo ws_scripts('head');

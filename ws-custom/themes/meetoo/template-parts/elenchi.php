@@ -321,6 +321,103 @@ function meetoo_eventi_lista($ent, $quale){
 	return $out;
 }
 
+/* ---------- Categorie e Percorsi ----------
+ *
+ * Le dichiara il contenuto di un LUOGO CONTENITORE — un quartiere, ma anche una
+ * città: il Lungotevere attraversa mezza Roma e più di un comune, e non è di un
+ * quartiere solo. Stanno in un elenco unico perché sono la stessa cosa vista da
+ * due lati: un percorso è una collezione ordinata (il lungomare, da sud a nord),
+ * una categoria una collezione senza ordine (i libri), e chi le cerca le cerca
+ * insieme.
+ *
+ * Il codice sta qui e non in `zone.php` perché ora lo usano in due, e due copie
+ * della stessa regola divergono al primo ritocco.
+ */
+function meetoo_percorsi($ent, $dove){
+	$out = array();
+	foreach((!empty($ent->hasPart) ? $ent->hasPart : array()) as $voce){
+		$id = meetoo_riferimento_nodo($voce);
+		if($id === ''){
+			continue;
+		}
+		$slug = basename($id);
+		/* Una CATEGORIA è generale — «Musica» è musica a Ostia come altrove — e sta
+		 * nel catalogo (`categories/…`), dichiarata una volta sola. Qui il luogo dice
+		 * soltanto quali categorie ha; nome, sommario e icona si chiedono al catalogo.
+		 *
+		 * La sua ISTANZA, se esiste, è `places/<dove>/<slug>`: è lì che stanno i suoi
+		 * membri, ed è quella la pagina. Se non c'è, la categoria è dichiarata ma non
+		 * ancora aperta: si vede spenta.
+		 *
+		 * Un PERCORSO invece è di questo posto e basta — il lungomare di Ostia non è
+		 * il lungomare di nessun altro — e sta dove sta. */
+		$categoria = (strpos($id, 'categories/') === 0);
+		$istanza = $categoria ? 'places/'.$dove.'/'.$slug : $id;
+		$href = meetoo_indirizzo($istanza);
+		/* Nome e sommario si chiedono al documento: per una categoria al catalogo,
+		 * per un percorso a se stesso. Il riferimento nel contenitore può dire solo
+		 * `{"@id": …}` — ed è giusto così, perché il nome sta in fondo al
+		 * riferimento e tenerne una seconda copia qui vuol dire vederle divergere. */
+		$def = meetoo_contenuto($categoria ? $id : $istanza);
+		$sua = meetoo_icona_di($istanza) ?: ($categoria ? meetoo_icona_di($id) : null);
+		$titolo = (isset($voce->name) ? trim((string)$voce->name) : '') ?: (string)($def['name'] ?? '');
+		$nota = (isset($voce->description) ? trim((string)$voce->description) : '') ?: (string)($def['description'] ?? '');
+		$out[] = array(
+			'href' => $href,
+			'icona' => $sua ? $sua['name'] : 'route',
+			'classe' => $sua ? $sua['class'] : '',
+			'titolo' => $titolo !== '' ? $titolo : ucfirst(str_replace('-', ' ', $slug)),
+			'nota' => $nota,
+		);
+	}
+	/* PRIMA QUELLO CHE SI PUÒ APRIRE. Le categorie dichiarate ma non ancora aperte
+	 * restano — dicono che cosa sta arrivando — ma in fondo: chi guarda cerca dove
+	 * andare, e trovarsi davanti tre riquadri spenti prima del primo che funziona
+	 * fa sembrare vuoto un posto che vuoto non è. L'ordine dichiarato si conserva
+	 * dentro i due gruppi: `usort` in PHP è stabile. */
+	usort($out, function($a, $b){
+		return (int)($a['href'] === '') <=> (int)($b['href'] === '');
+	});
+	return $out;
+}
+
+/** La sezione «Categorie e Percorsi», disegnata. Niente da mostrare, niente sezione. */
+function meetoo_sezione_percorsi($percorsi){
+	if(!count($percorsi)){
+		return;
+	}
+?>
+				<section id="categorie" class="mt-sezione">
+					<h2 class="sec-head"><?php echo mt_icona('explore'); ?><?php _e('Categorie e Percorsi'); ?></h2>
+					<div class="grid">
+<?php foreach($percorsi as $p){
+	if($p['href'] !== ''){
+		echo mt_card_tile(array(
+			'href' => $p['href'],
+			'icon' => $p['icona'],
+			'iconClass' => $p['classe'],
+			'accent' => true,
+			'title' => $p['titolo'],
+			'meta' => $p['nota'],
+		));
+		continue;
+	}
+	/* In preparazione: NON è un collegamento, e si vede che non lo è. Un riquadro
+	 * che sembra cliccabile e non fa niente è peggio di uno spento. */
+?>
+						<div class="card mt-in-arrivo">
+							<div class="card-icon"><?php echo mt_icona($p['icona'], $p['classe']); ?></div>
+							<div class="card-body">
+								<h3 class="card-title"><?php echo mt_esc($p['titolo']); ?> <span class="mt-etichetta"><?php _e('In preparazione'); ?></span></h3>
+								<div class="card-meta"><span><?php echo mt_esc($p['nota']); ?></span></div>
+							</div>
+						</div>
+<?php } ?>
+					</div>
+				</section>
+<?php
+}
+
 /** L'icona di un luogo, dal suo tipo: un parco non è un negozio. */
 function meetoo_icona_luogo($tipi){
 	$t = strtolower(implode(' ', (array)$tipi));
