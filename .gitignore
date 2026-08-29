@@ -22,16 +22,33 @@ ws-admin/_private/
 # ---------------------------------------------------------------------------
 ws-custom/contents/
 
+# Sotto `ws-custom/` questa è l'UNICA cartella fuori. `languages/`, `plugins/` e
+# `themes/` sono codice del sito e stanno nel repository: il plugin di accesso è
+# scritto qui, e tenerlo fuori voleva dire che una correzione al tema viaggiava e
+# quella al plugin no. Se un giorno compare una cartella nuova sotto ws-custom/,
+# la regola non la copre: va deciso caso per caso, non per abitudine.
+
 # ---------------------------------------------------------------------------
 # Generato, scaricato o pesante: si ricostruisce, non si versiona.
 # ---------------------------------------------------------------------------
+# Plugin DI TERZE PARTI. I nostri (google-login, google-recaptcha, slider, amp)
+# stanno nel repository: sono codice del sito. Questi no — si riscaricano dalla
+# loro origine, e due di loro non si potrebbero versionare comunque perché hanno
+# un `.git` proprio: git li registrerebbe come riferimenti che un clone non sa
+# risolvere.
+# (Il `#` fa commento solo a inizio riga: in coda a un percorso finirebbe dentro
+# il pattern, e la regola non varrebbe niente.)
+# github.com/thoughtbot/bourbon
+ws-custom/plugins/bourbon/
+# github.com/absalomedia/sassphp
+ws-custom/plugins/sassphp/
+# 60 MB in 10.116 file — github.com/googleapis/google-api-php-client
+ws-custom/plugins/google-api-php-client/
+ws-custom/plugins/google-api-services-mybusiness/
+
 **/node_modules/
 ws-admin/json-xml/uploads/
 *.tgz
-
-# Plugin del CMS: 83 MB, in buona parte di terze parti. Se un giorno ne scrivi
-# di tuoi, togli questa riga e ignora i singoli plugin esterni.
-ws-custom/plugins/
 
 # Cartella di lavoro rimasta dal trasloco di Meetoo verso la radice.
 sinapsi/

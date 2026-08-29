@@ -38,6 +38,26 @@ function ws_template_abspath( $generic_name, $specialized_name = null ) {
 	$templates = get_ws_templates_array( $generic_name, $specialized_name );
 	locate_file($templates);
 }
+/**
+ * Il file `$basename` dentro uno dei plugin attivi, '' se non ce l'ha nessuno.
+ *
+ * L'ordine è quello con cui i plugin sono dichiarati: il primo che ce l'ha
+ * risponde. Se due plugin portassero lo stesso template sarebbe comunque una
+ * cosa da guardare, non da risolvere qui con una regola.
+ */
+function ws_plugin_file($basename) {
+	if(!function_exists('ws_plugins') or !function_exists('ws_plugins_abspath')){
+		return '';
+	}
+	foreach((array) ws_plugins('all') as $ws_plugin){
+		$forse = ws_plugins_abspath().'/'.$ws_plugin.'/'.$basename;
+		if(file_exists($forse)){
+			return $forse;
+		}
+	}
+	return '';
+}
+
 function locate_file($basenames, $args = array() ) {
 	global $ws_query;
 	$default_args = array(
@@ -72,8 +92,20 @@ function locate_file($basenames, $args = array() ) {
 					break;
 				}
 			}
+			if(empty($located)){
+				/* Poi i PLUGIN ATTIVI. Un plugin che aggiunge una funzione al sito
+				 * — l'accesso con Google, un modulo di contatto — si porta anche il
+				 * pezzo di pagina che la mostra: sta con il codice che lo riempie, e
+				 * chi installa il plugin lo ha subito, senza copiare niente a mano.
+				 *
+				 * Dopo i temi, e non prima, perché così un tema lo SOVRASCRIVE: gli
+				 * basta un file con lo stesso nome. È il modo in cui si personalizza
+				 * senza toccare il plugin — e senza perdere la modifica quando il
+				 * plugin si aggiorna. */
+				$located = ws_plugin_file($basename);
+			}
 			if(empty($located) and file_exists(ws_admin_abspath()."/$basename")){
-				// Nessun tema ce l'ha: lo dà l'amministrazione (refresh e simili).
+				// Nessuno ce l'ha: lo dà l'amministrazione (refresh e simili).
 				$located = ws_admin_abspath()."/$basename";
 			}
 			if(!empty($located)){

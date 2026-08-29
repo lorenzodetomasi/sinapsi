@@ -1,0 +1,28 @@
+#google-user-registered { background: #f0fdf4; border: 1px solid #bbf7d0; }
+
+.google-avatar { position: relative; display: inline-block; font-family: "Google Sans", Roboto, Arial, sans-serif; user-select: none; }
+.avatar-circle { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; box-sizing: border-box; border: 2px solid transparent; transition: box-shadow 0.15s; }
+.avatar-circle.logged-in:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); }
+.google-login-trigger { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
+.google-login-trigger:hover { transform: scale(1.05); }
+
+.profile-popup { position: absolute; top: 52px; right: 0; width: 280px; background: #ffffff; border-radius: 24px; box-shadow: 0 4px 12px 0 rgba(60,64,67,0.15), 0 8px 24px 0 rgba(60,64,67,0.15); padding: 20px; border: 1px solid #dadce0; z-index: 99999; text-align: center; }
+.profile-popup.hidden { display: none; }
+.popup-big-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; }
+.popup-name { font-size: 16px; font-weight: 500; color: #202124; line-height: 1.2; }
+.popup-email { font-size: 14px; color: #5f6368; margin-top: 4px; }
+
+.popup-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+.meta-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; border: 1px solid #dadce0; text-transform: uppercase; }
+.meta-pill.role-pill { background: #e8f0fe; color: #1967d2; border-color: #d2e3fc; }
+.meta-pill.lang-pill { background: #e6f4ea; color: #137333; border-color: #ceead6; }
+
+.popup-actions { margin-top: 20px; border-top: 1px solid #e8eaed; padding-top: 16px; }
+.google-action-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500; text-decoration:none; margin-bottom:8px; } 
+.register-btn { background:#1a73e8; color:#fff; } 
+.edit-btn { background:#f1f3f4; color:#3c4043; }
+.google-logout-btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px; border-radius: 100px; background: #f8f9fa; color: #3c4043; font-size: 14px; text-decoration: none; border: 1px solid #dadce0; }
+
+.portal-id-card { background: #fff; padding: 1.5rem; border-radius: 8px; border: 1px dashed #bbf7d0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 20px; }
+.portal-avatar-placeholder { width: 56px; height: 56px; border-radius: 50%; background: #f1f3f4; display: flex; align-items: center; justify-content: center; color: #9aa0a6; flex-shrink: 0; }
+.portal-avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #e8f0fe; } 
