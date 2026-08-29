@@ -46,16 +46,33 @@ $portal_org_logo = $profilo['org_logo'];
          * il primo disegno e' gia' quello giusto; dopo, se il tema cambia, si
          * ridisegna.
          *
-         * Come si sa qual e' il tema: l'attributo `data-theme` sulla radice quando
-         * qualcuno ha scelto, la preferenza di sistema quando non ha scelto. Sono
-         * le stesse due cose che guardano i colori. */
+         * Come si sa se la pagina e' chiara o scura: SI GUARDA LA PAGINA.
+         *
+         * Prima si guardava la preferenza di SISTEMA, e su isotype.org — che e' un
+         * sito solo chiaro — bastava avere il computer in scuro per ritrovarsi un
+         * pulsante nero in mezzo al bianco. Il sistema dice come vorrebbe vedere le
+         * cose chi guarda; qui serve sapere di che colore e' davvero il posto dove
+         * il pulsante va a finire, e quello lo sa solo la pagina.
+         *
+         * Si risale finche' si trova qualcuno che un fondo ce l'ha davvero (i
+         * contenitori in mezzo sono spesso trasparenti) e se ne misura la
+         * luminosita'. Vale per un sito che il tema lo cambia e per uno che ha un
+         * colore solo, senza che nessuno dei due debba dichiarare niente. */
         (function () {
             var bottone = function () { return document.getElementById('g_id_signin_btn'); };
+            var fondoDietro = function (el) {
+                for (var n = el; n && n !== document.documentElement; n = n.parentElement) {
+                    var c = window.getComputedStyle(n).backgroundColor;
+                    // Trasparente non e' un colore: e' «guarda dietro di me».
+                    if (c && c !== 'transparent' && !/^rgba\(\s*0,\s*0,\s*0,\s*0\s*\)$/.test(c)) { return c; }
+                }
+                return window.getComputedStyle(document.documentElement).backgroundColor || 'rgb(255,255,255)';
+            };
             var scuro = function () {
-                var scelto = document.documentElement.getAttribute('data-theme');
-                if (scelto === 'dark') { return true; }
-                if (scelto === 'light') { return false; }
-                return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                var n = fondoDietro(bottone() || document.body).match(/[\d.]+/g);
+                if (!n || n.length < 3) { return false; }
+                // Luminosita' percepita: il verde pesa piu' del rosso, il blu quasi niente.
+                return (0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2]) / 255 < 0.5;
             };
             var tema = function () { return scuro() ? 'filled_black' : 'outline'; };
             var el = bottone();
