@@ -149,22 +149,58 @@ function save_ratings(string $f, array $d): bool {
     @mkdir(dirname($f), 0775, true);
     return @file_put_contents($f, json_encode($d, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) !== false;
 }
-/** Le medie, bersaglio per bersaglio: {id: {value, count}}. */
+/* Un voto è `{value, text, date}`. I file scritti prima avevano il numero nudo:
+ * si accettano tutti e due, perché un formato che cambia non deve cancellare
+ * quello che la gente aveva già detto. */
+function ratings_voto($v): array {
+    if (is_array($v)) {
+        return ['value' => (int)($v['value'] ?? 0), 'text' => (string)($v['text'] ?? ''), 'date' => (string)($v['date'] ?? '')];
+    }
+    return ['value' => (int)$v, 'text' => '', 'date' => ''];
+}
+/** Le medie, bersaglio per bersaglio: {id: {value, count, reviews}}. */
 function ratings_medie(array $d): array {
     $out = [];
     foreach ($d['targets'] as $id => $voti) {
         if (!is_array($voti) || !count($voti)) continue;
-        $n = count($voti);
-        $out[$id] = ['value' => round(array_sum($voti) / $n, 1), 'count' => $n];
+        $somma = 0; $n = 0; $scritte = 0;
+        foreach ($voti as $v) {
+            $x = ratings_voto($v);
+            if ($x['value'] < 1) continue;
+            $somma += $x['value']; $n++;
+            if ($x['text'] !== '') $scritte++;
+        }
+        if (!$n) continue;
+        $out[$id] = ['value' => round($somma / $n, 1), 'count' => $n, 'reviews' => $scritte];
     }
     return $out;
 }
-/** I voti di questa persona: {id: value}. */
+/** I voti di questa persona: {id: {value, text}}. */
 function ratings_miei(array $d, ?array $user): array {
     if (!$user) return [];
     $out = [];
     foreach ($d['targets'] as $id => $voti) {
-        if (isset($voti[$user['uid']])) $out[$id] = (int)$voti[$user['uid']];
+        if (isset($voti[$user['uid']])) {
+            $x = ratings_voto($voti[$user['uid']]);
+            $out[$id] = ['value' => $x['value'], 'text' => $x['text']];
+        }
+    }
+    return $out;
+}
+/* Le recensioni scritte, per bersaglio, SENZA chi le ha scritte.
+ *
+ * Il nome di chi ha votato non esce di qui: sta nell'archivio privato, e per
+ * mostrarlo ci vuole una decisione — chi scrive una recensione non ha
+ * acconsentito a firmarla in pubblico solo perché l'ha scritta. Il giorno che
+ * quella decisione si prende, il nome si aggiunge qui e basta. */
+function ratings_recensioni(array $d): array {
+    $out = [];
+    foreach ($d['targets'] as $id => $voti) {
+        foreach ((array)$voti as $v) {
+            $x = ratings_voto($v);
+            if ($x['text'] === '') continue;
+            $out[$id][] = ['value' => $x['value'], 'text' => $x['text'], 'date' => $x['date']];
+        }
     }
     return $out;
 }
@@ -229,6 +265,7 @@ if ($action === 'status') {
         'canRate' => $user && !$isSeries && evento_passato($event) && my_reg($rsvp['registrations'], $user) !== null,
         'ratings' => ratings_medie(load_ratings(ratings_file($base, $relPath))),
         'myRatings' => ratings_miei(load_ratings(ratings_file($base, $relPath)), $user),
+        'reviews' => ratings_recensioni(load_ratings(ratings_file($base, $relPath))),
     ]);
     exit;
 }
@@ -273,6 +310,11 @@ if ($action === 'rate') {
     if (my_reg($rsvp['registrations'], $user) === null) fail(403, 'Puoi valutare gli eventi a cui ti eri iscritto.');
     $target = trim((string)($_POST['target'] ?? ''));
     $valore = (int)($_POST['value'] ?? 0);
+    /* Due righe, non un tema: una recensione lunga non la legge nessuno, e un
+     * campo senza limite è un invito a incollarci dentro qualunque cosa. */
+    $testo = trim((string)($_POST['text'] ?? ''));
+    if (function_exists('mb_substr')) $testo = mb_substr($testo, 0, 600);
+    else $testo = substr($testo, 0, 600);
     if ($target === '') fail(400, 'Manca che cosa stai valutando.');
     // Il bersaglio è un @id del sito (l'evento stesso, un organizzatore, il luogo):
     // niente barre iniziali, niente risalite di cartella.
@@ -283,13 +325,24 @@ if ($action === 'rate') {
     $r = load_ratings($rf);
     if (!isset($r['targets'][$target]) || !is_array($r['targets'][$target])) $r['targets'][$target] = [];
     // Zero significa «tolgo il voto»: ci si può ripensare, e un voto ritirato non
-    // deve restare a pesare sulla media.
-    if ($valore === 0) unset($r['targets'][$target][$user['uid']]);
-    else $r['targets'][$target][$user['uid']] = $valore;
+    // deve restare a pesare sulla media — né lasciare in giro quello che avevo
+    // scritto quando la pensavo diversamente.
+    if ($valore === 0) {
+        unset($r['targets'][$target][$user['uid']]);
+    } else {
+        $prima = isset($r['targets'][$target][$user['uid']]) ? ratings_voto($r['targets'][$target][$user['uid']]) : null;
+        // Il testo si tocca solo se è stato mandato: cambiare la stella non deve
+        // cancellare la recensione scritta ieri.
+        $t = array_key_exists('text', $_POST) ? $testo : ($prima['text'] ?? '');
+        $r['targets'][$target][$user['uid']] = ['value' => $valore, 'text' => $t, 'date' => date('c')];
+    }
     $r['@type'] = 'meetoo:RatingList';
     $r['event'] = $relPath;
     if (!save_ratings($rf, $r)) fail(500, 'Non riesco a salvare la valutazione.');
-    echo json_encode(['success' => true, 'target' => $target, 'value' => $valore, 'ratings' => ratings_medie($r)]);
+    echo json_encode([
+        'success' => true, 'target' => $target, 'value' => $valore,
+        'ratings' => ratings_medie($r), 'reviews' => ratings_recensioni($r),
+    ]);
     exit;
 }
 
@@ -330,6 +383,22 @@ if ($action === 'register' || $action === 'unregister') {
     }
     save_rsvp($rsvpFile, $rsvp);
     echo json_encode(['success' => true, 'registered' => true, 'myMode' => $mode, 'capacity' => capacity($event, $rsvp['registrations'])]);
+    exit;
+}
+
+/* --- RICALCOLA LA MEDIA (per gli editor) ---
+ *
+ * La stessa funzione della manutenzione, chiamata su un bersaglio solo: serve
+ * all'editor, dove `aggregateRating` è un campo che si vede e che finora si
+ * poteva anche digitare. Può farlo chi ha il diritto di modificare l'evento —
+ * la media di un gruppo la ricalcola chi cura gli eventi di quel gruppo. */
+if ($action === 'aggregate') {
+    if (!is_admin($event, $user)) fail(403, 'Non hai i permessi per ricalcolare le valutazioni.');
+    require_once __DIR__ . '/../lib/ws-rating.php';
+    $target = trim((string)($_POST['target'] ?? $relPath));
+    if (!preg_match('#^[A-Za-z0-9._/-]+$#', $target) || strpos($target, '..') !== false) fail(400, 'Bersaglio non valido.');
+    $r = ws_rating_aggiorna($base, $target, true);
+    echo json_encode(['success' => true] + $r);
     exit;
 }
 

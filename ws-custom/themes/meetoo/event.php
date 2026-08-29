@@ -185,6 +185,11 @@ include_template('template-parts/header');
 				          — sono bottoni veri, e chi li preme senza essere collegato riceve
 				          l'invito ad accedere, non il silenzio. `data-*` porta l'evento a
 				          cui si riferiscono: il programma non deve indovinarlo. */ ?>
+				<?php /* IL RIQUADRO: le cose da fare stanno insieme, in evidenza, e hanno un
+				          indirizzo — `#review`. Un invito a valutare si manda per messaggio
+				          («dicci com'è andata»), e chi lo riceve deve atterrare sul punto,
+				          non in cima a una pagina lunga. */ ?>
+				<div class="mt-cta" id="review">
 				<div class="mt-azioni" data-evento="<?php echo mt_esc($rel); ?>"<?php echo $serie ? ' data-serie="1"' : ''; ?>>
 					<button type="button" class="mt-azione" data-azione="interesse" aria-pressed="false">
 						<?php echo mt_icona('bookmark'); ?><span><?php _e('Mi interessa'); ?></span><span class="mt-conto"></span>
@@ -226,6 +231,7 @@ if(!$serie){
 				<section id="mt-valuta" class="mt-sezione" hidden
 					data-bersagli="<?php echo mt_esc(json_encode($bersagli, JSON_UNESCAPED_UNICODE)); ?>"></section>
 <?php } ?>
+				</div><!-- .mt-cta -->
 
 				<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e lo
 				          ottiene solo chi ha i permessi, perché a decidere è il server. I nomi

@@ -300,3 +300,44 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-stella.on { color: var(--color1); }
 .mt-stella.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
 .mt-stelle:hover .mt-stella:not(:disabled) { color: var(--color-hint); }
+
+/* Il riquadro delle cose da fare: le azioni e le stelle stanno insieme, in
+   evidenza, e hanno un indirizzo — `#review`. Chi ci arriva da un link deve
+   trovarsi davanti l'invito, non doverlo cercare. */
+.mt-cta {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-line);
+  border-left: 3px solid var(--color-link);
+  border-radius: var(--border-radius);
+  background: var(--color-background-section1);
+  scroll-margin-top: 6rem;
+}
+.mt-cta .mt-azioni { margin: 0; }
+.mt-cta .mt-azioni-nota { margin: .5rem 0 0; }
+.mt-cta .mt-sezione { margin-top: 1.25rem; }
+.mt-cta .mt-sezione:first-child { margin-top: 0; }
+/* Quando si arriva da #review il riquadro si fa notare, una volta sola. */
+.mt-cta:target { animation: mt-nota 1.6s ease-out 1; }
+@keyframes mt-nota {
+  from { border-left-color: var(--color1); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-link) 20%, transparent); }
+  to   { border-left-color: var(--color-link); box-shadow: none; }
+}
+
+/* La recensione: compare dopo il voto, perché prima sarebbe la risposta a una
+   domanda che non è stata ancora fatta. */
+.mt-v-commento { flex: 0 0 100%; display: flex; gap: .5rem; align-items: flex-start; margin-top: .5rem; }
+.mt-v-commento textarea {
+  flex: 1; resize: vertical; font: inherit; padding: .5rem .6rem;
+  color: var(--color-text); background: var(--color-background-main);
+  border: 1px solid var(--color-line); border-radius: var(--border-radius);
+}
+.mt-v-salva {
+  flex: none; font: inherit; padding: .45rem .9rem; cursor: pointer;
+  color: var(--color-link); background: transparent;
+  border: 1px solid var(--color-line); border-radius: 999px;
+}
+.mt-v-salva:hover { border-color: var(--color-link); }
+.mt-v-scritte { flex: 0 0 100%; list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
+.mt-v-scritte li { color: var(--color-hint); font-size: .92rem; }
+.mt-v-voto { color: var(--color1); margin-right: .4rem; }

@@ -150,6 +150,35 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            /* Le medie sono un DERIVATO: si ricalcolano, non si scrivono a mano.
+             * Un gruppo raccoglie i voti di tutti gli eventi che ha organizzato,
+             * un luogo quelli di tutti quelli che ha ospitato — per questo si
+             * legge l'archivio intero e non il singolo evento, e per questo si fa
+             * quando lo si chiede invece che a ogni stella toccata. */
+            'valutazioni' => [
+                'title' => 'Aggiorna le valutazioni medie',
+                'meta'  => 'Ricalcola l\'aggregateRating di eventi, gruppi e luoghi dai voti di chi c\'era',
+                'icon'  => 'star', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
+                'confirm' => 'Ricalcolare le valutazioni medie? I valori scritti a mano verranno sostituiti dalla media dei voti.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/ws-rating.php';
+                    $r = ws_rating_aggiorna_tutti($base, $apply);
+                    $righe = [];
+                    foreach ($r['righe'] as $x) {
+                        if ($x['motivo'] === 'nessun cambiamento' || $x['motivo'] === 'gia\' aggiornato') continue;
+                        $righe[] = $x['id'] . ': '
+                            . ($x['da'] === null ? '(niente)' : $x['da']) . ' → '
+                            . ($x['a'] === null ? '(niente)' : $x['a'] . ' su ' . $x['count'] . ' voti')
+                            . ($x['motivo'] !== '' ? ' — ' . $x['motivo'] : '');
+                    }
+                    return [
+                        'changes' => $r['cambiati'],
+                        'summary' => $r['cambiati'] . ' su ' . $r['bersagli'] . ' da aggiornare',
+                        'lines' => $righe,
+                    ];
+                },
+            ],
+
             'mappa-sito' => [
                 'title' => 'Rigenera la mappa del sito',
                 'meta'  => 'Un indirizzo per ogni contenuto: e\' cosi\' che le pagine diventano visibili al CMS e ai motori',

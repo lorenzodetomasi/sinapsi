@@ -113,21 +113,29 @@
    * Cliccando la stella che si è già data, il voto si ritira: ci si può
    * ripensare, e ritirare un giudizio dev'essere facile quanto darlo.
    */
+  var statoVoti = null;
+  var statoValuta = null;
   function valutazioni(d) {
+    statoValuta = d;
     var sez = document.getElementById('mt-valuta');
     if (!sez) return;
     var bersagli;
     try { bersagli = JSON.parse(sez.getAttribute('data-bersagli') || '[]'); } catch (e) { return; }
     if (!bersagli.length || !d.past) return;
     var medie = d.ratings || {};
-    var miei = d.myRatings || {};
+    /* Le mie risposte stanno in un oggetto solo per tutta la vita della pagina:
+     * gli ascoltatori sono attaccati una volta e vedono sempre questo, non la
+     * copia del disegno in cui erano nati. */
+    if (!statoVoti) statoVoti = d.myRatings || {};
+    else if (d.myRatings) { Object.keys(statoVoti).forEach(function (k) { delete statoVoti[k]; }); Object.assign(statoVoti, d.myRatings); }
+    var miei = statoVoti;
     var puo = !!d.canRate;
     // Senza il diritto di votare e senza nemmeno un voto altrui non c'è niente
     // da dire: la sezione resta chiusa invece di mostrare cinque stelle vuote.
     if (!puo && !Object.keys(medie).length) return;
 
     function stelle(t) {
-      var mio = miei[t.id] || 0;
+      var mio = (miei[t.id] || {}).value || 0;
       var media = medie[t.id];
       var s = '';
       for (var i = 1; i <= 5; i++) {
@@ -135,11 +143,28 @@
           (puo ? '' : ' disabled') + ' data-voto="' + i + '" aria-label="' + i + ' su 5">' +
           '<span class="material-symbols-outlined">star</span></button>';
       }
+      /* La recensione compare DOPO il voto, e solo a chi il voto l'ha dato.
+       * Prima sarebbe un campo di testo davanti a una domanda che non è ancora
+       * stata fatta; dopo è la cosa che uno ha già in mente. */
+      var mieTesto = (miei[t.id] || {}).text || '';
+      var scritte = (d.reviews || {})[t.id] || [];
+      var commento = (puo && mio)
+        ? '<div class="mt-v-commento">' +
+            '<textarea rows="2" maxlength="600" placeholder="Due righe, se ti va: com\'è andata?">' + esc(mieTesto) + '</textarea>' +
+            '<button type="button" class="mt-v-salva">Salva</button>' +
+          '</div>'
+        : '';
+      var altrui = scritte.length
+        ? '<ul class="mt-v-scritte">' + scritte.slice(0, 5).map(function (x) {
+            return '<li><span class="mt-v-voto">' + esc(x.value) + '★</span>' + esc(x.text) + '</li>';
+          }).join('') + '</ul>'
+        : '';
       return '<li data-bersaglio="' + esc(t.id) + '">' +
         '<span class="mt-v-tipo">' + esc(t.tipo) + '</span>' +
         '<span class="mt-v-nome">' + esc(t.nome) + '</span>' +
         '<span class="mt-stelle">' + s + '</span>' +
         '<span class="mt-v-media">' + (media ? esc(media.value + ' (' + media.count + ')') : '') + '</span>' +
+        commento + altrui +
         '</li>';
     }
 
@@ -152,6 +177,12 @@
     sez.hidden = false;
 
     if (!puo) return;
+    /* Gli ascoltatori si attaccano UNA volta sola: la sezione si ridisegna a ogni
+     * voto, e riattaccarli a ogni giro vorrebbe dire mandare due richieste al
+     * secondo clic, tre al terzo. (Stanno sulla sezione e non sui bottoni proprio
+     * perché i bottoni cambiano: la sezione no.) */
+    if (sez.dataset.legato === '1') return;
+    sez.dataset.legato = '1';
     sez.addEventListener('click', function (ev) {
       var st = ev.target.closest && ev.target.closest('.mt-stella');
       if (!st || st.disabled) return;
@@ -159,19 +190,44 @@
       var target = riga.getAttribute('data-bersaglio');
       var voto = parseInt(st.getAttribute('data-voto'), 10);
       // La stessa stella una seconda volta = ritiro il voto.
-      if ((miei[target] || 0) === voto) voto = 0;
-      S.api('rate', { path: evento, target: target, value: String(voto) }).then(function (r) {
+      if (((miei[target] || {}).value || 0) === voto) voto = 0;
+      manda(riga, target, voto, null);
+    });
+
+    // Il commento si salva a parte: cambiare idea sulle stelle non deve
+    // cancellare quello che si era scritto, e viceversa.
+    sez.addEventListener('click', function (ev) {
+      var b = ev.target.closest && ev.target.closest('.mt-v-salva');
+      if (!b) return;
+      var riga = b.closest('li');
+      var target = riga.getAttribute('data-bersaglio');
+      var ta = riga.querySelector('textarea');
+      manda(riga, target, (miei[target] || {}).value || 0, ta ? ta.value : '');
+    });
+
+    function manda(riga, target, voto, testo) {
+      var campi = { path: evento, target: target, value: String(voto) };
+      if (testo !== null) campi.text = testo;
+      S.api('rate', campi).then(function (r) {
         var b = r.body || {};
         if (r.status !== 200 || !b.success) { dillo(b.error || 'Non ha funzionato.', 'avviso'); return; }
-        miei[target] = voto;
+        dillo(testo !== null ? 'Grazie: la tua recensione è salvata.' : '', 'ok');
+        miei[target] = voto ? { value: voto, text: testo !== null ? testo : ((miei[target] || {}).text || '') } : null;
+        if (!voto) delete miei[target];
         Array.prototype.forEach.call(riga.querySelectorAll('.mt-stella'), function (x, i) {
           x.classList.toggle('on', i + 1 <= voto);
         });
         var m = (b.ratings || {})[target];
         var box = riga.querySelector('.mt-v-media');
         if (box) box.textContent = m ? m.value + ' (' + m.count + ')' : '';
+        // Il campo del commento compare col primo voto e sparisce se lo si ritira:
+        // si ridisegna la sezione con quello che il server ha appena risposto.
+        statoValuta.ratings = b.ratings || statoValuta.ratings;
+        statoValuta.reviews = b.reviews || statoValuta.reviews;
+        statoValuta.myRatings = null;   // le mie risposte le tiene `statoVoti`
+        valutazioni(statoValuta);
       });
-    });
+    }
   }
 
   function chiedi(azione, b) {
