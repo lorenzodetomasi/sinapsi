@@ -331,7 +331,9 @@ function meetoo_url_modifica(){
 	if(strpos($rel, 'events/') !== 0){
 		return '';
 	}
-	return ws_root_url().'ws-admin/events/edit/?id='.rawurlencode($rel);
+	// `ws_root_url()` NON finisce con la barra: senza questa, l'indirizzo diventava
+	// «https://www.isotype.orgws-admin/…».
+	return rtrim(ws_root_url(), '/').'/ws-admin/events/edit/?id='.rawurlencode($rel);
 }
 
 /**

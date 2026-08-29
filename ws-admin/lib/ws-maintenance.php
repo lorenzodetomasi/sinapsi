@@ -169,6 +169,7 @@ if (!function_exists('ws_maint_ops')) {
                         $righe[] = $x['id'] . ': '
                             . ($x['da'] === null ? '(niente)' : $x['da']) . ' → '
                             . ($x['a'] === null ? '(niente)' : $x['a'] . ' su ' . $x['count'] . ' voti')
+                            . (!empty($x['fonti']) ? '  [' . $x['fonti'] . ']' : '')
                             . ($x['motivo'] !== '' ? ' — ' . $x['motivo'] : '');
                     }
                     return [

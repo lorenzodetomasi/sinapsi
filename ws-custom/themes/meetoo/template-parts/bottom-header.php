@@ -69,12 +69,12 @@ if($gid !== ''){
 	$mappa = 'https://www.google.com/maps/search/?api=1&amp;query=%20&amp;query_place_id='.rawurlencode($gid);
 	$azioni[] = '<a class="mt-icon-btn" href="'.$mappa.'" rel="noopener" target="_blank" title="'.__('Apri in Google Maps').'" aria-label="'.__('Apri in Google Maps').'"><span class="material-symbols-outlined" aria-hidden="true">map</span></a>';
 }
-// La scorciatoia all'editor la vede solo chi può usarla: la domanda la fa il
-// plugin di accesso, e se il plugin non c'è non compare niente.
-if(function_exists('ws_utente_puo_scrivere') and ws_utente_puo_scrivere() and !empty($ws_query['content'])){
-	$id = preg_replace('#^[^/]+/[^/]+/#', '', (string)$ws_query['content']);
-	$azioni[] = '<a class="mt-icon-btn" href="'.ws_root_url().'/ws-admin/events/edit/?id='.rawurlencode($id).'" title="'.__('Modifica').'" aria-label="'.__('Modifica').'"><span class="material-symbols-outlined" aria-hidden="true">edit</span></a>';
-}
+/* La penna NON è più qui: sta nella prima riga, accanto alle impostazioni
+ * (`top-header.php`). Quella che c'era qui non ha mai funzionato — chiedeva a
+ * `ws_utente_puo_scrivere()`, una funzione che in tutto il progetto non esiste,
+ * quindi la condizione era falsa per costruzione e il pulsante non compariva a
+ * nessuno. Il permesso adesso lo decide `meetoo_puo_modificare()`, che lo chiede
+ * alla stessa funzione che risponde al salvataggio. */
 
 if(empty($briciole) and empty($azioni)){
 	return;
