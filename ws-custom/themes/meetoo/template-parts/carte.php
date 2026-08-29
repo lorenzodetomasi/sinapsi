@@ -158,8 +158,12 @@ function mt_luogo_testo($p){
 
 /** I mesi come li abbrevia il blocchetto della data. */
 function mt_mese($t){
+	return mt_mese_num((int)date('n', $t));
+}
+/** Lo stesso, dal numero del mese: si usa quando la data è già letta nel suo fuso. */
+function mt_mese_num($n){
 	$mesi = array('gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic');
-	return $mesi[(int)date('n', $t) - 1];
+	return $mesi[max(1, min(12, $n)) - 1];
 }
 
 /**
@@ -171,18 +175,22 @@ function mt_mese($t){
 function mt_card_evento($ev, $o = array()){
 	$path = (string)(isset($ev['path']) ? $ev['path'] : (isset($ev['@id']) ? $ev['@id'] : ''));
 	$inizio = trim((string)(isset($ev['startDate']) ? $ev['startDate'] : ''));
-	$t = $inizio !== '' ? strtotime($inizio) : false;
+	/* Il giorno e l'ora si leggono NEL FUSO SCRITTO NELLA DATA, non in quello del
+	 * server: le sei di sera a Ostia sono le quattro a Greenwich, e il server sta
+	 * a Greenwich. Vale anche per il giorno — un evento delle 00:30 cambia data. */
+	$d = function_exists('meetoo_istante') ? meetoo_istante($inizio) : null;
+	$t = $d ? $d->getTimestamp() : ($inizio !== '' ? strtotime($inizio) : false);
 	$testa = '<div class="card-date">'
-		.'<span class="d">'.($t ? date('j', $t) : '·').'</span>'
-		.'<span class="m">'.($t ? mt_mese($t) : '').'</span>'
-		.'<span class="y">'.($t ? date('Y', $t) : '').'</span>'
+		.'<span class="d">'.($d ? $d->format('j') : '·').'</span>'
+		.'<span class="m">'.($d ? mt_mese_num((int)$d->format('n')) : '').'</span>'
+		.'<span class="y">'.($d ? $d->format('Y') : '').'</span>'
 		.'</div>';
 
 	$meta = array();
 	// L'ora si mostra solo se c'è: dire «alle 00:00» a un evento che dura tutto il
 	// giorno è dirgli addosso una cosa falsa.
-	if($t and preg_match('/T\d/', $inizio)){
-		$meta[] = mt_meta('schedule', date('H:i', $t));
+	if($d and preg_match('/T\d/', $inizio)){
+		$meta[] = mt_meta('schedule', $d->format('H:i'));
 	}
 	if((!isset($o['organizer']) or $o['organizer'] !== false) and !empty($ev['organizer'])){
 		$meta[] = mt_meta(mt_org_icona(isset($ev['organizerType']) ? $ev['organizerType'] : '', $ev['organizer']), $ev['organizer']);

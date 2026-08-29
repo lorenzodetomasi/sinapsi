@@ -34,24 +34,23 @@ function mt_ev($n, $campo){
  * si chiedono a `strftime`: quella funzione dipende dalla lingua installata sul
  * server, e un server che non ce l'ha risponde in inglese senza dirlo.
  */
-function mt_quando($dal, $al){
+function mt_quando($dal, $al, $fuso = ''){
 	$g = array('domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato');
 	$m = array('gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre');
-	$i = strtotime($dal);
+	/* Nel fuso scritto nella data, non in quello del server: le sei di sera a
+	 * Ostia sono le quattro a Greenwich, e il server sta a Greenwich. */
+	$i = meetoo_istante($dal, $fuso);
 	if(!$i){
 		return '';
 	}
-	$f = $al !== '' ? strtotime($al) : 0;
-	$giorno = function($t) use ($g, $m){
-		return $g[(int)date('w', $t)].' '.(int)date('j', $t).' '.$m[(int)date('n', $t) - 1].' '.date('Y', $t);
+	$f = $al !== '' ? meetoo_istante($al, $fuso) : null;
+	$giorno = function($d) use ($g, $m){
+		return $g[(int)$d->format('w')].' '.(int)$d->format('j').' '.$m[(int)$d->format('n') - 1].' '.$d->format('Y');
 	};
-	$ora = function($t){
-		return date('H:i', $t);
-	};
-	if($f and date('Y-m-d', $f) !== date('Y-m-d', $i)){
-		return $giorno($i).', '.$ora($i).' — '.$giorno($f).', '.$ora($f);
+	if($f and $f->format('Y-m-d') !== $i->format('Y-m-d')){
+		return $giorno($i).', '.$i->format('H:i').' — '.$giorno($f).', '.$f->format('H:i');
 	}
-	return $giorno($i).', '.$ora($i).($f ? '–'.$ora($f) : '');
+	return $giorno($i).', '.$i->format('H:i').($f ? '–'.$f->format('H:i') : '');
 }
 
 /** In presenza, online, o tutte e due: lo dice `eventAttendanceMode`. */
@@ -83,7 +82,9 @@ $rel = preg_replace('#^[^/]+/[^/]+/#', '', trim((string)($ws_query['content'] ??
 $stato = mt_ev($e, 'eventStatus');
 $dal = mt_ev($e, 'startDate');
 $al = mt_ev($e, 'endDate');
-$quando = mt_quando($dal, $al);
+// Il fuso lo dichiara l'evento: serve alle date che lo scarto non ce l'hanno.
+$fuso = trim((string)meetoo_campo_meetoo($e, 'timezone'));
+$quando = mt_quando($dal, $al, $fuso);
 
 /* Il luogo: il nome sta nell'evento, la località nel documento del luogo — e
  * l'indirizzo della sua pagina lo sa la mappa. Un evento non ripete quello che
@@ -249,10 +250,9 @@ if(!$serie){
 					<h2 class="sec-head"><?php echo mt_icona('list_alt'); ?><?php _e('Programma'); ?></h2>
 					<ol class="mt-programma">
 <?php foreach($programma as $s){
-	$oraS = mt_ev($s, 'startDate');
-	$t = $oraS !== '' ? strtotime($oraS) : 0; ?>
+	$oraS = meetoo_ora(mt_ev($s, 'startDate'), $fuso); ?>
 						<li>
-							<span class="mt-prog-ora"><?php echo $t ? mt_esc(date('H:i', $t)) : '·'; ?></span>
+							<span class="mt-prog-ora"><?php echo $oraS !== '' ? mt_esc($oraS) : '·'; ?></span>
 							<span class="mt-prog-cosa">
 								<strong><?php echo mt_esc(mt_ev($s, 'name')); ?></strong>
 <?php $d = mt_ev($s, 'description'); if($d !== ''){ ?>

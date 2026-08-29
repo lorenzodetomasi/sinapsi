@@ -274,9 +274,10 @@ body {
   .field-row-sep { flex-direction: column; }
   .field-row-sep > .pair-sep-control { display: none; }
   .grid-spacer { display: none; }
-  /* Data: precisione sopra, input sotto a tutta larghezza */
-  .smart-date .sd-row { flex-direction: column; align-items: stretch; }
-  .smart-date .sd-precision { max-width: none; }
+  /* (La data non ha più bisogno di una regola per lo schermo stretto: la sua riga
+     va a capo da sola quando lo spazio non basta — vedi `form.css`. Legarla alla
+     larghezza dello schermo era sbagliato: il campo è stretto anche su uno
+     schermo largo, quando sta in mezza colonna.) */
 }
 /* Tag: mai più larghi del contenitore (niente overflow su mobile) */
 .tag { max-width: 100%; overflow-wrap: anywhere; }

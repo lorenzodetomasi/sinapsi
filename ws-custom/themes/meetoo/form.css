@@ -185,8 +185,18 @@
   display: grid; gap: var(--sp-md); align-items: flex-start;
   grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
 }
-.field-row-sep { display: flex; gap: var(--sp-sm); align-items: flex-start; }
-.field-row-sep > .control:not(.pair-sep-control) { flex: 1; min-width: 0; }
+/* «Dal — al» va a capo per lo SPAZIO CHE HA, non per la larghezza dello schermo.
+ *
+ * Affiancati in un pannello da 616px i due campi hanno 295px a testa, e lì
+ * dentro il menu della precisione più il campo della data non ci stanno: la riga
+ * si spaginava su uno schermo largo, dove una regola legata al viewport non
+ * interviene mai. Con `wrap` e una base minima, i due campi restano affiancati
+ * finché ognuno ha spazio per essere leggibile — poi vanno uno sotto l'altro,
+ * ognuno a tutta larghezza, e la data torna in una riga sola. */
+.field-row-sep { display: flex; flex-wrap: wrap; gap: var(--sp-sm); align-items: flex-start; }
+.field-row-sep > .control:not(.pair-sep-control) { flex: 1 1 22rem; min-width: 0; }
+/* Andati a capo, il trattino in mezzo non ha più un mezzo da stare: sparisce. */
+.field-row-sep > .pair-sep-control { flex: 0 0 auto; }
 /* Colonnina del separatore: etichetta-segnaposto (vuota) + carattere allineato
    all'input, così "–" / "/" cadono sulla riga del campo, non su quella del label */
 /* Il trattino cade sulla riga dei campi, non su quella delle etichette. Ci arriva
@@ -283,15 +293,27 @@
 .field-row-inline > .control { flex: 0 0 auto; margin: 0; min-height: 0; }
 
 /* Data con precisione + pulsanti (calendario / cancella) */
-.smart-date .sd-row { display: flex; gap: var(--sp-xs); align-items: center; margin-top: var(--label-gap); }
+/* La riga della data VA A CAPO da sola.
+ *
+ * «Dal» e «al» stanno affiancati, quindi ognuno ha metà colonna: lì dentro il
+ * menu della precisione e il campo non ci stanno in riga, e finivano uno sopra
+ * l'altro per via di una regola legata alla larghezza dello SCHERMO — che non è
+ * quella che conta, perché il campo è stretto anche su uno schermo largo.
+ * Con `wrap` decide lo spazio vero: stanno in riga finché ci stanno, e quando
+ * non ci stanno vanno a capo restando larghi quanto serve, non quanto la
+ * colonna. */
+.smart-date .sd-row {
+  display: flex; flex-wrap: wrap; gap: var(--sp-xs);
+  align-items: center; margin-top: var(--label-gap);
+}
 /* «Data e ora / Solo data / Solo ora» è un campo, e deve sembrarlo: prima era
  * più piccolo del resto (12px contro 16) e con un margine interno suo, e in
  * mezzo a una riga di campi si leggeva come un'etichetta cliccabile. */
 .smart-date .sd-precision {
-  flex: none; width: auto; max-width: 10rem; margin: 0;
+  flex: 0 1 auto; width: auto; min-width: 7.5rem; max-width: 10rem; margin: 0;
   padding: 0 1.5rem 0 var(--field-pad-x); font-size: var(--fs-base); color: var(--text);
 }
-.smart-date .sd-input-wrap { position: relative; flex: 1 1 8rem; min-width: 0; }
+.smart-date .sd-input-wrap { position: relative; flex: 1 1 11rem; min-width: 0; }
 .smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 4rem; background-image: none; }
 .smart-date .sd-pick, .smart-date .sd-clear {
   position: absolute; top: 50%; transform: translateY(-50%);
@@ -312,6 +334,11 @@
 .pane input[type='number'],
 .pane input[type='datetime-local'],
 .pane input[type='date'],
+/* `time` mancava, ed era l'unico campo del modulo senza vestito: scegliendo
+ * «Solo ora» il campo diventava un rettangolino alto 24px, chiaro, largo quanto
+ * il testo — sembrava un'altra cosa perché non aveva nessuna delle regole che
+ * fanno sembrare un campo un campo. */
+.pane input[type='time'],
 .pane input[type='month'],
 .pane select,
 .rf input,
@@ -338,7 +365,9 @@
 /* Selettore data/ora: nascondiamo l'icona nativa (che resta cliccabile) e ne
    disegniamo una nostra, dello stesso colore delle × nei tag (--text-dim).
    Il colore va scritto nel data URI, quindi c'è una variante per tema. */
-.pane input[type='datetime-local']::-webkit-calendar-picker-indicator {
+.pane input[type='datetime-local']::-webkit-calendar-picker-indicator,
+.pane input[type='date']::-webkit-calendar-picker-indicator,
+.pane input[type='month']::-webkit-calendar-picker-indicator {
   /* appearance:none rimuove il disegno nativo (l'icona nera); l'area resta
      cliccabile e apre comunque il selettore */
   -webkit-appearance: none;
@@ -349,18 +378,41 @@
   height: 1.25rem;
   margin: 0;
 }
-.pane input[type='datetime-local'] {
+.pane input[type='datetime-local'],
+.pane input[type='date'],
+.pane input[type='month'] {
   padding-right: 2.5rem;
   background-repeat: no-repeat;
   background-position: right var(--field-pad-x) center;
   background-size: 1.125rem;
 }
-:root[data-theme='dark'] .pane input[type='datetime-local'] {
+:root[data-theme='dark'] .pane input[type='datetime-local'],
+:root[data-theme='dark'] .pane input[type='date'],
+:root[data-theme='dark'] .pane input[type='month'] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa0b4' stroke-width='2' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
 }
-:root[data-theme='light'] .pane input[type='datetime-local'] {
+:root[data-theme='light'] .pane input[type='datetime-local'],
+:root[data-theme='light'] .pane input[type='date'],
+:root[data-theme='light'] .pane input[type='month'] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2' stroke-linecap='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M8 3v4M16 3v4M3 10h18'/%3E%3C/svg%3E");
 }
+
+/* UNA SOLA ICONA DEL CALENDARIO.
+ *
+ * Il campo data ne aveva due: quella che disegniamo noi nello sfondo (qui sopra)
+ * e il pulsante che il renderer della data mette accanto — due modi di aprire lo
+ * stesso calendario, uno accanto all'altro. La regola che spegneva lo sfondo
+ * c'era già, ma pesava meno di quelle per tema e perdeva.
+ *
+ * Dove c'è il pulsante comanda il pulsante; dove non c'è — le ore dei
+ * sotto-eventi, per dire — resta lo sfondo. */
+:root[data-theme='dark'] .pane .smart-date .sd-input-wrap input,
+:root[data-theme='light'] .pane .smart-date .sd-input-wrap input,
+.pane .smart-date .sd-input-wrap input { background-image: none; }
+/* Senza pulsanti a destra il campo non tiene lo spazio per due: «Solo ora» e
+   «Solo anno» sono larghi come il testo che contengono, come ogni altro campo. */
+.pane .smart-date .sd-input-wrap:not(:has(.sd-pick)) input { padding-right: 2.5rem; }
+.pane .smart-date .sd-input-wrap:not(:has(button)) input { padding-right: var(--field-pad-x); }
 
 /* Checkbox compatto */
 .pane input[type='checkbox'] {

@@ -337,6 +337,46 @@ function meetoo_url_modifica(){
 }
 
 /**
+ * UN ISTANTE, LETTO NEL FUSO IN CUI È SCRITTO.
+ *
+ * Le date dei contenuti portano lo scarto con sé — `2026-09-06T18:00:00+02:00` —
+ * ed è quello che dice l'ora vera dell'appuntamento: le sei di sera a Ostia.
+ * `strtotime()` + `date()` invece formattano nel fuso del SERVER, e il server è
+ * a UTC: quelle sei diventavano le quattro, in ogni card, su ogni pagina, in
+ * ogni riga di programma. Non è un'ora sbagliata di poco, è l'ora di un altro
+ * posto.
+ *
+ * `DateTimeImmutable` lo scarto se lo tiene. Se una data non ce l'ha, vale il
+ * fuso dichiarato dall'evento e, in mancanza, quello del server — meglio una
+ * scelta dichiarata che un silenzio.
+ */
+function meetoo_istante($valore, $fuso = ''){
+	$v = trim((string)$valore);
+	if($v === ''){
+		return null;
+	}
+	try {
+		$d = new DateTimeImmutable($v);
+	} catch(Exception $e){
+		return null;
+	}
+	// Senza scarto scritto, `DateTimeImmutable` ha usato il fuso del server: si
+	// rilegge nel fuso dell'evento, che è quello in cui l'ora era stata pensata.
+	if($fuso !== '' and !preg_match('/(Z|[+-]\d{2}:?\d{2})$/', $v)){
+		try {
+			$d = new DateTimeImmutable($v, new DateTimeZone($fuso));
+		} catch(Exception $e){}
+	}
+	return $d;
+}
+
+/** L'ora di un istante come la direbbe chi è sul posto: «18:00». */
+function meetoo_ora($valore, $fuso = ''){
+	$d = meetoo_istante($valore, $fuso);
+	return $d ? $d->format('H:i') : '';
+}
+
+/**
  * L'indirizzo web di un file che sta NELLA CARTELLA di un contenuto.
  *
  * Nei documenti l'immagine si scrive relativa a sé — `media-sources/cover.jpg` —
