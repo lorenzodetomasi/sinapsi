@@ -261,28 +261,69 @@ function mt_tipo_evento($t){
 	return $nomi[$k] ?? preg_replace('/Event$/', '', $k);
 }
 
-/* QUALI TIPI MOSTRARE. Un'etichetta che ripete quella accanto non aggiunge
- * niente e ruba spazio: si tiene la prima e si scartano i doppioni, confrontando
- * senza maiuscole e senza accenti. La bozza della regola è questa; se un domani
- * si vorrà nascondere anche ciò che ripete una keyword, il posto è qui. */
+/**
+ * Le parole che un tipo di schema.org DICE GIÀ.
+ *
+ * «Letteratura» e «Libri e letture» sono la stessa cosa detta due volte, e due
+ * etichette identiche accanto non aggiungono niente: si tiene quella della
+ * redazione, che è più precisa e più nostra, e si butta il tipo.
+ *
+ * Il dizionario è corto apposta. Ci sono solo le corrispondenze fra i tipi che
+ * usiamo e i nomi delle categorie che esistono nel catalogo: una voce in più,
+ * indovinata, nasconderebbe un'informazione vera — che è il danno peggiore di
+ * tutti, perché non si vede. Oggi non scarta niente (l'unico tipo in uso è
+ * `LiteraryEvent` e gli additionalType sono «Leggere insieme» e «BookCrossing»,
+ * che sono altre cose): è una guardia per quando il vocabolario crescerà.
+ */
+function mt_sinonimi_tipo($tipo){
+	$mappa = array(
+		'LiteraryEvent' => array('letteratura', 'libri e letture', 'letture', 'lettura'),
+		'MusicEvent' => array('musica', 'concerto', 'concerti'),
+		'TheaterEvent' => array('teatro', 'spettacolo teatrale'),
+		'ScreeningEvent' => array('cinema', 'proiezione', 'proiezioni'),
+		'ChildrensEvent' => array('per bambini', 'bambini e famiglie', 'bambini'),
+		'BusinessEvent' => array('lavoro', 'lavoro e opportunita', 'business'),
+		'Festival' => array('festival', 'sagre, feste, palii', 'sagra', 'festa'),
+		'FoodEvent' => array('cibo', 'gastronomia'),
+		'SportsEvent' => array('sport'),
+		'EducationEvent' => array('formazione', 'corso', 'corsi'),
+		'ExhibitionEvent' => array('mostra', 'mostre'),
+		'VisualArtsEvent' => array('arti visive', 'arte'),
+	);
+	return $mappa[trim((string)$tipo)] ?? array();
+}
+
+/* QUALI TIPI MOSTRARE. Si tiene la prima etichetta e si scartano i doppioni —
+ * confronto senza maiuscole e senza accenti — e in più si butta il tipo quando
+ * la parola della redazione dice già la stessa cosa. */
 $tipi = array();
 $visti = array();
 $normale = function($t){
 	$x = mb_strtolower(trim((string)$t), 'UTF-8');
 	return strtr($x, array('à'=>'a','è'=>'e','é'=>'e','ì'=>'i','ò'=>'o','ù'=>'u'));
 };
-foreach(array(mt_xsi_tipo($e)) as $t){
-	$nome = mt_tipo_evento((string)$t);
-	if($nome === '' or isset($visti[$normale($nome)])){
-		continue;
-	}
-	$visti[$normale($nome)] = true;
-	$tipi[] = $nome;
-}
+/* Prima la parola della redazione, poi il tipo: l'ordine conta, perché a
+ * scartare è chi arriva dopo, e fra le due deve sopravvivere la più precisa. */
 $cat = mt_ev($e, 'additionalType');
-if($cat !== '' and !isset($visti[$normale($cat)])){
+if($cat !== ''){
 	$visti[$normale($cat)] = true;
 	$tipi[] = $cat;
+}
+$tipoSchema = mt_xsi_tipo($e);
+$nome = mt_tipo_evento($tipoSchema);
+if($nome !== '' and !isset($visti[$normale($nome)])){
+	// Il tipo si tace anche quando una parola già scritta dice la stessa cosa.
+	$ridondante = false;
+	foreach(mt_sinonimi_tipo($tipoSchema) as $sinonimo){
+		if(isset($visti[$normale($sinonimo)])){
+			$ridondante = true;
+			break;
+		}
+	}
+	if(!$ridondante){
+		$visti[$normale($nome)] = true;
+		array_unshift($tipi, $nome);
+	}
 }
 $voto = isset($e->aggregateRating) ? mt_ev($e->aggregateRating, 'ratingValue') : '';
 $voto_max = $voto !== '' ? (mt_ev($e->aggregateRating, 'bestRating') ?: '5') : '';
