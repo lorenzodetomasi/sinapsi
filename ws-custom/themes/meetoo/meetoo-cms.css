@@ -352,10 +352,22 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
    Sotto i 64rem è una colonna sola e l'ordine del documento è già quello giusto:
    abstract, dati, azioni, programma. Sopra, il testo a sinistra e le cose da fare
    a destra — l'`aside` è una colonna, non una cornice. */
+/* LE COLONNE SI DEFINISCONO UNA VOLTA SOLA.
+ *
+ * La testata e il corpo hanno tutti e due due colonne, e devono essere LE STESSE
+ * — se no la colonna di destra si sposta a metà pagina, che è quello che
+ * succedeva: la testata la faceva con flex (448 e 384 pixel) e il corpo con una
+ * griglia (549 e 275), e il bordo destro del blocco «Organizzato da» cadeva
+ * centodieci pixel prima di quello dell'aside sotto.
+ *
+ * Due sistemi diversi per la stessa cosa divergono sempre: uno solo, scritto in
+ * due variabili, e le due griglie non possono più litigare. */
+.mt-evento-pagina { --evento-colonne: minmax(0, 2fr) minmax(0, 1fr); --evento-stacco: 2.5rem; }
+
 .mt-evento-testa { margin-bottom: 1.5rem; }
-.mt-testa-righe { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin: .5rem 0 1rem; }
-.mt-testa-sx { flex: 1 1 20rem; min-width: 0; }
-.mt-testa-dx { flex: 1 1 16rem; min-width: 0; display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
+.mt-testa-righe { display: flex; flex-direction: column; gap: .5rem; margin: .5rem 0 1rem; }
+.mt-testa-sx { min-width: 0; }
+.mt-testa-dx { min-width: 0; display: flex; flex-direction: column; gap: .35rem; align-items: flex-start; }
 /* Quando e dove sono le due domande per cui si apre la pagina: si vedono. */
 .mt-quando, .mt-dove { display: flex; align-items: center; gap: .5rem; margin: 0 0 .35rem; font-size: 1.1rem; }
 .mt-quando { font-weight: 600; color: var(--color-heading); }
@@ -397,10 +409,11 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-tag-fondo { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--color-line); }
 
 @media (min-width: 64rem) {
+  .mt-testa-righe,
   .mt-evento-griglia {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 0 2.5rem;
+    grid-template-columns: var(--evento-colonne);
+    gap: 0 var(--evento-stacco);
     align-items: start;
   }
   .mt-principale { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
