@@ -208,6 +208,17 @@ foreach(mt_lista($e, 'subEvent') as $s){
 
 $serie = (stripos((string)($rewrite_rule->type ?? ''), 'eventseries') !== false);
 
+/* PASSATO O NO: cambia che cosa si puo' fare. A un appuntamento di ieri non ci
+ * si iscrive e non lo si mette in agenda; lo si puo' ancora ricordare, e
+ * raccontare com'e' andato. */
+$fine_ev = meetoo_istante($al !== '' ? $al : $dal, $fuso);
+$passato = $fine_ev ? $fine_ev->getTimestamp() < time() : false;
+
+$organizzatori = mt_lista($e, 'organizer');
+$voto = isset($e->aggregateRating) ? mt_ev($e->aggregateRating, 'ratingValue') : '';
+$voto_max = $voto !== '' ? (mt_ev($e->aggregateRating, 'bestRating') ?: '5') : '';
+$voto_n = $voto !== '' ? mt_ev($e->aggregateRating, 'ratingCount') : '';
+
 /* Il vestito e il comportamento di questa pagina si caricano solo qui: sono la
  * pagina di un evento, e su una zona sarebbero peso scaricato per niente. */
 $ws_theme_url = ws_theme_url();
@@ -216,26 +227,86 @@ $GLOBALS['ws_scripts']['bodyend']['meetoo_evento'] = '<script defer="defer" src=
 include_template('template-parts/header');
 ?>
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina', 'mt-evento-pagina'))); ?>>
-				<h1 class="mt-h1"><?php echo mt_esc($titolo); ?> <?php echo mt_badge_stato($stato); ?></h1>
+
+				<?php /* LA TESTATA: che cosa è, quando e dove, e da dove viene.
+				          A sinistra il quando e il dove — le due domande per cui si apre la
+				          pagina di un evento, e per questo in evidenza. A destra i rimandi
+				          ad altro: la collezione di cui fa parte, chi lo organizza, il voto
+				          di chi c'è stato. La copertina viene dopo: è bella, ma non è
+				          l'informazione. */ ?>
+				<header class="mt-evento-testa">
+					<h1 class="mt-h1"><?php echo mt_esc($titolo); ?> <?php echo mt_badge_stato($stato); ?></h1>
+
+					<div class="mt-testa-righe">
+						<div class="mt-testa-sx">
+<?php if($quando !== ''){ ?>
+							<p class="mt-quando"><?php echo mt_icona('event'); ?><span><?php echo mt_esc($quando); ?></span></p>
+<?php } ?>
+<?php if($luogoNome !== ''){ ?>
+							<p class="mt-dove"><?php echo mt_icona('location_on'); ?><span><?php
+								echo $luogoHref !== ''
+									? '<a href="'.mt_esc($luogoHref).'">'.mt_esc($luogoNome).'</a>'
+									: mt_esc($luogoNome);
+							?></span></p>
+<?php } ?>
+						</div>
+
+						<div class="mt-testa-dx">
+<?php if($serieHref !== ''){ ?>
+							<p class="mt-nota"><?php echo mt_icona('collections_bookmark'); ?>
+								<?php _e('Fa parte di'); ?> <a href="<?php echo mt_esc($serieHref); ?>"><?php echo mt_esc($serieNome !== '' ? $serieNome : basename($serieId)); ?></a>
+							</p>
+<?php } ?>
+<?php if(count($organizzatori)){ ?>
+							<p class="mt-organizza"><span><?php _e('Organizzato da'); ?></span>
+<?php foreach($organizzatori as $o){
+	$id = meetoo_riferimento_nodo($o);
+	$nome = mt_ev($o, 'name') ?: ($id !== '' ? meetoo_titolo_contenuto($id) : '');
+	if($nome === ''){ continue; }
+	$href = $id !== '' ? meetoo_indirizzo($id) : '';
+	$dentro = mt_icona(mt_org_icona((string)($o->{'@type'} ?? ''), $nome)).mt_esc($nome);
+	echo $href !== ''
+		? '<a class="mt-chip" href="'.mt_esc($href).'">'.$dentro.'</a>'
+		: '<span class="mt-chip">'.$dentro.'</span>';
+} ?>
+							</p>
+<?php } ?>
+<?php if($voto !== ''){ ?>
+							<p class="mt-voto"><?php echo mt_icona('star'); ?><span><?php
+								echo mt_esc($voto.' / '.$voto_max);
+								echo $voto_n !== '' ? ' '.mt_esc(sprintf(__('(%s valutazioni)'), $voto_n)) : '';
+							?></span></p>
+<?php } ?>
+						</div>
+					</div>
 
 <?php $cover = meetoo_media($rel, mt_ev($e, 'image') ?: mt_ev($e, 'logo')); if($cover !== ''){ ?>
-				<figure class="mt-copertina">
-					<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
+					<figure class="mt-copertina">
+						<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
 <?php $credito = trim((string)meetoo_campo_meetoo($e, 'imageCredit')); if($credito !== ''){ ?>
-					<figcaption class="mt-credito"><?php echo mt_esc($credito); ?></figcaption>
+						<figcaption class="mt-credito"><?php echo mt_esc($credito); ?></figcaption>
 <?php } ?>
-				</figure>
+					</figure>
+<?php } ?>
+				</header>
+
+				<?php /* Da qui in giù, due colonne su schermo largo: a sinistra quello che
+				          c'è da leggere, a destra quello che c'è da fare. Su schermo stretto
+				          diventa una colonna sola, e l'ordine del documento è già quello
+				          giusto — l'abstract, i dati, le azioni, poi il programma. */ ?>
+				<div class="mt-evento-griglia">
+
+<?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
+					<div class="mt-corpo mt-abstract"><?php ws_echo($testo); ?></div>
+<?php } else if(mt_ev($e, 'description') !== ''){ ?>
+					<p class="mt-abstract mt-sommario"><?php echo mt_esc(mt_ev($e, 'description')); ?></p>
 <?php } ?>
 
-				<div class="mt-scheda">
-<?php if($quando !== ''){ echo mt_meta('event', $quando); } ?>
-<?php if($luogoNome !== ''){ ?>
-					<span><?php echo mt_icona('location_on'); ?><?php
-						echo $luogoHref !== ''
-							? '<a href="'.mt_esc($luogoHref).'">'.mt_esc($luogoNome).'</a>'
-							: mt_esc($luogoNome);
-					?></span>
-<?php } ?>
+					<?php /* `aside` per quello che è, non per come si vede: qui dentro non c'è
+					          una cornice, c'è una colonna. Il riquadro del «salva la data» la
+					          cornice ce l'ha perché è un invito ad agire, e si deve vedere. */ ?>
+					<aside class="mt-aside">
+						<div class="mt-dati">
 <?php if($modalita){ echo mt_meta($modalita[0], $modalita[1]); } ?>
 <?php if($eta !== ''){ echo mt_meta('escalator_warning', strcasecmp($eta, 'All Ages') === 0 ? __('Tutte le età') : $eta); } ?>
 <?php if($offerta !== ''){ echo mt_meta('sell', $offerta); } ?>
@@ -244,80 +315,69 @@ include_template('template-parts/header');
 		? sprintf(__('%1$s posti su %2$s ancora liberi'), $rimasti, $posti)
 		: sprintf(__('%s posti'), $posti));
 } ?>
-				</div>
-
-<?php $organizzatori = mt_lista($e, 'organizer'); if(count($organizzatori)){ ?>
-				<p class="mt-organizza"><span><?php _e('Organizzato da'); ?></span>
-<?php foreach($organizzatori as $o){
-	$id = meetoo_riferimento_nodo($o);
-	$nome = mt_ev($o, 'name') ?: ($id !== '' ? meetoo_titolo_contenuto($id) : '');
-	if($nome === ''){ continue; }
-	$href = $id !== '' ? meetoo_indirizzo($id) : '';
-	$icona = mt_org_icona((string)($o->{'@type'} ?? ''), $nome);
-	$dentro = mt_icona($icona).mt_esc($nome);
-	echo $href !== ''
-		? '<a class="mt-chip" href="'.mt_esc($href).'">'.$dentro.'</a>'
-		: '<span class="mt-chip">'.$dentro.'</span>';
-} ?>
-				</p>
-<?php } ?>
-
-				<?php /* Le tre cose che si possono fare. Ci sono anche senza JavaScript
-				          — sono bottoni veri, e chi li preme senza essere collegato riceve
-				          l'invito ad accedere, non il silenzio. `data-*` porta l'evento a
-				          cui si riferiscono: il programma non deve indovinarlo. */ ?>
-				<?php /* IL RIQUADRO: le cose da fare stanno insieme, in evidenza, e hanno un
-				          indirizzo — `#review`. Un invito a valutare si manda per messaggio
-				          («dicci com'è andata»), e chi lo riceve deve atterrare sul punto,
-				          non in cima a una pagina lunga. */ ?>
-				<div class="mt-cta" id="review">
 <?php
-/* SALVA LA DATA. Solo per quello che deve ancora succedere: mettere in agenda un
- * appuntamento di ieri non serve a nessuno, e un pulsante che non serve toglie
- * attenzione a quelli che servono.
- *
- * Due strade perché i calendari sono due mondi: Google ha un indirizzo che apre
- * il suo modulo già compilato, tutti gli altri — Apple, Outlook, il telefono —
- * leggono un file `.ics`, che questa stessa pagina sa scrivere. */
-$passato = $i_fine = meetoo_istante($al !== '' ? $al : $dal, $fuso);
-$passato = $passato ? $passato->getTimestamp() < time() : false;
+$link = array();
+$sito = mt_ev($e, 'url');
+if($sito !== ''){
+	$link[] = array($sito, __('Sito dell’evento'));
+}
+foreach(mt_lista($e, 'sameAs') as $x){
+	$v = trim((string)$x);
+	if($v !== ''){
+		$link[] = array($v, preg_replace('#^www\.#', '', (string)parse_url($v, PHP_URL_HOST)) ?: $v);
+	}
+}
+foreach($link as $l){
+	echo '<span>'.mt_icona('link').'<a href="'.mt_esc($l[0]).'" rel="noopener">'.mt_esc($l[1]).'</a></span>';
+}
+?>
+						</div>
+
+						<?php /* Le cose che si possono fare, insieme e con un indirizzo suo —
+						          `#review`: un invito a valutare si manda per messaggio, e chi
+						          lo riceve deve atterrare sul punto. */ ?>
+						<div class="mt-cta" id="review">
+<?php
+/* SALVA LA DATA, solo per quello che deve ancora succedere. Due strade perché i
+ * calendari sono due mondi: Google ha un indirizzo che apre il suo modulo già
+ * compilato, tutti gli altri — Apple, Outlook, il telefono — leggono un file
+ * `.ics`, che questa stessa pagina sa scrivere. */
 if(!$passato and $ics_inizio !== ''){
 ?>
-					<div class="mt-agenda">
-						<a class="mt-azione mt-azione-forte" href="<?php echo mt_esc($google_cal); ?>" target="_blank" rel="noopener">
-							<?php echo mt_icona('event_available'); ?><span><?php _e('Salva la data su Google Calendar'); ?></span>
-						</a>
-						<a class="mt-azione" href="?ics=1" download>
-							<?php echo mt_icona('download'); ?><span><?php _e('Altri calendari (.ics)'); ?></span>
-						</a>
-					</div>
-					<p class="mt-agenda-nota"><?php _e('Inserisci questo evento nel tuo calendario.'); ?></p>
+							<div class="mt-agenda">
+								<a class="mt-azione mt-azione-forte" href="<?php echo mt_esc($google_cal); ?>" target="_blank" rel="noopener">
+									<?php echo mt_icona('event_available'); ?><span><?php _e('Salva la data su Google Calendar'); ?></span>
+								</a>
+								<a class="mt-azione" href="?ics=1" download>
+									<?php echo mt_icona('download'); ?><span><?php _e('Altri calendari (.ics)'); ?></span>
+								</a>
+							</div>
+							<p class="mt-agenda-nota"><?php _e('Inserisci questo evento nel tuo calendario.'); ?></p>
 <?php } ?>
-				<div class="mt-azioni" data-evento="<?php echo mt_esc($rel); ?>"<?php echo $serie ? ' data-serie="1"' : ''; ?>>
-					<button type="button" class="mt-azione" data-azione="interesse" aria-pressed="false">
-						<?php echo mt_icona('bookmark'); ?><span><?php _e('Mi interessa'); ?></span><span class="mt-conto"></span>
-					</button>
-					<button type="button" class="mt-azione" data-azione="piace" aria-pressed="false">
-						<?php echo mt_icona('favorite'); ?><span><?php _e('Mi piace'); ?></span><span class="mt-conto"></span>
-					</button>
-<?php if(!$serie){ ?>
-					<button type="button" class="mt-azione mt-azione-forte" data-azione="iscrizione" aria-pressed="false">
-						<?php echo mt_icona('how_to_reg'); ?><span><?php _e('Parteciperò'); ?></span><span class="mt-conto"></span>
-					</button>
+							<div class="mt-azioni" data-evento="<?php echo mt_esc($rel); ?>"<?php echo $serie ? ' data-serie="1"' : ''; ?>>
+								<button type="button" class="mt-azione" data-azione="interesse" aria-pressed="false">
+									<?php echo mt_icona('bookmark'); ?><span><?php _e('Mi interessa'); ?></span><span class="mt-conto"></span>
+								</button>
+								<button type="button" class="mt-azione" data-azione="piace" aria-pressed="false">
+									<?php echo mt_icona('favorite'); ?><span><?php _e('Mi piace'); ?></span><span class="mt-conto"></span>
+								</button>
+<?php /* A un appuntamento di ieri non ci si iscrive: il bottone non c'è. */
+if(!$serie and !$passato){ ?>
+								<button type="button" class="mt-azione mt-azione-forte" data-azione="iscrizione" aria-pressed="false">
+									<?php echo mt_icona('how_to_reg'); ?><span><?php _e('Parteciperò'); ?></span><span class="mt-conto"></span>
+								</button>
 <?php } ?>
-					<button type="button" class="mt-azione" data-azione="condividi">
-						<?php echo mt_icona('share'); ?><span><?php _e('Condividi'); ?></span>
-					</button>
-				</div>
-				<p class="mt-azioni-nota" hidden></p>
+								<button type="button" class="mt-azione" data-azione="condividi">
+									<?php echo mt_icona('share'); ?><span><?php _e('Condividi'); ?></span>
+								</button>
+							</div>
+							<p class="mt-azioni-nota" hidden></p>
 
 <?php
-/* CHE COSA SI PUÒ VALUTARE: l'evento, chi l'ha organizzato, il luogo.
- *
- * L'elenco lo compone il server, perché è il server a sapere come si chiamano e
- * che @id hanno; quando e da chi si possa votare lo decide il server pure, e il
- * browser si limita a chiedere. Tre bersagli distinti perché sono tre esperienze
- * distinte: un posto scomodo non è colpa di chi organizza. */
+/* CHE COSA SI PUÒ VALUTARE: l'evento, chi l'ha organizzato, il luogo. Tre
+ * bersagli distinti perché sono tre esperienze distinte: un posto scomodo non è
+ * colpa di chi organizza. Le medie e le recensioni le legge chiunque — come su
+ * una scheda di Google Maps —; votare può solo chi c'era, e lo decide il server. */
 $bersagli = array(array('id' => $rel, 'nome' => $titolo, 'tipo' => __('L’evento')));
 foreach($organizzatori as $o){
 	$oid = meetoo_riferimento_nodo($o);
@@ -331,46 +391,35 @@ if($luogoId !== '' and $luogoNome !== ''){
 }
 if(!$serie){
 ?>
-				<section id="mt-valuta" class="mt-sezione" hidden
-					data-bersagli="<?php echo mt_esc(json_encode($bersagli, JSON_UNESCAPED_UNICODE)); ?>"></section>
+							<section id="mt-valuta" class="mt-sezione" hidden
+								data-bersagli="<?php echo mt_esc(json_encode($bersagli, JSON_UNESCAPED_UNICODE)); ?>"></section>
 <?php } ?>
-				</div><!-- .mt-cta -->
-
-				<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e lo
-				          ottiene solo chi ha i permessi, perché a decidere è il server. I nomi
-				          non stanno nel file dell'evento: li ricompone l'archivio privato. */ ?>
-				<section id="mt-partecipanti" class="mt-sezione" hidden></section>
-
-<?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
-				<div class="mt-corpo"><?php ws_echo($testo); ?></div>
-<?php } else if(mt_ev($e, 'description') !== ''){ ?>
-				<p class="mt-sommario"><?php echo mt_esc(mt_ev($e, 'description')); ?></p>
-<?php } ?>
+						</div><!-- .mt-cta -->
+					</aside>
 
 <?php if(count($programma)){ ?>
-				<section class="mt-sezione">
-					<h2 class="sec-head"><?php echo mt_icona('list_alt'); ?><?php _e('Programma'); ?></h2>
-					<ol class="mt-programma">
-<?php foreach($programma as $s){
-	$oraS = meetoo_ora(mt_ev($s, 'startDate'), $fuso); ?>
-						<li>
-							<span class="mt-prog-ora"><?php echo $oraS !== '' ? mt_esc($oraS) : '·'; ?></span>
-							<span class="mt-prog-cosa">
-								<strong><?php echo mt_esc(mt_ev($s, 'name')); ?></strong>
-<?php $d = mt_ev($s, 'description'); if($d !== ''){ ?>
-								<span class="mt-prog-nota"><?php echo mt_esc($d); ?></span>
+					<section class="mt-sezione">
+						<h2 class="sec-head"><?php echo mt_icona('list_alt'); ?><?php _e('Programma'); ?></h2>
+						<ol class="mt-programma">
+<?php foreach($programma as $sub){
+	$oraS = meetoo_ora(mt_ev($sub, 'startDate'), $fuso); ?>
+							<li>
+								<span class="mt-prog-ora"><?php echo $oraS !== '' ? mt_esc($oraS) : '·'; ?></span>
+								<span class="mt-prog-cosa">
+									<strong><?php echo mt_esc(mt_ev($sub, 'name')); ?></strong>
+<?php $dsub = mt_ev($sub, 'description'); if($dsub !== ''){ ?>
+									<span class="mt-prog-nota"><?php echo mt_esc($dsub); ?></span>
 <?php } ?>
-							</span>
-						</li>
+								</span>
+							</li>
 <?php } ?>
-					</ol>
-				</section>
+						</ol>
+					</section>
 <?php } ?>
 
 <?php
 /* Le occorrenze di una SERIE: quando la pagina è quella di una collezione, le
- * sue date sono la cosa che si sta cercando. Stesse sezioni delle altre pagine,
- * con l'ambito puntato su questa serie. */
+ * sue date sono la cosa che si sta cercando. */
 if($serie){
 	meetoo_ambito('collection', basename($rel));
 	meetoo_frammento();
@@ -381,8 +430,15 @@ if($serie){
 }
 ?>
 
+					<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e
+					          lo ottiene solo chi ha i permessi, perché a decidere è il server.
+					          Sta nel contenuto e non nell'aside perché un elenco di nomi ed
+					          email ha bisogno di larghezza. */ ?>
+					<section id="mt-partecipanti" class="mt-sezione" hidden></section>
+				</div><!-- .mt-evento-griglia -->
+
 <?php
-// Da dove viene e dove continua: la serie, i temi, i collegamenti.
+// I temi: la categoria dichiarata e le parole chiave, su una riga in fondo.
 $tag = array();
 $cat = mt_ev($e, 'additionalType');
 if($cat !== ''){
@@ -394,40 +450,11 @@ foreach(mt_lista($e, 'keywords') as $k){
 		$tag[] = $v;
 	}
 }
-$link = array();
-$sito = mt_ev($e, 'url');
-if($sito !== ''){
-	$link[] = array($sito, __('Sito dell’evento'));
-}
-foreach(mt_lista($e, 'sameAs') as $s){
-	$v = trim((string)$s);
-	if($v !== ''){
-		$link[] = array($v, preg_replace('#^www\.#', '', (string)parse_url($v, PHP_URL_HOST)) ?: $v);
-	}
-}
-$voto = isset($e->aggregateRating) ? mt_ev($e->aggregateRating, 'ratingValue') : '';
-if($serieHref !== '' or count($tag) or count($link) or $voto !== ''){
+if(count($tag)){
 ?>
-				<section class="mt-sezione mt-scheda-fondo">
-<?php if($serieHref !== ''){ ?>
-					<p class="mt-nota"><?php echo mt_icona('collections_bookmark'); ?>
-						<?php _e('Fa parte di'); ?> <a href="<?php echo mt_esc($serieHref); ?>"><?php echo mt_esc($serieNome !== '' ? $serieNome : basename($serieId)); ?></a>
-					</p>
-<?php } ?>
-<?php if($voto !== ''){ $max = mt_ev($e->aggregateRating, 'bestRating') ?: '5'; ?>
-					<p class="mt-nota"><?php echo mt_icona('star'); ?><?php echo mt_esc($voto.' / '.$max); ?></p>
-<?php } ?>
-<?php if(count($tag)){ ?>
-					<p class="mt-tag">
+				<p class="mt-tag mt-tag-fondo">
 <?php foreach($tag as $t){ ?><span class="mt-chip"><?php echo mt_esc($t); ?></span><?php } ?>
-					</p>
-<?php } ?>
-<?php if(count($link)){ ?>
-					<p class="mt-link">
-<?php foreach($link as $l){ ?><a href="<?php echo mt_esc($l[0]); ?>" rel="noopener"><?php echo mt_esc($l[1]); ?></a><?php } ?>
-					</p>
-<?php } ?>
-				</section>
+				</p>
 <?php } ?>
 			</article>
 <?php
