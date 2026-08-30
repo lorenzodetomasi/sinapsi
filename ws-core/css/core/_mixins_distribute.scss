@@ -1,0 +1,27 @@
+/*
+$distribute: 'vertical' | 'horizontal';
+$align: 'top' | 'middle' | 'bottom' | 'left' | 'center' | 'right';
+$space: 'space-between' | 'space-around' | 'space-evenly';
+$method: 'flex';
+*/
+@mixin distribute-container($distribute: null, $space: 'space-between', $method: 'flex'){
+  @if $method == 'flex' {
+    @if $distribute == 'vertical' {
+      align-items: flex-start;
+    } @else if $distribute == 'horizontal' {
+      @if $space == 'space-between' {
+        justify-content: space-between;
+      }
+    }
+  }
+}
+@mixin distribute($grid){
+  // Flex distribute
+  .flex {
+    &.#{$grid}distribute-horizontal {
+      &, &.space-between {
+        @include distribute-container($distribute: 'horizontal', $space: 'space-between', $method: 'flex');
+      }
+    }
+  }
+}

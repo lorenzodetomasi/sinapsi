@@ -1,0 +1,5 @@
+input, label, select, textarea {
+  font-family: $navs-font-family;
+}
+// Placeholder text color -- selectors need to be separate to work
+@include placeholder($placeholder-color);

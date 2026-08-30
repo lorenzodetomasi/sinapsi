@@ -1,0 +1,235 @@
+@mixin box-model($grid){
+  // Vertical paddings
+/*
+  @if $grid != '' {
+    .section-padding-top,
+    .section,
+    .#{$grid}section-padding-top,
+    .#{$grid}section {
+      padding-top: #{"$" + $grid + "content-start-top"};
+    }
+    .section-padding-bottom,
+    .section,
+    .#{$grid}section-padding-bottom,
+    .#{$grid}section {
+      padding-bottom: #{'$' + $grid + 'content-start-top'};
+    }
+  }
+*/
+  .#{$grid}padding-d4,
+  .#{$grid}padding-v-d4,
+  .#{$grid}padding-top-d4 {
+    padding-top: $gutter/4 !important;
+  }
+  .#{$grid}padding-d4,
+  .#{$grid}padding-v-d4,
+  .#{$grid}padding-bottom-d4 {
+    padding-bottom: $gutter/4 !important;
+  }
+  .#{$grid}padding-d2,
+  .#{$grid}padding-v-d2,
+  .#{$grid}padding-top-d2 {
+    padding-top: $gutter/2 !important;
+  }
+  .#{$grid}padding-d2,
+  .#{$grid}padding-v-d2,
+  .#{$grid}padding-bottom-d2 {
+    padding-bottom: $gutter/2 !important;
+  }
+  .#{$grid}padding,
+  .#{$grid}padding-v,
+  .#{$grid}padding-top {
+    padding-top: $gutter !important;
+  }
+  .#{$grid}padding,
+  .#{$grid}padding-v,
+  .#{$grid}padding-bottom {
+    padding-bottom: $gutter !important;
+  }
+  .#{$grid}padding-2x,
+  .#{$grid}padding-v-2x,
+  .#{$grid}padding-top-2x {
+    padding-top: $gutter*2 !important;
+  }
+  .#{$grid}padding-2x,
+  .#{$grid}padding-v-2x,
+  .#{$grid}padding-bottom-2x {
+    padding-bottom: $gutter*2 !important;
+  }
+  // Horizontal paddings
+  .#{$grid}padding-d4,
+  .#{$grid}padding-h-d4,
+  .#{$grid}padding-right-d4 {
+    padding-right: $gutter/4 !important;
+  }
+  .#{$grid}padding-d2,
+  .#{$grid}padding-h-d2,
+  .#{$grid}padding-right-d2 {
+    padding-right: $gutter/2 !important;
+  }
+  .#{$grid}padding,
+  .#{$grid}padding-h,
+  .#{$grid}padding-right {
+    padding-right: $gutter !important;
+  }
+  .#{$grid}padding-2x,
+  .#{$grid}padding-h-2x,
+  .#{$grid}padding-right-2x {
+    padding-right: $gutter*2 !important;
+  }
+  .#{$grid}padding-d4,
+  .#{$grid}padding-h-d4,
+  .#{$grid}padding-left-d4 {
+    padding-left: $gutter/4 !important;
+  }
+  .#{$grid}padding-d2,
+  .#{$grid}padding-h-d2,
+  .#{$grid}padding-left-d2 {
+    padding-left: $gutter/2 !important;
+  }
+  .#{$grid}padding,
+  .#{$grid}padding-h,
+  .#{$grid}padding-left {
+    padding-left: $gutter !important;
+  }
+  .#{$grid}padding-2x,
+  .#{$grid}padding-h-2x,
+  .#{$grid}padding-left-2x {
+    padding-left: $gutter*2 !important;
+  }
+  .#{$grid}full-width {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  // No paddings
+  .#{$grid}no-padding-top,
+  .#{$grid}no-padding,
+  .#{$grid}no-padding-v {
+    padding-top: 0 !important;
+  }
+  .#{$grid}no-padding-bottom,
+  .#{$grid}no-padding,
+  .#{$grid}no-padding-v {
+    padding-bottom: 0 !important;
+  }
+  .#{$grid}no-padding-left,
+  .#{$grid}no-padding,
+  .#{$grid}no-padding-h {
+    padding-left: 0 !important;
+  }
+  .#{$grid}no-padding-right,
+  .#{$grid}no-padding,
+  .#{$grid}no-padding-h {
+    padding-right: 0 !important;
+  }
+  // Vertical margins
+  .#{$grid}margin-d4,
+  .#{$grid}margin-v-d4,
+  .#{$grid}margin-top-d4 {
+    margin-top: $gutter/4;
+  }
+  .#{$grid}margin-d4,
+  .#{$grid}margin-v-d4,
+  .#{$grid}margin-bottom-d4 {
+    margin-bottom: $gutter/4;
+  }
+  .#{$grid}margin-d2,
+  .#{$grid}margin-v-d2,
+  .#{$grid}margin-top-d2 {
+    margin-top: $gutter/2;
+  }
+  .#{$grid}margin-d2,
+  .#{$grid}margin-v-d2,
+  .#{$grid}margin-bottom-d2 {
+    margin-bottom: $gutter/2;
+  }
+  .#{$grid}margin,
+  .#{$grid}margin-v,
+  .#{$grid}margin-top {
+    margin-top: $gutter;
+  }
+  .#{$grid}margin,
+  .#{$grid}margin-v,
+  .#{$grid}margin-bottom {
+    margin-bottom: $gutter;
+  }
+  .#{$grid}margin-2x,
+  .#{$grid}margin-v-2x,
+  .#{$grid}margin-top-2x {
+    margin-top: $gutter*2;
+  }
+  .#{$grid}margin-2x,
+  .#{$grid}margin-v-2x,
+  .#{$grid}margin-bottom-2x {
+    margin-bottom: $gutter*2;
+  }
+  // Horizontal margins
+  .#{$grid}margin-d4,
+  .#{$grid}margin-h-d4,
+  .#{$grid}margin-right-d4 {
+    margin-right: $gutter/4;
+  }
+  .#{$grid}margin-d2,
+  .#{$grid}margin-h-d2,
+  .#{$grid}margin-right-d2 {
+    margin-right: $gutter/2;
+  }
+  .#{$grid}margin,
+  .#{$grid}margin-h,
+  .#{$grid}margin-right {
+    margin-right: $gutter;
+  }
+  .#{$grid}margin-2x,
+  .#{$grid}margin-h-2x,
+  .#{$grid}margin-right-2x {
+    margin-right: $gutter*2;
+  }
+  .#{$grid}margin-d4,
+  .#{$grid}margin-h-d4,
+  .#{$grid}margin-left-d4 {
+    margin-left: $gutter/4;
+  }
+  .#{$grid}margin-d2,
+  .#{$grid}margin-h-d2,
+  .#{$grid}margin-left-d2 {
+    margin-left: $gutter/2;
+  }
+  .#{$grid}margin,
+  .#{$grid}margin-h,
+  .#{$grid}margin-left {
+    margin-left: $gutter;
+  }
+  .#{$grid}margin-2x,
+  .#{$grid}margin-h-2x,
+  .#{$grid}margin-left-2x {
+    margin-left: $gutter*2;
+  }
+  // No margins
+  .#{$grid}no-margin-top,
+  .#{$grid}no-margin,
+  .#{$grid}no-margin-v {
+    margin-top: 0 !important;
+  }
+  .#{$grid}no-margin-bottom,
+  .#{$grid}no-margin,
+  .#{$grid}no-margin-v {
+    margin-bottom: 0 !important;
+  }
+  .#{$grid}no-margin-left,
+  .#{$grid}no-margin,
+  .#{$grid}no-margin-h {
+    margin-left: 0 !important;
+  }
+  .#{$grid}no-margin-right,
+  .#{$grid}no-margin,
+  .#{$grid}no-margin-h {
+    margin-right: 0 !important;
+  }
+/*
+  // Layout margins
+  .#{$grid}layout-margin-h  {
+    margin-left: #{'$' + $grid + 'layout-margin-h'};
+    margin-right: #{'$' + $grid + 'layout-margin-h'};
+  }
+*/
+}

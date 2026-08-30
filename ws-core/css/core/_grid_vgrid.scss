@@ -1,0 +1,10 @@
+// Display
+.hgrid,
+.maxgrid,
+.print {
+  display: none !important;
+}
+@include grid('vgrid-');
+@include box-model('vgrid-');
+@include align('vgrid-');
+@include distribute('vgrid-');

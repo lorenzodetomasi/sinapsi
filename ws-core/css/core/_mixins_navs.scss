@@ -1,0 +1,59 @@
+@mixin navs($grid){
+  .nav {
+    &.#{$grid}vertical,
+    &.#{$grid}horizontal {
+      li a {
+        padding-top: $navs-padding-top;
+        padding-bottom: $navs-padding-bottom;
+      }
+    }
+    &.#{$grid}vertical {
+      li a {
+        padding-left: $navs-padding-left;
+        padding-right: $navs-padding-right;
+      }
+    }
+    &.#{$grid}horizontal {
+      ul, ol {
+        li a {
+          padding-left: $navs-padding-left;
+          padding-right: $navs-padding-right;
+        }
+        &:first-child > li:first-child:not(.cta) > a {
+          padding-left: 0;
+        }
+        &:last-child > li:last-child:not(.cta) > a {
+          padding-right: 0;
+        }
+      }
+    }
+  }
+  .#{$grid}header-modal {
+    top: $vgrid-header-height;
+    left: 0;
+    display: none;
+    position: fixed;
+    z-index: 99;
+    width: 100%;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto;
+    @if $grid == "vgrid-" {
+      background: $vgrid-header-modal-background;
+    } @else {
+
+    }
+    &.nav.#{$grid}vertical {
+      ul, ol {
+        width: 100%;
+        li {
+          border-top: 1px solid $grigio-chiaro;
+          width: 100%;
+          a {
+
+          }
+        }
+      }
+    }
+  }
+}

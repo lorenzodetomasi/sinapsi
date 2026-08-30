@@ -1,0 +1,144 @@
+// Default backgrounds
+.background-black {
+  background-color: $nero;
+}
+.background-darkcolor,
+.background-black {
+  color: $color-on-black;
+  h1, h2, h3, h4, h5, h6 {
+    color: $headings-color-on-black;
+    a {
+      color: $headings-link-color-on-black;
+      &:hover,
+      &:active {
+        color: $headings-link-hover-color-on-black;
+      }
+    }
+  }
+  [itemprop="headline"]{
+    color: $bianco;
+  }
+  .problem,
+  .unique_selling_proposition {
+    color: $unique_selling_proposition-color-on-black;
+  }
+  a {
+    color: $text-link-color-on-black;
+    &:hover,
+    &:active {
+      color: $text-link-hover-color-on-black;
+    }
+  }
+  .button {
+    background: $buttons-background-on-black;
+    color: $buttons-color-on-black;
+    &:hover,
+    &:active {
+      background: $cta-hover-background-on-black;
+      color: $cta-hover-color-on-black;
+    }
+  }
+  li.cta a,
+  a.cta {
+    background: $cta-background-on-black;
+    color: $cta-color-on-black;
+    &:hover,
+    &:active {
+      background: $cta-hover-background-on-black;
+      color: $cta-hover-color-on-black;
+    }
+  }
+}
+.background-color-gray {
+  background-color: $grigio_chiaro;
+}
+.background-white {
+  background-color: $bianco;
+}
+.background-lightcolor,
+.background-white {
+  color: $nero;
+}
+a.color-black:link,
+.color-black {
+  color: $nero;
+}
+a.color-white:link,
+.color-white {
+  color: $bianco;
+}
+a.color1:link,
+.color1 {
+  color: $color1;
+}
+a.color1-lighter:link,
+.color1-lighter {
+  color: $color1-lighter;
+}
+.background-color1 {
+  background-color: $color1;
+}
+@if variable-exists(color1-darker) {
+  .background-color1-darker {
+    background-color: $color1-darker;
+  }
+}
+@if variable-exists(color1-lighter) {
+  .background-color1-lighter {
+    background-color: $color1-lighter;
+  }
+}
+a.color2:link,
+.color2 {
+  color: $color2;
+}
+.background-color2 {
+  background-color: $color2;
+}
+@if variable-exists(color2-lighter) {
+  a.color2-lighter:link,
+  .color2-lighter {
+    color: $color2-lighter;
+  }
+  .background-color2-lighter {
+    background-color: $color2-lighter;
+  }
+}
+@if variable-exists(color3) {
+  a.color3:link,
+  .color3 {
+    color: $color3;
+  }
+  .background-color3 {
+    background-color: $color3;
+  }
+  @if variable-exists(color3-lighter) {
+    .background-color3-lighter {
+      background-color: $color3-lighter;
+    }
+  }
+  @if variable-exists(color3-darker) {
+    .background-color3-darker {
+      background-color: $color3-darker;
+    }
+  }
+}
+@if variable-exists(color4) {
+  a.color4:link,
+  .color4 {
+    color: $color4;
+  }
+  .background-color4 {
+    background-color: $color4;
+  }
+  @if variable-exists(color4-lighter) {
+    .background-color4-lighter {
+      background-color: $color4-lighter;
+    }
+  }
+  @if variable-exists(color4-darker) {
+    .background-color4-darker {
+      background-color: $color4-darker;
+    }
+  }
+}

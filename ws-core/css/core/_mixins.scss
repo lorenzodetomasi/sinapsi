@@ -1,0 +1,35 @@
+@import
+  "mixins_grid",
+  "mixins_align",
+  "mixins_distribute",
+  "mixins_margin_padding",
+  "mixins_navs",
+  "mixins_forms",
+  "mixins_media";
+@mixin box-shadow($value) {
+  -webkit-box-shadow: $value;
+  -moz-box-shadow: $value;
+  box-shadow: $value;
+}
+@mixin box-sizing($value) {
+  -webkit-box-sizing: $value; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: $value;    /* Firefox, Gecko */
+  box-sizing: $value;
+}
+@mixin abbr-no-border {
+    text-decoration: none;
+    border-bottom: none;
+}
+@mixin screen-reader-text {
+  clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+  clip: rect(1px, 1px, 1px, 1px);
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+}
+@mixin text-tape() {
+  display: inline-block;
+  padding: 0 .8em;
+  margin-bottom: .2em;
+}

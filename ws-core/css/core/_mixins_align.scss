@@ -1,0 +1,194 @@
+/*
+Align container
+$horizontal: 'left' | 'center' | 'right' | 'justify' (stretch);
+$vertical: 'top' | 'baseline' | 'middle' (center) | 'bottom' | 'justify' (stretch);
+$method: text | flex | position | float;
+        @if $height != null {
+                height: $height;
+        }
+*/
+@mixin align-container($horizontal: null, $vertical: null, $method: null, $child-width: null, $child-height: null){
+  @if $method == 'text' {
+    @if $horizontal == 'left' {
+      text-align: left;
+    } @else if $horizontal == 'center' {
+      text-align: center;
+    } @else if $horizontal == 'right' {
+      text-align: right;
+    }
+  } @else if $method == 'flex' {
+    @if $vertical == 'top' {
+      align-items: flex-start;
+    } @else if $vertical == 'baseline' {
+      align-items: baseline;
+    } @else if $vertical == 'middle' {
+      align-items: center;
+    } @else if $vertical == 'bottom' {
+      align-items: flex-end;
+    } @else if $vertical == 'justify' {
+      align-items: stretch;
+    }
+    @if $horizontal == 'left' {
+      justify-content: flex-start;
+    } @else if $horizontal == 'center' {
+      justify-content: center;
+    } @else if $horizontal == 'right' {
+      justify-content: flex-end;
+    }
+  } @else if $method == 'position' {
+  } @else if $method == 'float' {
+    @if $horizontal == 'none' {
+      float: none;
+    } @else if $horizontal == 'left' {
+      float: left;
+    } @else if $horizontal == 'center' {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    } @else if $horizontal == 'right' {
+      float: right;
+    }
+  }
+}
+@mixin align-child($horizontal: null, $vertical: null, $method: null, $width: null, $height: null){
+// Fonti: http://www.w3.org/Style/Examples/007/center.en.html,
+// method: 'text' or 'inline' | 'float' | 'position' | 'flex';
+  @if $method == 'text' {
+
+  } @else if $method == 'flex' {
+
+  } @else if $method == 'position' {
+    @mixin vertical-align(){
+            transform-style: preserve-3d;
+            & > * {
+                    position: relative;
+                    top: 50%;
+                    transform: translateY(-50%);
+            }
+    }
+
+    @if $type == 'top-left' {
+            top: 0;
+            left: 0;
+    } @else if $type == 'top-center' {
+            top: 0;
+            margin: 0 auto;
+    } @else if $type == 'top-right' {
+            top: 0;
+            right: 0;
+    } @else if $type == 'middle-center' {
+    // Absolute center: http://www.smashingmagazine.com/2013/08/09/absolute-horizontal-vertical-centering-css/
+            width: 50%;
+            height: 50%;
+            overflow: auto;
+            margin: auto;
+            top: 0; left: 0; bottom: 0; right: 0;
+    } @else if $type == 'middle-left' {
+            margin: auto;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+    } @else if $type == 'middle-right' {
+            top: 0;
+            left: 0;
+    } @else if $type == 'bottom-left' {
+            bottom: 0;
+            left: 0;
+    } @else if $type == 'bottom-center' {
+            margin: 0 auto;
+            bottom: 0;
+    } @else if $type == 'bottom-full-width' {
+            left: 0; bottom: 0; right: 0;
+    } @else if $type == 'bottom-right' {
+            bottom: 0;
+            right: 0;
+    } @else if $type == 'full-height-child' {
+      display: flex;
+      & > * {
+        flex: 1;
+      }
+    }
+    @if $horizontal == 'left' {
+      left: 0;
+    } @else if $horizontal == 'center' {
+      left: 50%;
+      transform: translateX(-50%);
+    } @else if $horizontal == 'right' {
+      right: 0;
+    } @else if $horizontal == 'full' {
+      left: 0; right: 0;
+    }
+    @if $vertical == 'top' {
+      top: 0;
+    } @else if $vertical == 'middle' {
+      top: 50%;
+      transform: translateY(-50%);
+    } @else if $vertical == 'bottom' {
+      bottom: 0;
+    } @else if $vertical == 'full' {
+      bottom: 0; top: 0;
+    }
+  } @else if $method == 'float' {
+
+  }
+}
+@mixin align($grid){
+  // Text align
+  .#{$grid}text-align-left {
+    @include align-container('left', null, $method: 'text');
+  }
+  .#{$grid}text-align-center {
+    @include align-container('center', null, $method: 'text');
+  }
+  .#{$grid}text-align-right {
+    @include align-container('right', null, $method: 'text');
+  }
+  // Flex align
+  .flex {
+    &.#{$grid}align-top {
+      @include align-container(null, 'top', 'flex');
+    }
+    &.#{$grid}align-middle {
+      @include align-container(null, 'middle', 'flex');
+    }
+    &.#{$grid}align-baseline {
+      @include align-container(null, 'baseline', 'flex');
+    }
+    &.#{$grid}align-bottom {
+      @include align-container(null, 'bottom', 'flex');
+    }
+    &.#{$grid}align-left {
+      @include align-container('left', null, 'flex');
+    }
+    &.#{$grid}align-center {
+      @include align-container('center', null, 'flex');
+    }
+    &.#{$grid}align-right {
+      @include align-container('right', null, 'flex');
+    }
+  }
+  // Position align
+  .position {
+    & > * {
+      display: block;// useful if child is an inline element
+      position: absolute;
+    }
+  }
+  // Float align
+  .float {
+    &.#{$grid}align-none {
+      @include align-container('none', null, $method: 'float');
+      //margin: rem-calc(10px 5px 10px 0);
+    }
+    &.#{$grid}align-left {
+      @include align-container('left', null, $method: 'float');
+    }
+    &.#{$grid}align-center {
+      @include align-container('center', null, $method: 'float');
+    }
+    &.#{$grid}align-right {
+      @include align-container('right', null, $method: 'float');
+    }
+  }
+}

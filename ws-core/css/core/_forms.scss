@@ -1,0 +1,387 @@
+@import "../reset/normalize/forms";
+form {
+  margin: 0;
+  padding: 0;
+  border: 0 none;
+}
+// Fieldsets
+fieldset {
+  &.question {
+    padding: 0;
+    border: 0 none;
+  }
+  &.field {
+    legend {
+      margin: 0;
+      font-weight: normal;
+      border-top: none;
+    }
+  }
+  &.checkboxes,
+  &.checkimgboxes {
+    ul, ol {
+      margin-left: 0;
+      list-style: none;
+    }
+  }
+  &.checkimgboxes input {
+    clear: both;
+  }
+  legend.label {
+    float: left;
+    width: 100%;
+    & + * {
+      clear: both;
+    }
+  }
+}
+fieldset.fieldset,
+.fieldset {
+  margin-bottom: $gutter;
+  border: $fieldset-border;
+  legend {
+    color: $fieldset-legend-color;
+    padding: $fieldset-legend-padding;
+  }
+}
+// Fields
+.field,
+fieldset.field {
+  align-items: baseline;
+  margin: $field-margin;
+}
+fieldset.field {
+  padding: 0;
+  border: 0 none;
+}
+.field + .field,
+br + .field {
+  margin-top: 0;
+}
+.field:last-child {
+  margin-bottom: 0;
+}
+.input-group {
+  input + .button,
+  select + .button,
+  input + .link,
+  select + .link,
+  .button + .button {
+    align-self: center;
+    margin: 0;
+  }
+  .button + .button {
+    margin-left: 1px;
+  }
+}
+// Labels
+.label,
+legend.label {
+  padding: .5rem .5rem .5rem 0;
+  &.background {
+    padding: .5rem;
+  }
+  &.material-icons,
+  .material-icons {
+    padding: .25rem;
+    line-height: 1.2;
+  }
+  .help {
+    display: block;
+    font-size: .8em;
+  }
+}
+// Inputs
+.input {
+  display: inline-block;
+  &.flex1 {
+    input {
+      width: 100%;
+    }
+  }
+  small {
+    display: block;
+  }
+}
+input:not([type]),
+input[type="color"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"],
+input[type="week"],
+input[type="email"],
+input[type="month"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+input[type="tel"],
+input[type="text"],
+input[type="url"],
+textarea,
+select {
+  box-sizing: border-box;
+  min-width: 100px;
+  font-size: 1rem;
+  border: none;
+  border-bottom: $field-border-width solid $field-border-color;
+  border-radius: $field-border-radius;
+  padding: .5em;
+  outline: none;
+  background: $field-background;
+  box-shadow: none;
+  transition: all .3s;
+  &:hover,
+  &:focus,
+  &:active {
+    border-color: $field-hover-border-color;
+  }
+}
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="time"],
+input[type="week"] {
+  height: rem-calc(37px);
+}
+input[type="date"] {
+  width: 10em;
+}
+select {
+  -webkit-appearance: button;
+  padding: .5em;
+}
+select,
+.field.datalist {
+  background-image:
+    linear-gradient(60deg, transparent 50%, $field-border-color 50%),
+    linear-gradient(120deg, $field-border-color 50%, transparent 50%);
+//    linear-gradient(to right, $field-border-color, $field-border-color);
+  background-position:
+    calc(100% - 1.15em) calc(0.8em),
+    calc(100% - 0.75em) calc(0.8em);
+//    calc(100% - 2.5em) 0.2em;
+  background-size:
+    0.4em 0.7em,
+    0.4em 0.7em;
+//    1px 2em;
+  background-repeat: no-repeat;
+}
+select,
+.field.datalist {
+  &:hover,
+  &:focus {
+  background-image:
+    linear-gradient(60deg, transparent 50%, $field-hover-border-color 50%),
+    linear-gradient(120deg, $field-hover-border-color 50%, transparent 50%);
+//    linear-gradient(to right, $field-hover-border-color, $field-hover-border-color);
+  }
+}
+::-webkit-inner-spin-button {
+  color: $field-border-color;
+}
+::-webkit-calendar-picker-indicator {
+  color: $field-hover-border-color;
+  background: transparent;
+}
+input[type="search"] {
+        -webkit-appearance: textfield;
+}
+input[type="search"]::-webkit-search-decoration {
+        -webkit-appearance: none;
+}
+textarea {
+        overflow: auto;
+        vertical-align: top;
+}
+input,
+textarea {
+        background-image: -webkit-linear-gradient(hsla(0,0%,100%,0), hsla(0,0%,100%,0)); // Removing the inner shadow, rounded corners on iOS inputs
+}
+// radio, checkbox
+input[type="checkbox"],
+input[type="radio"] {
+        padding: 0;
+}
+.field.acceptance,
+.field.checkbox,
+.field.radio {
+  display: block;
+  padding-left: 1.7em;
+  .label {
+    box-sizing: border-box;
+    border-bottom: 2px solid transparent;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    .label-text,
+    .text {
+      flex: 1;
+      text-align: left;
+    }
+  }
+  [type="radio"]:not(:checked),
+  [type="radio"]:checked,
+  [type="checkbox"]:not(:checked),
+  [type="checkbox"]:checked {
+    display: none;
+//      position: absolute;
+//      left: -9999px;
+//      opacity: 0;
+  }
+  [type="radio"] + .label,
+  [type="checkbox"] + .label {
+    margin-left: -1.7em;
+    &:before,
+    &:after {
+      position: relative;
+      top: .2em;
+      content: '';
+      width: 1em;
+      height: 1em;
+      margin-right: .5em;
+      z-index: 0;
+      border: 2px solid $field-border-color;
+      transition: .2s;
+    }
+    &:after {
+      display: none;
+    }
+    .label-text,
+    .text {
+      position: relative;
+      top: -.05em;
+    }
+  }
+}
+// radio
+.field.radio {
+  [type="radio"]:not(:checked)+.label:before,
+  [type="radio"]:not(:checked)+.label:after {
+    border: 2px solid $field-border-color;
+  }
+  [type="radio"] + .label {
+    &:before,
+    &:after {
+      border-radius: 50%;
+      transition: .28s ease;
+    }
+  }
+  [type="radio"]:checked + .label {
+    &:before,
+    &:after {
+      background-color: $field-focus-border-color;
+      border-color: $field-focus-border-color;
+      background-color: $field-focus-border-color;
+    }
+  }
+}
+// checkbox
+.field.acceptance,
+.field.checkbox {
+  [type="checkbox"] + .label {
+    &:before,
+    &:after {
+      border-radius: 1px;
+    }
+  }
+  [type="checkbox"]:checked + .label {
+    &:before,
+    &:after {
+      top: 0px;
+      left: -5px;
+      margin-right: 1em;
+      width: .5em;
+      height: 1em;
+      border-top: 2px solid transparent;
+      border-left: 2px solid transparent;
+      border-right: 2px solid $field-border-color;
+      border-bottom: 2px solid $field-border-color;
+      -webkit-transform: rotate(40deg);
+      transform: rotate(40deg);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      -webkit-transform-origin: 100% 100%;
+      transform-origin: 100% 100%;
+    }
+  }
+  .checkbox-right {
+    [type="checkbox"] + .label {
+      &:after {
+        display: inline-block;
+        margin-left: .5em;
+      }
+      &:before {
+        display: none;
+      }
+    }
+  }
+}
+// datalist
+// Sources: https://select2.github.io/, http://jsfiddle.net/gx8f2zeu/
+.field.data-list,
+.field.select {
+  .input {
+    .material-icons {
+      position: absolute;
+      top: 0.2em;
+      right: 0;
+      color: $field-border-color;
+      font-size: 2em;
+    }
+    &:focus:after,
+    &:hover:after {
+      color: $field-hover-border-color;
+    }
+    input[type="text"] {
+      padding-right: 1.5em;
+    }
+  }
+}
+.field.data-list {
+  position: relative;
+}
+.data-list-options {
+  position: absolute;
+  margin-top: -$field-border-width;
+  z-index: 99;
+  box-sizing: border-box;
+  max-height: 320px;
+  overflow-y: auto;
+  border: $field-border-width solid $field-border-color;
+  background-color: $bianco;
+  ul, ol {
+    list-style: none;
+    margin: 0;
+  }
+  li {
+    box-sizing: border-box;
+    background-color: white;
+    &.selected,
+    &:hover {
+      background-color: $selected-option-background-color;
+    }
+    small {
+      color: silver;
+    }
+  }
+  a {
+    display: block;
+    padding: .5em;
+    &, &:hover {
+      text-decoration: none;
+      text-transform: none;
+    }
+    color: black;
+    .label {
+      display: block;
+    }
+  }
+  & > ul > li > a {
+    padding-left: .5em;
+    color: $color1;
+  }
+  & > ul > li > ul > li > a {
+    padding-left: 1em;
+  }
+}

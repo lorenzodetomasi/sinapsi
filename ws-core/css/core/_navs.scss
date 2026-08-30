@@ -1,0 +1,239 @@
+// Navs
+.nav,
+.button,
+.link,
+.tag,
+li.cta,
+.cta:not(li) {
+  @if variable-exists(navs-font-family) {
+    font-family: $navs-font-family;
+  }
+  @if variable-exists(navs-font-size) {
+    font-size: $navs-font-size;
+  }
+  @if variable-exists(navs-font-weight) {
+    font-weight: $navs-font-weight;
+  }
+  @if variable-exists(navs-text-transform) {
+    text-transform: $navs-text-transform;
+  }
+  line-height: $navs-line-height;
+}
+// .nav
+.nav {
+  ul,
+  ol {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    &.scroll-y {
+      overflow-y: auto;
+    }
+    li a {
+      &:hover,
+      &:active {
+        text-decoration: none;
+      }
+      .label {
+        @include navs-label-style();
+      }
+    }
+    &.no-padding-h {
+      ul, ol {
+        li a {
+          padding-left: 0;
+          padding-right: 0;
+        }
+      }
+    }
+  }
+}
+// Button, Call-to-action (CTA) and Link
+.tag {
+
+}
+
+.button,
+.link,
+.cta:not(li),
+li.cta a {
+  will-change: opacity, transform;
+  transition: all .3s ease-out;
+  border: none;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+  text-align: center;
+  text-decoration: none;
+  &:hover,
+  &:active {
+    text-decoration: none;
+  }
+  &:focus {
+    outline: none;
+  }
+}
+.button,
+.cta:not(li),
+li.cta a {
+  @include box-shadow($shadow-bottom);
+  //.waves-effect
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+  will-change: opacity, transform;
+  transition: all .3s ease-out;
+  &:hover,
+  &:active {
+    @include box-shadow($shadow-hover);
+  }
+  &[disabled] {
+    background-color: silver;
+    color: black;
+    @include box-shadow(none);
+    &:hover,
+    &:active {
+      @include box-shadow(none);
+    }
+  }
+}
+.button {
+  background: $buttons-background;
+  color: $buttons-color;
+  border-radius: $buttons-border-radius;
+  &:hover,
+  &:active {
+    background-color: $buttons-hover-background;
+    color: $buttons-hover-color;
+  }
+}
+.cta:not(li),
+li.cta a {
+  background: $cta-background;
+  color: $cta-color;
+  border-radius: $cta-border-radius;
+  &:hover,
+  &:active {
+    background: $cta-hover-background;
+    color: $cta-hover-color;
+  }
+}
+.link {
+  color: $link-color;
+  @include box-shadow(none);
+  &:not([class^="background-color"]) {
+    background-color: transparent;
+  }
+  &.first {
+    padding-left: 0;
+  }
+  &:hover,
+  &:active,
+  &.toggle-on {
+    color: $link-hover-color;
+    @include box-shadow(none);
+  }
+}
+.nav li a,
+.h48,
+.h36,
+.button,
+.link,
+.tag,
+.cta:not(li),
+li.cta a {
+  &.lowercase {
+    text-transform: none;
+  }
+  .material-icons {
+    font-size: $icon-size;
+    position: relative;
+    bottom: $icon-offset;
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+  .material-icons +.button-text,
+  .material-icons +.text {
+    flex: 1
+  }
+  .button-text,
+  .text {
+    text-align: left;
+    padding-top: 0.04em;
+    padding-bottom: 0.04em;
+  }
+  .material-icons + .button-text,
+  .material-icons + .text,
+  .button-text + .material-icons,
+  .text + .material-icons {
+    margin-left: .5em;
+  }
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.nav li a,
+.h36,
+.button,
+.link,
+.tag,
+.navs-padding {
+  padding: $navs-padding;
+}
+.cta:not(li),
+li.cta a {
+  padding: $cta-padding;
+}
+.nav.h48 li a,
+.h48:not(.nav) {
+  padding: $navs48-padding;
+}
+.nav li a,
+.button,
+.link,
+.tag,
+.cta:not(li),
+li.cta a {
+  abbr[title],
+  acronym[title] {
+    @include abbr-no-border;
+  }
+}
+a[title] abbr,
+abbr[title] a {
+  @include abbr-no-border;
+}
+p > .button,
+p > .link {
+  margin-right: $gutter/2;
+  margin-bottom: $gutter/2;
+}
+/*
+.button + .button,
+.link + .link,
+.cta + .cta,
+.button + .link,
+.button + .cta,
+.link + .button,
+.link + .cta,
+.cta + .button,
+.cta + .link {
+  margin-left: $gutter/2;
+}
+*/
+// Material icons
+.link .material-icons {
+    &.menu {
+      top: -1px;
+    }
+}

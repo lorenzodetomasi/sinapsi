@@ -1,0 +1,172 @@
+@function grid_column_width($columns, $span: 1){
+        @return (100/$columns) * $span * 1%;
+}
+@mixin flex-container(){
+  display: flex;
+  display: -webkit-flex;
+  flex-wrap: wrap;
+  & > * {
+    box-sizing: border-box;
+  }
+  & > .flex-grow1 {// equal width children
+    flex-grow: 1;
+  }
+  &.nowrap {
+    flex-wrap: nowrap;
+  }
+}
+@mixin position-container(){
+  position: relative;
+  width: 100%;
+}
+// http://quirksmode.org/css/clearing.html
+@mixin float-container(){
+  width: 100%;
+  overflow: hidden;
+}
+@mixin column($grid_columns, $row_columns, $gutter, $gutter_type: 'padding', $position: 'middle', $colspan: 1){
+//$grid_columns: number of total columns of the grid;
+//$row_columns: number of total columns in the row (depends on colspans);
+//$gutter: the space beetwen columns, [n]px, [n]em, [n]rem, [n]%;
+//$gutter_type: 'padding' (default) | 'margin';
+//$position: 'first' | 'middle' | 'last';
+//$colspan: [n], 1 (default), https://www.w3.org/wiki/HTML/Elements/td#Example_B;
+  @if $gutter == 0 {
+    width: grid_column_width($grid_columns) * $colspan;
+  } @else if $gutter > 0 {
+    @if $gutter_type == 'margin' {
+      @if $colspan == 1 {
+        width: calc((100% - #{$gutter} * (#{$row_columns} - 1)) / #{$grid_columns});
+      } @else if $colspan > 1 {
+        width: calc((100% - #{$gutter} * (#{$row_columns} - 1)) / #{$grid_columns} + #{$gutter} * (#{$colspan} - 1));
+      }
+    }
+    @if $position == 'first' {
+      @if $gutter_type == 'margin' {
+        margin-left: 0;
+        margin-right: $gutter/2;
+      } @else if $gutter_type == 'padding' {
+        width: calc((100% - #{$gutter} * (#{$row_columns} - 1)) / #{$grid_columns} + #{$gutter}/2 * #{$colspan});
+        padding-left: 0;
+        padding-right: $gutter/2;
+      }
+    } @else if $position == 'middle' {
+      @if $gutter_type == 'margin' {
+        width: calc((100% - #{$gutter} * (#{$row_columns} - 1)) / #{$grid_columns} + #{$gutter} * (#{$colspan} - 1));
+        margin-left: $gutter/2;
+        margin-right: $gutter/2;
+      } @else if $gutter_type == 'padding' {
+        width: calc((100% - #{$gutter} * (#{$row_columns} - 1)) / #{$grid_columns} + #{$gutter} * #{$colspan});
+        padding-left: $gutter/2;
+        padding-right: $gutter/2;
+      }
+    } @else if $position == 'last' {
+      @if $gutter_type == 'margin' {
+        margin-left: $gutter/2;
+        margin-right: 0;
+      } @else if $gutter_type == 'padding' {
+        width: calc((100% - #{$gutter} * (#{$row_columns} - 1)) / #{$grid_columns} + #{$gutter}/2 * #{$colspan});
+        padding-left: $gutter/2;
+        padding-right: 0;
+      }
+    }
+  }
+}
+@mixin columns($columns, $gutter: $gutter, $gutter_type: 'padding'){
+  width: 100%;
+  @if($columns == 1){
+    & > * {
+      width: 100%;
+    }
+  } @else {
+    @if($gutter == 0){
+      & > * {
+        @include column($columns, $columns, $gutter, 'padding', 'middle', 1);
+      }
+    } @else {
+      & > * {
+        @if $gutter_type == 'margin' {
+          @include column($columns, $columns, $gutter, 'margin', 'middle', 1);
+        } @else {
+          @include column($columns, $columns, $gutter, 'padding', 'middle', 1);
+        }
+      }
+      & > :nth-child(#{$columns}n+1) {// the first children of each row
+        @if $gutter_type == 'margin' {
+          @include column($columns, $columns, $gutter, 'margin', 'first', 1);
+        } @else {
+          @include column($columns, $columns, $gutter, 'padding', 'first', 1);
+        }
+      }
+      & > :nth-child(#{$columns}n) {// the last children of each row
+        @if $gutter_type == 'margin' {
+          @include column($columns, $columns, $gutter, 'margin', 'last', 1);
+        } @else {
+          @include column($columns, $columns, $gutter, 'padding', 'last', 1);
+        }
+      }
+    }
+  }
+}
+@mixin grid($grid){
+  // Display
+  .#{$grid}display-none,
+  .#{$grid}no {
+    display: none !important;
+  }
+  // Flex container
+  .#{$grid}flex {
+    @include flex-container;
+  }
+  .#{$grid}flex-no {
+    display: inherit;
+  }
+  .#{$grid}flex1 {
+    flex: 1;
+  }
+  // Position container
+  .#{$grid}position {
+    @include position-container;
+  }
+  // Float container
+  .#{$grid}float {
+    @include float-container;
+  }
+  // Widths
+  .#{$grid}width-full {
+    box-sizing: border-box;
+    width: 100%;
+  }
+  .#{$grid}width-half,
+  .#{$grid}w1of2 {
+    width: grid_column_width(2);
+  }
+  .#{$grid}w1of3 {
+    width: grid_column_width(3);
+  }
+  .#{$grid}w2of3 {
+    width: grid_column_width(3,2);
+  }
+  .#{$grid}w1of4 {
+    width: grid_column_width(4);
+  }
+  .#{$grid}w1of5 {
+    width: grid_column_width(5);
+  }
+  .#{$grid}w2 {
+    width: grid_column_width(2);
+  }
+  // Columns
+  .#{$grid}cols1 {
+    @include columns(1, $gutter, 'padding');
+  }
+  .#{$grid}cols2 {
+    @include columns(2, $gutter, 'padding');
+  }
+  .#{$grid}cols3 {
+    @include columns(3, $gutter, 'padding');
+  }
+  .#{$grid}cols4 {
+    @include columns(4, $gutter, 'padding');
+  }
+}
