@@ -254,6 +254,34 @@ function meetoo_contenuto($rel){
 }
 
 /**
+ * Una fascia d'età scritta come la scrive schema.org → [primo, ultimo] anno.
+ *
+ * «6-13» → [6,13];  «65-» e «65+» → [65,120];  «All Ages» → [0,120];  il resto null.
+ * Le stesse regole di `ws_listrule_eta()` in Gestione, che è quella che decide chi
+ * entra nelle liste: se le due leggessero diverso, la pagina direbbe una cosa e
+ * l'elenco un'altra. Sono venti righe in due posti perché il frontend non carica
+ * le librerie di ws-admin, e non è il caso che cominci a farlo per una fascia.
+ */
+function meetoo_fascia($v){
+	if(!is_string($v)){
+		return null;
+	}
+	$s = trim($v);
+	if($s === ''){
+		return null;
+	}
+	if(preg_match('/^(all\s*ages|tutte\s*le\s*et)/iu', $s)){
+		return array(0, 120);
+	}
+	if(!preg_match('/^(\d{1,3})\s*[-+]\s*(\d{1,3})?$/', $s, $m)){
+		return null;
+	}
+	$primo = (int)$m[1];
+	$ultimo = (isset($m[2]) and $m[2] !== '') ? (int)$m[2] : 120;
+	return $primo <= $ultimo ? array($primo, $ultimo) : null;
+}
+
+/**
  * L'icona di un contenuto, dichiarata dal contenuto stesso.
  *
  * `"meetoo:icon": {"class": "material-symbols-outlined", "name": "water"}`.

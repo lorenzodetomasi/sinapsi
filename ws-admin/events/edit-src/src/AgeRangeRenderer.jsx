@@ -82,9 +82,21 @@ const AgeRange = ({ data, handleChange, path, label, uischema, visible }) => {
     return metti(i, i);                                 // in mezzo: resta solo questa
   };
 
+  /* Una coppia storta — «da 3 a 1» — non arriva MAI al file: il modello tiene
+   * l'ultimo valore buono e il campo dice che cosa non va. Non si può però
+   * rifiutare mentre si scrive: per arrivare a 12 si passa da 1, e 1 con «da 3»
+   * è storto. Quindi si avvisa qui e si rimette a posto quando il campo si
+   * lascia — chi ha battuto una cosa che non sta in piedi ritrova quella di
+   * prima, non il vuoto. */
   const scriviLibero = (da, a) => {
     setLibero([da, a]);
-    handleChange(path, componi(da, a));
+    const v = componi(da, a);
+    const svuotato = String(da).trim() === '' && String(a).trim() === '';
+    if (v !== '' || svuotato) handleChange(path, v);
+  };
+  const chiudiLibero = () => {
+    const b = leggi(valore);
+    setLibero(b ? [String(b[0]), b[1] >= MAX ? '' : String(b[1])] : ['', '']);
   };
   const storto = libero[0] !== '' && libero[1] !== '' && componi(libero[0], libero[1]) === '';
 
@@ -122,19 +134,27 @@ const AgeRange = ({ data, handleChange, path, label, uischema, visible }) => {
             type="number" min="0" max={MAX} inputMode="numeric"
             value={libero[0]}
             onChange={(e) => scriviLibero(e.target.value, libero[1])}
+            onBlur={chiudiLibero}
           />
         </label>
         <label>
           a
           <input
-            type="number" min="0" max={MAX} inputMode="numeric" placeholder="in su"
+            type="number" min={libero[0] || 0} max={MAX} inputMode="numeric" placeholder="in su"
             value={libero[1]}
             onChange={(e) => scriviLibero(libero[0], e.target.value)}
+            onBlur={chiudiLibero}
           />
         </label>
-        <span className="age-esito">
+        {/* I diciotto anni non sono un confine di scuola — le superiori vanno da 14
+            a 18 — ma sono l'unico limite che a volte è la legge a mettere. Sta qui
+            e non fra le fasce perché non è una fascia: è dove finiscono i minori. */}
+        <button type="button" className="age-scorciatoia" onClick={() => scriviLibero('18', '')}>
+          Solo maggiorenni
+        </button>
+        <span className={storto ? 'age-esito age-storto' : 'age-esito'}>
           {storto
-            ? 'L’ultimo anno viene prima del primo.'
+            ? 'L’ultimo anno viene prima del primo: non lo scrivo.'
             : valore === ''
               ? 'Vuoto: nessuna età dichiarata.'
               : `Nel file: ${valore}`}

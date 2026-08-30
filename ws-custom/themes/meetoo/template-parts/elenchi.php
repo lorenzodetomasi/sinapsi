@@ -26,6 +26,19 @@ if(!defined('MEETOO_PASSO')){
 }
 
 /**
+ * L'invito che chiude un elenco vuoto.
+ *
+ * Una raccolta senza niente dentro non è un vicolo cieco: è il punto in cui chi
+ * legge sa qualcosa che noi non sappiamo — quello che succede nel quartiere lo
+ * vede lui prima di noi. Sta in una funzione sola perché la stessa frase compare
+ * in fondo a ogni parte di ogni raccolta, e cinque copie divergono al primo
+ * ripensamento.
+ */
+function meetoo_invito(){
+	return __('Vuoi contribuire a questa raccolta? Segnalaci quello che ritieni utile e interessante.');
+}
+
+/**
  * Le tre sezioni, con il loro nome e quanto ne arriva già scritto nella pagina.
  * `primi` è l'assaggio sulla pagina della zona; sulla pagina dell'elenco si parte
  * più larghi, perché è lì che uno è andato apposta.
@@ -67,7 +80,7 @@ function meetoo_sezioni($ampio = false){
 		'raccolta' => array(
 			'titolo' => __('In questa raccolta'), 'icona' => 'list', 'lista' => 'cards',
 			'primi' => 12,
-			'vuoto' => __('Questa raccolta è ancora vuota.'),
+			'vuoto' => __('Questa raccolta è ancora vuota.').' '.meetoo_invito(),
 			'sommario' => __('Che cosa c’è dentro'),
 		),
 		'archivio' => array(
@@ -354,6 +367,14 @@ function meetoo_percorsi($ent, $dove){
 		$categoria = (strpos($id, 'categories/') === 0);
 		$istanza = $categoria ? 'places/'.$dove.'/'.$slug : $id;
 		$href = meetoo_indirizzo($istanza);
+		/* «In preparazione» non vuol dire «la pagina non c'è»: vuol dire «qui non
+		 * c'è ancora niente». Una categoria può essere aperta — la sua istanza
+		 * esiste, con le sue regole — e non aver ancora raccolto nulla in questo
+		 * posto: aprirla costa un clic e restituisce un elenco vuoto, che è il
+		 * modo peggiore di dire «non ancora». Lo si dice prima, sul riquadro. */
+		if($href !== '' and meetoo_conta_raccolta(meetoo_contenuto($istanza)) === 0){
+			$href = '';
+		}
 		/* Nome e sommario si chiedono al documento: per una categoria al catalogo,
 		 * per un percorso a se stesso. Il riferimento nel contenitore può dire solo
 		 * `{"@id": …}` — ed è giusto così, perché il nome sta in fondo al
@@ -362,12 +383,19 @@ function meetoo_percorsi($ent, $dove){
 		$sua = meetoo_icona_di($istanza) ?: ($categoria ? meetoo_icona_di($id) : null);
 		$titolo = (isset($voce->name) ? trim((string)$voce->name) : '') ?: (string)($def['name'] ?? '');
 		$nota = (isset($voce->description) ? trim((string)$voce->description) : '') ?: (string)($def['description'] ?? '');
+		/* Una categoria d'ETÀ lo dichiara nel catalogo: `"meetoo:ageRange": "0-13"`.
+		 * È un dato e non un elenco di slug nel template perché serve a due cose in
+		 * una — dice quali categorie stanno insieme nella loro sezione, e in che
+		 * ordine (per età, non per alfabeto). Aggiungerne una domani è scrivere una
+		 * riga nel catalogo, non ritoccare il tema. */
+		$fascia = is_array($def) ? meetoo_fascia((string)($def['meetoo:ageRange'] ?? '')) : null;
 		$out[] = array(
 			'href' => $href,
 			'icona' => $sua ? $sua['name'] : 'route',
 			'classe' => $sua ? $sua['class'] : '',
 			'titolo' => $titolo !== '' ? $titolo : ucfirst(str_replace('-', ' ', $slug)),
 			'nota' => $nota,
+			'eta' => $fascia !== null ? $fascia[0] : null,
 		);
 	}
 	/* PRIMA QUELLO CHE SI PUÒ APRIRE. Le categorie dichiarate ma non ancora aperte
@@ -381,14 +409,60 @@ function meetoo_percorsi($ent, $dove){
 	return $out;
 }
 
-/** La sezione «Categorie e Percorsi», disegnata. Niente da mostrare, niente sezione. */
+/**
+ * Quante voci ha una raccolta: le sue, e quelle delle sue parti.
+ *
+ * Una raccolta divisa in parti — «Bambini e famiglie» con dentro le quattro fasce
+ * della scuola — non ha voci proprie: le hanno le parti. Contarle solo in cima
+ * direbbe «vuota» di una pagina piena.
+ */
+function meetoo_conta_raccolta($doc){
+	if(!is_array($doc)){
+		return 0;
+	}
+	$n = count((array)($doc['itemListElement'] ?? array()));
+	foreach((array)($doc['hasPart'] ?? array()) as $parte){
+		if(is_array($parte)){
+			$n += count((array)($parte['itemListElement'] ?? array()));
+		}
+	}
+	return $n;
+}
+
+/**
+ * Le categorie e i percorsi di un posto, disegnati.
+ *
+ * DUE SEZIONI, non una. L'età non è un tema: «Musica» e «Terza età» rispondono a
+ * due domande diverse — che cosa mi interessa, e per chi è — e mescolarle obbliga
+ * chi cerca «qualcosa per mio figlio» a leggere tutta la griglia. Le fasce vanno
+ * in fondo, per età crescente, che è l'unico ordine che hanno.
+ */
 function meetoo_sezione_percorsi($percorsi){
+	$temi = array();
+	$fasce = array();
+	foreach($percorsi as $p){
+		if(($p['eta'] ?? null) === null){
+			$temi[] = $p;
+		} else {
+			$fasce[] = $p;
+		}
+	}
+	// Per età crescente, aperte o no: qui l'ordine è l'anagrafe, non la disponibilità.
+	usort($fasce, function($a, $b){
+		return $a['eta'] <=> $b['eta'];
+	});
+	meetoo_griglia_percorsi('categorie', 'explore', __('Categorie e Percorsi'), $temi);
+	meetoo_griglia_percorsi('fasce-eta', 'diversity_1', __('Fasce d’età'), $fasce);
+}
+
+/** Una griglia di riquadri. Niente da mostrare, niente sezione. */
+function meetoo_griglia_percorsi($id, $icona, $titolo, $percorsi){
 	if(!count($percorsi)){
 		return;
 	}
 ?>
-				<section id="categorie" class="mt-sezione">
-					<h2 class="sec-head"><?php echo mt_icona('explore'); ?><?php _e('Categorie e Percorsi'); ?></h2>
+				<section id="<?php echo mt_esc($id); ?>" class="mt-sezione">
+					<h2 class="sec-head"><?php echo mt_icona($icona); ?><?php echo mt_esc($titolo); ?></h2>
 					<div class="grid">
 <?php foreach($percorsi as $p){
 	if($p['href'] !== ''){

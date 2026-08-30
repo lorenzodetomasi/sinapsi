@@ -112,9 +112,9 @@ if($serie){
 			$nota = trim((string)($parte->description ?? ''));
 			$cfg['titolo'] = $nome !== '' ? $nome : sprintf(__('Parte %d'), $n + 1);
 			$cfg['icona'] = 'list';
-			$cfg['vuoto'] = $nota !== ''
+			$cfg['vuoto'] = ($nota !== ''
 				? sprintf(__('Ancora niente qui. %s'), $nota)
-				: __('Ancora niente in questa parte.');
+				: __('Ancora niente in questa parte.')).' '.meetoo_invito();
 			/* UNA PARTE FATTA DI EVENTI non è un elenco di titoli: è la stessa cosa
 			 * che si vede sulla pagina di un gruppo — i prossimi, quelli che si
 			 * ripetono, e il passato solo se lo si chiede. Un elenco piatto mette

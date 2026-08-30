@@ -140,7 +140,9 @@ export const schema = {
     timezone: { type: 'string', title: 'Fuso orario', format: 'timezone' },
     startDate: { type: 'string', format: 'date-time', title: 'Dal' },
     endDate: { type: 'string', format: 'date-time', title: 'al' },
-    typicalAgeRange: { type: 'string', title: "Fascia d'età" },
+    // «Adatto a», non «riservato a»: la fascia dice chi ci sta bene, e chi la
+    // dichiara stretta sta già dicendo che l'evento è costruito su quegli anni.
+    typicalAgeRange: { type: 'string', title: 'Questo evento è adatto a' },
     eventStatus: { type: 'string', title: 'Stato evento', oneOf: EVENT_STATUS },
     eventAttendanceMode: { type: 'string', title: 'Modalità', oneOf: ATTENDANCE_MODE },
     /* «Posti limitati» non finisce nel contenuto: e' una domanda che si fa

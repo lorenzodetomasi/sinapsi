@@ -563,6 +563,15 @@ button.primary { margin-top: var(--sp-md); }
 .pane .age-range .age-libero input[type='number'] { width: 4.5rem; margin: 0; }
 .age-oppure { color: var(--text-dim); font-size: 0.875rem; }
 .age-esito { color: var(--text-dim); font-size: 0.8125rem; }
+.age-esito.age-storto { color: var(--danger, #e5484d); }
+/* Scorciatoia, non azione: `.pane button` veste tutti i pulsanti del modulo come
+ * comandi pieni, e questo non lo è — scrive un valore, come le fasce accanto. */
+.age-range .age-scorciatoia {
+  padding: 0.15rem 0.6rem; font: inherit; font-size: 0.8125rem; font-weight: 400;
+  background: transparent; color: var(--text-dim);
+  border: 1px solid var(--border); border-radius: var(--r-pill); cursor: pointer;
+}
+.age-range .age-scorciatoia:hover { background: transparent; border-color: var(--accent); color: var(--accent); }
 .age-pulisci {
   display: inline-flex; align-items: center; justify-content: center;
   width: 1.5rem; height: 1.5rem; padding: 0;

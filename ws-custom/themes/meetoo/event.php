@@ -74,16 +74,11 @@ function mt_modalita($v){
  */
 function mt_eta($v){
 	$s = trim((string)$v);
-	if($s === ''){ return ''; }
-	if(preg_match('/^(all\s*ages|tutte\s*le\s*et)/iu', $s)){ return __('Tutte le età'); }
-	if(!preg_match('/^(\d{1,3})\s*[-+]\s*(\d{1,3})?$/', $s, $m)){ return $s; }
-	$primo = (int)$m[1];
-	if(!isset($m[2]) or $m[2] === ''){
-		return $primo <= 0 ? __('Tutte le età') : sprintf(__('Da %d anni in su'), $primo);
-	}
-	$ultimo = (int)$m[2];
-	if($ultimo < $primo){ return $s; }
-	return sprintf(__('Da %d a %d anni'), $primo, $ultimo);
+	$f = meetoo_fascia($s);
+	if($f === null){ return $s; }               // scritta a modo suo: si mostra com'è
+	if($f[0] <= 0 and $f[1] >= 120){ return __('Tutte le età'); }
+	if($f[1] >= 120){ return sprintf(__('Da %d anni in su'), $f[0]); }
+	return sprintf(__('Da %d a %d anni'), $f[0], $f[1]);
 }
 
 /**
