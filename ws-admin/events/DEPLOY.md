@@ -179,15 +179,19 @@ letto **prima sulla voce di lista** e poi sul membro.
 («^BookCrossing» prende anche «BookCrossingPlace»). La distinzione che mancava al primo giro, quando
 c'era un `contains` ambiguo.
 
-Le due sole clausole che JSON Schema non ha sono le **fasce d'età**, `ageWithin` e `ageOverlaps`:
-`{"field": "typicalAgeRange", "ageWithin": "6-10"}` prende chi è costruito su quegli anni,
-`{"field": "typicalAgeRange", "ageOverlaps": "0-13"}` chi li tocca soltanto — comprese le fasce
-aperte come «0-» (tutte le età), che con `ageWithin` non entrerebbero in nessuna fascia, ed è giusto:
-«per tutti» non vuol dire «per un bambino di sei anni». Sono aritmetica su un testo — «6-13», «11-»
+Le sole clausole che JSON Schema non ha sono le **fasce d'età**, `ageOverlaps`, `ageTargets` e
+`ageWithin`. `ageOverlaps: "0-13"` è la lista larga: prende chi tocca quegli anni, «0-» (tutte le
+età) compreso, ed è giusto — un evento aperto a tutti è adatto anche ai bambini. `ageTargets:
+"14-18"` è la lista di UNA fascia: tocca quegli anni **e** dichiara qualcosa. I due pezzi servono
+tutti e due, e la prova è sui contenuti veri: con il solo «dentro» (`ageWithin`) **tutte e otto le
+fasce restavano vuote**, perché gli intervalli che si scrivono davvero — «0-13», «14-» —
+attraversano le fasce o sono aperti verso l'alto; con il solo «tocca», «0-» sarebbe entrato in tutte
+e otto e ogni fascia sarebbe diventata l'intero calendario. `ageWithin` resta per il caso stretto.
+Sono aritmetica su un testo — «6-13», «11-»
 — e la regex che ci vorrebbe altrimenti (`^(?:[0-9]|1[0-3])\s*-\s*(?:…)$`) si scrive una volta e non
 si rilegge più: la stessa ragione per cui il `required` lo mette il compilatore. `ws_listrule_compile()`
-le traduce lo stesso in un `pattern`, enumerando le coppie di anni ammesse; **provata l'equivalenza fra
-l'aritmetica e il pattern generato su 223.335 casi — tutte le fasce scrivibili per 15 regole: nessuna
+le traduce lo stesso in un `pattern`, enumerando le coppie di anni ammesse; **provata l’equivalenza fra
+l'aritmetica e il pattern generato su 387.114 casi — tutte le fasce scrivibili per 26 regole: nessuna
 differenza**.
 Si scrivono in forma COMPATTA — `{"field": "additionalType", "const": "BookCrossing"}` — e
 `ws_listrule_compile()` le traduce nello JSON Schema equivalente. Perché non JSON Schema scritto a

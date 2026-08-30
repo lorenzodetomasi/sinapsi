@@ -75,23 +75,41 @@ if (!function_exists('ws_listrule_match')) {
      * più. L'aritmetica sta qui, una volta per tutte, come il `required` e il caso
      * stringa-o-array:
      *
-     *   { "field":"typicalAgeRange", "ageWithin":   "6-10" }   DENTRO   (pensato per)
-     *   { "field":"typicalAgeRange", "ageOverlaps": "0-13" }   TOCCA    (adatto a)
+     *   { "field":"typicalAgeRange", "ageOverlaps": "0-13" }   TOCCA     (adatto a)
+     *   { "field":"typicalAgeRange", "ageTargets":  "14-18" }  RIGUARDA  (la lista di fascia)
+     *   { "field":"typicalAgeRange", "ageWithin":   "6-10" }   DENTRO    (stretto)
      *
-     * Sono due liste diverse e servono tutte e due. `ageWithin` è la fascia: ci entra
-     * chi è costruito su quegli anni. `ageOverlaps` è la lista larga: ci entra anche
-     * «0-», tutte le età — che con `ageWithin` non entrerebbe in nessuna fascia, ed è
-     * giusto, «per tutti» non vuol dire «per un bambino di sei anni».
+     * `ageOverlaps` è la lista larga: ci entra anche «0-», tutte le età, ed è giusto —
+     * un evento aperto a tutti è adatto anche ai bambini.
+     *
+     * `ageTargets` è la lista di UNA fascia: tocca quegli anni E dichiara qualcosa.
+     * I due pezzi servono tutti e due. Senza il primo, «14-» (dai quattordici in su)
+     * non entrerebbe da nessuna parte, perché aperto verso l'alto non sta DENTRO
+     * nessuna fascia: provato sui contenuti veri, tutte e otto le fasce vuote, anche
+     * quelle dei bambini. Senza il secondo, «0-» entrerebbe in tutte e otto e ogni
+     * fascia diventerebbe l'intero calendario: «per tutti» non è una dichiarazione di
+     * pubblico, è la sua assenza.
+     *
+     * `ageWithin` resta per il caso stretto — chi è costruito ESATTAMENTE su quegli
+     * anni — ma sui contenuti veri non lo usa nessuna lista: è troppo severo perché
+     * gli intervalli che si scrivono davvero (0-13, 14-) attraversano le fasce.
      */
 
     /** L'ultimo anno che contiamo: oltre, «e oltre». */
     function ws_listrule_eta_max(): int { return 120; }
 
-    /** Quale dei due operatori porta questa clausola? '' se nessuno. */
+    /** Quale dei tre operatori porta questa clausola? '' se nessuno. */
     function ws_listrule_eta_quale(array $c): string {
         if (array_key_exists('ageWithin', $c))   return 'ageWithin';
         if (array_key_exists('ageOverlaps', $c)) return 'ageOverlaps';
+        if (array_key_exists('ageTargets', $c))  return 'ageTargets';
         return '';
+    }
+
+    /** «Tutte le età» — [0,120] — non è una dichiarazione di pubblico: è la sua
+     *  assenza detta a voce alta. Le liste di fascia la lasciano fuori. */
+    function ws_listrule_eta_universale(array $f): bool {
+        return $f[0] <= 0 && $f[1] >= ws_listrule_eta_max();
     }
 
     /** Il testo di una fascia → [primo, ultimo] anno; `null` se fascia non è.
@@ -117,9 +135,9 @@ if (!function_exists('ws_listrule_match')) {
         $f = ws_listrule_eta($v);
         $r = ws_listrule_eta((string)$c[$quale]);
         if ($f === null || $r === null) return false;
-        return $quale === 'ageWithin'
-            ? ($f[0] >= $r[0] && $f[1] <= $r[1])          // la fascia sta dentro
-            : ($f[0] <= $r[1] && $f[1] >= $r[0]);         // le due si toccano
+        if ($quale === 'ageWithin')  return $f[0] >= $r[0] && $f[1] <= $r[1];   // dentro
+        if ($quale === 'ageTargets' && ws_listrule_eta_universale($f)) return false;
+        return $f[0] <= $r[1] && $f[1] >= $r[0];                                // si toccano
     }
 
     /** Lo stesso test scritto come `pattern`, per chi la regola la valuta con JSON
@@ -136,22 +154,29 @@ if (!function_exists('ws_listrule_match')) {
         $r      = ws_listrule_eta((string)($c[$quale] ?? ''));
         if ($r === null) return '(?!)';                   // regola illeggibile: non prende nulla
         $max = ws_listrule_eta_max();
-        // DENTRO: primo e ultimo stanno tutti e due nella fascia della regola.
-        // TOCCA:  il primo non supera l'ultimo anno della regola, e l'ultimo arriva
-        //         almeno al primo. «11-» (ultimo assente) tocca sempre, dentro no.
-        $primi   = $dentro ? range($r[0], $r[1]) : range(0, $r[1]);
-        $aperto  = $dentro ? ($r[1] >= $max) : true;
-        $gruppi  = [];
+        // DENTRO:   primo e ultimo stanno tutti e due nella fascia della regola.
+        // TOCCA:    il primo non supera l'ultimo anno della regola, e l'ultimo arriva
+        //           almeno al primo. «11-» (ultimo assente) tocca sempre, dentro no.
+        // RIGUARDA: come TOCCA, meno «0-» e «0-120» — la fascia universale, che con
+        //           primo 0 si riconosce dal solo ultimo: aperto, o l'ultimo anno.
+        $primi  = $dentro ? range($r[0], $r[1]) : range(0, $r[1]);
+        $gruppi = [];
         foreach ($primi as $a) {
-            $da   = $dentro ? $a : max($a, $r[0]);
-            $fino = $dentro ? $r[1] : $max;
+            $da     = $dentro ? $a : max($a, $r[0]);
+            $fino   = $dentro ? $r[1] : $max;
+            $aperto = $dentro ? ($r[1] >= $max) : true;
+            if ($quale === 'ageTargets' && $a <= 0) {
+                $fino   = $max - 1;   // «0-120» è universale
+                $aperto = false;      // «0-» pure
+            }
             if ($da > $fino) continue;
             $ultimi = '(?:' . implode('|', range($da, $fino)) . ')' . ($aperto ? '?' : '');
             $gruppi[] = $a . '\s*[-+]\s*' . $ultimi;
         }
         $p = $gruppi ? '^\s*(?:' . implode('|', $gruppi) . ')\s*$' : '(?!)';
-        // «All Ages» è [0,120]: tocca qualunque fascia, ma sta dentro solo il tutto.
-        if (!$dentro || ($r[0] <= 0 && $r[1] >= $max)) {
+        // «All Ages» è [0,120]: tocca qualunque fascia, ma sta dentro solo il tutto —
+        // e per una lista di fascia è proprio quello che non si vuole.
+        if ($quale === 'ageOverlaps' || ($dentro && $r[0] <= 0 && $r[1] >= $max)) {
             $p = '(?i:^\s*(?:all\s*ages|tutte\s*le\s*et).*$)|' . $p;
         }
         return $p;
