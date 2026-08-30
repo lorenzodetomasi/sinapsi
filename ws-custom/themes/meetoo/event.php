@@ -283,7 +283,7 @@ function mt_sinonimi_tipo($tipo){
 		'ScreeningEvent' => array('cinema', 'proiezione', 'proiezioni'),
 		'ChildrensEvent' => array('per bambini', 'bambini e famiglie', 'bambini'),
 		'BusinessEvent' => array('lavoro', 'lavoro e opportunita', 'business'),
-		'Festival' => array('festival', 'sagre, feste, palii', 'sagra', 'festa'),
+		'Festival' => array('festival', 'sagre, fiere e festival', 'sagra', 'fiera', 'festa'),
 		'FoodEvent' => array('cibo', 'gastronomia'),
 		'SportsEvent' => array('sport'),
 		'EducationEvent' => array('formazione', 'corso', 'corsi'),
