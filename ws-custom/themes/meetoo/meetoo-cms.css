@@ -127,6 +127,15 @@
 .mt-footer-voci a:hover { text-decoration: underline; }
 .mt-footer-firma { margin: 0; font-size: .9rem; }
 
+/* ---------- Gruppo verificato ----------
+   Il segno sta accanto al nome, alla sua altezza, e non lo sovrasta: dice «dietro
+   c'è qualcuno che risponde», non «guarda qui». */
+.mt-verificato {
+  display: inline-flex; align-items: center; vertical-align: baseline;
+  margin-left: 0.3em; color: var(--color-link);
+}
+.mt-verificato .material-symbols-outlined { font-size: 0.72em; line-height: 1; }
+
 /* ---------- Briciole: la casa è un'icona ---------- */
 /* Il nome resta nel markup, ma non a schermo: chi legge con la voce lo sente, chi
    guarda vede una casa. `clip` e non `display:none`, che le tecnologie assistive

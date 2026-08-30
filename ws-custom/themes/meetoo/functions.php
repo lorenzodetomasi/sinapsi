@@ -226,6 +226,20 @@ function meetoo_icona_nodo($nodo){
 }
 
 /**
+ * La cartella dei contenuti di QUESTO sito, in QUESTA lingua.
+ *
+ * Si ricava dalla richiesta — `meetoo/it_IT/…` — e non si scrive a mano da nessuna
+ * parte: il nome del sito è un dato della rotta, non una costante del tema. Chi la
+ * scriveva a mano leggeva i contenuti di «meetoo» anche quando il tema girava per
+ * un altro sito.
+ */
+function meetoo_radice_contenuti(){
+	global $ws_query;
+	$pezzi = explode('/', (string)($ws_query['content'] ?? ''));
+	return ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/'.$pezzi[0].'/'.($pezzi[1] ?? ws_locale());
+}
+
+/**
  * Un contenuto, letto dal disco e tenuto da parte.
  *
  * Serve alle card che linkano a qualcos'altro e vogliono sapere una cosa sola —
@@ -234,7 +248,6 @@ function meetoo_icona_nodo($nodo){
  * scritto, e passare dall'albero XML per leggere un campo sarebbe un giro lungo.
  */
 function meetoo_contenuto($rel){
-	global $ws_query;
 	static $letti = array();
 	$rel = trim((string)$rel, '/');
 	if($rel === ''){
@@ -243,9 +256,7 @@ function meetoo_contenuto($rel){
 	if(array_key_exists($rel, $letti)){
 		return $letti[$rel];
 	}
-	$pezzi = explode('/', (string)$ws_query['content']);
-	$radice = ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/'.$pezzi[0].'/'.($pezzi[1] ?? ws_locale());
-	$file = "$radice/$rel/index.json";
+	$file = meetoo_radice_contenuti()."/$rel/index.json";
 	$doc = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
 	if(is_array($doc) and isset($doc['mainEntity']) and is_array($doc['mainEntity'])){
 		$doc = $doc['mainEntity'];
@@ -343,7 +354,57 @@ function meetoo_puo_modificare(){
 	if(!is_array($doc)){
 		return false;
 	}
-	return ws_can_edit($doc, (string)$utente['uid'], (string)$utente['role']);
+	return ws_can_edit($doc, (string)$utente['uid'], (string)$utente['role'], meetoo_gruppi_gestiti());
+}
+
+/**
+ * I gruppi che chi sta guardando gestisce.
+ *
+ * È il legame che rende «organizzatore verificato» una cosa dicibile: un gruppo
+ * nomina in `meetoo:manager` chi lo cura, e da lì discende tutto il resto — la
+ * penna sugli eventi del gruppo, il «+» per pubblicarne di nuovi, un domani il
+ * badge e il piano. Si chiede una volta sola per pagina: la risposta richiede di
+ * aprire i file dei gruppi, e sono gli stessi per tutta la richiesta.
+ */
+function meetoo_gruppi_gestiti(){
+	static $miei = null;
+	if($miei !== null){
+		return $miei;
+	}
+	$utente = meetoo_utente();
+	if(!is_array($utente) or !function_exists('ws_gruppi_gestiti')){
+		return $miei = array();
+	}
+	return $miei = ws_gruppi_gestiti(meetoo_radice_contenuti(), (string)$utente['uid']);
+}
+
+/**
+ * Questa persona può creare una cosa nuova di questo tipo?
+ *
+ * Domanda diversa da «può modificare», e finora non se la faceva nessuno: dal sito
+ * non si poteva creare niente, l'unico collegamento a un editor era la penna su
+ * qualcosa che esisteva già. La risposta la dà `ws_can_create()`, la stessa che
+ * risponderà al momento del salvataggio.
+ */
+function meetoo_puo_creare($tipo = 'events'){
+	$utente = meetoo_utente();
+	if(!is_array($utente) or !function_exists('ws_can_create')){
+		return false;
+	}
+	return ws_can_create($tipo, (string)$utente['uid'], (string)$utente['role'], meetoo_gruppi_gestiti());
+}
+
+/**
+ * Dove si va per creare, '' se non c'è ancora dove andare.
+ *
+ * Come per la penna: si offre solo ciò che un editor sa davvero aprire. Oggi gli
+ * eventi; luoghi e gruppi quando avranno il loro (tappe 2 e 3).
+ */
+function meetoo_url_crea($tipo = 'events'){
+	if($tipo !== 'events'){
+		return '';
+	}
+	return rtrim(ws_root_url(), '/').'/ws-admin/events/edit/';
 }
 
 /**
@@ -561,7 +622,7 @@ function meetoo_utente(){
 	}
 	// Le preferenze stanno sul profilo, non nel browser: valgono anche da un altro
 	// computer. Se il profilo non c'è ancora, restano quelle di partenza.
-	$profilo = ws_user_get(ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/meetoo/'.ws_locale(), $u['uid']);
+	$profilo = ws_user_get(meetoo_radice_contenuti(), $u['uid']);
 	return $chi = array(
 		'uid' => $u['uid'],
 		'name' => $u['name'] ?: $u['email'],

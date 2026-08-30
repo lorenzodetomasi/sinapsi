@@ -135,12 +135,25 @@ if (!is_array($inviato)) {
 // prende comunque l'entità. Il guscio di pagina lo mette il server (sotto).
 $doc = ws_wrap_entity($inviato);
 
-// Se l'evento esiste già: gate creator/contributor.
+// Chi è di casa: i gruppi che questa persona gestisce. Servono a tutte e due le
+// domande — chi può creare, e chi può modificare quello che il gruppo organizza.
+$gruppi = function_exists('ws_gruppi_gestiti') ? ws_gruppi_gestiti($base, $user['uid']) : [];
+
+// Se l'evento esiste già: gate creator/contributor/gruppo.
 $storedDoc = $exists ? json_decode((string)@file_get_contents($file), true) : null;
 $stored = is_array($storedDoc) ? ws_wrap_entity($storedDoc) : null;
-if (is_array($stored) && !ws_can_edit($stored, $user['uid'], $user['role'])) {
+if (is_array($stored) && !ws_can_edit($stored, $user['uid'], $user['role'], $gruppi)) {
     http_response_code(403);
-    echo json_encode(['error' => 'Non sei autorizzato a modificare questo evento (creator: ' . ws_ref_id($stored['creator'] ?? null) . '). Chiedi di essere aggiunto ai contributor.']);
+    echo json_encode(['error' => 'Non sei autorizzato a modificare questo evento (creator: ' . ws_ref_id($stored['creator'] ?? null) . '). Chiedi di essere aggiunto ai contributor, oppure fatti nominare fra chi gestisce il gruppo che lo organizza.']);
+    exit;
+}
+// Se è NUOVO: la porta d'ingresso ha una serratura. Mancava del tutto — il gate qui
+// sopra scatta solo su ciò che esiste già, quindi chiunque avesse fatto login poteva
+// creare. Finché non c'era un «+» da nessuna parte la cosa era teorica; adesso il «+»
+// c'è, e la stessa regola che decide se mostrarlo decide se accettare il salvataggio.
+if (!is_array($stored) && !ws_can_create('events', $user['uid'], $user['role'], $gruppi)) {
+    http_response_code(403);
+    echo json_encode(['error' => 'Per pubblicare un evento devi gestire un gruppo su Meetoo. Scrivici e ti mettiamo in contatto con il tuo.']);
     exit;
 }
 

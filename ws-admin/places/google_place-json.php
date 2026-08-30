@@ -62,30 +62,16 @@ function ws_read_stored($id) {
     return [$gid, $stored, false];
 }
 
-// --- Persone (creator/author/contributor) come riferimenti schema.org ---
-function ws_person_ref($uid) { return ['@type' => 'Person', '@id' => "users/$uid"]; }
-// Estrae "users/<uid>" da un riferimento (oggetto {@id} o stringa).
-function ws_ref_id($x) {
-    if (is_array($x)) return (string)($x['@id'] ?? '');
-    return is_string($x) ? $x : '';
-}
-// Normalizza contributor (singolo o lista) in array di "users/<uid>".
-function ws_ref_ids($x) {
-    if (!is_array($x)) return [];
-    $list = (isset($x['@id']) || isset($x['@type'])) ? [$x] : $x; // oggetto singolo → lista
-    $out = [];
-    foreach ($list as $r) { $id = ws_ref_id($r); if ($id !== '') $out[] = $id; }
-    return $out;
-}
-// Chi può modificare un'entità: super-admin/admin sempre; altrimenti creator o
-// contributor. Un item legacy senza creator è aperto (coerente col gate del save).
-function ws_can_edit($entity, $userUid, $userRole) {
-    if (in_array($userRole, ['admin', 'super-admin'], true)) return true;
-    $creatorId = ws_ref_id($entity['creator'] ?? null);
-    if ($creatorId === '') return true;
-    $me = "users/$userUid";
-    return $creatorId === $me || in_array($me, ws_ref_ids($entity['contributor'] ?? null), true);
-}
+/* Persone e permessi: la regola sta in un posto solo.
+ *
+ * Qui c'era una SECONDA copia di `ws_ref_id`, `ws_ref_ids` e `ws_can_edit`, scritta
+ * a mano e già divergente da quella della libreria (il `ws_ref_ids` locale non
+ * reggeva il null). Due copie della regola che dice chi può toccare che cosa sono
+ * due regole: la prima volta che se ne cambia una, l'altra continua a rispondere
+ * come prima, e nessuno se ne accorge finché non è tardi. Per giunta i nomi non
+ * erano protetti da `function_exists`, quindi bastava che questo file e la libreria
+ * finissero nella stessa richiesta per fermare tutto con un errore fatale. */
+require_once __DIR__ . '/../lib/ws-auth.php';
 // @id → percorso sicuro sotto it_IT (solo places/organizations, niente traversal).
 function ws_id_to_path($id) {
     if (!is_string($id) || $id === '') return null;

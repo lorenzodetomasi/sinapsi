@@ -157,14 +157,84 @@ if (!function_exists('ws_ref_ids')) {
     }
 }
 
-// Può l'utente modificare questa entità? admin/super-admin sempre; altrimenti solo
-// se è creator o tra i contributor; se non c'è creator (legacy) → sì.
+/* ---- Chi è di casa --------------------------------------------------------
+ *
+ * Un gruppo dice chi lo gestisce: `meetoo:manager` elenca le persone che ne curano
+ * la scheda e pubblicano a suo nome. È il legame che mancava, e da lui dipendono
+ * tre cose che sembrano lontane fra loro: chi ha il diritto di creare qualcosa,
+ * chi ha il badge verificato (e riceve la fattura), e la differenza fra un evento
+ * organizzato da un gruppo e un incontro proposto da chi partecipa.
+ *
+ *   "meetoo:manager": [ { "@type": "Person", "@id": "users/1004491…" } ]
+ */
+
+/** I gruppi che questa persona gestisce, come @id. */
+if (!function_exists('ws_gruppi_gestiti')) {
+    function ws_gruppi_gestiti(string $base, string $uid): array {
+        static $letti = [];
+        if ($uid === '') return [];
+        $chiave = "$base|$uid";
+        if (isset($letti[$chiave])) return $letti[$chiave];
+        $me = "users/$uid";
+        $out = [];
+        foreach (glob(rtrim($base, '/') . '/organizations/*/index.json') as $f) {
+            $j = json_decode((string)@file_get_contents($f), true);
+            if (!is_array($j)) continue;
+            $e = $j['mainEntity'] ?? $j;
+            if (!is_array($e)) continue;
+            if (in_array($me, ws_ref_ids($e['meetoo:manager'] ?? null), true)) {
+                $id = (string)($e['@id'] ?? '');
+                if ($id !== '') $out[] = $id;
+            }
+        }
+        return $letti[$chiave] = $out;
+    }
+}
+
+/**
+ * Può creare una cosa nuova di questo tipo?
+ *
+ * Modificare e creare sono due domande diverse, e finora ne esisteva una sola:
+ * `ws_can_edit()` sa dire chi può toccare una cosa che c'è già, ma sulla creazione
+ * non c'era nessuna regola — e infatti dal sito non si poteva creare niente.
+ *
+ * «Organizzatore verificato» qui vuol dire una cosa precisa: chi ha almeno un
+ * gruppo da gestire. Crea eventi (che pubblicherà a nome del gruppo) e luoghi
+ * (che poi userà per i suoi eventi). Un gruppo NON lo crea: aprire un gruppo nuovo
+ * è un atto di riconoscimento, e lo fa chi amministra.
+ */
+if (!function_exists('ws_can_create')) {
+    function ws_can_create(string $tipo, string $uid, string $role, array $gruppi = []): bool {
+        if ($uid === '') return false;                        // da sloggati non si crea
+        if (in_array($role, ['admin', 'super-admin'], true)) return true;
+        if (!$gruppi) return false;
+        return in_array($tipo, ['events', 'places'], true);
+    }
+}
+
+/**
+ * Può modificare questa entità?
+ *
+ * Amministratori sempre. Poi tre modi di essere di casa: chi gestisce il gruppo
+ * modifica il gruppo; chi gestisce il gruppo modifica quello che il gruppo
+ * organizza; chi ha creato una cosa (o è fra i contributor) modifica la sua.
+ *
+ * NON PIÙ: «se non c'è `creator`, allora sì». Era una regola di transizione scritta
+ * quando gli utenti erano due e i contenuti li scrivevamo noi, e diceva in pratica
+ * «chiunque abbia fatto login può modificare qualunque cosa» — perché il `creator`
+ * nei contenuti non c'è quasi mai. Finché la porta d'ingresso non esisteva era
+ * innocua; nel momento in cui si invitano gli organizzatori a entrare diventa una
+ * casa senza pareti. Chi aveva scritto qualcosa prima che il campo esistesse lo
+ * ritrova attraverso il gruppo, che è il modo giusto di dire «questo è mio».
+ */
 if (!function_exists('ws_can_edit')) {
-    function ws_can_edit(array $entity, string $userUid, string $userRole): bool {
+    function ws_can_edit(array $entity, string $userUid, string $userRole, array $gruppi = []): bool {
         if (in_array($userRole, ['admin', 'super-admin'], true)) return true;
-        $creatorId = ws_ref_id($entity['creator'] ?? null);
-        if ($creatorId === '') return true;
+        if ($userUid === '') return false;
         $me = "users/$userUid";
+        if (in_array($me, ws_ref_ids($entity['meetoo:manager'] ?? null), true)) return true;
+        if ($gruppi && array_intersect($gruppi, ws_ref_ids($entity['organizer'] ?? null))) return true;
+        $creatorId = ws_ref_id($entity['creator'] ?? null);
         return $creatorId === $me || in_array($me, ws_ref_ids($entity['contributor'] ?? null), true);
     }
 }

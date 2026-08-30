@@ -43,7 +43,15 @@ if($cover !== ''){ ?>
 					<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
 				</figure>
 <?php } ?>
-				<h1 class="mt-h1"><?php echo mt_esc($titolo); ?></h1>
+<?php
+/* Il badge: dice che dietro questo gruppo c'è qualcuno che risponde — l'abbiamo
+ * verificato noi. Sta accanto al nome perché è del nome che parla, e si legge dal
+ * JSON perché i campi `meetoo:` nell'albero XML stanno in un altro spazio dei nomi
+ * e da qui non si raggiungono. */
+$mt_doc = meetoo_contenuto(meetoo_rel_corrente());
+$mt_verificato = is_array($mt_doc) && !empty($mt_doc['meetoo:verified']);
+?>
+				<h1 class="mt-h1"><?php echo mt_esc($titolo); ?><?php if($mt_verificato){ ?><span class="mt-verificato" title="<?php _e('Gruppo verificato'); ?>"><span class="material-symbols-outlined" aria-hidden="true">verified</span><span class="mt-solo-voce"><?php _e('Gruppo verificato'); ?></span></span><?php } ?></h1>
 <?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
 				<div class="mt-corpo"><?php ws_echo($testo); ?></div>
 <?php } ?>

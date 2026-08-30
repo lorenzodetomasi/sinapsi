@@ -240,11 +240,18 @@ function my_reg(array $regs, ?array $user): ?array {
     foreach ($regs as $r) if (($r['uid'] ?? '') === $user['uid']) return $r;
     return null;
 }
-function is_admin(array $event, ?array $user): bool {
-    return $user && function_exists('ws_can_edit') && ws_can_edit($event, $user['uid'], $user['role']);
+/* Chi vede l'elenco dei partecipanti: chi potrebbe modificare l'evento. Compreso
+ * chi gestisce il gruppo che lo organizza — è la persona che quel giorno apre la
+ * porta e conta le sedie, ed è la prima che ne ha bisogno. */
+function is_admin(array $event, ?array $user, array $gruppi = []): bool {
+    return $user && function_exists('ws_can_edit') && ws_can_edit($event, $user['uid'], $user['role'], $gruppi);
 }
 
 $rsvp = load_rsvp($rsvpFile, $relPath);
+// I gruppi che chi chiede gestisce: la stessa risposta serve a tutte e tre le
+// domande di permesso qui sotto, e leggerla tre volte sarebbe leggere tre volte
+// gli stessi sei file.
+$mieiGruppi = ($user && function_exists('ws_gruppi_gestiti')) ? ws_gruppi_gestiti($base, $user['uid']) : [];
 
 // --- STATUS (pubblico; con token aggiunge la tua registrazione e isAdmin) ---
 if ($action === 'status') {
@@ -253,7 +260,7 @@ if ($action === 'status') {
         'event' => $relPath, 'isSeries' => $isSeries, 'capacity' => $cap,
         'registered' => $user ? (my_reg($rsvp['registrations'], $user) !== null) : false,
         'myMode' => $user ? (my_reg($rsvp['registrations'], $user)['mode'] ?? null) : null,
-        'isAdmin' => is_admin($event, $user),
+        'isAdmin' => is_admin($event, $user, $mieiGruppi),
         'count' => count($rsvp['registrations']),
         'likes' => count(load_likes(likes_file($base, $relPath))['users']),
         'liked' => $user ? in_array($user['uid'], load_likes(likes_file($base, $relPath))['users'], true) : false,
@@ -393,7 +400,7 @@ if ($action === 'register' || $action === 'unregister') {
  * poteva anche digitare. Può farlo chi ha il diritto di modificare l'evento —
  * la media di un gruppo la ricalcola chi cura gli eventi di quel gruppo. */
 if ($action === 'aggregate') {
-    if (!is_admin($event, $user)) fail(403, 'Non hai i permessi per ricalcolare le valutazioni.');
+    if (!is_admin($event, $user, $mieiGruppi)) fail(403, 'Non hai i permessi per ricalcolare le valutazioni.');
     require_once __DIR__ . '/../lib/ws-rating.php';
     $target = trim((string)($_POST['target'] ?? $relPath));
     if (!preg_match('#^[A-Za-z0-9._/-]+$#', $target) || strpos($target, '..') !== false) fail(400, 'Bersaglio non valido.');
@@ -404,7 +411,7 @@ if ($action === 'aggregate') {
 
 // --- PARTICIPANTS / NOTIFY (solo admin dell'evento) ---
 if ($action === 'participants' || $action === 'notify') {
-    if (!is_admin($event, $user)) fail(403, 'Solo gli amministratori dell\'evento possono vedere i partecipanti.');
+    if (!is_admin($event, $user, $mieiGruppi)) fail(403, 'Solo gli amministratori dell\'evento possono vedere i partecipanti.');
     $uid = $user['uid'];
 
     if ($action === 'notify') {

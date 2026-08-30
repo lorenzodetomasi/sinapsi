@@ -11,6 +11,21 @@
 ?>
 						<span id="mt-slot"></span>
 <?php
+/* Il «+»: la porta che non c'era.
+ *
+ * Fino a ieri dal sito si poteva solo MODIFICARE quello che esisteva già — l'unico
+ * collegamento a un editor era la penna qui sotto — e chi voleva pubblicare doveva
+ * chiederlo a noi. Lo vede chi ha il diritto di creare: un amministratore, o chi
+ * gestisce un gruppo. Sta accanto alla penna perché sono lo stesso gesto a due
+ * tempi: aggiungere una cosa, e poi rimetterci le mani. */
+$mt_crea = (function_exists('meetoo_puo_creare') and meetoo_puo_creare('events')) ? meetoo_url_crea('events') : '';
+if($mt_crea !== ''){
+?>
+						<a class="mt-icon-btn" id="mt-crea" href="<?php echo mt_esc($mt_crea); ?>" title="<?php _e('Aggiungi un evento'); ?>" aria-label="<?php _e('Aggiungi un evento'); ?>">
+							<span class="material-symbols-outlined" aria-hidden="true">add</span>
+						</a>
+<?php } ?>
+<?php
 /* La penna: c'è solo per chi può davvero modificare QUESTA cosa, e solo se
  * esiste un editor che sappia aprirla. Il permesso lo decide la stessa funzione
  * che risponde al momento del salvataggio, così la penna non è mai una porta
