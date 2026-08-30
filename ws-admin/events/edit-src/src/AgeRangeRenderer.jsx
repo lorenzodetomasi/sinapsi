@@ -146,11 +146,15 @@ const AgeRange = ({ data, handleChange, path, label, uischema, visible }) => {
             onBlur={chiudiLibero}
           />
         </label>
-        {/* I due gradini che mette la legge, non la scuola: in Italia i film si
-            classificano VM14 e VM18, e quattordici anni è anche l'età da cui si
-            risponde di sé. Stanno qui e non fra le fasce perché fasce non sono —
+        {/* Le tre soglie che non sono fasce. `0+` è «aperto a tutti», ed è una cosa
+            diversa dal campo vuoto: quello è silenzio, questo è una promessa.
+            14 e 18 li mette la legge e non la scuola — in Italia i film si
+            classificano VM14 e VM18, e a quattordici anni comincia l'imputabilità —
             e i diciotto cadono in mezzo alle superiori, quindi con le sole caselle
             non si potrebbero nemmeno scrivere. */}
+        <button type="button" className="age-scorciatoia" title="Aperto a tutte le età" onClick={() => scriviLibero('0', '')}>
+          0+
+        </button>
         <button type="button" className="age-scorciatoia" title="Da 14 anni in su" onClick={() => scriviLibero('14', '')}>
           14+
         </button>
