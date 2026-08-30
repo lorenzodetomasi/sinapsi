@@ -11,6 +11,8 @@
  *   { "field": "@type",          "enum":    ["Library", "BookStore"] }
  *   { "field": "meetoo:isGroup", "const":   true }
  *   { "field": "meetoo:coastalPosition", "exists": true }
+ *   { "field": "typicalAgeRange", "ageWithin":   "6-10" }   fascia DENTRO la fascia
+ *   { "field": "typicalAgeRange", "ageOverlaps": "0-13" }   fascia che la TOCCA
  *
  * Perché la forma compatta e non JSON Schema scritto per esteso: in JSON Schema
  * `properties` si applica solo se il campo c'è e `contains` solo se il valore è
@@ -35,6 +37,7 @@ if (!function_exists('ws_listrule_match')) {
         if (array_key_exists('const', $c))        $test = ['const' => $c['const']];
         elseif (array_key_exists('enum', $c))     $test = ['enum' => array_values((array)$c['enum'])];
         elseif (array_key_exists('pattern', $c))  $test = ['type' => 'string', 'pattern' => (string)$c['pattern']];
+        elseif (ws_listrule_eta_quale($c) !== '') $test = ['type' => 'string', 'pattern' => ws_listrule_eta_pattern($c)];
         else return ['not' => []];   // clausola senza operatore: non seleziona nulla
         return [
             'required' => [$campo],
@@ -60,7 +63,98 @@ if (!function_exists('ws_listrule_match')) {
             $re = '/' . str_replace('/', '\/', (string)$c['pattern']) . '/u';
             return @preg_match($re, $v) === 1;
         }
+        if (ws_listrule_eta_quale($c) !== '') return ws_listrule_test_eta($v, $c);
         return false;
+    }
+
+    /* ---- Fasce d'età -------------------------------------------------------
+     * `typicalAgeRange` di schema.org è un testo, e le sue forme sono due: «6-13»
+     * e «11-» (da undici in su). Chiedere a chi scrive una regola l'espressione che
+     * dice se due intervalli si toccano vuol dire chiedergli
+     * `^(?:[0-9]|1[0-3])\s*-\s*(?:[6-9]|…)$`: si scrive una volta e non si rilegge
+     * più. L'aritmetica sta qui, una volta per tutte, come il `required` e il caso
+     * stringa-o-array:
+     *
+     *   { "field":"typicalAgeRange", "ageWithin":   "6-10" }   DENTRO   (pensato per)
+     *   { "field":"typicalAgeRange", "ageOverlaps": "0-13" }   TOCCA    (adatto a)
+     *
+     * Sono due liste diverse e servono tutte e due. `ageWithin` è la fascia: ci entra
+     * chi è costruito su quegli anni. `ageOverlaps` è la lista larga: ci entra anche
+     * «0-», tutte le età — che con `ageWithin` non entrerebbe in nessuna fascia, ed è
+     * giusto, «per tutti» non vuol dire «per un bambino di sei anni».
+     */
+
+    /** L'ultimo anno che contiamo: oltre, «e oltre». */
+    function ws_listrule_eta_max(): int { return 120; }
+
+    /** Quale dei due operatori porta questa clausola? '' se nessuno. */
+    function ws_listrule_eta_quale(array $c): string {
+        if (array_key_exists('ageWithin', $c))   return 'ageWithin';
+        if (array_key_exists('ageOverlaps', $c)) return 'ageOverlaps';
+        return '';
+    }
+
+    /** Il testo di una fascia → [primo, ultimo] anno; `null` se fascia non è.
+     *  «6-13» → [6,13];  «11-» e «11+» → [11,120];  «All Ages» → [0,120].
+     *  Una fascia scritta a parole — «da 3 a 6 anni» — resta valida per chi legge
+     *  ma qui è `null`: la regola non la riconosce, e non fa finta di sì. Nemmeno
+     *  «14-0», che è un errore di battitura: raddrizzarlo in silenzio vorrebbe dire
+     *  metterlo in una lista che nessuno ha chiesto. */
+    function ws_listrule_eta($v): ?array {
+        if (!is_string($v)) return null;
+        $s = trim($v);
+        if ($s === '') return null;
+        if (preg_match('/^(all\s*ages|tutte\s*le\s*et)/iu', $s)) return [0, ws_listrule_eta_max()];
+        if (!preg_match('/^(\d{1,3})\s*[-+]\s*(\d{1,3})?$/', $s, $m)) return null;
+        $primo  = (int)$m[1];
+        $ultimo = (isset($m[2]) && $m[2] !== '') ? (int)$m[2] : ws_listrule_eta_max();
+        return $primo <= $ultimo ? [$primo, $ultimo] : null;
+    }
+
+    /** La clausola d'età è vera per questo valore? */
+    function ws_listrule_test_eta($v, array $c): bool {
+        $quale = ws_listrule_eta_quale($c);
+        $f = ws_listrule_eta($v);
+        $r = ws_listrule_eta((string)$c[$quale]);
+        if ($f === null || $r === null) return false;
+        return $quale === 'ageWithin'
+            ? ($f[0] >= $r[0] && $f[1] <= $r[1])          // la fascia sta dentro
+            : ($f[0] <= $r[1] && $f[1] >= $r[0]);         // le due si toccano
+    }
+
+    /** Lo stesso test scritto come `pattern`, per chi la regola la valuta con JSON
+     *  Schema. Gli anni sono pochi e finiti, quindi l'elenco di quelli ammessi è
+     *  esatto — e lo scrive il compilatore, non chi la regola la scrive a mano.
+     *
+     *  Le due cifre si enumerano ACCOPPIATE, un gruppo per ogni primo anno: gli
+     *  ultimi ammessi dipendono dal primo (nessuno accetta «7-6»), e enumerarle
+     *  separate faceva passare le fasce scritte al contrario. Ne esce un'espressione
+     *  lunga: è generata, non si legge, e nasce già giusta. */
+    function ws_listrule_eta_pattern(array $c): string {
+        $quale  = ws_listrule_eta_quale($c);
+        $dentro = ($quale === 'ageWithin');
+        $r      = ws_listrule_eta((string)($c[$quale] ?? ''));
+        if ($r === null) return '(?!)';                   // regola illeggibile: non prende nulla
+        $max = ws_listrule_eta_max();
+        // DENTRO: primo e ultimo stanno tutti e due nella fascia della regola.
+        // TOCCA:  il primo non supera l'ultimo anno della regola, e l'ultimo arriva
+        //         almeno al primo. «11-» (ultimo assente) tocca sempre, dentro no.
+        $primi   = $dentro ? range($r[0], $r[1]) : range(0, $r[1]);
+        $aperto  = $dentro ? ($r[1] >= $max) : true;
+        $gruppi  = [];
+        foreach ($primi as $a) {
+            $da   = $dentro ? $a : max($a, $r[0]);
+            $fino = $dentro ? $r[1] : $max;
+            if ($da > $fino) continue;
+            $ultimi = '(?:' . implode('|', range($da, $fino)) . ')' . ($aperto ? '?' : '');
+            $gruppi[] = $a . '\s*[-+]\s*' . $ultimi;
+        }
+        $p = $gruppi ? '^\s*(?:' . implode('|', $gruppi) . ')\s*$' : '(?!)';
+        // «All Ages» è [0,120]: tocca qualunque fascia, ma sta dentro solo il tutto.
+        if (!$dentro || ($r[0] <= 0 && $r[1] >= $max)) {
+            $p = '(?i:^\s*(?:all\s*ages|tutte\s*le\s*et).*$)|' . $p;
+        }
+        return $p;
     }
 
     /** Uguaglianza come `const` di JSON Schema: stesso valore E stesso tipo. */

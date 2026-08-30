@@ -75,24 +75,31 @@ const SOCIAL_SUGGEST = [
   'Facebook', 'Instagram', 'LinkedIn', 'TikTok', 'YouTube', 'X',
   'Telegram', 'WhatsApp', 'Threads', 'Pinterest', 'Blog', 'Sito web',
 ];
-/* Fasce d'età: suggerite, non obbligate — il campo accetta anche valori propri.
+/* Fasce d'età: le stesse che si leggono nelle categorie, con la scuola accanto.
  *
- * Il suggerimento però adesso conta: le categorie che si popolano da sole leggono
- * QUESTO campo. «Bambini e famiglie › Progettato per i bambini» prende chi dichiara
- * una fascia che comprende gli anni fra 0 e 14, e per farlo confronta valori esatti.
- * Una fascia scritta a mano — «da 3 a 6 anni» — resta valida per chi legge, ma la
- * regola non la riconosce: chi la scrive deve sapere che quell'evento nella
- * categoria non ci entra da solo. */
-const AGE_RANGES = [
-  'All Ages', 
-  '0-3', 
-  '3-6', 
-  '6-12', 
-  '12-18', 
-  '18+', 
-  '18-30', 
-  '30-60', 
-  '60+'
+ * PIASTRELLANO: non si sovrappongono e non lasciano buchi, e ogni anno sta in una
+ * fascia sola. È quello che permette al campo di restare uno — il testo di
+ * schema.org, «6-13» — anche quando le fasce spuntate sono più d'una: se sono
+ * attaccate, l'unione È la scelta, e non c'è un altro insieme di fasce che dia lo
+ * stesso testo. Nessun campo di servizio a ricordare le caselle.
+ *
+ * I confini sono quelli della scuola perché sono gli unici che tutti conoscono
+ * senza doverli imparare: le medie finiscono a 13, le superiori cominciano a 14.
+ * I suggerimenti di prima (0-3, 3-6, 6-12) si sovrapponevano ai bordi, e un bambino
+ * di tre anni finiva in due fasce a seconda di chi compilava.
+ *
+ * Le categorie che si popolano da sole leggono QUESTO campo (`ageWithin` e
+ * `ageOverlaps` in ws-listrule.php). Una fascia scritta a parole — «da 3 a 6 anni»
+ * — resta valida per chi legge, ma la regola non la riconosce. */
+const AGE_BANDS = [
+  { id: 'baby',      name: 'Baby',        min: 0,  max: 2,   school: 'nido' },
+  { id: 'materna',   name: 'Materna',     min: 3,  max: 5,   school: 'infanzia' },
+  { id: 'bambini',   name: 'Bambini',     min: 6,  max: 10,  school: 'primaria' },
+  { id: 'ragazzi',   name: 'Ragazzi',     min: 11, max: 13,  school: 'medie' },
+  { id: 'adolesc',   name: 'Adolescenti', min: 14, max: 18,  school: 'superiori' },
+  { id: 'giovani',   name: 'Giovani',     min: 19, max: 34,  school: '' },
+  { id: 'adulti',    name: 'Adulti',      min: 35, max: 64,  school: '' },
+  { id: 'terzaeta',  name: 'Terza età',   min: 65, max: 120, school: '' },
 ];
 export const schema = {
   type: 'object',
@@ -380,15 +387,11 @@ export const uischema = {
       label: 'Pubblico',
       options: { icon: 'people' },
       elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/eventAttendanceMode'),
-            ctrl('#/properties/typicalAgeRange', {
-              options: { searchable: true, suggestions: AGE_RANGES, icon: 'child_care' },
-            }),
-          ],
-        },
+        ctrl('#/properties/eventAttendanceMode'),
+        // Riga sua: sono otto fasce più due numeri, in mezza riga si accavallerebbero.
+        ctrl('#/properties/typicalAgeRange', {
+          options: { ageRange: true, bands: AGE_BANDS, icon: 'child_care' },
+        }),
         // I posti si contano solo se sono contati: la spunta apre i campi, e finche'
         // e' spenta cinque caselle vuote non stanno li' a farsi guardare. Un evento
         // senza tetto e' il caso normale, e il caso normale non deve chiedere niente.

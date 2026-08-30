@@ -13,6 +13,7 @@ import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableOb
 import SearchSelectRenderer, { searchSelectTester } from './SearchSelectRenderer.jsx';
 import RecurrenceRenderer, { recurrenceTester } from './RecurrenceRenderer.jsx';
 import MultiSelectRenderer, { multiSelectTester } from './MultiSelectRenderer.jsx';
+import AgeRangeRenderer, { ageRangeTester } from './AgeRangeRenderer.jsx';
 import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
 import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
@@ -46,6 +47,7 @@ const renderers = [
   { tester: searchSelectTester, renderer: SearchSelectRenderer },
   { tester: recurrenceTester, renderer: RecurrenceRenderer },
   { tester: multiSelectTester, renderer: MultiSelectRenderer },
+  { tester: ageRangeTester, renderer: AgeRangeRenderer },
   { tester: computedTester, renderer: ComputedRenderer },
   { tester: fieldRowTester, renderer: FieldRowRenderer },
   { tester: iconTextTester, renderer: IconTextRenderer },

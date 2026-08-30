@@ -63,6 +63,30 @@ function mt_modalita($v){
 }
 
 /**
+ * La fascia d'età detta a parole.
+ *
+ * Nel file sta come la scrive schema.org — «6-13», «65-» (da 65 in su), «0-» per
+ * chi ha dichiarato che va bene per tutti — perché quel testo lo devono leggere
+ * anche i motori di ricerca. Ma «0-» in una scheda non lo legge nessuno: qui
+ * ridiventa una frase. «All Ages» resta riconosciuto: è quello che c'è scritto nei
+ * file di prima, e una pagina non deve peggiorare perché il modo di scrivere è
+ * cambiato.
+ */
+function mt_eta($v){
+	$s = trim((string)$v);
+	if($s === ''){ return ''; }
+	if(preg_match('/^(all\s*ages|tutte\s*le\s*et)/iu', $s)){ return __('Tutte le età'); }
+	if(!preg_match('/^(\d{1,3})\s*[-+]\s*(\d{1,3})?$/', $s, $m)){ return $s; }
+	$primo = (int)$m[1];
+	if(!isset($m[2]) or $m[2] === ''){
+		return $primo <= 0 ? __('Tutte le età') : sprintf(__('Da %d anni in su'), $primo);
+	}
+	$ultimo = (int)$m[2];
+	if($ultimo < $primo){ return $s; }
+	return sprintf(__('Da %d a %d anni'), $primo, $ultimo);
+}
+
+/**
  * Il tipo schema.org di un nodo.
  *
  * Nel JSON è `@type`; nell'XML che il CMS legge diventa l'ATTRIBUTO `xsi:type`
@@ -465,7 +489,7 @@ if($serie){
 					<aside class="mt-aside">
 						<div class="mt-dati">
 <?php if($modalita){ echo mt_meta($modalita[0], $modalita[1]); } ?>
-<?php if($eta !== ''){ echo mt_meta('escalator_warning', strcasecmp($eta, 'All Ages') === 0 ? __('Tutte le età') : $eta); } ?>
+<?php if($eta !== ''){ echo mt_meta('escalator_warning', mt_eta($eta)); } ?>
 <?php if($offerta !== ''){ echo mt_meta('sell', $offerta); } ?>
 <?php if($posti !== '' and (int)$posti > 0){
 	echo mt_meta('event_seat', $rimasti !== ''

@@ -178,6 +178,17 @@ letto **prima sulla voce di lista** e poi sul membro.
 `exists` e si comportano come là: `const` = valore ESATTO («BookCrossing»), `pattern` = espressione
 («^BookCrossing» prende anche «BookCrossingPlace»). La distinzione che mancava al primo giro, quando
 c'era un `contains` ambiguo.
+
+Le due sole clausole che JSON Schema non ha sono le **fasce d'età**, `ageWithin` e `ageOverlaps`:
+`{"field": "typicalAgeRange", "ageWithin": "6-10"}` prende chi è costruito su quegli anni,
+`{"field": "typicalAgeRange", "ageOverlaps": "0-13"}` chi li tocca soltanto — comprese le fasce
+aperte come «0-» (tutte le età), che con `ageWithin` non entrerebbero in nessuna fascia, ed è giusto:
+«per tutti» non vuol dire «per un bambino di sei anni». Sono aritmetica su un testo — «6-13», «11-»
+— e la regex che ci vorrebbe altrimenti (`^(?:[0-9]|1[0-3])\s*-\s*(?:…)$`) si scrive una volta e non
+si rilegge più: la stessa ragione per cui il `required` lo mette il compilatore. `ws_listrule_compile()`
+le traduce lo stesso in un `pattern`, enumerando le coppie di anni ammesse; **provata l'equivalenza fra
+l'aritmetica e il pattern generato su 223.335 casi — tutte le fasce scrivibili per 15 regole: nessuna
+differenza**.
 Si scrivono in forma COMPATTA — `{"field": "additionalType", "const": "BookCrossing"}` — e
 `ws_listrule_compile()` le traduce nello JSON Schema equivalente. Perché non JSON Schema scritto a
 mano: `properties` si applica solo se il campo c'è e `contains` solo sugli array, quindi la regola

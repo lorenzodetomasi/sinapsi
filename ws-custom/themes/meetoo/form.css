@@ -528,6 +528,50 @@ button.primary { margin-top: var(--sp-md); }
 .tag button .material-symbols-outlined { font-size: 1em; }
 .tag-menu { top: calc(100% + var(--sp-xs)); left: 0; right: auto; min-width: 12rem; }
 
+/* ---------- Fascia d'età ----------
+ * Otto fasce attaccate: la selezione è un pezzo continuo, e si vede che lo è —
+ * le spuntate sono piene, quelle che la fascia scritta a mano tocca solo in parte
+ * hanno il bordo tratteggiato. Non è decorazione: «7-12» prende mezza primaria e
+ * mezze medie, e chi guarda deve capire perché quelle due fasce non sono piene. */
+.age-range .age-bands {
+  display: flex; flex-wrap: wrap; gap: var(--sp-xs);
+  margin-top: var(--label-gap);
+}
+.age-band {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem;
+  padding: 0.3rem 0.65rem;
+  background: var(--field-bg); color: var(--text);
+  border: 1px solid transparent; border-radius: var(--r-md);
+  font: inherit; text-align: left; cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.age-band:hover { border-color: var(--border); }
+.age-band.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.age-band.part { border-style: dashed; border-color: var(--accent); }
+.age-band-name { font-size: 0.875rem; line-height: 1.2; }
+.age-band-note { font-size: 0.75rem; line-height: 1.2; opacity: 0.7; }
+
+.age-range .age-libero {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs);
+  margin: var(--sp-sm) 0 var(--sp-md);
+}
+.age-range .age-libero label {
+  display: inline-flex; align-items: center; gap: var(--sp-xs);
+  margin: 0; min-height: 0; color: var(--text-dim); font-size: 0.875rem;
+}
+/* I due numeri sono campi come gli altri, solo larghi quanto un'età. */
+.pane .age-range .age-libero input[type='number'] { width: 4.5rem; margin: 0; }
+.age-oppure { color: var(--text-dim); font-size: 0.875rem; }
+.age-esito { color: var(--text-dim); font-size: 0.8125rem; }
+.age-pulisci {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.5rem; height: 1.5rem; padding: 0;
+  background: transparent; border: none; border-radius: 50%;
+  color: var(--text-dim); cursor: pointer;
+}
+.age-pulisci:hover { background: var(--accent); color: var(--on-accent); }
+.age-pulisci .material-symbols-outlined { font-size: 1rem; }
+
 /* Multi-select a opzioni fisse: input di ricerca inline nel contenitore dei chip */
 .multiselect .tags { position: relative; cursor: text; }
 .multiselect .ms-input {
