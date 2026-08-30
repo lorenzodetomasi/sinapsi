@@ -366,7 +366,26 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-evento-testa .mt-organizza { margin: 0; }
 .mt-evento-testa .mt-nota { margin: 0; }
 
+/* Due involucri, un ordine per parte.
+ *
+ * A colonna sola l'ordine giusto è: abstract, dati, azioni, programma — cioè i
+ * figli dei due involucri MESCOLATI. Con `display: contents` gli involucri
+ * spariscono dal disegno e restano solo i blocchi, che si mettono in fila con
+ * `order`: il testo, poi i dati, poi le cose da fare, poi il resto.
+ *
+ * A due colonne gli involucri tornano scatole, una per colonna. È anche il modo
+ * per NON far spanare la griglia: prima l'aside occupava «99 righe» per stare
+ * alto quanto la colonna accanto, e la griglia quelle 99 righe le creava davvero
+ * — sotto il programma si apriva un vuoto di duemila pixel. */
 .mt-evento-griglia { display: flex; flex-direction: column; gap: 1.5rem; }
+@media (max-width: 63.99rem) {
+  .mt-evento-griglia > .mt-principale,
+  .mt-evento-griglia > .mt-aside { display: contents; }
+  .mt-abstract { order: 1; }
+  .mt-dati { order: 2; }
+  .mt-cta { order: 3; }
+  .mt-principale > .mt-sezione { order: 4; }
+}
 /* L'abstract è il testo d'apertura: si legge per primo e si vede che lo è. */
 .mt-abstract { font-size: 1.1rem; line-height: 1.6; }
 .mt-abstract p:first-child { font-size: 1.15rem; }
@@ -381,11 +400,18 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
   .mt-evento-griglia {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    gap: 1.5rem 2.5rem;
+    gap: 0 2.5rem;
     align-items: start;
   }
-  /* L'aside occupa la seconda colonna per tutta l'altezza; tutto il resto scorre
-     nella prima, nell'ordine in cui è scritto. */
-  .mt-evento-griglia > .mt-aside { grid-column: 2; grid-row: 1 / span 99; }
-  .mt-evento-griglia > :not(.mt-aside) { grid-column: 1; }
+  .mt-principale { display: flex; flex-direction: column; gap: 1.5rem; min-width: 0; }
 }
+
+/* I tipi dell'evento, sotto il dove: che cosa è, in due parole. */
+.mt-tipi { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 0; }
+.mt-chip-tipo { font-size: .85rem; color: var(--color-hint); }
+
+/* Gli organizzatori uno sotto l'altro, a filo con la O di «Organizzato da»:
+   tre nomi in fila orizzontale andavano a capo dove capitava. */
+.mt-organizza { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; margin: 0; }
+.mt-organizza-testa { color: var(--color-hint); }
+.mt-organizza .mt-chip { margin: 0; }

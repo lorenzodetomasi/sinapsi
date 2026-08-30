@@ -62,6 +62,23 @@ function mt_modalita($v){
 	return null;
 }
 
+/**
+ * Il tipo schema.org di un nodo.
+ *
+ * Nel JSON è `@type`; nell'XML che il CMS legge diventa l'ATTRIBUTO `xsi:type`
+ * — `<mainEntity xsi:type="LiteraryEvent">` — perché un nome di elemento non può
+ * contenere la chiocciola. Chiederlo come `$nodo->{'@type'}` ritorna sempre
+ * vuoto, e il tipo sembra non esserci: è successo, e per questo c'è questa
+ * funzione invece di quella riga.
+ */
+function mt_xsi_tipo($nodo){
+	if(!is_object($nodo)){
+		return '';
+	}
+	$a = $nodo->attributes('http://www.w3.org/2001/XMLSchema-instance');
+	return ($a !== null and isset($a['type'])) ? trim((string)$a['type']) : '';
+}
+
 /** I riferimenti di un campo (organizer, sameAs…) sempre come elenco. */
 function mt_lista($n, $campo){
 	if(!isset($n->$campo)){
@@ -215,6 +232,58 @@ $fine_ev = meetoo_istante($al !== '' ? $al : $dal, $fuso);
 $passato = $fine_ev ? $fine_ev->getTimestamp() < time() : false;
 
 $organizzatori = mt_lista($e, 'organizer');
+
+/* CHE COSA È, detto in italiano.
+ *
+ * `@type` porta i tipi di schema.org — `LiteraryEvent`, `MusicEvent` — che sono
+ * parole per le macchine: qui si mostrano tradotte. `Event` e `EventSeries` si
+ * saltano: dicono soltanto «è un evento», che chi è su questa pagina lo sa già.
+ *
+ * `additionalType` è la parola che ci mette la redazione («Leggere insieme»), e
+ * sta accanto: le due cose non si escludono, una classifica e l'altra racconta.
+ */
+function mt_tipo_evento($t){
+	$nomi = array(
+		'LiteraryEvent' => 'Letteratura', 'MusicEvent' => 'Musica', 'TheaterEvent' => 'Teatro',
+		'ScreeningEvent' => 'Proiezione', 'ExhibitionEvent' => 'Mostra', 'Festival' => 'Festival',
+		'FoodEvent' => 'Cibo', 'SportsEvent' => 'Sport', 'ChildrensEvent' => 'Per bambini',
+		'EducationEvent' => 'Formazione', 'SocialEvent' => 'Incontro', 'BusinessEvent' => 'Lavoro',
+		'ComedyEvent' => 'Comicità', 'DanceEvent' => 'Danza', 'CourseInstance' => 'Corso',
+		'Hackathon' => 'Hackathon', 'SaleEvent' => 'Vendita', 'VisualArtsEvent' => 'Arti visive',
+		'PublicationEvent' => 'Pubblicazione', 'DeliveryEvent' => 'Consegna',
+	);
+	$k = trim((string)$t);
+	if($k === '' or $k === 'Event' or $k === 'EventSeries'){
+		return '';
+	}
+	// Un tipo che non conosciamo si mostra com'è, senza la coda «Event»: meglio
+	// una parola inglese che nessuna parola.
+	return $nomi[$k] ?? preg_replace('/Event$/', '', $k);
+}
+
+/* QUALI TIPI MOSTRARE. Un'etichetta che ripete quella accanto non aggiunge
+ * niente e ruba spazio: si tiene la prima e si scartano i doppioni, confrontando
+ * senza maiuscole e senza accenti. La bozza della regola è questa; se un domani
+ * si vorrà nascondere anche ciò che ripete una keyword, il posto è qui. */
+$tipi = array();
+$visti = array();
+$normale = function($t){
+	$x = mb_strtolower(trim((string)$t), 'UTF-8');
+	return strtr($x, array('à'=>'a','è'=>'e','é'=>'e','ì'=>'i','ò'=>'o','ù'=>'u'));
+};
+foreach(array(mt_xsi_tipo($e)) as $t){
+	$nome = mt_tipo_evento((string)$t);
+	if($nome === '' or isset($visti[$normale($nome)])){
+		continue;
+	}
+	$visti[$normale($nome)] = true;
+	$tipi[] = $nome;
+}
+$cat = mt_ev($e, 'additionalType');
+if($cat !== '' and !isset($visti[$normale($cat)])){
+	$visti[$normale($cat)] = true;
+	$tipi[] = $cat;
+}
 $voto = isset($e->aggregateRating) ? mt_ev($e->aggregateRating, 'ratingValue') : '';
 $voto_max = $voto !== '' ? (mt_ev($e->aggregateRating, 'bestRating') ?: '5') : '';
 $voto_n = $voto !== '' ? mt_ev($e->aggregateRating, 'ratingCount') : '';
@@ -249,6 +318,11 @@ include_template('template-parts/header');
 									: mt_esc($luogoNome);
 							?></span></p>
 <?php } ?>
+<?php if(count($tipi)){ ?>
+							<p class="mt-tipi">
+<?php foreach($tipi as $t){ ?><span class="mt-chip mt-chip-tipo"><?php echo mt_esc($t); ?></span><?php } ?>
+							</p>
+<?php } ?>
 						</div>
 
 						<div class="mt-testa-dx">
@@ -258,18 +332,18 @@ include_template('template-parts/header');
 							</p>
 <?php } ?>
 <?php if(count($organizzatori)){ ?>
-							<p class="mt-organizza"><span><?php _e('Organizzato da'); ?></span>
+							<div class="mt-organizza"><span class="mt-organizza-testa"><?php _e('Organizzato da'); ?></span>
 <?php foreach($organizzatori as $o){
 	$id = meetoo_riferimento_nodo($o);
 	$nome = mt_ev($o, 'name') ?: ($id !== '' ? meetoo_titolo_contenuto($id) : '');
 	if($nome === ''){ continue; }
 	$href = $id !== '' ? meetoo_indirizzo($id) : '';
-	$dentro = mt_icona(mt_org_icona((string)($o->{'@type'} ?? ''), $nome)).mt_esc($nome);
+	$dentro = mt_icona(mt_org_icona(mt_xsi_tipo($o), $nome)).mt_esc($nome);
 	echo $href !== ''
 		? '<a class="mt-chip" href="'.mt_esc($href).'">'.$dentro.'</a>'
 		: '<span class="mt-chip">'.$dentro.'</span>';
 } ?>
-							</p>
+							</div>
 <?php } ?>
 <?php if($voto !== ''){ ?>
 							<p class="mt-voto"><?php echo mt_icona('star'); ?><span><?php
@@ -295,6 +369,7 @@ include_template('template-parts/header');
 				          diventa una colonna sola, e l'ordine del documento è già quello
 				          giusto — l'abstract, i dati, le azioni, poi il programma. */ ?>
 				<div class="mt-evento-griglia">
+					<div class="mt-principale">
 
 <?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
 					<div class="mt-corpo mt-abstract"><?php ws_echo($testo); ?></div>
@@ -305,6 +380,47 @@ include_template('template-parts/header');
 					<?php /* `aside` per quello che è, non per come si vede: qui dentro non c'è
 					          una cornice, c'è una colonna. Il riquadro del «salva la data» la
 					          cornice ce l'ha perché è un invito ad agire, e si deve vedere. */ ?>
+
+<?php if(count($programma)){ ?>
+					<section class="mt-sezione">
+						<h2 class="sec-head"><?php echo mt_icona('list_alt'); ?><?php _e('Programma'); ?></h2>
+						<ol class="mt-programma">
+<?php foreach($programma as $sub){
+	$oraS = meetoo_ora(mt_ev($sub, 'startDate'), $fuso); ?>
+							<li>
+								<span class="mt-prog-ora"><?php echo $oraS !== '' ? mt_esc($oraS) : '·'; ?></span>
+								<span class="mt-prog-cosa">
+									<strong><?php echo mt_esc(mt_ev($sub, 'name')); ?></strong>
+<?php $dsub = mt_ev($sub, 'description'); if($dsub !== ''){ ?>
+									<span class="mt-prog-nota"><?php echo mt_esc($dsub); ?></span>
+<?php } ?>
+								</span>
+							</li>
+<?php } ?>
+						</ol>
+					</section>
+<?php } ?>
+
+<?php
+/* Le occorrenze di una SERIE: quando la pagina è quella di una collezione, le
+ * sue date sono la cosa che si sta cercando. */
+if($serie){
+	meetoo_ambito('collection', basename($rel));
+	meetoo_frammento();
+	$tutto = (string)($_GET['tutti'] ?? '');
+	$SEZIONI = meetoo_sezioni(true);
+	meetoo_sezione('eventi', $SEZIONI['eventi'] ?? null, $tutto);
+	meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
+}
+?>
+
+					<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e
+					          lo ottiene solo chi ha i permessi, perché a decidere è il server.
+					          Sta nel contenuto e non nell'aside perché un elenco di nomi ed
+					          email ha bisogno di larghezza. */ ?>
+					<section id="mt-partecipanti" class="mt-sezione" hidden></section>
+					</div><!-- .mt-principale -->
+
 					<aside class="mt-aside">
 						<div class="mt-dati">
 <?php if($modalita){ echo mt_meta($modalita[0], $modalita[1]); } ?>
@@ -396,54 +512,12 @@ if(!$serie){
 <?php } ?>
 						</div><!-- .mt-cta -->
 					</aside>
-
-<?php if(count($programma)){ ?>
-					<section class="mt-sezione">
-						<h2 class="sec-head"><?php echo mt_icona('list_alt'); ?><?php _e('Programma'); ?></h2>
-						<ol class="mt-programma">
-<?php foreach($programma as $sub){
-	$oraS = meetoo_ora(mt_ev($sub, 'startDate'), $fuso); ?>
-							<li>
-								<span class="mt-prog-ora"><?php echo $oraS !== '' ? mt_esc($oraS) : '·'; ?></span>
-								<span class="mt-prog-cosa">
-									<strong><?php echo mt_esc(mt_ev($sub, 'name')); ?></strong>
-<?php $dsub = mt_ev($sub, 'description'); if($dsub !== ''){ ?>
-									<span class="mt-prog-nota"><?php echo mt_esc($dsub); ?></span>
-<?php } ?>
-								</span>
-							</li>
-<?php } ?>
-						</ol>
-					</section>
-<?php } ?>
-
-<?php
-/* Le occorrenze di una SERIE: quando la pagina è quella di una collezione, le
- * sue date sono la cosa che si sta cercando. */
-if($serie){
-	meetoo_ambito('collection', basename($rel));
-	meetoo_frammento();
-	$tutto = (string)($_GET['tutti'] ?? '');
-	$SEZIONI = meetoo_sezioni(true);
-	meetoo_sezione('eventi', $SEZIONI['eventi'] ?? null, $tutto);
-	meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
-}
-?>
-
-					<?php /* I partecipanti: il guscio è qui, l'elenco lo chiede il browser — e
-					          lo ottiene solo chi ha i permessi, perché a decidere è il server.
-					          Sta nel contenuto e non nell'aside perché un elenco di nomi ed
-					          email ha bisogno di larghezza. */ ?>
-					<section id="mt-partecipanti" class="mt-sezione" hidden></section>
 				</div><!-- .mt-evento-griglia -->
 
 <?php
 // I temi: la categoria dichiarata e le parole chiave, su una riga in fondo.
+// La categoria sta nella testata, con i tipi: qui restano le parole chiave.
 $tag = array();
-$cat = mt_ev($e, 'additionalType');
-if($cat !== ''){
-	$tag[] = $cat;
-}
 foreach(mt_lista($e, 'keywords') as $k){
 	$v = trim((string)$k);
 	if($v !== ''){
