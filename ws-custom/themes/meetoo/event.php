@@ -86,6 +86,28 @@ $al = mt_ev($e, 'endDate');
 $fuso = trim((string)meetoo_campo_meetoo($e, 'timezone'));
 $quando = mt_quando($dal, $al, $fuso);
 
+/**
+ * L'evento come lo capisce un calendario.
+ *
+ * Un appuntamento serve a poco se resta su una pagina: il gesto vero è metterlo
+ * nel proprio calendario, e da lì in poi ci pensa il telefono a ricordarselo.
+ * Google ha un indirizzo che fa da modulo precompilato; tutti gli altri —
+ * Apple, Outlook, Thunderbird, il telefono — parlano `.ics`, che è un formato di
+ * testo e si scrive qui in dieci righe.
+ *
+ * Le ore vanno in UTC con la Z finale: è l'unico modo perché l'appuntamento
+ * cada all'ora giusta anche per chi lo apre da un altro fuso.
+ */
+function mt_utc($valore, $fuso){
+	$d = meetoo_istante($valore, $fuso);
+	return $d ? $d->setTimezone(new DateTimeZone('UTC'))->format('Ymd\THis\Z') : '';
+}
+/** Il testo di un campo, senza marcatura e senza righe vuote: un calendario non le legge. */
+function mt_piano($html){
+	$t = trim(html_entity_decode(strip_tags(preg_replace('#</(p|div|li|h[1-6])>#i', "$0\n", (string)$html)), ENT_QUOTES, 'UTF-8'));
+	return preg_replace('/\n{3,}/', "\n\n", $t);
+}
+
 /* Il luogo: il nome sta nell'evento, la località nel documento del luogo — e
  * l'indirizzo della sua pagina lo sa la mappa. Un evento non ripete quello che
  * il luogo dice già di sé. */
@@ -96,6 +118,64 @@ if($luogoDoc){
 	$luogoNome = mt_luogo_testo($luogoDoc) ?: $luogoNome;
 }
 $luogoHref = $luogoId !== '' ? meetoo_indirizzo($luogoId) : '';
+
+$ics_inizio = mt_utc($dal, $fuso);
+$ics_fine = mt_utc($al !== '' ? $al : $dal, $fuso);
+$ics_dove = trim($luogoNome);
+$ics_testo = mt_piano(isset($e->abstract) ? $e->abstract->innerHTML() : mt_ev($e, 'description'));
+$ics_url = ws_href(trim((string)$ws_query['wspath'], '/'));
+
+/* IL FILE .ICS, chiesto alla stessa pagina.
+ *
+ * `?ics` non è un'altra pagina: è la stessa cosa detta in un'altra lingua, e
+ * risponde prima che si cominci a scrivere l'HTML — come già fa il pezzo di
+ * elenco chiesto mentre si scorre. Un indirizzo in meno da inventare, e nessun
+ * posto dove i due possano divergere. */
+if(isset($_GET['ics']) and $ics_inizio !== ''){
+	/* Nel formato iCalendar la barra rovescia, la virgola e il punto e virgola
+	 * vanno protetti, e un a capo si scrive come i due caratteri `\` e `n` — non
+	 * come un a capo vero, che spezzerebbe il file in due righe e lo renderebbe
+	 * illeggibile a chi lo apre. */
+	$esc = function($t){
+		return str_replace(
+			array('\\', "\r\n", "\n", ',', ';'),
+			array('\\\\', '\\n', '\\n', '\\,', '\\;'),
+			(string)$t
+		);
+	};
+	$righe = array(
+		'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Meetoo//IT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+		'BEGIN:VEVENT',
+		'UID:'.$esc($rel).'@meetoo',
+		'DTSTAMP:'.gmdate('Ymd\THis\Z'),
+		'DTSTART:'.$ics_inizio,
+		'DTEND:'.$ics_fine,
+		'SUMMARY:'.$esc($titolo),
+	);
+	if($ics_dove !== ''){
+		$righe[] = 'LOCATION:'.$esc($ics_dove);
+	}
+	if($ics_testo !== ''){
+		$righe[] = 'DESCRIPTION:'.$esc($ics_testo);
+	}
+	$righe[] = 'URL:'.$esc($ics_url);
+	$righe[] = 'END:VEVENT';
+	$righe[] = 'END:VCALENDAR';
+	header('Content-Type: text/calendar; charset=utf-8');
+	header('Content-Disposition: attachment; filename="'.basename($rel).'.ics"');
+	echo implode("\r\n", $righe)."\r\n";
+	exit;
+}
+
+/* L'indirizzo del modulo precompilato di Google Calendar. Le due date separate
+ * da una barra, in UTC, e il resto come testo. */
+$google_cal = $ics_inizio === '' ? '' : 'https://calendar.google.com/calendar/render?'.http_build_query(array(
+	'action' => 'TEMPLATE',
+	'text' => $titolo,
+	'dates' => $ics_inizio.'/'.$ics_fine,
+	'details' => trim($ics_testo."\n\n".$ics_url),
+	'location' => $ics_dove,
+));
 
 // Prezzo: «Ingresso libero» quando è dichiarato gratuito o costa zero.
 $gratis = in_array(strtolower(mt_ev($e, 'isAccessibleForFree')), array('1','true'), true);
@@ -191,6 +271,28 @@ include_template('template-parts/header');
 				          («dicci com'è andata»), e chi lo riceve deve atterrare sul punto,
 				          non in cima a una pagina lunga. */ ?>
 				<div class="mt-cta" id="review">
+<?php
+/* SALVA LA DATA. Solo per quello che deve ancora succedere: mettere in agenda un
+ * appuntamento di ieri non serve a nessuno, e un pulsante che non serve toglie
+ * attenzione a quelli che servono.
+ *
+ * Due strade perché i calendari sono due mondi: Google ha un indirizzo che apre
+ * il suo modulo già compilato, tutti gli altri — Apple, Outlook, il telefono —
+ * leggono un file `.ics`, che questa stessa pagina sa scrivere. */
+$passato = $i_fine = meetoo_istante($al !== '' ? $al : $dal, $fuso);
+$passato = $passato ? $passato->getTimestamp() < time() : false;
+if(!$passato and $ics_inizio !== ''){
+?>
+					<div class="mt-agenda">
+						<a class="mt-azione mt-azione-forte" href="<?php echo mt_esc($google_cal); ?>" target="_blank" rel="noopener">
+							<?php echo mt_icona('event_available'); ?><span><?php _e('Salva la data su Google Calendar'); ?></span>
+						</a>
+						<a class="mt-azione" href="?ics=1" download>
+							<?php echo mt_icona('download'); ?><span><?php _e('Altri calendari (.ics)'); ?></span>
+						</a>
+					</div>
+					<p class="mt-agenda-nota"><?php _e('Inserisci questo evento nel tuo calendario.'); ?></p>
+<?php } ?>
 				<div class="mt-azioni" data-evento="<?php echo mt_esc($rel); ?>"<?php echo $serie ? ' data-serie="1"' : ''; ?>>
 					<button type="button" class="mt-azione" data-azione="interesse" aria-pressed="false">
 						<?php echo mt_icona('bookmark'); ?><span><?php _e('Mi interessa'); ?></span><span class="mt-conto"></span>

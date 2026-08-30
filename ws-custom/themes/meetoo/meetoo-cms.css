@@ -341,3 +341,9 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-v-scritte { flex: 0 0 100%; list-style: none; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .35rem; }
 .mt-v-scritte li { color: var(--color-hint); font-size: .92rem; }
 .mt-v-voto { color: var(--color1); margin-right: .4rem; }
+
+/* Salva la data: due strade per due mondi di calendari, in cima al riquadro
+   perché è il gesto che chiude la lettura di un evento — «ci vado». */
+.mt-agenda { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 .5rem; }
+.mt-agenda .mt-azione { text-decoration: none; }
+.mt-agenda-nota { margin: 0 0 1rem; font-size: .9rem; color: var(--color-hint); }
