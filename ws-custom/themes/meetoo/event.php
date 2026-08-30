@@ -367,10 +367,11 @@ include_template('template-parts/header');
 						</div>
 
 						<div class="mt-testa-dx">
-<?php if($serieHref !== ''){ ?>
-							<p class="mt-nota"><?php echo mt_icona('collections_bookmark'); ?>
-								<?php _e('Fa parte di'); ?> <a href="<?php echo mt_esc($serieHref); ?>"><?php echo mt_esc($serieNome !== '' ? $serieNome : basename($serieId)); ?></a>
-							</p>
+<?php if($voto !== ''){ ?>
+							<p class="mt-voto"><?php echo mt_icona('star'); ?><span><?php
+								echo mt_esc($voto.' / '.$voto_max);
+								echo $voto_n !== '' ? ' '.mt_esc(sprintf(__('(%s valutazioni)'), $voto_n)) : '';
+							?></span></p>
 <?php } ?>
 <?php if(count($organizzatori)){ ?>
 							<div class="mt-organizza"><span class="mt-organizza-testa"><?php _e('Organizzato da'); ?></span>
@@ -386,11 +387,10 @@ include_template('template-parts/header');
 } ?>
 							</div>
 <?php } ?>
-<?php if($voto !== ''){ ?>
-							<p class="mt-voto"><?php echo mt_icona('star'); ?><span><?php
-								echo mt_esc($voto.' / '.$voto_max);
-								echo $voto_n !== '' ? ' '.mt_esc(sprintf(__('(%s valutazioni)'), $voto_n)) : '';
-							?></span></p>
+<?php if($serieHref !== ''){ ?>
+							<p class="mt-nota"><?php echo mt_icona('collections_bookmark'); ?>
+								<?php _e('Fa parte di'); ?> <a href="<?php echo mt_esc($serieHref); ?>"><?php echo mt_esc($serieNome !== '' ? $serieNome : basename($serieId)); ?></a>
+							</p>
 <?php } ?>
 						</div>
 					</div>
