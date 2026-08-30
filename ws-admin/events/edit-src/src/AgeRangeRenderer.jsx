@@ -146,11 +146,16 @@ const AgeRange = ({ data, handleChange, path, label, uischema, visible }) => {
             onBlur={chiudiLibero}
           />
         </label>
-        {/* I diciotto anni non sono un confine di scuola — le superiori vanno da 14
-            a 18 — ma sono l'unico limite che a volte è la legge a mettere. Sta qui
-            e non fra le fasce perché non è una fascia: è dove finiscono i minori. */}
-        <button type="button" className="age-scorciatoia" onClick={() => scriviLibero('18', '')}>
-          Solo maggiorenni
+        {/* I due gradini che mette la legge, non la scuola: in Italia i film si
+            classificano VM14 e VM18, e quattordici anni è anche l'età da cui si
+            risponde di sé. Stanno qui e non fra le fasce perché fasce non sono —
+            e i diciotto cadono in mezzo alle superiori, quindi con le sole caselle
+            non si potrebbero nemmeno scrivere. */}
+        <button type="button" className="age-scorciatoia" title="Da 14 anni in su" onClick={() => scriviLibero('14', '')}>
+          14+
+        </button>
+        <button type="button" className="age-scorciatoia" title="Da 18 anni in su: solo maggiorenni" onClick={() => scriviLibero('18', '')}>
+          18+
         </button>
         <span className={storto ? 'age-esito age-storto' : 'age-esito'}>
           {storto

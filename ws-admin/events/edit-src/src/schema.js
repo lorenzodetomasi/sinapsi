@@ -155,8 +155,10 @@ export const schema = {
     maximumAttendeeCapacity: { type: 'integer', title: 'Posti totali' },
     bookedAttendeeCapacity: { type: 'integer', title: 'Posti prenotati' },
     remainingAttendeeCapacity: { type: 'integer', title: 'Posti rimasti' },
-    isChildrensEvent: { type: 'boolean', title: 'Adatto ai bambini' },
-    childrenMustBeAccompanied: { type: 'boolean', title: 'Bambini accompagnati dai genitori' },
+    // «Adatto ai bambini» non c'è più: lo dicevano in due, la spunta e la fascia,
+    // e due risposte allo stesso fatto prima o poi si contraddicono. Adesso lo dice
+    // la fascia, che dice anche QUALI bambini.
+    childrenMustBeAccompanied: { type: 'boolean', title: 'Minori solo se accompagnati' },
     forSeparatedParents: { type: 'boolean', title: 'Solo genitori separati' },
     isAccessibleForFree: { type: 'boolean', title: 'Gratuito' },
     offers: {
@@ -293,7 +295,18 @@ const ctrl = (scope, extra = {}) => ({ type: 'Control', scope, ...extra });
 const PRIMARY_SCOPE = '#/properties/primaryType';
 const showIfSeries = { effect: 'SHOW', condition: { scope: PRIMARY_SCOPE, schema: { const: 'EventSeries' } } };
 const showIfNotSeries = { effect: 'SHOW', condition: { scope: PRIMARY_SCOPE, schema: { not: { const: 'EventSeries' } } } };
-const showIfChildren = { effect: 'SHOW', condition: { scope: '#/properties/isChildrensEvent', schema: { const: true } } };
+/* «Minori solo se accompagnati» si chiede solo a chi ha dichiarato una fascia che
+ * comprende minorenni. Prima la domanda pendeva da una spunta che non c'è più; ora
+ * pende dal campo che porta davvero l'informazione. Il pattern dice «comincia sotto
+ * i diciotto»: 0-9 e 10-17 seguiti dal trattino, più «All Ages» dei file di prima —
+ * niente `(?i)`, che è PHP e non JavaScript, e qui la regola la valuta il browser. */
+const showIfMinori = {
+  effect: 'SHOW',
+  condition: {
+    scope: '#/properties/typicalAgeRange',
+    schema: { type: 'string', pattern: '^(?:[Aa]ll\\s*[Aa]ges|(?:1[0-7]|[0-9])\\s*[-+])' },
+  },
+};
 const showIfLimited = { effect: 'SHOW', condition: { scope: '#/properties/hasLimitedCapacity', schema: { const: true } } };
 
 export const uischema = {
@@ -394,6 +407,11 @@ export const uischema = {
         ctrl('#/properties/typicalAgeRange', {
           options: { ageRange: true, bands: AGE_BANDS, icon: 'child_care' },
         }),
+        // Subito sotto la fascia perché dipende da quella: si legge di seguito,
+        // «adatto dai 6 ai 10 — e solo se accompagnati».
+        ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfMinori, options: { inline: true } }),
+        ctrl('#/properties/forSeparatedParents', { options: { inline: true } }),
+        ctrl('#/properties/isAccessibleForFree', { options: { inline: true } }),
         // I posti si contano solo se sono contati: la spunta apre i campi, e finche'
         // e' spenta cinque caselle vuote non stanno li' a farsi guardare. Un evento
         // senza tetto e' il caso normale, e il caso normale non deve chiedere niente.
@@ -415,17 +433,6 @@ export const uischema = {
             ctrl('#/properties/remainingAttendeeCapacity', { options: { computed: true } }),
           ],
         },
-        // I tre flag "bambini/genitori" su una riga, Gratuito sulla successiva
-        {
-          type: 'HorizontalLayout',
-          options: { inline: true },
-          elements: [
-            ctrl('#/properties/isChildrensEvent'),
-            ctrl('#/properties/childrenMustBeAccompanied', { rule: showIfChildren }),
-            ctrl('#/properties/forSeparatedParents'),
-          ],
-        },
-        ctrl('#/properties/isAccessibleForFree'),
       ],
     },
     {

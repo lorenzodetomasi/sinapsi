@@ -183,7 +183,6 @@ export function fromJsonLd(doc) {
     },
     // Flag pubblico (booleani meetoo dedicati)
     hasLimitedCapacity: haCapienza,
-    isChildrensEvent: asBool(doc['meetoo:isChildrensEvent']),
     childrenMustBeAccompanied: asBool(doc['meetoo:childrenMustBeAccompanied']),
     forSeparatedParents: asBool(doc['meetoo:forSeparatedParents']),
   };
@@ -347,9 +346,11 @@ export function toJsonLd(d) {
     ...(d.superEvent ? { superEvent: toEventRef(d.superEvent) } : {}),
     ...(d.eventStatus ? { eventStatus: d.eventStatus } : {}),
     ...(aggregateRating ? { aggregateRating } : {}),
-    // Flag pubblico: emessi solo se attivi (accompagnati solo se adatto ai bambini)
-    ...(d.isChildrensEvent ? { 'meetoo:isChildrensEvent': true } : {}),
-    ...(d.isChildrensEvent && d.childrenMustBeAccompanied ? { 'meetoo:childrenMustBeAccompanied': true } : {}),
+    /* Flag pubblico: emessi solo se attivi. `meetoo:isChildrensEvent` non si scrive
+     * più e non si legge più — lo diceva già la fascia, e un fatto scritto in due
+     * posti prima o poi si contraddice. Nei file di prima resta finché non li si
+     * risalva; le liste non lo guardano più. */
+    ...(d.childrenMustBeAccompanied ? { 'meetoo:childrenMustBeAccompanied': true } : {}),
     ...(d.forSeparatedParents ? { 'meetoo:forSeparatedParents': true } : {}),
   };
 }
