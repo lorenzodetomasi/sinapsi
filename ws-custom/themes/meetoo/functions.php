@@ -293,6 +293,26 @@ function meetoo_fascia($v){
 }
 
 /**
+ * La fascia d'età in breve, per una pastiglia di scheda: «0+», «14+», «6-10».
+ *
+ * Nel file la fascia aperta si scrive col trattino finale — «14-» — perché è la
+ * forma che schema.org documenta e che leggono i motori di ricerca. Ma «14-» a un
+ * essere umano non dice niente, o peggio gli dice «fino a 14». Il più lo capiscono
+ * tutti, e infatti è quello che si legge sulle locandine. Il valore nel file non
+ * cambia: cambia come lo mostriamo.
+ *
+ * Dove c'è spazio — la scheda dell'evento — si dice per esteso: `mt_eta()`.
+ */
+function meetoo_fascia_breve($v){
+	$s = trim((string)$v);
+	$f = meetoo_fascia($s);
+	if($f === null){
+		return $s;   // scritta a modo suo: si mostra com'è
+	}
+	return $f[1] >= 120 ? $f[0].'+' : $f[0].'-'.$f[1];
+}
+
+/**
  * L'icona di un contenuto, dichiarata dal contenuto stesso.
  *
  * `"meetoo:icon": {"class": "material-symbols-outlined", "name": "water"}`.

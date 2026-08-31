@@ -258,7 +258,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   (function () {
     const SITE_ROOT = location.pathname.replace(/\/ws-admin\/.*/, '/');
     const CONTENT_BASE = SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/';
-    const THEME = SITE_ROOT + 'ws-custom/themes/meetoo/';
     const EDIT = SITE_ROOT + 'ws-admin/events/edit/';
     const PAGE = 10;                       // quanti se ne mostrano per volta
     const esc = Meetoo.cardUtils.esc;
@@ -266,6 +265,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const state = {
       series: [], upcoming: [], archive: [],
       shown: { up: 0, ar: 0 }, archiveOpen: false, broken: {}, trash: [],
+      /* Gli indirizzi pubblici, chiesti alla mappa del sito. Prima «Visualizza»
+       * apriva `event.html?id=…`, cioè il prototipo del tema: una fotografia del
+       * sito di allora, senza segnale che lo fosse. La pagina vera la sa solo la
+       * mappa, e gliela si chiede una volta per tutta la lista. */
+      urls: {},
     };
 
     (function crumb() {
@@ -315,7 +319,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Azioni redazionali: la card è la stessa del sito, con la coda diversa.
     // "Cestina" non è un link ma un'azione: data-trash la intercetta più sotto.
     const actions = (ev) => [
-      { href: THEME + 'event.html?id=' + encodeURIComponent(ev.path), icon: 'visibility', label: 'Visualizza', title: 'Apri la pagina pubblica', external: true },
+      ...(state.urls[ev.path]
+        ? [{ href: state.urls[ev.path], icon: 'visibility', label: 'Visualizza', title: 'Apri la pagina pubblica', external: true }]
+        : []),
       { href: EDIT + '?id=' + encodeURIComponent(ev.path), icon: 'edit', label: 'Modifica', title: 'Apri nell\'editor', primary: true },
       { href: EDIT + '?from=' + encodeURIComponent(ev.path), icon: 'content_copy', label: 'Duplica', title: 'Nuovo evento a partire da questo' },
       { href: '#trash-' + encodeURIComponent(ev.path), icon: 'delete', label: 'Cestina', title: 'Sposta nel cestino (ripristinabile)' },
@@ -326,7 +332,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       extraMeta: [{ icon: 'history', text: ev.dateModified ? 'agg. ' + fmtDate(ev.dateModified) : '' }],
     });
     const seriesCard = (ev) => Meetoo.tileCard({
-      href: THEME + 'collection.html?id=' + encodeURIComponent(ev.path),
+      href: state.urls[ev.path] || (EDIT + '?id=' + encodeURIComponent(ev.path)),
       icon: 'collections_bookmark',
       title: ev.name || ev.path,
       meta: (ev.organizer || 'Collezione di eventi'),
@@ -402,6 +408,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           // Prossimi: dal più vicino (è quello da curare adesso).
           state.upcoming = all.filter((e) => e.kind !== 'series')
             .sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+
+          // Gli indirizzi pubblici: una sola lettura della mappa per tutta la lista
+          // (la promessa è condivisa), e le card che ancora non ce l'hanno si
+          // ridisegnano appena arriva.
+          Promise.all(all.map((e) => Meetoo.urlPagina(e.path).then((u) => { if (u) state.urls[e.path] = u; })))
+            .then(() => resetLists());
 
           // Filtri popolati dai dati presenti.
           const orgs = new Map(), colls = new Map();

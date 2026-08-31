@@ -200,11 +200,12 @@ function mt_card_evento($ev, $o = array()){
 		$meta[] = mt_meta('location_on', $luogo);
 	}
 	/* La fascia d'età, quando l'evento la dichiara: dice PER CHI è, ed è la prima
-	 * cosa che legge chi cerca qualcosa da fare con i figli. «All Ages» si scrive
-	 * come si direbbe parlando. */
+	 * cosa che legge chi cerca qualcosa da fare con i figli. In una pastiglia si
+	 * scrive corta — «0+», «14+», «6-10» — che è come si legge su una locandina;
+	 * per esteso si dice sulla scheda, dove c'è spazio per una frase. */
 	$eta = trim((string)($ev['ageRange'] ?? ''));
 	if($eta !== ''){
-		$meta[] = mt_meta('escalator_warning', strcasecmp($eta, 'All Ages') === 0 ? __('Tutte le età') : $eta);
+		$meta[] = mt_meta('escalator_warning', meetoo_fascia_breve($eta));
 	} else if(!empty($ev['isChildrens'])){
 		$meta[] = mt_meta('escalator_warning', __('Adatto ai bambini'));
 	}

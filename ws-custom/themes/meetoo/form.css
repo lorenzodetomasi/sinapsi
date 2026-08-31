@@ -194,9 +194,23 @@
  * finché ognuno ha spazio per essere leggibile — poi vanno uno sotto l'altro,
  * ognuno a tutta larghezza, e la data torna in una riga sola. */
 .field-row-sep { display: flex; flex-wrap: wrap; gap: var(--sp-sm); align-items: flex-start; }
-.field-row-sep > .control:not(.pair-sep-control) { flex: 1 1 22rem; min-width: 0; }
-/* Andati a capo, il trattino in mezzo non ha più un mezzo da stare: sparisce. */
+/* 22rem erano troppi: due campi da 352px più il trattino non entravano nemmeno
+ * in un pannello da 696px, e «Dal – al» finiva SEMPRE su due righe — con il
+ * trattino appeso in fondo al primo campo. La base ora è quella che serve
+ * davvero a una data: il menu della precisione (7,5rem) più il campo (11rem).
+ * Sotto i ~34rem di pannello i due vanno a capo come prima, e il trattino, che
+ * fra due righe non ha un mezzo dove stare, sparisce. */
+.field-row-sep > .control:not(.pair-sep-control) { flex: 1 1 19rem; min-width: 0; }
+/* Andati a capo, il trattino in mezzo non ha più un mezzo da stare: sparisce.
+ * Lo diceva il commento e non lo faceva nessuno — restava appeso in fondo al
+ * primo campo. Lo decide la larghezza del PANNELLO, non quella della finestra:
+ * l'editor ha due colonne, e una regola legata al viewport guarda la cosa
+ * sbagliata (è già successo, ed è per questo che qui si usa `@container`). */
+.field-row-sep { container-type: inline-size; }
 .field-row-sep > .pair-sep-control { flex: 0 0 auto; }
+@container (max-width: 41rem) {
+  .field-row-sep > .pair-sep-control { display: none; }
+}
 /* Colonnina del separatore: etichetta-segnaposto (vuota) + carattere allineato
    all'input, così "–" / "/" cadono sulla riga del campo, non su quella del label */
 /* Il trattino cade sulla riga dei campi, non su quella delle etichette. Ci arriva
@@ -314,7 +328,13 @@
   padding: 0 1.5rem 0 var(--field-pad-x); font-size: var(--fs-base); color: var(--text);
 }
 .smart-date .sd-input-wrap { position: relative; flex: 1 1 11rem; min-width: 0; }
-.smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 4rem; background-image: none; }
+/* `.pane` davanti NON è ornamentale: senza, questa regola e quella generica dei
+ * campi (`.pane input[type='datetime-local']`) hanno la stessa specificità, e
+ * vince l'ultima scritta — che è quella generica, più in basso nel file. Il
+ * risultato era un `margin: 8px 0 12px` che sopravviveva al `margin: 0`: il
+ * campo diventava alto 56 invece di 36, e il trattino di «Dal – al» — alto
+ * quanto un controllo — restava otto pixel più su del testo delle date. */
+.pane .smart-date .sd-input-wrap input { margin: 0; min-width: 0; padding-right: 4rem; background-image: none; }
 .smart-date .sd-pick, .smart-date .sd-clear {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 1.5rem; height: 1.5rem; padding: 0; border: none; background: transparent;

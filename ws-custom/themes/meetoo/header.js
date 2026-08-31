@@ -49,15 +49,81 @@
   var RSVP_URL  = SITE_ROOT + 'ws-admin/events/rsvp.php';
   var LOGO_URL  = SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/brand/media/logo-h.svg';
   var THEME_DIR = SITE_ROOT + 'ws-custom/themes/meetoo/';
-  // Navigazione principale (hamburger). La pagina può sovrascriverla con Meetoo.setNav(...).
+  /* IL SITO, non i prototipi.
+   *
+   * Queste voci — e il logo, più sotto — puntavano alle pagine di prova del tema
+   * (`index.html`, `waterfront.html`), che erano il sito prima che il sito ci
+   * fosse. Adesso il sito c'è, servito dal CMS, e quelle pagine sono una fotografia
+   * di com'era: chi ci finiva dalla Gestione vedeva contenuti vecchi senza nessun
+   * segnale che lo fossero.
+   *
+   * Gli elenchi nel CMS vivono dentro una ZONA — `/lido-di-ostia/eventi`, non
+   * `/eventi` — perché «gli eventi» in assoluto non sono una pagina: sono la
+   * domanda «dove?» lasciata senza risposta. Finché la zona viva è una, il menu la
+   * nomina; quando se ne aprirà una seconda, questa lista andrà rifatta. */
+  var HOME      = SITE_ROOT + 'meetoo/';
+  var ZONA      = HOME + 'roma/municipio10/lido-di-ostia/';
   var NAV = [
-    { label: 'Home', icon: 'home', href: THEME_DIR + 'index.html' },
-    { label: 'Il Lungomare', icon: 'directions_boat', href: THEME_DIR + 'waterfront.html' },
-    { label: 'Eventi', icon: 'event', href: THEME_DIR + 'index.html#eventi' },
-    { label: 'Gruppi', icon: 'groups', href: THEME_DIR + 'index.html#gruppi' },
-    { label: 'Luoghi', icon: 'place', href: THEME_DIR + 'index.html#luoghi' },
-    { label: 'Iniziative letterarie', icon: 'menu_book', href: THEME_DIR + 'index.html#letterarie' },
+    { label: 'Home', icon: 'home', href: HOME },
+    { label: 'Il Lungomare', icon: 'directions_boat', href: ZONA + 'lungomare' },
+    { label: 'Eventi', icon: 'event', href: ZONA + 'eventi' },
+    { label: 'Gruppi', icon: 'groups', href: ZONA + 'gruppi' },
+    { label: 'Luoghi', icon: 'place', href: ZONA + 'luoghi' },
+    { label: 'Iniziative letterarie', icon: 'menu_book', href: ZONA + 'libri-e-letture' },
   ];
+  /* ---- Dov'è la pagina pubblica di un contenuto ----------------------------
+   *
+   * La risposta la sa la mappa del sito (`ws_sitemap.wsx`), che è anche l'unica
+   * autorità: gli indirizzi non si compongono a mano da questa parte, perché la
+   * regola che li costruisce sta nel server e cambia — un quartiere che passa di
+   * municipio cambia l'indirizzo di tutti i suoi eventi, e una pagina che se lo
+   * fosse calcolato manderebbe la gente su un 404. La Gestione lo chiedeva a
+   * `event.html?id=…`, cioè al prototipo, che invece un indirizzo non ce l'ha.
+   *
+   * Si legge una volta sola: è un file, e l'alternativa è una richiesta per riga.
+   *
+   * NOTA: l'editor eventi ha la stessa funzione in `edit-src/src/pagina.js`. Non
+   * sono unificabili oggi — l'editor è un bundle ES e non carica questo file — e
+   * quindi vanno cambiate insieme. Se un domani l'editor caricherà l'header
+   * condiviso, quella lì diventa una riga che chiama questa. */
+  var mappaPagine = null;
+  function urlPagina(rel) {
+    var v = String(rel || '').replace(/^\/+|\/+$/g, '');
+    if (!v) return Promise.resolve('');
+    if (!mappaPagine) {
+      var base = contentBase();
+      mappaPagine = fetch(base.replace(/[^/]+\/$/, '') + 'ws_sitemap.wsx', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.text() : ''; })
+        .then(function (testo) {
+          var m = new Map();
+          if (!testo) return m;
+          var doc = new DOMParser().parseFromString(testo, 'application/xml');
+          var urls = doc.getElementsByTagName('url');
+          for (var i = 0; i < urls.length; i++) {
+            var wspath = (urls[i].getElementsByTagName('wspath')[0] || {}).textContent || '';
+            var query  = (urls[i].getElementsByTagName('query')[0] || {}).textContent || '';
+            var q = query.match(/[?&]content=([^&]+)/);
+            if (!wspath || !q) continue;
+            // Le pagine GENERATE (i tre elenchi di una zona) condividono il
+            // contenuto della zona: qui si cerca la pagina PROPRIA di una cosa.
+            if (/[?&](elenco|zona)=/.test(query)) continue;
+            var id = decodeURIComponent(q[1]).replace(/^[^/]+\/[^/]+\//, '');
+            if (!m.has(id)) m.set(id, wspath);
+          }
+          return m;
+        })
+        .catch(function () { return new Map(); });
+    }
+    return mappaPagine.then(function (m) {
+      var wspath = m.get(v);
+      if (!wspath) return '';
+      // La mappa dice `/roma/…`: davanti manca il punto in cui il sito è montato,
+      // che porta il nome della cartella dei contenuti (`contents/meetoo/` → `/meetoo/`).
+      var sito = (contentBase().match(/contents\/([^/]+)\//) || [])[1] || '';
+      return SITE_ROOT.replace(/\/$/, '') + (sito ? '/' + sito : '') + wspath;
+    });
+  }
+
   var TOKEN_KEY = 'meetoo_gid_token', THEME_KEY = 'meetoo:theme';
   /* Dove si tiene il token dell'accesso.
    * Stava in sessionStorage, che vive UNA SCHEDA: aprendo il sito in una scheda
@@ -160,7 +226,7 @@
   header.innerHTML =
     '<div class="mt-row mt-row-1">' +
       '<div class="mt-left"><button class="mt-icon-btn" id="mt-menu" title="Menu" aria-label="Menu"><span class="material-symbols-outlined">menu</span></button>' +
-        '<a class="mt-brand" href="' + esc(THEME_DIR + 'index.html') + '" title="Home Meetoo"><img class="mt-logo" src="' + esc(LOGO_URL) + '" alt="Meetoo" onerror="this.replaceWith(Object.assign(document.createElement(\'b\'),{textContent:\'Meetoo\',style:\'font-family:Roboto Slab,serif;color:var(--mt-red);font-size:1.2rem\'}))"></a></div>' +
+        '<a class="mt-brand" href="' + esc(HOME) + '" title="Home Meetoo"><img class="mt-logo" src="' + esc(LOGO_URL) + '" alt="Meetoo" onerror="this.replaceWith(Object.assign(document.createElement(\'b\'),{textContent:\'Meetoo\',style:\'font-family:Roboto Slab,serif;color:var(--mt-red);font-size:1.2rem\'}))"></a></div>' +
       '<div class="mt-actions"><span id="mt-slot"></span>' +
         '<button class="mt-icon-btn" id="mt-settings" title="Impostazioni"><span class="material-symbols-outlined">settings</span></button>' +
         '<span id="mt-account"></span></div>' +
@@ -211,7 +277,7 @@
   if (!drawer) {
   drawerOv = document.createElement('div'); drawerOv.className = 'mt-drawer-ov';
   drawer = document.createElement('nav'); drawer.className = 'mt-drawer';
-  drawer.innerHTML = '<div class="mt-drawer-head"><a class="mt-brand" href="' + esc(THEME_DIR + 'index.html') + '"><img src="' + esc(LOGO_URL) + '" alt="Meetoo" onerror="this.replaceWith(Object.assign(document.createElement(\'b\'),{textContent:\'Meetoo\',style:\'font-family:Roboto Slab,serif;color:var(--mt-red);font-size:1.1rem\'}))"></a>' +
+  drawer.innerHTML = '<div class="mt-drawer-head"><a class="mt-brand" href="' + esc(HOME) + '"><img src="' + esc(LOGO_URL) + '" alt="Meetoo" onerror="this.replaceWith(Object.assign(document.createElement(\'b\'),{textContent:\'Meetoo\',style:\'font-family:Roboto Slab,serif;color:var(--mt-red);font-size:1.1rem\'}))"></a>' +
     '<button class="mt-icon-btn" id="mt-drawer-close" aria-label="Chiudi"><span class="material-symbols-outlined">close</span></button></div><div class="mt-nav" id="mt-nav"></div>';
   document.body.appendChild(drawerOv); document.body.appendChild(drawer);
   }
@@ -351,6 +417,7 @@
     // Slot opzionale per bottoni info/legenda a sinistra delle azioni.
     siteRoot: function () { return SITE_ROOT; },
     contentBase: contentBase,
+    urlPagina: urlPagina,
     setActions: function (html) { var s = document.getElementById('mt-slot'); if (s) s.innerHTML = html || ''; },
     // Voci del menu hamburger (default in NAV): [{label, icon, href, target?}].
     setNav: function (items) { if (Array.isArray(items) && items.length) NAV = items; },
