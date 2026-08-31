@@ -1,0 +1,3 @@
+# La cartella è il RISULTATO della build (npm run build:scheda in events/edit-src):
+# i sorgenti stanno lì, qui ci finiscono solo i file compilati.
+/edit/

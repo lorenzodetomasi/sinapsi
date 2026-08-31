@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "vite build && rsync -avz --delete ../edit/ \"${DEPLOY_DEST:?imposta DEPLOY_DEST=utente@host:/percorso/ws-admin/events/edit/}\""
+    "deploy": "vite build && rsync -avz --delete ../edit/ \"${DEPLOY_DEST:?imposta DEPLOY_DEST=utente@host:/percorso/ws-admin/events/edit/}\"",
+    "build:scheda": "vite build --config vite.scheda.config.js",
+    "deploy:scheda": "vite build --config vite.scheda.config.js && rsync -avz --delete ../../places/edit/ \"${DEPLOY_DEST_SCHEDA:?imposta DEPLOY_DEST_SCHEDA=utente@host:/percorso/ws-admin/places/edit/}\""
   },
   "dependencies": {
     "@jsonforms/core": "^3.8.0",

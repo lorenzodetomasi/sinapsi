@@ -2,7 +2,7 @@
 // Verifica se un @id di place/localbusiness esiste già in ws-custom e, se sì,
 // restituisce il Google Place ID salvato e alcuni campi confrontabili, così il
 // chiamante può capire se è lo STESSO luogo (→ collega) o una collisione di slug.
-// Usato da events/edit (client) e da places/edit/index.php. GET ?id=<prefix>/<region>/<slug>
+// Usato da events/edit (client) e da places/importa/index.php. GET ?id=<prefix>/<region>/<slug>
 // Seconda domanda, ?place_id=<google place id>: «questo luogo di Google è già sul
 // sito?». È la domanda giusta quando si sceglie un suggerimento di Google, perché
 // il Place ID è l'identità del luogo — mentre l'@id costruito da nome e CAP cambia

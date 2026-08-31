@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Il guscio non si tiene in cache: dentro c'è solo il rimando al programma,
+         e quel nome cambia a ogni rilascio. Un guscio vecchio in cache punta a un
+         file che non esiste più, e l'editor si apre con tutti i campi vuoti. -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>Scheda luogo o gruppo — Meetoo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Source+Code+Pro:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Il foglio dei moduli arriva dal tema, non dal bundle: è lo stesso che veste
+         l'editor degli eventi, ed è per questo che i campi si impaginano uguale.
+         Indirizzo assoluto apposta: relativo, la build ne farebbe una copia. -->
+    <link rel="stylesheet" href="/ws-custom/themes/meetoo/form.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/mainScheda.jsx"></script>
+  </body>
+</html>

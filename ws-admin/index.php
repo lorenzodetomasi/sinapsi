@@ -184,8 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        * header.js a chi ha il ruolo per vederla, su tutte le pagine. */
       Meetoo.setNav([
         { label: 'Gestione eventi', icon: 'event_note', href: ADMIN + 'events/index.php' },
-        { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/edit/' },
-        { label: 'Luoghi e organizzazioni', icon: 'place', href: ADMIN + 'places/edit/' },
+        { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/nuovo/' },
+        { label: 'Luoghi e gruppi', icon: 'place', href: ADMIN + 'places/edit/' },
         { label: 'Convertitore JSON ⇄ XML', icon: 'sync_alt', href: ADMIN + 'json-xml/index.php' },
         { label: 'Vai al sito', icon: 'public', href: SITE_ROOT + 'meetoo/' },
       ]);
@@ -204,18 +204,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const TOOLS = {
       'sec-eventi': [
         { href: ADMIN + 'events/index.php', icon: 'event_note', title: 'Gestione eventi', meta: 'Elenco, ricerca, cestino, indice' },
-        { href: ADMIN + 'events/edit/', icon: 'note_add', title: 'Nuovo evento', meta: 'Editor JSON-LD (form)' },
+        { href: ADMIN + 'events/nuovo/', icon: 'note_add', title: 'Nuovo evento', meta: 'Scegli il tipo, poi il modulo' },
       ],
-      // Luoghi e organizzazioni usano lo STESSO strumento: cambia solo dove
-      // finiscono (places/<IT+CAP>/<slug> o organizations/<slug>), scelto lì col
-      // selettore «Salva come» — che ?as=organization preimposta.
+      /* Luoghi e gruppi hanno lo stesso editor — cambia solo lo schema, che si
+       * sceglie dall'@id — e lo stesso backend. L'IMPORTATORE è un'altra cosa:
+       * lavora sul JSON grezzo, gestisce la whitelist dei redattori e rigenera
+       * l'indice dei doppioni. Serve ancora, ma non è il posto dove si scrive
+       * una scheda: per quello adesso c'è un modulo. */
       'sec-luoghi': [
-        { href: ADMIN + 'places/edit/', icon: 'place', title: 'Luoghi e attività', meta: 'Apri e aggiorna i luoghi salvati' },
-        { href: ADMIN + 'places/edit/', icon: 'add_location', title: 'Nuovo luogo o attività', meta: 'Importa da Google Maps' },
+        { href: ADMIN + 'places/edit/', icon: 'place', title: 'Nuovo luogo o attività', meta: 'Modulo, con ricerca su Google Maps' },
+        { href: ADMIN + 'places/importa/', icon: 'upload_file', title: 'Importatore', meta: 'JSON grezzo, doppioni, redattori' },
       ],
       'sec-organizzazioni': [
-        { href: ADMIN + 'places/edit/', icon: 'groups', title: 'Organizzazioni', meta: 'Apri e aggiorna le organizzazioni salvate' },
-        { href: ADMIN + 'places/edit/?as=organization', icon: 'group_add', title: 'Nuova organizzazione', meta: 'Importa da Google Maps come organizations/…' },
+        { href: ADMIN + 'places/edit/?tipo=gruppo', icon: 'group_add', title: 'Nuovo gruppo', meta: 'Modulo: nome, contatti, chi lo gestisce' },
       ],
       'sec-utenti': [
         { href: '#', icon: 'manage_accounts', title: 'Utenti e ruoli', meta: 'In arrivo — oggi i ruoli si cambiano in users/users.xml', soon: true },

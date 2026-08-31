@@ -443,3 +443,15 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
     background: transparent; color: var(--text); border-bottom-color: var(--accent);
   }
 }
+
+/* ---------- Editor delle schede (luoghi e gruppi) ----------
+   Una colonna sola, non due: una scheda non ha un validatore accanto. Ma un
+   modulo largo quanto lo schermo non si legge — l'occhio perde la riga fra
+   l'etichetta e il campo — quindi la colonna si tiene la larghezza che ha
+   nell'editor degli eventi, dove il modulo occupa meta' di uno schermo grande. */
+.app-scheda > .pane {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto;
+}
