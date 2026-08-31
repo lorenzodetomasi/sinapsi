@@ -168,6 +168,21 @@ if (!function_exists('ws_ref_ids')) {
  *   "meetoo:manager": [ { "@type": "Person", "@id": "users/1004491…" } ]
  */
 
+/** Dove possono stare i gruppi: le organizzazioni, e i luoghi — perché un teatro
+ *  o una libreria organizzano eventi quanto un'associazione, e chi li cura deve
+ *  poterne gestire la scheda. Cercarli solo sotto `organizations/` lasciava fuori
+ *  metà di chi organizza davvero. */
+if (!function_exists('ws_gruppi_glob')) {
+    function ws_gruppi_glob(string $base): array {
+        $b = rtrim($base, '/');
+        return array_merge(
+            glob("$b/organizations/*/index.json") ?: [],
+            glob("$b/places/*/index.json") ?: [],
+            glob("$b/places/*/*/index.json") ?: []
+        );
+    }
+}
+
 /** I gruppi che questa persona gestisce, come @id. */
 if (!function_exists('ws_gruppi_gestiti')) {
     function ws_gruppi_gestiti(string $base, string $uid): array {
@@ -177,7 +192,7 @@ if (!function_exists('ws_gruppi_gestiti')) {
         if (isset($letti[$chiave])) return $letti[$chiave];
         $me = "users/$uid";
         $out = [];
-        foreach (glob(rtrim($base, '/') . '/organizations/*/index.json') as $f) {
+        foreach (ws_gruppi_glob($base) as $f) {
             $j = json_decode((string)@file_get_contents($f), true);
             if (!is_array($j)) continue;
             $e = $j['mainEntity'] ?? $j;
