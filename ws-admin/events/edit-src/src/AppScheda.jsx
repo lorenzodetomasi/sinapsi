@@ -72,6 +72,8 @@ export default function AppScheda() {
   const [cerca, setCerca] = useState('');
   const [grezzoGoogle, setGrezzo] = useState(null);
   const [modale, setModale] = useState(false);
+  const [differenze, setDifferenze] = useState([]);
+  const [scelte, setScelte] = useState(new Set());
   const [urlPubblica, setUrlPubblica] = useState('');
   const timerMsg = useRef(0);
 
@@ -136,6 +138,7 @@ export default function AppScheda() {
       const r = await api('load', { id });
       if (r.error) { avvisa(r.error, 'ko'); return; }
       setGrezzo(null);
+      setDifferenze([]);
       adotta(r.json, true);
       avvisa(`Aperta ${id}.`);
     } catch {
@@ -156,6 +159,12 @@ export default function AppScheda() {
     try {
       const r = await api('search', placeId ? { place_id: placeId, query } : { query });
       setGrezzo(r.raw_google || null);
+      /* Le differenze fra quello che dice Google e quello che è già salvato: si
+       * mostrano nel modale con una casella ciascuna, perché «aggiorna da Google»
+       * quasi mai vuol dire «prendi tutto» — il nome buono è spesso il nostro. */
+      const diff = Array.isArray(r.updates) ? r.updates.filter((u) => u && u.path) : [];
+      setDifferenze(diff);
+      setScelte(new Set(diff.map((u) => u.path)));
       if (r.error) { avvisa(r.error, 'ko'); return; }
       const trovato = r.ws_cms;
       if (!trovato) { avvisa('Google non ha restituito una scheda.', 'ko'); return; }
@@ -174,19 +183,25 @@ export default function AppScheda() {
   /* SALVA. Su una scheda caricata dal server si sovrascrive: l'hai vista e l'hai
    * cambiata apposta. Su una nuova si lascia decidere al backend, che sa
    * riconoscere un doppione meglio di noi (ha l'indice dei Google Place ID). */
-  const salva = useCallback(async () => {
+  const salva = useCallback(async (soloQuesti) => {
     if (!data.id) { avvisa('Manca l’indirizzo della scheda (@id).', 'ko'); return; }
     if (!data.name) { avvisa('Manca il nome.', 'ko'); return; }
     setOccupato(true);
     try {
-      const r = await api('save', { jsonld: JSON.stringify(jsonld), mode: esisteSulServer ? 'overwrite' : '' });
+      const parziale = Array.isArray(soloQuesti) && soloQuesti.length > 0;
+      const r = await api('save', {
+        jsonld: JSON.stringify(jsonld),
+        mode: parziale ? 'merge' : (esisteSulServer ? 'overwrite' : ''),
+        ...(parziale ? { paths: soloQuesti } : {}),
+      });
       if (r.error) { avvisa(r.error, 'ko'); return; }
       if (r.needs_confirm) {
         avvisa('Esiste già una scheda a questo indirizzo. Aprila e modificala, oppure cambia l’@id.', 'ko');
         return;
       }
       setEsiste(true);
-      avvisa('Salvata sul server.');
+      setDifferenze([]);
+      avvisa(Array.isArray(soloQuesti) && soloQuesti.length ? `Integrati ${soloQuesti.length} campi.` : 'Salvata sul server.');
     } catch {
       avvisa('Il server non risponde.', 'ko');
     } finally {
@@ -277,6 +292,44 @@ export default function AppScheda() {
                 <pre>{JSON.stringify(jsonld, null, 2)}</pre>
               </section>
             </div>
+            {differenze.length > 0 && (
+              <div className="modal-diff">
+                <h3>Che cosa cambierebbe, e che cosa prendiamo</h3>
+                <ul>
+                  {differenze.map((u) => (
+                    <li key={u.path}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={scelte.has(u.path)}
+                          onChange={(e) => {
+                            const n = new Set(scelte);
+                            if (e.target.checked) n.add(u.path); else n.delete(u.path);
+                            setScelte(n);
+                          }}
+                        />
+                        <span className="diff-campo">{u.field}</span>
+                        <span className="diff-vecchio">{u.old || '—'}</span>
+                        <span className="diff-freccia" aria-hidden="true">→</span>
+                        <span className="diff-nuovo">{u.new}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+                <div className="modal-diff-azioni">
+                  <button type="button" className="btn-ghost" onClick={() => setScelte(new Set(differenze.map((u) => u.path)))}>Tutti</button>
+                  <button type="button" className="btn-ghost" onClick={() => setScelte(new Set())}>Nessuno</button>
+                  <button
+                    type="button"
+                    className="primary"
+                    disabled={occupato || scelte.size === 0}
+                    onClick={() => { salva([...scelte]); setModale(false); }}
+                  >
+                    Integra i campi scelti
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

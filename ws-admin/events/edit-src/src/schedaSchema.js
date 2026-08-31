@@ -98,6 +98,11 @@ export const schemaLuogo = {
     containedInPlace: { type: 'string', title: 'Sta dentro (@id)' },
     isGroup: { type: 'boolean', title: 'È un gruppo, non un luogo fisico' },
 
+    /* Chi altro può modificare QUESTA scheda. È un permesso della singola
+     * scheda, non della persona: sta qui e non in Gestione utenti perché la
+     * domanda «chi può toccare questa cosa» si fa guardando la cosa. */
+    contributor: { type: 'array', title: 'Chi altro può modificarla', items: { type: 'string' } },
+
     googlePlaceId: { type: 'string', title: 'Google Place ID' },
     ratingValue: { type: 'string', title: 'Voto' },
     reviewCount: { type: 'string', title: 'Recensioni' },
@@ -195,6 +200,10 @@ export const uischemaLuogo = {
     /* Quello che scrive Google, e i voti. Si vedono perché sapere che ci sono fa
      * parte del capire la scheda; non si toccano perché al prossimo aggiornamento
      * quello che avessi scritto sparirebbe senza dire niente. */
+    gruppoCampi('Chi ci mette le mani', 'manage_accounts', [
+      ctrl('#/properties/contributor', { options: { icon: 'group_add' } }),
+    ]),
+
     gruppoCampi('Da Google e dai voti', 'travel_explore', [
       {
         type: 'HorizontalLayout',
@@ -241,6 +250,7 @@ export const schemaGruppo = {
      * scheda. È il campo su cui poggia tutto il resto — chi può creare, chi ha il
      * badge — e finora non aveva nessun posto dove scriverlo se non il file. */
     manager: { type: 'array', title: 'Chi lo gestisce', items: { type: 'string' } },
+    contributor: { type: 'array', title: 'Chi altro può modificarne la scheda', items: { type: 'string' } },
     verified: { type: 'boolean', title: 'Gruppo verificato' },
     ratingValue: { type: 'string', title: 'Voto' },
     reviewCount: { type: 'string', title: 'Recensioni' },
@@ -292,6 +302,7 @@ export const uischemaGruppo = {
     ]),
     gruppoCampi('Chi risponde', 'verified_user', [
       ctrl('#/properties/manager', { options: { icon: 'manage_accounts' } }),
+      ctrl('#/properties/contributor', { options: { icon: 'group_add' } }),
       ctrl('#/properties/verified', { options: { inline: true } }),
       {
         type: 'HorizontalLayout',

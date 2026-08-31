@@ -486,3 +486,28 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   font-family: 'Source Code Pro', ui-monospace, monospace; font-size: .8125rem; line-height: 1.5;
 }
 .modal-vuoto { margin: 0; color: var(--text-dim); font-size: var(--fs-label); }
+
+/* Il merge selettivo: che cosa cambierebbe, con una casella per campo.
+   «Aggiorna da Google» quasi mai vuol dire «prendi tutto» — il nome buono è
+   spesso quello redazionale, e il rating quello di Google: si sceglie riga per
+   riga, ed è questa la ragione per cui l'elenco esiste. */
+.modal-diff { border-top: 1px solid var(--border); padding: var(--sp-md); }
+.modal-diff h3 {
+  margin: 0 0 var(--sp-sm); font-size: var(--fs-label); font-weight: 600;
+  color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em;
+}
+.modal-diff ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-xs); }
+.modal-diff label {
+  display: grid; align-items: baseline; gap: var(--sp-sm);
+  grid-template-columns: auto 8rem 1fr auto 1fr; cursor: pointer;
+}
+.modal-diff input { accent-color: var(--accent); }
+.diff-campo { font-weight: 600; }
+.diff-vecchio { color: var(--text-dim); text-decoration: line-through; overflow-wrap: anywhere; }
+.diff-freccia { color: var(--text-dim); }
+.diff-nuovo { overflow-wrap: anywhere; }
+.modal-diff-azioni { display: flex; gap: var(--sp-sm); justify-content: flex-end; margin-top: var(--sp-md); }
+@media (max-width: 46rem) {
+  .modal-diff label { grid-template-columns: auto 1fr; }
+  .diff-freccia { display: none; }
+}

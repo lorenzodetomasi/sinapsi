@@ -160,6 +160,9 @@ export const schema = {
     // la fascia, che dice anche QUALI bambini.
     childrenMustBeAccompanied: { type: 'boolean', title: 'Minori solo se accompagnati' },
     forSeparatedParents: { type: 'boolean', title: 'Solo genitori separati' },
+    /* Chi altro può modificare QUESTO evento. È un permesso della singola cosa,
+     * non della persona: sta nell'editor della cosa, come nelle schede. */
+    contributor: { type: 'array', title: 'Chi altro può modificarlo', items: { type: 'string' } },
     isAccessibleForFree: { type: 'boolean', title: 'Gratuito' },
     offers: {
       type: 'object',
@@ -395,6 +398,7 @@ export const uischema = {
         // Quello che non torna fra date, programma e occorrenze
         { type: 'Coerenza' },
         ctrl('#/properties/eventStatus'),
+        ctrl('#/properties/contributor', { options: { icon: 'group_add' } }),
       ],
     },
     {

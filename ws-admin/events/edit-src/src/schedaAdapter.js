@@ -18,6 +18,14 @@ const rifId = (x) => (x && typeof x === 'object' ? testo(x['@id']) : testo(x));
  *  permette tutte e due le forme e i contenuti veri le usano tutte e due. */
 const lista = (x) => (x === undefined || x === null ? [] : Array.isArray(x) ? x : [x]);
 
+/** Una lista di uid → riferimenti a persone. Si scrive come oggetto e non come
+ *  stringa nuda perché è così che il server li legge — e perché un @id dentro un
+ *  oggetto è un riferimento, mentre una stringa è solo una stringa. */
+const persone = (uids) => (uids || [])
+  .map((x) => String(x).trim())
+  .filter(Boolean)
+  .map((uid) => ({ '@type': 'Person', '@id': uid.startsWith('users/') ? uid : `users/${uid}` }));
+
 /** L'entità dentro il documento (i contenuti hanno il guscio di pagina). */
 export function entitaDi(doc) {
   return doc && typeof doc === 'object' && doc.mainEntity && typeof doc.mainEntity === 'object'
@@ -72,6 +80,7 @@ export function luogoDaJsonLd(doc) {
     containedInPlace: rifId(e.containedInPlace),
     isGroup: e['meetoo:isGroup'] === true,
 
+    contributor: lista(e.contributor).map(rifId).filter(Boolean),
     googlePlaceId: testo(e['meetoo:google_place_id']),
     ratingValue: testo(voto.ratingValue),
     reviewCount: testo(voto.reviewCount),
@@ -137,6 +146,8 @@ export function luogoAJsonLd(d, docOriginale) {
     e.containedInPlace = { ...vecchio, '@id': d.containedInPlace };
   } else delete e.containedInPlace;
 
+  metti('contributor', persone(d.contributor));
+
   if (d.isGroup) e['meetoo:isGroup'] = true; else delete e['meetoo:isGroup'];
 
   if (dentro) { doc.mainEntity = e; doc['@id'] = e['@id']; }
@@ -170,6 +181,7 @@ export function gruppoDaJsonLd(doc) {
     location: rifId(e.location) || rifId(e.containedInPlace),
     areaServed: testo(e.areaServed && typeof e.areaServed === 'object' ? e.areaServed.name : e.areaServed),
     manager: lista(e['meetoo:manager']).map(rifId).filter(Boolean),
+    contributor: lista(e.contributor).map(rifId).filter(Boolean),
     verified: e['meetoo:verified'] === true,
     ratingValue: testo(voto.ratingValue),
     reviewCount: testo(voto.reviewCount),
@@ -221,11 +233,8 @@ export function gruppoAJsonLd(d, docOriginale) {
   /* Chi gestisce: si scrive come riferimento a una persona, non come stringa
    * nuda, perché è così che `ws_gruppi_gestiti()` lo legge — e perché un @id
    * dentro un oggetto è un riferimento, mentre una stringa è solo una stringa. */
-  const gestori = (d.manager || [])
-    .map((x) => String(x).trim())
-    .filter(Boolean)
-    .map((uid) => ({ '@type': 'Person', '@id': uid.startsWith('users/') ? uid : `users/${uid}` }));
-  metti('meetoo:manager', gestori);
+  metti('meetoo:manager', persone(d.manager));
+  metti('contributor', persone(d.contributor));
   if (d.verified) e['meetoo:verified'] = true; else delete e['meetoo:verified'];
 
   if (dentro) { doc.mainEntity = e; doc['@id'] = e['@id']; }

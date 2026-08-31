@@ -157,12 +157,23 @@ if (!is_array($stored) && !ws_can_create('events', $user['uid'], $user['role'], 
     exit;
 }
 
-// Campi server-authoritative: preserva creator/contributor/dateCreated esistenti,
-// altrimenti (nuovo) imposta creator=utente e dateCreated=adesso; dateModified sempre.
+/* Campi che decide il SERVER, non il modulo.
+ *
+ * `creator` e `dateCreated` sono la storia di questo contenuto: chi l'ha fatto e
+ * quando. Non si riscrivono, nemmeno se il payload dicesse altro.
+ *
+ * `contributor` NO: quello è un permesso — chi altro può metterci le mani — e un
+ * permesso deve poterlo cambiare chi ha già il diritto di modificare la cosa.
+ * Finora il server lo ripristinava sempre dal file, quindi un campo nell'editor
+ * sarebbe stato una promessa non mantenuta: lo compili, salvi, e torna com'era.
+ * Se il payload non lo porta affatto, resta quello salvato. */
 $now = date('c');
 if (is_array($stored)) {
-    foreach (['creator', 'contributor', 'dateCreated'] as $k) {
+    foreach (['creator', 'dateCreated'] as $k) {
         if (isset($stored[$k])) $doc[$k] = $stored[$k];
+    }
+    if (!array_key_exists('contributor', $doc) && isset($stored['contributor'])) {
+        $doc['contributor'] = $stored['contributor'];
     }
     if (!isset($doc['creator'])) $doc['creator'] = ws_person_ref($user['uid']);
     if (!isset($doc['dateCreated'])) $doc['dateCreated'] = $now;

@@ -875,19 +875,23 @@ if ($action === 'search') {
             $idSamePlace = true;
             $freshRating = isset($place['rating']) ? (string)(float)$place['rating'] : '';
             $freshReviews = isset($place['user_ratings_total']) ? (string)(int)$place['user_ratings_total'] : '';
+            /* Ogni differenza porta anche il PERCORSO del campo nel documento.
+             * Senza, l'elenco si può leggere ma non si può usare: chi sceglie
+             * «prendi solo il CAP» deve poterlo dire a `ws_apply_paths()`, che
+             * ragiona per percorsi puntati e non conosce la parola «CAP». */
             $cmp = [
-                ['nome', (string)($place['name'] ?? ''), $stored['name']],
-                ['sito', (string)($place['website'] ?? ''), $stored['url']],
-                ['indirizzo', trim($street), $stored['streetAddress']],
-                ['CAP', $postalCode, $stored['postalCode']],
-                ['città', $city, $stored['addressLocality']],
-                ['rating', $freshRating, (string)($stored['ratingValue'] ?? '')],
-                ['recensioni', $freshReviews, (string)($stored['reviewCount'] ?? '')],
+                ['nome', (string)($place['name'] ?? ''), $stored['name'], 'mainEntity.name'],
+                ['sito', (string)($place['website'] ?? ''), $stored['url'], 'mainEntity.url'],
+                ['indirizzo', trim($street), $stored['streetAddress'], 'mainEntity.address.streetAddress'],
+                ['CAP', $postalCode, $stored['postalCode'], 'mainEntity.address.postalCode'],
+                ['città', $city, $stored['addressLocality'], 'mainEntity.address.addressLocality'],
+                ['rating', $freshRating, (string)($stored['ratingValue'] ?? ''), 'mainEntity.aggregateRating.ratingValue'],
+                ['recensioni', $freshReviews, (string)($stored['reviewCount'] ?? ''), 'mainEntity.aggregateRating.reviewCount'],
             ];
             foreach ($cmp as $row) {
                 $new = trim($row[1]); $old = trim($row[2]);
                 if ($new !== '' && strcasecmp($new, $old) !== 0) {
-                    $updates[] = ['field' => $row[0], 'old' => $old, 'new' => $new];
+                    $updates[] = ['field' => $row[0], 'old' => $old, 'new' => $new, 'path' => $row[3]];
                 }
             }
         }

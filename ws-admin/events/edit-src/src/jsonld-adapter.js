@@ -185,6 +185,8 @@ export function fromJsonLd(doc) {
     hasLimitedCapacity: haCapienza,
     childrenMustBeAccompanied: asBool(doc['meetoo:childrenMustBeAccompanied']),
     forSeparatedParents: asBool(doc['meetoo:forSeparatedParents']),
+    contributor: (Array.isArray(doc.contributor) ? doc.contributor : (doc.contributor ? [doc.contributor] : []))
+      .map((x) => (x && typeof x === 'object' ? String(x['@id'] ?? '') : String(x))).filter(Boolean),
   };
 }
 
@@ -352,6 +354,11 @@ export function toJsonLd(d) {
      * risalva; le liste non lo guardano più. */
     ...(d.childrenMustBeAccompanied ? { 'meetoo:childrenMustBeAccompanied': true } : {}),
     ...(d.forSeparatedParents ? { 'meetoo:forSeparatedParents': true } : {}),
+    // Chi altro può modificarlo. Sempre presente (anche vuoto) perché il server
+    // distingue «non l'ho toccato» da «l'ho svuotato»: senza la chiave, ripristina.
+    contributor: (d.contributor || [])
+      .map((x) => String(x).trim()).filter(Boolean)
+      .map((uid) => ({ '@type': 'Person', '@id': uid.startsWith('users/') ? uid : `users/${uid}` })),
   };
 }
 

@@ -186,6 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { label: 'Gestione eventi', icon: 'event_note', href: ADMIN + 'events/index.php' },
         { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/nuovo/' },
         { label: 'Luoghi e gruppi', icon: 'place', href: ADMIN + 'places/edit/' },
+        { label: 'Utenti e ruoli', icon: 'manage_accounts', href: ADMIN + 'users/' },
         { label: 'Convertitore JSON ⇄ XML', icon: 'sync_alt', href: ADMIN + 'json-xml/index.php' },
         { label: 'Vai al sito', icon: 'public', href: SITE_ROOT + 'meetoo/' },
       ]);
@@ -219,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { href: ADMIN + 'places/edit/?tipo=gruppo', icon: 'group_add', title: 'Nuovo gruppo', meta: 'Modulo: nome, contatti, chi lo gestisce' },
       ],
       'sec-utenti': [
-        { href: '#', icon: 'manage_accounts', title: 'Utenti e ruoli', meta: 'In arrivo — oggi i ruoli si cambiano in users/users.xml', soon: true },
+        { href: ADMIN + 'users/', icon: 'manage_accounts', title: 'Utenti e ruoli', meta: 'Chi c\'è, che ruolo ha, quali gruppi gestisce' },
       ],
       'sec-tools': [
         { href: ADMIN + 'json-xml/index.php', icon: 'sync_alt', title: 'Convertitore JSON ⇄ XML', meta: 'Converte e valida i contenuti' },
