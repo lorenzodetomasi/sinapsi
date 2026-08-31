@@ -227,6 +227,12 @@ body {
    `section` — e `.pane` è una section. Sommati a quelli del primo gruppo facevano
    una fascia vuota alta 76px fra l'header e la prima domanda. */
 .layout > .pane { margin-top: 0; }
+/* Il primo gruppo non prende lo stacco: sopra ha l'header, non un altro gruppo.
+   La riga con `> .group:first-child` non ha mai fatto presa perché JSON Forms
+   infila un `.vertical-layout-item` fra il layout e il gruppo — e un selettore
+   che salta un livello non incontra niente. Restavano 56px di vuoto fra la barra
+   e la prima domanda: 32 di margine, 16 di riempimento, 8 di nessuno. */
+.pane > .vertical-layout > :first-child > .group,
 .pane > .vertical-layout > .group:first-child,
 .pane > .group:first-child {
   margin-top: 0; padding-top: 0; border-top: 0;
@@ -455,3 +461,28 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   max-width: 60rem;
   margin: 0 auto;
 }
+
+/* Il campo di ricerca nella barra della scheda: è l'EntityPicker degli
+   Organizzatori, che qui deve prendersi lo spazio che avanza. */
+.scheda-cerca { flex: 1 1 18rem; min-width: 0; position: relative; }
+.scheda-cerca .rf, .scheda-cerca .ent-box { margin: 0; }
+
+/* I due JSON, uno accanto all'altro. Su schermo stretto uno sotto l'altro: due
+   colonne di codice larghe 300px non si leggono, si indovinano. */
+.modal-box.modal-json { width: min(96vw, 74rem); max-height: 86vh; display: flex; flex-direction: column; }
+.modal-json-corpo {
+  display: grid; gap: var(--sp-md); padding: var(--sp-md);
+  grid-template-columns: 1fr; overflow: auto; min-height: 0;
+}
+@media (min-width: 60rem) { .modal-json-corpo { grid-template-columns: 1fr 1fr; } }
+.modal-json-corpo section { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.modal-json-corpo h3 {
+  margin: 0 0 var(--sp-sm); font-size: var(--fs-label); font-weight: 600;
+  color: var(--text-dim); text-transform: uppercase; letter-spacing: .08em;
+}
+.modal-json-corpo pre {
+  margin: 0; padding: var(--sp-sm); overflow: auto; max-height: 62vh;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm);
+  font-family: 'Source Code Pro', ui-monospace, monospace; font-size: .8125rem; line-height: 1.5;
+}
+.modal-vuoto { margin: 0; color: var(--text-dim); font-size: var(--fs-label); }

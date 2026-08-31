@@ -327,13 +327,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       { href: EDIT + '?from=' + encodeURIComponent(ev.path), icon: 'content_copy', label: 'Duplica', title: 'Nuovo evento a partire da questo' },
       { href: '#trash-' + encodeURIComponent(ev.path), icon: 'delete', label: 'Cestina', title: 'Sposta nel cestino (ripristinabile)' },
     ];
+    /* Il titolo porta all'EDITOR, non alla pagina pubblica: in Gestione si apre
+     * una scheda per cambiarla, e la pagina pubblica ha già il suo pulsante
+     * («Visualizza», l'occhio) quando quell'indirizzo esiste. */
     const eventCard = (ev) => Meetoo.eventCard(ev, {
+      viewUrl: EDIT + '?id=' + encodeURIComponent(ev.path),
       actions: actions(ev),
       badge: brokenBadge(ev.path),
       extraMeta: [{ icon: 'history', text: ev.dateModified ? 'agg. ' + fmtDate(ev.dateModified) : '' }],
     });
     const seriesCard = (ev) => Meetoo.tileCard({
-      href: state.urls[ev.path] || (EDIT + '?id=' + encodeURIComponent(ev.path)),
+      href: EDIT + '?id=' + encodeURIComponent(ev.path),
       icon: 'collections_bookmark',
       title: ev.name || ev.path,
       meta: (ev.organizer || 'Collezione di eventi'),

@@ -14,6 +14,7 @@ import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
 import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
+import EntityPicker from './EntityPicker.jsx';
 
 /* L'editor delle SCHEDE: un luogo, un'attività, un gruppo.
  *
@@ -68,8 +69,9 @@ export default function AppScheda() {
   const [esisteSulServer, setEsiste] = useState(false);
   const [msg, setMsg] = useState(null);
   const [occupato, setOccupato] = useState(false);
-  const [mostraJson, setMostraJson] = useState(false);
   const [cerca, setCerca] = useState('');
+  const [grezzoGoogle, setGrezzo] = useState(null);
+  const [modale, setModale] = useState(false);
   const [urlPubblica, setUrlPubblica] = useState('');
   const timerMsg = useRef(0);
 
@@ -127,16 +129,33 @@ export default function AppScheda() {
 
   const jsonld = useMemo(() => aJsonLd(data, doc, tipo), [data, doc, tipo]);
 
+  /** Una voce scelta fra quelle del SITO: si apre quella, non se ne fa una nuova. */
+  const dalSito = useCallback(async (id) => {
+    setOccupato(true);
+    try {
+      const r = await api('load', { id });
+      if (r.error) { avvisa(r.error, 'ko'); return; }
+      setGrezzo(null);
+      adotta(r.json, true);
+      avvisa(`Aperta ${id}.`);
+    } catch {
+      avvisa('Il server non risponde.', 'ko');
+    } finally {
+      setOccupato(false);
+    }
+  }, [adotta, avvisa]);
+
   /* CERCA SU GOOGLE. Il backend restituisce una scheda già in forma schema.org
    * (`ws_cms`): si adotta quella, tenendo però l'@id che c'è — cambiare indirizzo
    * a un luogo già pubblicato romperebbe ogni collegamento che gli punta. */
-  const daGoogle = useCallback(async () => {
+  const daGoogle = useCallback(async (placeIdScelto) => {
     const query = cerca.trim();
-    const placeId = data.googlePlaceId;
-    if (!query && !placeId) { avvisa('Scrivi il nome del luogo, o carica una scheda che abbia già un Google Place ID.', 'ko'); return; }
+    const placeId = placeIdScelto || data.googlePlaceId;
+    if (!query && !placeId) { avvisa('Scegli un luogo dall’elenco, o carica una scheda che abbia già un Google Place ID.', 'ko'); return; }
     setOccupato(true);
     try {
       const r = await api('search', placeId ? { place_id: placeId, query } : { query });
+      setGrezzo(r.raw_google || null);
       if (r.error) { avvisa(r.error, 'ko'); return; }
       const trovato = r.ws_cms;
       if (!trovato) { avvisa('Google non ha restituito una scheda.', 'ko'); return; }
@@ -188,22 +207,25 @@ export default function AppScheda() {
             <span>{data.name || `${titolo} senza nome`}</span>
           </nav>
 
-          {tipo !== 'gruppo' && (
-            <>
-              <input
-                type="text"
-                className="modal-input"
-                style={{ flex: '1 1 16rem', minWidth: 0 }}
-                placeholder="Cerca su Google Maps: nome e città…"
-                value={cerca}
-                onChange={(e) => setCerca(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') daGoogle(); }}
-              />
-              <button type="button" className="btn-ghost" onClick={daGoogle} disabled={occupato}>
-                <span className="material-symbols-outlined">travel_explore</span>
-                {data.googlePlaceId ? 'Aggiorna da Google' : 'Cerca su Google'}
-              </button>
-            </>
+          {/* Lo STESSO campo del «Nome» degli Organizzatori: prima quello che c'è
+              già sul sito, poi — solo se il sito non ha già la risposta — quello
+              che dice Google. La domanda «c'è già?» viene prima di «esiste?»,
+              altrimenti si creano doppioni di cose che abbiamo già. */}
+          <div className="scheda-cerca">
+            <EntityPicker
+              value={cerca}
+              ambito={tipo === 'gruppo' ? 'organizer' : 'venue'}
+              placeholder={tipo === 'gruppo' ? 'Cerca un gruppo già sul sito…' : 'Cerca sul sito o su Google Maps…'}
+              onChange={setCerca}
+              onPickSite={(e) => dalSito(e['@id'])}
+              onPickGoogle={({ placeId }) => daGoogle(placeId)}
+            />
+          </div>
+
+          {data.googlePlaceId && tipo !== 'gruppo' && (
+            <button type="button" className="btn-ghost" onClick={() => daGoogle()} disabled={occupato} title="Rilegge la scheda da Google con il Place ID salvato">
+              <span className="material-symbols-outlined">travel_explore</span> Aggiorna da Google
+            </button>
           )}
 
           {urlPubblica && (
@@ -215,34 +237,59 @@ export default function AppScheda() {
       </div>
 
       <div className="pane">
-        {mostraJson ? (
-          <div className="code-pane">
-            <h2>JSON-LD</h2>
-            <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
-              {JSON.stringify(jsonld, null, 2)}
-            </pre>
-          </div>
-        ) : (
-          <JsonForms
-            schema={schema}
-            uischema={uischema}
-            data={data}
-            renderers={renderers}
-            cells={vanillaCells}
-            onChange={({ data: d }) => setData(d)}
-          />
-        )}
+        <JsonForms
+          schema={schema}
+          uischema={uischema}
+          data={data}
+          renderers={renderers}
+          cells={vanillaCells}
+          onChange={({ data: d }) => setData(d)}
+        />
       </div>
+
+      {/* I DUE JSON, uno accanto all'altro: a sinistra quello che ha detto Google,
+          a destra quello che finirà nel file. È il confronto per cui finora si
+          apriva l'importatore — con la differenza che qui la colonna di destra
+          non è un'anteprima ma esattamente ciò che si sta per salvare. */}
+      {modale && (
+        <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setModale(false); }}>
+          <div className="modal-box modal-json" role="dialog" aria-modal="true" aria-label="I due JSON">
+            <div className="modal-head">
+              <strong>Che cosa dice Google, e che cosa salviamo</strong>
+              <button type="button" className="icon-btn" onClick={() => setModale(false)} title="Chiudi">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-json-corpo">
+              <section>
+                <h3>Da Google Maps</h3>
+                {grezzoGoogle ? (
+                  <pre>{JSON.stringify(grezzoGoogle, null, 2)}</pre>
+                ) : (
+                  <p className="modal-vuoto">
+                    Niente da mostrare: questa scheda non è stata (ancora) letta da Google
+                    in questa sessione. Cercala qui sopra, oppure usa «Aggiorna da Google».
+                  </p>
+                )}
+              </section>
+              <section>
+                <h3>Quello che salviamo</h3>
+                <pre>{JSON.stringify(jsonld, null, 2)}</pre>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="ed-foot">
         <div className="ed-foot-sx">
           <button
             type="button"
-            className={mostraJson ? 'ed-toggle active' : 'ed-toggle'}
-            onClick={() => setMostraJson((v) => !v)}
-            title="Mostra il JSON-LD che verrà salvato"
+            className={modale ? 'ed-toggle active' : 'ed-toggle'}
+            onClick={() => setModale(true)}
+            title="Confronta il JSON di Google con quello che verrà salvato"
           >
-            <span className="material-symbols-outlined">data_object</span> JSON-LD
+            <span className="material-symbols-outlined">data_object</span> I due JSON
           </button>
           {msg && <span className={msg.genere === 'ko' ? 'flash ko' : 'flash ok'}>{msg.testo}</span>}
         </div>

@@ -252,7 +252,11 @@
     (opts.extraMeta || []).forEach(function (m) { if (m && m.text) metas.push(metaItem(m.icon, m.text)); });
 
     var title = esc(ev.name || '(senza titolo)') + statusBadge(ev.status) + (opts.badge || '');
-    var href = (opts.viewUrl || 'event.html?id=' + encodeURIComponent(ev.path) + baseQ);
+    /* Dove porta il titolo. Era `event.html?id=…`, il prototipo del tema: adesso
+     * quel file è in archivio, e il titolo di ogni evento portava a un 404. Chi
+     * disegna la card sa dove vuole mandare e lo dice con `viewUrl`; chi non lo
+     * dice non ottiene un link sbagliato, ottiene un titolo che non è un link. */
+    var href = opts.viewUrl || '';
     // Condividi + «mi interessa» di serie; le pagine di gestione, dove servono
     // altre azioni, le tolgono con social: false.
     if (opts.social !== false && !opts.actions) {
