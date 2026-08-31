@@ -3,7 +3,7 @@ import { createPortal as creaPortale } from 'react-dom';
 import { JsonForms } from '@jsonforms/react';
 import { vanillaRenderers, vanillaCells } from '@jsonforms/vanilla-renderers';
 import { schema, uischema } from './schema.js';
-import { fromJsonLd, toJsonLd, blankJsonLd, dedupeKeywords } from './jsonld-adapter.js';
+import { fromJsonLd, toJsonLd, blankJsonLd, docNuovo, dedupeKeywords } from './jsonld-adapter.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
 import SeoDescrizioneRenderer, { seoDescrizioneTester } from './SeoDescrizioneRenderer.jsx';
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
@@ -178,8 +178,10 @@ export default function App() {
     const q = new URLSearchParams(window.location.search);
     const from = q.get('from');            // ?from=… → duplica (nuovo evento da un altro)
     const id = q.get('id') || q.get('event');
+    const tipo = q.get('tipo');            // ?tipo=… → arriva dalla scelta fatta prima
     if (from) loadFromWeb(from, true);
     else if (id) loadFromWeb(id);
+    else if (tipo) setData(deriveCapacities(fromJsonLd(docNuovo(tipo))));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -362,3 +362,27 @@ export const blankJsonLd = {
   '@id': '',
   '@type': 'Event',
 };
+
+/* Il documento di partenza secondo il TIPO scelto prima del modulo (`?tipo=`).
+ *
+ * Non è comodità: è la sola cosa che il modulo non può dedurre da solo, e
+ * sbagliarla non si disfa. Una giornata a blocchi resta UN evento con dentro il
+ * suo programma — la tentazione è farne una collezione, «sono tre cose», ma le
+ * occorrenze di una collezione sono eventi veri con un indirizzo ciascuno, e tre
+ * conferenze dello stesso pomeriggio non lo sono. Una rassegna che si ripete
+ * invece è una collezione per davvero, e parte già con la ricorrenza accesa
+ * perché è quella la sua ragione di esistere.
+ */
+export function docNuovo(tipo) {
+  if (tipo === 'giornata') {
+    // Una riga di programma vuota: dice dove vanno i blocchi, senza compilarli.
+    return { ...blankJsonLd, subEvent: [{ '@type': 'Event', name: '', startDate: '', endDate: '' }] };
+  }
+  if (tipo === 'serie-regolare') {
+    return { ...blankJsonLd, '@type': 'EventSeries', eventSchedule: { '@type': 'Schedule', repeatFrequency: 'P1W' } };
+  }
+  if (tipo === 'serie-variabile') {
+    return { ...blankJsonLd, '@type': 'EventSeries' };
+  }
+  return blankJsonLd;   // «singolo», e qualunque cosa non riconosciamo
+}

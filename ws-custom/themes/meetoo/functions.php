@@ -419,12 +419,16 @@ function meetoo_puo_creare($tipo = 'events'){
  *
  * Come per la penna: si offre solo ciò che un editor sa davvero aprire. Oggi gli
  * eventi; luoghi e gruppi quando avranno il loro (tappe 2 e 3).
+ *
+ * Non si va dritti al modulo ma alla domanda che viene prima — che TIPO di cosa
+ * stai per scrivere — perché è l'unica che il modulo non può dedurre e l'unica
+ * che, sbagliata, non si disfa: cambia l'@id, e quindi l'indirizzo.
  */
 function meetoo_url_crea($tipo = 'events'){
 	if($tipo !== 'events'){
 		return '';
 	}
-	return rtrim(ws_root_url(), '/').'/ws-admin/events/edit/';
+	return rtrim(ws_root_url(), '/').'/ws-admin/events/nuovo/';
 }
 
 /**

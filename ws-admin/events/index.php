@@ -259,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const SITE_ROOT = location.pathname.replace(/\/ws-admin\/.*/, '/');
     const CONTENT_BASE = SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/';
     const EDIT = SITE_ROOT + 'ws-admin/events/edit/';
+    const NUOVO = SITE_ROOT + 'ws-admin/events/nuovo/';   // la scelta del tipo, prima del modulo
     const PAGE = 10;                       // quanti se ne mostrano per volta
     const esc = Meetoo.cardUtils.esc;
 
@@ -591,7 +592,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       });
     })();
 
-    document.getElementById('add-event-fab').addEventListener('click', () => { location.href = EDIT; });
+    document.getElementById('add-event-fab').addEventListener('click', () => { location.href = NUOVO; });
     document.getElementById('ar-load').addEventListener('click', function () {
       this.style.display = 'none';
       state.archiveOpen = true;
