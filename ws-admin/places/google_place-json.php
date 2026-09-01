@@ -57,7 +57,9 @@ function ws_read_stored($id) {
         'postalCode' => (string)($addr['postalCode'] ?? ''),
         'addressLocality' => (string)($addr['addressLocality'] ?? ''),
         'ratingValue' => $m['aggregateRating']['ratingValue'] ?? null,
-        'reviewCount' => $m['aggregateRating']['reviewCount'] ?? null,
+        // `ratingCount` è il numero di voti (Google: user_ratings_total); il vecchio
+        // `reviewCount` si legge ancora, per i file non ancora migrati.
+        'ratingCount' => $m['aggregateRating']['ratingCount'] ?? $m['aggregateRating']['reviewCount'] ?? null,
     ];
     return [$gid, $stored, false];
 }
@@ -886,7 +888,7 @@ if ($action === 'search') {
                 ['CAP', $postalCode, $stored['postalCode'], 'mainEntity.address.postalCode'],
                 ['città', $city, $stored['addressLocality'], 'mainEntity.address.addressLocality'],
                 ['rating', $freshRating, (string)($stored['ratingValue'] ?? ''), 'mainEntity.aggregateRating.ratingValue'],
-                ['recensioni', $freshReviews, (string)($stored['reviewCount'] ?? ''), 'mainEntity.aggregateRating.reviewCount'],
+                ['voti', $freshReviews, (string)($stored['ratingCount'] ?? ''), 'mainEntity.aggregateRating.ratingCount'],
             ];
             foreach ($cmp as $row) {
                 $new = trim($row[1]); $old = trim($row[2]);
@@ -948,7 +950,7 @@ if ($action === 'search') {
     if (!empty($place['website'])) $wsCmsJsonLd['mainEntity']['url'] = $place['website'];
     if (isset($place['rating'])) {
         $wsCmsJsonLd['mainEntity']['aggregateRating'] = [
-            "@type" => "AggregateRating", "ratingValue" => (float) $place['rating'], "reviewCount" => (int) $place['user_ratings_total']
+            "@type" => "AggregateRating", "ratingValue" => (float) $place['rating'], "ratingCount" => (int) $place['user_ratings_total']
         ];
     }
     // Campi integrati aggiuntivi

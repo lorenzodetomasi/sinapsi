@@ -143,14 +143,19 @@ if (!function_exists('ws_rating_raccogli')) {
         if (!$mio && $valEsterno) {
             $voci['google'] = [
                 'ratingValue' => (float)$agg['ratingValue'],
-                // Google conta le recensioni; se non l'ha detto, quella voce pesa
-                // come una sola — è l'ipotesi più prudente, non un numero inventato.
-                'reviewCount' => (int)($agg['reviewCount'] ?? $agg['ratingCount'] ?? 1) ?: 1,
+                /* Quello che Google conta sono i VOTI, non le recensioni scritte:
+                 * `user_ratings_total` è il numero di stelline, e in schema.org si
+                 * chiama `ratingCount`. Per anni l'abbiamo scritto sotto
+                 * `reviewCount`, che vuol dire un'altra cosa — quindi lo si legge
+                 * ancora anche da lì, per i file che non hanno ancora fatto il
+                 * passaggio. Se il numero non c'è, quella voce pesa uno: è
+                 * l'ipotesi prudente, non un numero inventato. */
+                'ratingCount' => (int)($agg['ratingCount'] ?? $agg['reviewCount'] ?? 1) ?: 1,
             ];
         }
 
         $g = isset($voci['google']['ratingValue']) ? (float)$voci['google']['ratingValue'] : null;
-        $gn = max(1, (int)($voci['google']['reviewCount'] ?? 1));
+        $gn = max(1, (int)($voci['google']['ratingCount'] ?? $voci['google']['reviewCount'] ?? 1));
         if ($g === null) unset($voci['google']);
 
         if ($m) {
@@ -189,8 +194,11 @@ if (!function_exists('ws_rating_raccogli')) {
                 'bestRating' => 5,
                 'worstRating' => 1,
                 'ratingCount' => $peso,
-                // Le recensioni scritte: quelle di Google più quelle di qui.
-                'reviewCount' => ($g !== null ? $gn : 0) + ($m ? $m['reviews'] : 0),
+                /* Le recensioni SCRITTE, e sono soltanto le nostre: di Google
+                 * sappiamo quante stelline ha preso, non quante persone hanno
+                 * scritto qualcosa. Sommarci `$gn` — come si faceva — voleva dire
+                 * affermare che ci sono 426 recensioni quando sono 426 voti. */
+                'reviewCount' => $m ? $m['reviews'] : 0,
             ];
         }
         // Si scrive solo se cambia davvero: un ricalcolo a vuoto non deve toccare

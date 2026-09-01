@@ -105,7 +105,12 @@ export const schemaLuogo = {
 
     googlePlaceId: { type: 'string', title: 'Google Place ID' },
     ratingValue: { type: 'string', title: 'Voto' },
-    reviewCount: { type: 'string', title: 'Recensioni' },
+    /* Due conteggi, due cose. `ratingCount` sono le stelline — è quello che
+     * Google manda come `user_ratings_total` — e `reviewCount` le recensioni
+     * scritte. Scriverli con lo stesso nome faceva dire alla scheda che 426
+     * persone avevano scritto qualcosa, quando avevano solo votato. */
+    ratingCount: { type: 'string', title: 'Voti' },
+    reviewCount: { type: 'string', title: 'Recensioni scritte' },
     satelliteView: { type: 'string', title: 'Vista dal satellite' },
     satelliteCredit: { type: 'string', title: 'Crediti della vista' },
     mapCount: { type: 'string', title: 'Mappe collegate' },
@@ -210,7 +215,13 @@ export const uischemaLuogo = {
         options: { cols: 3 },
         elements: [
           ctrl('#/properties/ratingValue', { options: { computed: true } }),
+          ctrl('#/properties/ratingCount', { options: { computed: true } }),
           ctrl('#/properties/reviewCount', { options: { computed: true } }),
+        ],
+      },
+      {
+        type: 'HorizontalLayout',
+        elements: [
           ctrl('#/properties/mapCount', { options: { computed: true } }),
         ],
       },
@@ -253,7 +264,8 @@ export const schemaGruppo = {
     contributor: { type: 'array', title: 'Chi altro può modificarne la scheda', items: { type: 'string' } },
     verified: { type: 'boolean', title: 'Gruppo verificato' },
     ratingValue: { type: 'string', title: 'Voto' },
-    reviewCount: { type: 'string', title: 'Recensioni' },
+    ratingCount: { type: 'string', title: 'Voti' },
+    reviewCount: { type: 'string', title: 'Recensioni scritte' },
   },
 };
 
@@ -306,8 +318,10 @@ export const uischemaGruppo = {
       ctrl('#/properties/verified', { options: { inline: true } }),
       {
         type: 'HorizontalLayout',
+        options: { cols: 3 },
         elements: [
           ctrl('#/properties/ratingValue', { options: { computed: true } }),
+          ctrl('#/properties/ratingCount', { options: { computed: true } }),
           ctrl('#/properties/reviewCount', { options: { computed: true } }),
         ],
       },

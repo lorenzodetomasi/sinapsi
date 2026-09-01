@@ -179,6 +179,10 @@ export function fromJsonLd(doc) {
     eventSchedule: fromSchedule(doc.eventSchedule),
     aggregateRating: {
       ratingValue: rating.ratingValue ?? '',
+      // `reviewCount` letto anche dal vecchio nome: i file non ancora migrati
+      // portano il conteggio dei VOTI sotto «recensioni».
+      ratingCount: rating.ratingCount ?? rating.reviewCount ?? '',
+      reviewCount: rating.ratingCount !== undefined ? (rating.reviewCount ?? '') : '',
       bestRating: rating.bestRating ?? '',
     },
     // Flag pubblico (booleani meetoo dedicati)
@@ -309,6 +313,8 @@ export function toJsonLd(d) {
     ? {
         '@type': 'AggregateRating',
         ratingValue: d.aggregateRating.ratingValue,
+        ...(d.aggregateRating.ratingCount ? { ratingCount: Number(d.aggregateRating.ratingCount) } : {}),
+        ...(d.aggregateRating.reviewCount ? { reviewCount: Number(d.aggregateRating.reviewCount) } : {}),
         ...(d.aggregateRating.bestRating ? { bestRating: d.aggregateRating.bestRating } : {}),
       }
     : null;

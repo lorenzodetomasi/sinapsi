@@ -83,7 +83,9 @@ export function luogoDaJsonLd(doc) {
     contributor: lista(e.contributor).map(rifId).filter(Boolean),
     googlePlaceId: testo(e['meetoo:google_place_id']),
     ratingValue: testo(voto.ratingValue),
-    reviewCount: testo(voto.reviewCount),
+    // Il vecchio nome si legge ancora: i file non migrati portano i voti lì.
+    ratingCount: testo(voto.ratingCount ?? voto.reviewCount ?? ''),
+    reviewCount: testo(voto.ratingCount !== undefined ? (voto.reviewCount ?? '') : ''),
     satelliteView: testo(e['meetoo:satelliteView']),
     satelliteCredit: testo(e['meetoo:satelliteCredit']),
     mapCount: lista(e.hasMap).length ? String(lista(e.hasMap).length) : '',
@@ -184,7 +186,8 @@ export function gruppoDaJsonLd(doc) {
     contributor: lista(e.contributor).map(rifId).filter(Boolean),
     verified: e['meetoo:verified'] === true,
     ratingValue: testo(voto.ratingValue),
-    reviewCount: testo(voto.reviewCount),
+    ratingCount: testo(voto.ratingCount ?? voto.reviewCount ?? ''),
+    reviewCount: testo(voto.ratingCount !== undefined ? (voto.reviewCount ?? '') : ''),
   };
 }
 

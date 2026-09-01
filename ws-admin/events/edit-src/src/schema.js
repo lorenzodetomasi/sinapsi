@@ -251,6 +251,13 @@ export const schema = {
       title: 'Valutazione',
       properties: {
         ratingValue: { type: 'string', title: 'Voto' },
+        /* I due conteggi di schema.org, e non sono sinonimi: `ratingCount` sono
+         * le stelline (quello che Google chiama `user_ratings_total`),
+         * `reviewCount` le recensioni scritte. Per anni il primo numero è finito
+         * sotto il secondo nome. Si vedono e non si toccano: li calcola
+         * `ws-rating.php` mettendo insieme Google e i voti di qui. */
+        ratingCount: { type: 'string', title: 'Voti' },
+        reviewCount: { type: 'string', title: 'Recensioni scritte' },
         bestRating: { type: 'string', title: 'Voto max' },
       },
     },
@@ -484,8 +491,10 @@ export const uischema = {
           type: 'HorizontalLayout',
           options: { separator: '/' },
           elements: [
-            ctrl('#/properties/aggregateRating/properties/ratingValue'),
-            ctrl('#/properties/aggregateRating/properties/bestRating'),
+            ctrl('#/properties/aggregateRating/properties/ratingValue', { options: { computed: true } }),
+            ctrl('#/properties/aggregateRating/properties/ratingCount', { options: { computed: true } }),
+            ctrl('#/properties/aggregateRating/properties/reviewCount', { options: { computed: true } }),
+            ctrl('#/properties/aggregateRating/properties/bestRating', { options: { computed: true } }),
           ],
         },
       ],

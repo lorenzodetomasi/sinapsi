@@ -511,3 +511,11 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   .modal-diff label { grid-template-columns: auto 1fr; }
   .diff-freccia { display: none; }
 }
+
+/* Lo stato della validazione, in fondo: un segno che si legge di sfuggita.
+   Un errore trovato al salvataggio e' un errore trovato tardi. */
+.ed-stato { display: inline-flex; align-items: center; gap: 3px; font-size: var(--fs-label); }
+.ed-stato .material-symbols-outlined { font-size: 1.05rem; }
+.ed-stato-valid { color: var(--ok, #3fb950); }
+.ed-stato-invalid { color: var(--danger, #e5484d); }
+.ed-stato-unreachable, .ed-stato-idle { color: var(--text-dim); }

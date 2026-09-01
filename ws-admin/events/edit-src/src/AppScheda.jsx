@@ -15,6 +15,10 @@ import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import EntityPicker from './EntityPicker.jsx';
+import JsonValidationPane from './JsonValidationPane.jsx';
+import DiffModal from './DiffModal.jsx';
+import { diffForm, mergeChoices } from './diff.js';
+import { API_BASE } from './config.js';
 
 /* L'editor delle SCHEDE: un luogo, un'attività, un gruppo.
  *
@@ -47,6 +51,19 @@ const renderers = [
 const RADICE = window.location.pathname.replace(/\/ws-admin\/.*/, '/');
 const PLACES_URL = RADICE + 'ws-admin/places/google_place-json.php';
 
+/** Il convertitore/validatore condiviso (json-xml): la stessa risposta che vede
+ *  l'editor degli eventi. Un secondo validatore, con regole sue, direbbe cose
+ *  diverse sullo stesso documento — che è il modo più sicuro per non fidarsi di
+ *  nessuno dei due. */
+async function apiJson(action, campi = {}) {
+  const r = await fetch(API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ action, ...campi }).toString(),
+  });
+  return r.json();
+}
+
 /** Il backend parla JSON: una funzione sola per tutte le sue azioni. */
 async function api(action, campi = {}) {
   const credential = window.meetooSession?.getToken?.() || '';
@@ -74,6 +91,9 @@ export default function AppScheda() {
   const [modale, setModale] = useState(false);
   const [differenze, setDifferenze] = useState([]);
   const [scelte, setScelte] = useState(new Set());
+  const [validazione, setValidazione] = useState({ status: 'idle', errors: [] });
+  const [confronto, setConfronto] = useState(null);   // { changes, rel } — il diff col salvato
+  const seq = useRef(0);
   const [urlPubblica, setUrlPubblica] = useState('');
   const timerMsg = useRef(0);
 
@@ -130,6 +150,25 @@ export default function AppScheda() {
   }, [data.id]);
 
   const jsonld = useMemo(() => aJsonLd(data, doc, tipo), [data, doc, tipo]);
+  const payload = useMemo(() => JSON.stringify(jsonld, null, 2), [jsonld]);
+
+  /* Il validatore: la stessa chiamata dell'editor eventi, con lo stesso pannello.
+   * Gira a ogni modifica, con un respiro, perché un errore trovato al salvataggio
+   * è un errore trovato tardi. */
+  const rivalida = useCallback(async (corrente) => {
+    const n = ++seq.current;
+    try {
+      const out = await apiJson('validate_json', { payload: corrente });
+      if (n !== seq.current) return;   // risposta vecchia: si scarta
+      setValidazione(out.valid ? { status: 'valid', errors: [] } : { status: 'invalid', errors: out.errors || [] });
+    } catch {
+      if (n === seq.current) setValidazione({ status: 'unreachable', errors: [] });
+    }
+  }, []);
+  useEffect(() => {
+    const t = setTimeout(() => rivalida(payload), 500);
+    return () => clearTimeout(t);
+  }, [payload, rivalida]);
 
   /** Una voce scelta fra quelle del SITO: si apre quella, non se ne fa una nuova. */
   const dalSito = useCallback(async (id) => {
@@ -183,6 +222,20 @@ export default function AppScheda() {
   /* SALVA. Su una scheda caricata dal server si sovrascrive: l'hai vista e l'hai
    * cambiata apposta. Su una nuova si lascia decidere al backend, che sa
    * riconoscere un doppione meglio di noi (ha l'indice dei Google Place ID). */
+  /* Prima di sovrascrivere: che cosa cambia rispetto al salvato. È la stessa
+   * domanda che faceva l'importatore, con lo stesso pannello — e la si fa PRIMA
+   * di scrivere, che è l'unico momento in cui serve. */
+  const confronta = useCallback(async () => {
+    if (!esisteSulServer || !data.id) return null;
+    try {
+      const r = await api('load', { id: data.id });
+      if (r.error || !r.json) return null;
+      const prima = daJsonLd(r.json, tipo);
+      const cambi = diffForm(prima, data);
+      return cambi.length ? { changes: cambi, rel: data.id } : null;
+    } catch { return null; }
+  }, [esisteSulServer, data, tipo]);
+
   const salva = useCallback(async (soloQuesti) => {
     if (!data.id) { avvisa('Manca l’indirizzo della scheda (@id).', 'ko'); return; }
     if (!data.name) { avvisa('Manca il nome.', 'ko'); return; }
@@ -229,7 +282,10 @@ export default function AppScheda() {
           <div className="scheda-cerca">
             <EntityPicker
               value={cerca}
-              ambito={tipo === 'gruppo' ? 'organizer' : 'venue'}
+              /* `organizer` e non `venue`: `venue` vuol dire «solo i luoghi», e in
+                 questa pagina si modificano anche le organizzazioni — cercando
+                 «Apecultura» non la trovava per costruzione. */
+              ambito="organizer"
               placeholder={tipo === 'gruppo' ? 'Cerca un gruppo già sul sito…' : 'Cerca sul sito o su Google Maps…'}
               onChange={setCerca}
               onPickSite={(e) => dalSito(e['@id'])}
@@ -289,7 +345,14 @@ export default function AppScheda() {
               </section>
               <section>
                 <h3>Quello che salviamo</h3>
-                <pre>{JSON.stringify(jsonld, null, 2)}</pre>
+                <pre>{payload}</pre>
+              </section>
+              <section className="pane-validation">
+                <JsonValidationPane
+                  payload={payload}
+                  validation={validazione}
+                  onRevalidate={() => rivalida(payload)}
+                />
               </section>
             </div>
             {differenze.length > 0 && (
@@ -334,6 +397,21 @@ export default function AppScheda() {
         </div>
       )}
 
+      <DiffModal
+        open={!!confronto}
+        changes={confronto?.changes || []}
+        relPath={confronto?.rel || ''}
+        saving={occupato}
+        onConfirm={(tieniIlLoro) => {
+          const unito = mergeChoices(data, confronto.changes, tieniIlLoro);
+          setData(unito);
+          setConfronto(null);
+          // Un giro di render, poi si salva: `jsonld` si ricalcola da `data`.
+          setTimeout(() => salva(), 0);
+        }}
+        onCancel={() => { if (!occupato) setConfronto(null); }}
+      />
+
       <div className="ed-foot">
         <div className="ed-foot-sx">
           <button
@@ -344,10 +422,30 @@ export default function AppScheda() {
           >
             <span className="material-symbols-outlined">data_object</span> I due JSON
           </button>
+          <span className={'ed-stato ed-stato-' + validazione.status} title={
+            validazione.status === 'valid' ? 'JSON-LD valido'
+              : validazione.status === 'invalid' ? validazione.errors.length + ' problemi'
+              : validazione.status === 'unreachable' ? 'Validatore non raggiungibile' : 'Controllo…'
+          }>
+            <span className="material-symbols-outlined">
+              {validazione.status === 'valid' ? 'check_circle'
+                : validazione.status === 'invalid' ? 'error'
+                : validazione.status === 'unreachable' ? 'cloud_off' : 'hourglass_empty'}
+            </span>
+            {validazione.status === 'invalid' ? validazione.errors.length : ''}
+          </span>
           {msg && <span className={msg.genere === 'ko' ? 'flash ko' : 'flash ok'}>{msg.testo}</span>}
         </div>
         <div className="ed-foot-dx">
-          <button type="button" className="primary" onClick={salva} disabled={occupato}>
+          <button
+            type="button"
+            className="primary"
+            disabled={occupato}
+            onClick={async () => {
+              const c = await confronta();
+              if (c) setConfronto(c); else salva();
+            }}
+          >
             <span className="material-symbols-outlined">cloud_upload</span> Salva sul web
           </button>
         </div>

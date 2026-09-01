@@ -458,6 +458,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .u-risultati .u-id { margin-left: auto; font-size: .72rem; color: var(--color-hint); }
     .u-risultati .u-vuoto { color: var(--color-hint); cursor: default; }
     .u-nessuno { color: var(--color-hint); font-size: .85rem; }
+    .u-tutto { display: inline-flex; align-items: center; gap: 6px; color: var(--color-link); font-size: .85rem; }
+    .u-tutto .material-symbols-outlined { font-size: 18px; }
     .u-tab select {
       background: var(--color-background-section1); color: var(--color-text);
       border: 1px solid var(--color-line); border-radius: 999px; padding: 6px 12px; font: inherit;
@@ -543,6 +545,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     function riga(u) {
       const nome = u.name || u.alternateName || '(senza nome)';
+      /* Un super-admin gestisce tutto: `ws_can_edit()` gli dice di sì prima di
+         guardare qualunque altra cosa. Affidargli un gruppo non aggiungerebbe
+         niente, e l'elenco vuoto accanto al suo nome direbbe il falso. */
+      if (u.role === 'super-admin') {
+        return '<tr data-uid="' + esc(u.uid) + '">'
+          + '<td><div class="u-nome">' + esc(nome) + (u.io ? '<span class="u-io">sei tu</span>' : '') + '</div>'
+          + '<div class="u-uid">' + esc(u.uid) + '</div></td>'
+          + '<td><select class="u-ruolo" disabled title="Il ruolo di un super-admin lo cambia un altro super-admin, dal file"><option selected>super-admin</option></select><span class="u-esito"></span></td>'
+          + '<td><span class="u-tutto"><span class="material-symbols-outlined">all_inclusive</span>tutto, perché è super-admin</span></td>'
+          + '<td class="u-nessuno">' + esc(u.lastLogin || '—') + '</td></tr>';
+      }
       const cose = (u.gestisce || []).map(pastiglia).join('');
       const auto = (u.coperti || []).length
         ? '<div class="u-auto-riga"><span class="u-auto-nota">e quindi, in automatico:</span>'

@@ -307,6 +307,64 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            /* Il numero era giusto, il nome no.
+             *
+             * Google manda `user_ratings_total`: quante persone hanno messo le
+             * stelline. In schema.org quello e' `ratingCount`; `reviewCount` sono
+             * le recensioni SCRITTE, che sono un'altra cosa e quasi sempre molte
+             * di meno. Per anni l'abbiamo salvato sotto `reviewCount`, e chi legge
+             * i nostri dati da fuori si sente dire che 426 persone hanno scritto
+             * una recensione quando hanno votato e basta. Qui si sposta il valore
+             * sotto il nome giusto.
+             *
+             * Si tocca SOLO cio' che viene da Google (c'e' un `google_place_id`) e
+             * solo dove `ratingCount` non c'e' ancora: una media gia' ricalcolata
+             * da noi ha tutti e due i campi e non va rimessa in discussione. */
+            'voti-google' => [
+                'title' => 'I voti di Google sotto il nome giusto',
+                'meta'  => 'reviewCount -> ratingCount dove il numero viene da Google',
+                'icon'  => 'star_half', 'scope' => 'places', 'preview' => true, 'since' => '2026.09',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    $righe = []; $n = 0;
+                    $files = array_merge(
+                        glob("$base/places/*/index.json") ?: [],
+                        glob("$base/places/*/*/index.json") ?: [],
+                        glob("$base/organizations/*/index.json") ?: [],
+                        glob("$base/events/*/index.json") ?: []
+                    );
+                    foreach ($files as $f) {
+                        $j = json_decode((string)@file_get_contents($f), true);
+                        if (!is_array($j)) continue;
+                        $dentro = isset($j['mainEntity']) && is_array($j['mainEntity']);
+                        $e = $dentro ? $j['mainEntity'] : $j;
+                        $agg = isset($e['aggregateRating']) && is_array($e['aggregateRating']) ? $e['aggregateRating'] : null;
+                        if (!$agg) continue;
+                        if (isset($agg['ratingCount'])) continue;
+                        if (!isset($agg['reviewCount']) || $agg['reviewCount'] === null) continue;
+                        $daGoogle = !empty($e['meetoo:google_place_id']) || !empty($e['meetoo:googlePlaceId']);
+                        if (!$daGoogle) continue;
+                        $val = (int)$agg['reviewCount'];
+                        $id = (string)($e['@id'] ?? basename(dirname($f)));
+                        $righe[] = "$id - $val voti: reviewCount -> ratingCount";
+                        $n++;
+                        if ($apply) {
+                            $agg['ratingCount'] = $val;
+                            unset($agg['reviewCount']);
+                            $e['aggregateRating'] = $agg;
+                            if ($dentro) { $j['mainEntity'] = $e; } else { $j = $e; }
+                            @file_put_contents($f, json_encode($j, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                        }
+                    }
+                    return [
+                        'changes' => $n,
+                        'summary' => $n
+                            ? ($apply ? "$n schede sistemate." : "$n schede da sistemare: il conteggio dei voti sta sotto «recensioni».")
+                            : 'Niente da spostare: i conteggi sono gia\' al posto giusto.',
+                        'lines' => $righe,
+                    ];
+                },
+            ],
+
             'places-index' => [
                 'title' => 'Rigenera indice luoghi e Gruppi',
                 'meta'  => 'Deduplica per Google Place ID, Gruppi della home, elenco organizzatori dell\'editor',
