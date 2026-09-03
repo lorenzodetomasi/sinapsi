@@ -1030,6 +1030,24 @@ msgstr "Visita il sito web “%s”"
 #~ "Invia una copia del tuo messaggio a %s, con l’obiettivo di migliorare la "
 #~ "qualità di questo servizio"
 
+msgid "Settings"
+msgstr "Impostazioni"
+
+msgid "Close “Settings”"
+msgstr "Chiudi “Impostazioni”"
+
+msgid "Appearance"
+msgstr "Aspetto"
+
+msgid "Automatic"
+msgstr "Automatico"
+
+msgid "Light"
+msgstr "Chiaro"
+
+msgid "Dark"
+msgstr "Scuro"
+
 #, fuzzy
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"
