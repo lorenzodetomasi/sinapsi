@@ -511,3 +511,6 @@ section.collections .sec-head .material-symbols-outlined { color: var(--color1);
 .mt-prof-btn:hover { border-color: var(--color-link); color: var(--color-link); }
 .mt-prof-esci { color: var(--color-hint); }
 .mt-prof-vuoto { color: var(--color-hint); text-align: center; margin: 0; }
+
+/* Mentre il modulo del profilo va e viene dal server. */
+.mt-prof-attesa { opacity: .55; pointer-events: none; transition: opacity .15s ease; }

@@ -1,9 +1,29 @@
 <?php
 session_start();
 
+/* INCORPORATA o a pagina intera.
+ *
+ * `?embed=1` serve al riquadro del profilo di Meetoo: restituisce SOLO il
+ * contenuto — niente doctype, niente head, niente body — così si può mettere
+ * dentro un modale invece che dentro una pagina. Cambia tre cose e nient'altro:
+ * il guscio, la risposta a chi non è collegato (un messaggio invece di un
+ * rimando, perché dentro un modale un redirect non si vede) e dove si va dopo
+ * aver salvato (in nessun posto: si resta lì, con la conferma).
+ *
+ * La pagina intera continua a funzionare esattamente come prima. */
+$embed = isset($_GET['embed']) && $_GET['embed'] !== '0';
+
+/* La radice del sito, invece di `https://www.isotype.org` scritto a mano: questo
+ * file gira anche altrove, e un indirizzo assoluto ce lo porta comunque lì. */
+$ws_radice = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
+
 // Controllo d'accesso base
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    header('Location: https://www.isotype.org/eventi');
+    if ($embed) {
+        echo '<p class="mt-prof-vuoto">Accedi per completare il tuo profilo.</p>';
+        exit;
+    }
+    header('Location: ' . $ws_radice . '/eventi');
     exit;
 }
 
@@ -169,9 +189,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
         $dom->formatOutput = true;
         $dom->loadXML($xml->asXML());
         $dom->save($XML_FILE_PATH);
-        
-        header('Location: https://www.isotype.org/eventi');
-        exit;
+
+        /* Dopo aver salvato: a pagina intera si esce (come prima), dentro un
+         * riquadro si RESTA — un modale che si svuota e ti manda agli eventi non
+         * dice «salvato», dice «è successo qualcosa». */
+        if ($embed) {
+            $salvato = true;
+        } else {
+            header('Location: ' . $ws_radice . '/eventi');
+            exit;
+        }
     }
 }
 
@@ -233,27 +260,29 @@ if (!file_exists($genders_json_path)) {
 }
 $genders_json_content = file_exists($genders_json_path) ? file_get_contents($genders_json_path) : '{"categories":[]}';
 ?>
+<?php if (!$embed): ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars(substr($current_locale, 0, 2)) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Profilo e Privacy</title>
+<?php endif; ?>
     <style>
-        :root { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: #202124; }
-        body { max-width: 680px; margin: 3rem auto; padding: 0 1.5rem; background: #f8f9fa; }
-        .card { background: #fff; border-radius: 16px; padding: 2rem; border: 1px solid #dadce0; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3); }
-        h1 { font-size: 1.5rem; margin-top: 0; color: #1a73e8; }
-        .id-box { background: #e8f0fe; border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; }
-        .uuid-badge { font-family: monospace; background: #fff; padding: 4px 8px; border-radius: 6px; border: 1px solid #cce3ff; font-size: 13px; color: #1967d2; }
-        .switch-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid #f1f3f4; }
+        :root { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: var(--color-text, #202124); }
+        body { max-width: 680px; margin: 3rem auto; padding: 0 1.5rem; background: var(--color-background, #f8f9fa); }
+        .card { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
+        h1 { font-size: 1.5rem; margin-top: 0; color: var(--color-link, #1a73e8); }
+        .id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .uuid-badge { font-family: monospace; background: var(--color-background-section1, #fff); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--color-line, #cce3ff); font-size: 13px; color: var(--color-link, #1967d2); }
+        .switch-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--color-line, #f1f3f4); }
         .switch-row:last-of-type { border-bottom: none; }
-        input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1a73e8; margin-top: 3px; cursor: pointer; }
+        input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-link, #1a73e8); margin-top: 3px; cursor: pointer; }
         .switch-label { font-weight: 600; display: block; margin-bottom: 2px; }
-        .switch-hint { font-size: 0.85rem; color: #5f6368; margin: 0; }
+        .switch-hint { font-size: 0.85rem; color: var(--color-hint, #5f6368); margin: 0; }
         
-        .search-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #dadce0; box-sizing: border-box; font-size: 14px; }
-        .search-input:focus { border-color: #1a73e8; outline: none; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+        .search-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--color-line, #dadce0); background: var(--color-background-section2, #fff); color: var(--color-text, #202124); box-sizing: border-box; font-size: 14px; }
+        .search-input:focus { border-color: var(--color-link, #1a73e8); outline: none; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
         
         .restore-btn { background: #f1f3f4; border: 1px solid #dadce0; border-radius: 6px; padding: 6px 10px; cursor: pointer; color: #5f6368; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
         .restore-btn:hover { background: #e8eaed; color: #1a73e8; border-color: #cce3ff; }
@@ -268,15 +297,25 @@ $genders_json_content = file_exists($genders_json_path) ? file_get_contents($gen
         .suggestions-list li { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
         .suggestions-list li:hover, .autocomplete-active { background-color: #e8f0fe !important; }
 
-        .btn { background: #1a73e8; color: #fff; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none;}
+        .btn { background: var(--color-link, #1a73e8); color: var(--color-background-header, #fff); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none;}
         .btn:hover { background: #1557b0; }
-        .btn-outline { background: transparent; color: #5f6368; border: 1px solid #dadce0; margin-left: 8px; }
+        .btn-outline { background: transparent; color: var(--color-hint, #5f6368); border: 1px solid var(--color-line, #dadce0); margin-left: 8px; }
         
         .input-group { display: flex; gap: 8px; align-items: center; }
+        .salvato { color: var(--color-link, #1a73e8); font-weight: 600; margin: 0 0 1rem; }
+        /* Incorporata nel riquadro: la card non ha bisogno di un secondo bordo,
+           ce l'ha gia' il modale. */
+        .mt-modal .card { background: transparent; border: none; padding: 0; }
+        .mt-modal h1 { font-size: 1.125rem; }
     </style>
+<?php if (!$embed): ?>
 </head>
 <body>
+<?php endif; ?>
     <div class="card">
+<?php if (!empty($salvato)): ?>
+        <p class="salvato">Salvato.</p>
+<?php endif; ?>
         <h1><?= $is_registered ? 'Modifica Profilo' : 'Registrazione al Portale' ?></h1>
         
         <div class="id-box">
@@ -515,5 +554,7 @@ $genders_json_content = file_exists($genders_json_path) ? file_get_contents($gen
             });
         });
     </script>
+<?php if (!$embed): ?>
 </body>
 </html>
+<?php endif; ?>

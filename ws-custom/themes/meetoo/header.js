@@ -304,8 +304,57 @@
     else box.innerHTML = profiloDaSessione();
     var esci = box.querySelector('[data-mt-logout]');
     if (esci) esci.onclick = function (e) { e.preventDefault(); S.logout(); chiudiProfilo(); };
+    agganciaProfilo(box);
     profilo.classList.add('open');
   }
+  /* Il modulo del profilo dentro il riquadro.
+   *
+   * Si prende dalla pagina vera (`?embed=1`, che restituisce solo il contenuto):
+   * i campi, le regole e il salvataggio stanno in un posto solo, e questo file
+   * non ne conosce nemmeno uno. Se qualcosa va storto — pagina non raggiungibile,
+   * JavaScript spento — il collegamento è un collegamento e porta alla pagina
+   * intera, che continua a esistere.
+   *
+   * Il modulo si invia senza uscire dal riquadro: `FormData` regge anche i file
+   * (la foto del profilo, il logo), e la risposta è la stessa pagina incorporata,
+   * che si rimette al suo posto — con dentro la conferma. */
+  function agganciaProfilo(box) {
+    box.querySelectorAll('[data-mt-profilo-form]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return;   // aprire in una scheda nuova resta possibile
+        e.preventDefault();
+        caricaProfilo(a.getAttribute('data-mt-profilo-form'));
+      });
+    });
+    var form = box.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var dati = new FormData(form);
+        var dove = form.getAttribute('action') || location.href;
+        box.classList.add('mt-prof-attesa');
+        fetch(dove, { method: 'POST', body: dati, credentials: 'same-origin' })
+          .then(function (r) { return r.text(); })
+          .then(function (html) { box.innerHTML = html; agganciaProfilo(box); })
+          .catch(function () { /* la pagina intera resta la via d'uscita */ })
+          .finally(function () { box.classList.remove('mt-prof-attesa'); });
+      });
+    }
+  }
+  function caricaProfilo(url) {
+    var box = document.getElementById('mt-profilo-corpo');
+    box.classList.add('mt-prof-attesa');
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        if (!html) { location.href = url.replace(/[?&]embed=1/, ''); return; }
+        box.innerHTML = html;
+        agganciaProfilo(box);
+      })
+      .catch(function () { location.href = url.replace(/[?&]embed=1/, ''); })
+      .finally(function () { box.classList.remove('mt-prof-attesa'); });
+  }
+
   function profiloDaSessione() {
     if (!S.user) {
       return '<p class="mt-prof-vuoto">Non sei collegato.</p>';

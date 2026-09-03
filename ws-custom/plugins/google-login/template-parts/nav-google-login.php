@@ -178,11 +178,19 @@ $portal_org_logo = $profilo['org_logo'];
                     </div>
                 </div>
                 <div class="mt-prof-azioni">
-                    <?php if ($is_registered_user): ?>
-                        <a href="<?= htmlspecialchars($ws_radice) ?>/profilo-utente" class="mt-prof-btn">Modifica il profilo</a>
-                    <?php else: ?>
-                        <a href="<?= htmlspecialchars($ws_radice) ?>/profilo-utente?init=register" class="mt-prof-btn">Completa la registrazione</a>
-                    <?php endif; ?>
+                    <?php
+                    /* Il modulo si apre DENTRO il riquadro: `data-mt-profilo-form`
+                     * dice a header.js dove prenderlo (`embed=1` = solo il
+                     * contenuto). L'`href` resta quello vero, così senza
+                     * JavaScript il collegamento funziona lo stesso e porta alla
+                     * pagina intera — che continua a esistere. */
+                    $prof = htmlspecialchars($ws_radice) . '/profilo-utente';
+                    $reg  = $is_registered_user ? '' : '?init=register';
+                    $emb  = $prof . ($reg ? $reg . '&' : '?') . 'embed=1';
+                    ?>
+                    <a href="<?= $prof . $reg ?>" data-mt-profilo-form="<?= $emb ?>" class="mt-prof-btn">
+                        <?= $is_registered_user ? 'Modifica il profilo' : 'Completa la registrazione' ?>
+                    </a>
                     <a href="?logout=1" class="mt-prof-btn mt-prof-esci">Esci</a>
                 </div>
             </div>
