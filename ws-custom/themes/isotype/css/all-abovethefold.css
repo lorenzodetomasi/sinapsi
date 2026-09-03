@@ -75,10 +75,14 @@ body {
 #header {
   grid-area: header;
   position: sticky;
-  top: 0; }
+  top: 0;
+  --header-logo-aperto: 4em;
+  --header-logo-stretto: 1.5rem; }
 
 #header-top {
   border-bottom: 1px solid #e6e6e6; }
+  .stretto #header-top {
+    border-bottom-width: 0; }
 
 #header1 {
   display: flex;
@@ -87,9 +91,10 @@ body {
   #header1 > div {
     display: flex; }
     #header1 > div > [itemprop="logo"] > img {
-      height: 4em;
-      margin-top: 1.5em;
-      margin-right: 1em; }
+      height: var(--header-logo, 4em);
+      margin-top: var(--header-aria, 1.5em);
+      margin-right: 1em;
+      transition: height .22s cubic-bezier(.22, 1, .36, 1), margin-top .22s cubic-bezier(.22, 1, .36, 1); }
 
 #main-container {
   grid-area: main-container;
