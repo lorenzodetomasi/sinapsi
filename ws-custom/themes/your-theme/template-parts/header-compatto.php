@@ -43,7 +43,15 @@
 	@media (max-width: 30rem) {
 		.header-compatto { --header-logo: var(--header-logo-stretto, 1.5rem); }
 	}
-	.header-compatto .header-espanso-solo {
+	/* Due modi di sparire.
+	   `.header-espanso-solo` se ne va e non torna: è l'aria dell'apertura, e
+	   chi legge non la rivuole più.
+	   `.header-cima-solo` torna quando si torna in cima. La barra dei contatti
+	   — dove siamo, la mail, il telefono — serve a chi arriva, e chi risale sta
+	   arrivando di nuovo. L'header intanto resta stretto: è l'ALTEZZA che non
+	   deve ballare mentre si legge, non il contenuto quando la lettura finisce. */
+	.header-compatto .header-espanso-solo,
+	.header-compatto .header-cima-solo {
 		transition: opacity .18s ease, max-height .22s cubic-bezier(.22,1,.36,1);
 		overflow: hidden; max-height: 6rem; opacity: 1;
 	}
@@ -54,7 +62,8 @@
 	}
 	/* `max-height` stringe il contenuto, non il bordo: la barra dei contatti di
 	   isotype ha una riga sotto, e chiusa sarebbe rimasta lì da sola. */
-	.header-compatto.stretto .header-espanso-solo {
+	.header-compatto.stretto .header-espanso-solo,
+	.header-compatto.stretto:not(.in-cima) .header-cima-solo {
 		max-height: 0; opacity: 0; border-width: 0;
 	}
 	@media (prefers-reduced-motion: reduce) {
@@ -80,6 +89,9 @@
 		if(window.scrollY > soglia){
 			header.classList.add('stretto');
 		}
+		/* Questa invece va e viene: dice se siamo in cima. Quello che è appeso a
+		   `.header-cima-solo` torna quando si risale — l'header resta stretto. */
+		header.classList.toggle('in-cima', window.scrollY <= soglia);
 	}
 	window.addEventListener('scroll', function(){
 		if(fermo) return;

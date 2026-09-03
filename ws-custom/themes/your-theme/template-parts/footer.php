@@ -21,7 +21,7 @@ include_template('template-parts/credits');
 		</div><!-- /#page-->
 		<aside class="meta">
 <?php
-if($ws_content->datePublished){
+if(!empty($ws_content->datePublished)){
 	$dateModified = DateTime::createFromFormat(DATE_ATOM, $ws_content->dateModified);
 	$datePublished = DateTime::createFromFormat(DATE_ATOM, $ws_content->datePublished);
 ?>
@@ -37,7 +37,7 @@ if($dateModified and $dateModified != $datePublished){
 ?>
 		</aside>
 <?php
-if(ws_lang(ws_locale()) != $ws_content->inLanguage){
+if(!empty($ws_content->inLanguage) and ws_lang(ws_locale()) != $ws_content->inLanguage){
 ?>
 				<p class="content-container alert">
 <?php
@@ -57,6 +57,7 @@ include_template('template-parts/modal-follow');
 include_template('template-parts/modal-share');
 include_template('template-parts/modal-search');
 include_template('template-parts/modal-languages');
+include_template('template-parts/modal-impostazioni');
 ?>
 <?php echo ws_scripts('bodyend'); ?>
 	</body>

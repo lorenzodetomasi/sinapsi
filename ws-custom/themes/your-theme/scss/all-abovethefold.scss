@@ -1,4 +1,13 @@
 @import "settings";
+// I colori di questo sito, nelle due luci. In chiaro sono quelli di sempre —
+// le stesse variabili di prima — e la seconda misura è per lo scuro. I token
+// generali arrivano da _tokens.css, importato dal foglio compilato.
+:root {
+  --color-heading: light-dark(#{$headings-color}, #ff6b6b);
+  --color-text: light-dark(#{$text-color}, #e6e0e9);
+  --color-line: light-dark(#{$meta-background-color}, #48454e);
+  --color-superficie: light-dark(#ffffff, #1e1f20);
+}
 @font-face {
   font-family: system;
   font-style: normal;
@@ -19,7 +28,7 @@ img.svg-symbols {
 html {
   font-family: $text-font-family;
   line-height: $text-line-height;
-  color: $text-color;
+  color: var(--color-text, #{$text-color});
   font-size: $text-font-size;
   font-weight: $text-font-weight;
   -ms-text-size-adjust: 100%;
@@ -87,11 +96,11 @@ aside.meta {
   --header-logo-stretto: 1.5rem;
 }
 #header-top {
-  border-bottom: 1px solid $meta-background-color;
+  border-bottom: 1px solid var(--color-line, #{$meta-background-color});
   // Chiusa, la barra non lascia dietro la sua riga: `max-height` stringe il
   // contenuto e il bordo resterebbe lì da solo. Sta qui e non nel foglio
   // dell'header compatto perché quello non può scavalcare un `#id`.
-  .stretto & {
+  .stretto:not(.in-cima) & {
     border-bottom-width: 0;
   }
 }
@@ -140,6 +149,41 @@ aside.meta {
 #header.stretto {
   padding-block: .5rem;
 }
+// Le tre scelte di aspetto, dentro la finestra delle impostazioni.
+.ws-aspetto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  padding-bottom: 1rem;
+  .ws-aspetto-titolo {
+    width: 100%;
+    margin: 0 0 .25rem;
+    font-weight: 600;
+  }
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .5rem .9rem;
+    border: 1px solid var(--color-line, #e0e0e6);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    &:hover {
+      border-color: var(--color-link, #2e3192);
+    }
+    // Quella in uso si riconosce dal bordo e dal peso, non da un riempimento:
+    // dentro c'è già un'icona, e due segnali sullo stesso bottone si pestano.
+    &.scelto {
+      border-color: var(--color-link, #2e3192);
+      color: var(--color-link, #2e3192);
+      font-weight: 600;
+    }
+  }
+}
 #main-container {
   grid-area: main-container;
   overflow-y: auto;
@@ -173,7 +217,7 @@ a {
 }
 h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
   font-family: $headings-font-family;
-  color: $headings-color;
+  color: var(--color-heading, #{$headings-color});
   a {
     color: inherit;
     text-decoration: none;
@@ -217,7 +261,7 @@ ul, ol, dl {
 #footer,
 .nav {
   a {
-    color: $headings-color;
+    color: var(--color-heading, #{$headings-color});
     box-sizing: border-box;
     text-decoration: none;
   }
@@ -225,12 +269,12 @@ ul, ol, dl {
     border-bottom: 2px solid transparent;
   }
   li a:hover {
-    color: $text-color;
-    border-bottom: 2px solid $text-color;
+    color: var(--color-text, #{$text-color});
+    border-bottom: 2px solid var(--color-text, #{$text-color});
   }
   li.current-menu-item a {
-    color: $headings-color;
-    border-bottom: 2px solid $headings-color;
+    color: var(--color-heading, #{$headings-color});
+    border-bottom: 2px solid var(--color-heading, #{$headings-color});
   }
 }
 .nav {

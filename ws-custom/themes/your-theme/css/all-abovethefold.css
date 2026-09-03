@@ -15,6 +15,16 @@
  */
 @import url("https://www.isotype.org/ws-custom/themes/your-theme/css/_tokens.css");
 @import url("https://www.isotype.org/ws-custom/themes/your-theme/css/_forms.css");
+
+/* I colori di questo sito, nelle due luci. In chiaro sono quelli di sempre;
+   la seconda misura è per lo scuro. Sovrascrivono i token generali, che qui
+   sopra arrivano da _tokens.css. */
+:root {
+  --color-heading: light-dark(#e30513, #ff6b6b);
+  --color-text: light-dark(#444, #e6e0e9);
+  --color-line: light-dark(#e6e6e6, #48454e);
+  --color-superficie: light-dark(#ffffff, #1e1f20); }
+
 @font-face {
   font-family: system;
   font-style: normal;
@@ -31,7 +41,7 @@ img.svg-symbols {
 html {
   font-family: "system-ui", "system";
   line-height: 1.5em;
-  color: #444;
+  color: var(--color-text, #444);
   font-size: 1rem;
   font-weight: 400;
   -ms-text-size-adjust: 100%;
@@ -89,8 +99,8 @@ body {
   --header-logo-stretto: 1.5rem; }
 
 #header-top {
-  border-bottom: 1px solid #e6e6e6; }
-  .stretto #header-top {
+  border-bottom: 1px solid var(--color-line, #e6e6e6); }
+  .stretto:not(.in-cima) #header-top {
     border-bottom-width: 0; }
 
 #header1 {
@@ -120,6 +130,34 @@ body {
 #header.stretto {
   padding-block: .5rem; }
 
+.ws-aspetto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  padding-bottom: 1rem; }
+  .ws-aspetto .ws-aspetto-titolo {
+    width: 100%;
+    margin: 0 0 .25rem;
+    font-weight: 600; }
+  .ws-aspetto button {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .5rem .9rem;
+    border: 1px solid var(--color-line, #e0e0e6);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer; }
+    .ws-aspetto button:hover {
+      border-color: var(--color-link, #2e3192); }
+    .ws-aspetto button.scelto {
+      border-color: var(--color-link, #2e3192);
+      color: var(--color-link, #2e3192);
+      font-weight: 600; }
+
 #main-container {
   grid-area: main-container;
   overflow-y: auto; }
@@ -147,7 +185,7 @@ a {
 
 h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
   font-family: 'Titillium Web', 'ambroise-std', 'Trebuchet MS', Georgia, serif;
-  color: #e30513; }
+  color: var(--color-heading, #e30513); }
   h1 a, .h1 a, h2 a, .h2 a, h3 a, .h3 a, h4 a, .h4 a, h5 a, .h5 a, h6 a, .h6 a {
     color: inherit;
     text-decoration: none; }
@@ -179,17 +217,17 @@ ul, ol, dl {
   vertical-align: middle; }
 
 #header a, #footer a, .nav a {
-  color: #e30513;
+  color: var(--color-heading, #e30513);
   box-sizing: border-box;
   text-decoration: none; }
 #header li a, #footer li a, .nav li a {
   border-bottom: 2px solid transparent; }
 #header li a:hover, #footer li a:hover, .nav li a:hover {
-  color: #444;
-  border-bottom: 2px solid #444; }
+  color: var(--color-text, #444);
+  border-bottom: 2px solid var(--color-text, #444); }
 #header li.current-menu-item a, #footer li.current-menu-item a, .nav li.current-menu-item a {
-  color: #e30513;
-  border-bottom: 2px solid #e30513; }
+  color: var(--color-heading, #e30513);
+  border-bottom: 2px solid var(--color-heading, #e30513); }
 
 .nav abbr[title] {
   text-decoration: none; }
@@ -247,23 +285,23 @@ ul, ol, dl {
   width: 100%;
   container-type: inline-size;
   container-name: myGrid;
-  border: 1px solid #e6e6e6;
+  border: 1px solid var(--color-line, #e6e6e6);
   /* Colore di sfondo opzionale per evitare pixel vuoti nel rendering sub-pixel */
-  background-color: white; }
+  background-color: var(--color-superficie, white); }
 
 /* CELLA: Disegna i bordi in alto e a sinistra */
 .grid-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #e6e6e6;
+  border: 1px solid var(--color-line, #e6e6e6);
   aspect-ratio: 1;
   text-decoration: none;
   overflow: hidden;
   transition: background-color 0.2s; }
 
 .grid-cell:hover {
-  background-color: #e6e6e6;
+  background-color: var(--color-line, #e6e6e6);
   cursor: pointer;
   /* Per evidenziare il bordo attivo sopra gli altri (opzionale):
    z-index: 1;

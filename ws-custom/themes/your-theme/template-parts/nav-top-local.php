@@ -67,6 +67,15 @@ if($ws_headings->follow == 'true' or $ws_headings->share == 'true' or $ws_headin
 	</ul>
 <?php
 }
+?>
+	<ul class="settings print-no">
+		<li>
+			<a href="#impostazioni" title="<?php _e('Settings'); ?>" data-toggle data-group="subheader" data-toggle-icon="close" data-close-title="<?php _e('Close “Settings”'); ?>">
+				<i class="material-symbols-outlined">settings</i><span class="text vgrid-no"><?php _e('Settings'); ?></span>
+			</a>
+		</li>
+	</ul>
+<?php
 if($ws_headings->search == 'true'){
 ?>
 	<ul class="search print-no">
