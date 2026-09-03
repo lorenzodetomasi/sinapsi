@@ -282,16 +282,26 @@ $genders_json_content = file_exists($genders_json_path) ? file_get_contents($gen
  * `body` non si scrivono affatto (non ci sono, lì dentro: c'è il riquadro).
  * A pagina intera resta tutto com'era. */
 $q = $embed ? '#mt-profilo-corpo ' : '';
+
+/* E NON DEVE CHIAMARSI COME UNA COSA CHE C'È GIÀ.
+ *
+ * Scrivere le regole sotto `#mt-profilo-corpo` impedisce a questa pagina di
+ * uscire; non impedisce a Meetoo di entrare. Là `.card` è la scheda di un
+ * evento — `display:flex`, `align-items:stretch`, `overflow:hidden` — e il
+ * modulo ci finiva dentro di traverso: titolo in una colonna, riquadro dell'ID
+ * in un'altra, il resto tagliato via. Nel riquadro la scheda ha un nome suo.
+ * A pagina intera resta `card`, che è il nome giusto a casa sua. */
+$scheda = $embed ? 'scheda-profilo' : 'card';
 ?>
     <style>
 <?php if (!$embed): ?>
         :root { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: var(--color-text, #202124); }
         body { max-width: 680px; margin: 3rem auto; padding: 0 1.5rem; background: var(--color-background, #f8f9fa); }
-        <?= $q ?>.card { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
+        <?= $q ?>.<?= $scheda ?> { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
 <?php else: ?>
         /* Nel riquadro la scheda non ha bisogno di un secondo bordo: ce l'ha già
            il modale, e il testo eredita da lì tipo, dimensione e colore. */
-        <?= $q ?>.card { background: transparent; border: none; padding: 0; }
+        <?= $q ?>.<?= $scheda ?> { display: block; background: transparent; border: none; padding: 0; }
 <?php endif; ?>
         <?= $q ?>h1 { font-size: <?= $embed ? '1.125rem' : '1.5rem' ?>; margin-top: 0; color: var(--color-link, #1a73e8); }
         <?= $q ?>.id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
@@ -323,7 +333,7 @@ $q = $embed ? '#mt-profilo-corpo ' : '';
 </head>
 <body>
 <?php endif; ?>
-    <div class="card">
+    <div class="<?= $scheda ?>">
 <?php if (!empty($salvato)): ?>
         <p class="salvato">Salvato.</p>
 <?php endif; ?>

@@ -297,11 +297,21 @@
     document.getElementById('mt-prof-close').onclick = chiudiProfilo;
   }
   function chiudiProfilo() { profilo.classList.remove('open'); }
+  /* Il pannello «chi sei» sta comodo in 440px: foto, nome, due bottoni. Il
+     MODULO del profilo no — ha campi, etichette lunghe e un identificativo di
+     venti cifre — e in 440px i campi si incolonnano uno sotto l'altro fino a
+     una parola per riga. Quando dentro c'è il modulo il riquadro si allarga, e
+     torna stretto quando si torna al pannello. */
+  function larghezzaProfilo(grande) {
+    var riquadro = profilo.querySelector('.mt-modal');
+    if (riquadro) riquadro.classList.toggle('mt-modal-largo', !!grande);
+  }
   /** Apre il profilo. Con `html` mette quello; senza, disegna ciò che sa la sessione. */
   function openProfilo(html) {
     var box = document.getElementById('mt-profilo-corpo');
     if (typeof html === 'string' && html) box.innerHTML = html;
     else box.innerHTML = profiloDaSessione();
+    larghezzaProfilo(false);
     var esci = box.querySelector('[data-mt-logout]');
     if (esci) esci.onclick = function (e) { e.preventDefault(); S.logout(); chiudiProfilo(); };
     agganciaProfilo(box);
@@ -349,6 +359,7 @@
       .then(function (html) {
         if (!html) { location.href = url.replace(/[?&]embed=1/, ''); return; }
         box.innerHTML = html;
+        larghezzaProfilo(true);
         agganciaProfilo(box);
       })
       .catch(function () { location.href = url.replace(/[?&]embed=1/, ''); })

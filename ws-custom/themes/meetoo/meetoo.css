@@ -419,6 +419,10 @@ section.collections .sec-head .material-symbols-outlined { color: var(--color1);
   max-width: 440px; width: 100%; max-height: 82vh; overflow: hidden; position: relative;
   box-shadow: 0 12px 40px rgba(0,0,0,.45); font-family: var(--font-family2);
 }
+/* Il riquadro largo: quando dentro non c'è un pannello ma un MODULO. 440px
+   bastano a «chi sei», non ai campi del profilo. Lo accende header.js quando
+   carica il modulo, e lo spegne quando torna al pannello. */
+.mt-modal.mt-modal-largo { max-width: 680px; }
 .mt-modal-scroll { padding: 26px; max-height: 82vh; overflow-y: auto; }
 .mt-modal-close { position: absolute; top: 10px; right: 10px; border: none; background: transparent; color: var(--color-text); cursor: pointer; padding: 4px; display: inline-flex; }
 .mt-modal-title { margin: 0 28px 14px 0; color: var(--color-heading); font-family: var(--font-family1); font-size: 1.3rem; }
