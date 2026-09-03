@@ -104,6 +104,21 @@ body {
       margin-top: var(--header-aria, 1.5em);
       margin-right: 1em;
       transition: height .22s cubic-bezier(.22, 1, .36, 1), margin-top .22s cubic-bezier(.22, 1, .36, 1); }
+  .stretto #header1 h1, .stretto #header1 h2 {
+    margin-block: 0; }
+
+#header.stretto,
+#header.stretto > div,
+.stretto #header1,
+.stretto #header1 hgroup,
+.stretto #header1 [itemprop="logo"] {
+  height: auto; }
+
+.stretto #header1 [itemprop="logo"] img {
+  height: var(--header-logo, 1.5rem); }
+
+#header.stretto {
+  padding-block: .5rem; }
 
 #main-container {
   grid-area: main-container;

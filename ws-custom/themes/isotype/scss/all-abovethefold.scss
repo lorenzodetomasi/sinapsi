@@ -103,6 +103,33 @@ aside.meta {
       }
     }
   }
+  // Stretto, i margini dei titoli restano dov'erano: `max-height` chiude il
+  // sottotitolo, non l'aria che aveva intorno. Erano 35px di bianco sotto il
+  // nome — il vuoto che faceva sembrare spaginata l'intestazione stretta.
+  .stretto & {
+    h1, h2 { margin-block: 0; }
+  }
+}
+// Stretta, l'intestazione non ha più un'altezza fissa.
+//
+// Le tre griglie gliene danno una in rem — 8,25rem con maxgrid, altre misure
+// con hgrid e vgrid — perché finora l'header era sempre lo stesso. Ora cambia
+// misura, e con l'altezza fissata restava alta uguale: dentro c'era il vuoto
+// lasciato da barra e sottotitolo. Basta una classe in più delle loro.
+// Il logo invece non va in `auto`: la sua misura è quella dell'header compatto.
+#header.stretto,
+#header.stretto > div,
+.stretto #header1,
+.stretto #header1 hgroup,
+.stretto #header1 [itemprop="logo"] {
+  height: auto;
+}
+.stretto #header1 [itemprop="logo"] img {
+  height: var(--header-logo, 1.5rem);
+}
+// L'aria intorno la dava l'altezza fissa: tolta quella, il logo toccava i bordi.
+#header.stretto {
+  padding-block: .5rem;
 }
 #main-container {
   grid-area: main-container;
