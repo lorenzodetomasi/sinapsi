@@ -14,6 +14,8 @@
  * compili, la seconda quando torni e non c'è più quello che avevi scritto.
  */
 
+import { AGE_BANDS } from './schema.js';
+
 export const ctrl = (scope, extra = {}) => ({ type: 'Control', scope, ...extra });
 
 /* I tipi schema.org che si usano qui. Il PRIMO @type è il discriminante — è
@@ -98,6 +100,16 @@ export const schemaLuogo = {
     containedInPlace: { type: 'string', title: 'Sta dentro (@id)' },
     isGroup: { type: 'boolean', title: 'È un gruppo, non un luogo fisico' },
 
+    /* A chi va bene questo posto. Stesso campo degli eventi — `typicalAgeRange`
+     * di schema.org, nella stessa forma testuale — perché a leggerlo è lo stesso
+     * motore: le liste di fascia (ws-listrule.php) interrogano questo nome, e un
+     * luogo che lo dichiara entra nelle stesse raccolte in cui entrano gli
+     * eventi. Un nome diverso qui avrebbe voluto dire un motore diverso. */
+    typicalAgeRange: { type: 'string', title: 'Questo luogo è adatto a' },
+    childrenMustBeAccompanied: { type: 'boolean', title: 'Minori solo se accompagnati' },
+    forSeparatedParents: { type: 'boolean', title: 'Solo genitori separati' },
+    isAccessibleForFree: { type: 'boolean', title: 'Gratuito' },
+
     /* Chi altro può modificare QUESTA scheda. È un permesso della singola
      * scheda, non della persona: sta qui e non in Gestione utenti perché la
      * domanda «chi può toccare questa cosa» si fa guardando la cosa. */
@@ -118,6 +130,19 @@ export const schemaLuogo = {
 };
 
 const gruppoCampi = (label, icon, elements) => ({ type: 'Group', label, options: { icon }, elements });
+
+/* «Minori solo se accompagnati» si chiede solo a chi ha dichiarato una fascia
+ * che comprende minorenni. Stessa regola dell'editor eventi, stesso pattern: «la
+ * fascia comincia sotto i diciotto» — 0-9 e 10-17 seguiti da trattino o più,
+ * oltre a «All Ages» dei file di prima. La valuta il browser, quindi niente
+ * `(?i)`, che è sintassi PHP. */
+const mostraSeMinori = {
+  effect: 'SHOW',
+  condition: {
+    scope: '#/properties/typicalAgeRange',
+    schema: { type: 'string', pattern: '^(?:[Aa]ll\\s*[Aa]ges|(?:1[0-7]|[0-9])\\s*[-+])' },
+  },
+};
 
 export const uischemaLuogo = {
   type: 'VerticalLayout',
@@ -164,7 +189,22 @@ export const uischemaLuogo = {
           ctrl('#/properties/longitude', { options: { computed: true } }),
         ],
       },
-      ctrl('#/properties/containedInPlace', { options: { icon: 'account_tree' } }),
+      ctrl('#/properties/containedInPlace', { options: { icon: 'account_tree', riferimento: true, ambito: 'organizer' } }),
+    ]),
+
+    /* La stessa sezione degli eventi, con le stesse fasce e le stesse parole.
+     * Un parco «adatto a 0-5» e una festa «adatta a 0-5» devono poter finire
+     * nella stessa lista: se il luogo lo dicesse in un modo suo, non ci
+     * finirebbe. «Minori solo se accompagnati» compare solo quando la fascia
+     * dichiarata comprende minorenni — sotto la fascia, perché è di quella che
+     * parla. */
+    gruppoCampi('Pubblico', 'people', [
+      ctrl('#/properties/typicalAgeRange', {
+        options: { ageRange: true, bands: AGE_BANDS, icon: 'child_care' },
+      }),
+      ctrl('#/properties/childrenMustBeAccompanied', { rule: mostraSeMinori, options: { inline: true } }),
+      ctrl('#/properties/forSeparatedParents', { options: { inline: true } }),
+      ctrl('#/properties/isAccessibleForFree', { options: { inline: true } }),
     ]),
 
     gruppoCampi('Contatti', 'contact_page', [
@@ -300,7 +340,9 @@ export const uischemaGruppo = {
       ctrl('#/properties/sameAs', { options: { icon: 'share' } }),
     ]),
     gruppoCampi('Dove', 'place', [
-      ctrl('#/properties/location', { options: { icon: 'place' } }),
+      // Stessa ricerca di «Sta dentro»: è la stessa domanda — quale scheda? —
+      // e finora si rispondeva battendo un indirizzo a memoria.
+      ctrl('#/properties/location', { options: { icon: 'place', riferimento: true, ambito: 'organizer' } }),
     ]),
     gruppoCampi('Immagini', 'image', [
       {

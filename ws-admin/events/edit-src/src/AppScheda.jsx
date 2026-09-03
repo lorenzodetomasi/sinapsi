@@ -14,11 +14,14 @@ import ComputedRenderer, { computedTester } from './ComputedRenderer.jsx';
 import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
+import AgeRangeRenderer, { ageRangeTester } from './AgeRangeRenderer.jsx';
+import RiferimentoRenderer, { riferimentoTester } from './RiferimentoRenderer.jsx';
 import EntityPicker from './EntityPicker.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import DiffModal from './DiffModal.jsx';
 import { diffForm, mergeChoices } from './diff.js';
 import { API_BASE } from './config.js';
+import { completaId, idIncompleto } from './placeId.js';
 
 /* L'editor delle SCHEDE: un luogo, un'attività, un gruppo.
  *
@@ -46,6 +49,8 @@ const renderers = [
   { tester: computedTester, renderer: ComputedRenderer },
   { tester: fieldRowTester, renderer: FieldRowRenderer },
   { tester: iconTextTester, renderer: IconTextRenderer },
+  { tester: ageRangeTester, renderer: AgeRangeRenderer },
+  { tester: riferimentoTester, renderer: RiferimentoRenderer },
 ];
 
 const RADICE = window.location.pathname.replace(/\/ws-admin\/.*/, '/');
@@ -135,6 +140,18 @@ export default function AppScheda() {
     })();
     return () => { fermo = true; };
   }, [idIniziale, adotta, avvisa]);
+
+  /* L'@id con la regione vuota — `places//statuadinettuno` — arriva da Google
+   * quando Google non dà il CAP: il server lo lascia rotto apposta, così non si
+   * salva una scheda a un indirizzo sbagliato. Ma il CAP, di solito, chi compila
+   * lo sa: appena lo scrive nel modulo, l'indirizzo si ricompone da sé. Finché
+   * non c'è, il segnale resta — ed è giusto che resti, perché manca davvero
+   * qualcosa. */
+  useEffect(() => {
+    if (!idIncompleto(data.id)) return;
+    const riparato = completaId(data.id, data.addressCountry, data.postalCode);
+    if (riparato !== data.id) setData((d) => ({ ...d, id: riparato }));
+  }, [data.id, data.addressCountry, data.postalCode]);
 
   // L'indirizzo pubblico, per l'occhio. Lo sa la mappa del sito, non noi.
   useEffect(() => {

@@ -91,7 +91,7 @@ const SOCIAL_SUGGEST = [
  * Le categorie che si popolano da sole leggono QUESTO campo (`ageWithin` e
  * `ageOverlaps` in ws-listrule.php). Una fascia scritta a parole — «da 3 a 6 anni»
  * — resta valida per chi legge, ma la regola non la riconosce. */
-const AGE_BANDS = [
+export const AGE_BANDS = [
   { id: 'baby',      name: 'Baby',        min: 0,  max: 2,   school: 'nido' },
   { id: 'materna',   name: 'Materna',     min: 3,  max: 5,   school: 'infanzia' },
   { id: 'bambini',   name: 'Bambini',     min: 6,  max: 10,  school: 'primaria' },

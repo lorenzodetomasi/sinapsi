@@ -33,6 +33,28 @@ export function buildPlaceId(type, region, slug) {
   return `${folderForType(type)}/${region}/${slug}`;
 }
 
+/* Un @id con la regione vuota — `places//statuadinettuno` — non è un errore di
+ * stampa: è il segnale che il server manda quando Google non ha dato il CAP
+ * (google_place-json.php, `id_region_missing`). Il doppio taglio rende l'@id
+ * invalido apposta, così il salvataggio si blocca invece di creare una scheda
+ * a un indirizzo sbagliato.
+ *
+ * Ma il segnale non è una risposta: il CAP, in genere, chi compila ce l'ha. Se
+ * nel modulo c'è, l'indirizzo si ricompone da sé; se non c'è ancora, il segnale
+ * resta lì a dire che manca qualcosa. */
+export function completaId(id, country, postalCode) {
+  const m = String(id || '').match(/^([A-Za-z]+)\/\/(.+)$/);
+  if (!m) return id;
+  const paese = String(country || '').trim();
+  const cap = String(postalCode || '').trim();
+  return (paese && cap) ? `${m[1]}/${paese}${cap}/${m[2]}` : id;
+}
+
+/** Vero quando l'@id porta ancora il segnale del CAP mancante. */
+export function idIncompleto(id) {
+  return /^[A-Za-z]+\/\/.+$/.test(String(id || ''));
+}
+
 // Cambia solo il prefisso (localbusinesses|places) di un @id in base al tipo.
 export function swapIdPrefix(id, type) {
   const m = String(id || '').match(/^(?:places|localbusinesses)\/(.*)$/);

@@ -78,6 +78,14 @@ export function luogoDaJsonLd(doc) {
     iconName: testo(icona.name || icona['meetoo:name']),
 
     containedInPlace: rifId(e.containedInPlace),
+
+    /* A chi va bene questo posto. Stessi nomi degli eventi: `typicalAgeRange` e
+       `isAccessibleForFree` sono di schema.org, gli altri due sono nostri e
+       portano il prefisso che dice che sono nostri. */
+    typicalAgeRange: testo(e.typicalAgeRange),
+    childrenMustBeAccompanied: e['meetoo:childrenMustBeAccompanied'] === true,
+    forSeparatedParents: e['meetoo:forSeparatedParents'] === true,
+    isAccessibleForFree: e.isAccessibleForFree === true,
     isGroup: e['meetoo:isGroup'] === true,
 
     contributor: lista(e.contributor).map(rifId).filter(Boolean),
@@ -147,6 +155,17 @@ export function luogoAJsonLd(d, docOriginale) {
     const vecchio = (e.containedInPlace && typeof e.containedInPlace === 'object') ? e.containedInPlace : {};
     e.containedInPlace = { ...vecchio, '@id': d.containedInPlace };
   } else delete e.containedInPlace;
+
+  metti('typicalAgeRange', d.typicalAgeRange || undefined);
+  /* I tre segni si scrivono solo quando sono veri. Un `false` scritto nel file
+     dice «questo posto NON è gratuito», che è un'affermazione; l'assenza dice
+     «non è stato detto», che è la verità finché nessuno lo dice. */
+  if (d.childrenMustBeAccompanied) e['meetoo:childrenMustBeAccompanied'] = true;
+  else delete e['meetoo:childrenMustBeAccompanied'];
+  if (d.forSeparatedParents) e['meetoo:forSeparatedParents'] = true;
+  else delete e['meetoo:forSeparatedParents'];
+  if (d.isAccessibleForFree) e.isAccessibleForFree = true;
+  else delete e.isAccessibleForFree;
 
   metti('contributor', persone(d.contributor));
 
