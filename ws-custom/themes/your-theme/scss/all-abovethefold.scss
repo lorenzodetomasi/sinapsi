@@ -80,9 +80,20 @@ aside.meta {
   grid-area: header;
   position: sticky;
   top: 0;
+  // Le due misure del logo per l'header che si restringe: quella dell'apertura
+  // è quella di sempre, quella della lettura è piccola. Chi le usa è
+  // `template-parts/header-compatto.php`.
+  --header-logo-aperto: 4em;
+  --header-logo-stretto: 1.5rem;
 }
 #header-top {
   border-bottom: 1px solid $meta-background-color;
+  // Chiusa, la barra non lascia dietro la sua riga: `max-height` stringe il
+  // contenuto e il bordo resterebbe lì da solo. Sta qui e non nel foglio
+  // dell'header compatto perché quello non può scavalcare un `#id`.
+  .stretto & {
+    border-bottom-width: 0;
+  }
 }
 #header1 {
   display: flex;
@@ -92,9 +103,12 @@ aside.meta {
     display: flex;
     & > [itemprop="logo"] {
       & > img {
-        height: 4em;
-        margin-top: 1.5em;
+        height: var(--header-logo, 4em);
+        // L'aria sopra il logo se ne va quando l'header si stringe: senza,
+        // l'intestazione restava alta uguale con dentro un logo più piccolo.
+        margin-top: var(--header-aria, 1.5em);
         margin-right: 1em;
+        transition: height .22s cubic-bezier(.22,1,.36,1), margin-top .22s cubic-bezier(.22,1,.36,1);
       }
     }
   }
@@ -329,8 +343,6 @@ select {
     -moz-appearance: none;
     -webkit-appearance: none;
   display: inline-block; 
-  position: relative; 
-  top: .13em; 
   width: 1.5em; 
   height: 1.5em; 
   z-index: 0; 
@@ -355,6 +367,15 @@ select {
   backface-visibility: hidden; 
   -webkit-transform-origin: 100% 100%; 
   transform-origin: 100% 100%;
+}
+// Fields
+label {
+  display: inline-flex;
+  align-items: baseline;
+  [type="checkbox"] {
+    position: relative; 
+    top: .25em; 
+  }
 }
 // Buttons
 .button {

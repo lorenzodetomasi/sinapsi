@@ -1,0 +1,109 @@
+/* ===========================================================================
+ * meetoo-tokens.css — SOLO i design token di Meetoo (palette, tipografia, misure).
+ *
+ * Separati dai componenti apposta: le pagine con un proprio impianto grafico (es.
+ * waterfront.html, che usa nomi di classe omonimi con altro significato) possono
+ * condividere la palette senza ereditare gli stili dei componenti.
+ *   - pagine standard  → meetoo.css (importa questo file)
+ *   - pagine speciali  → solo questo file
+ * =========================================================================== */
+
+:root {
+  /* Tipography */
+  /*color-scheme: light dark;*/
+  --font-family1: 'Roboto Slab', Georgia, serif;
+  --font-family2: 'Roboto', system-ui, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-size: 1em;
+  --font-size-small: 0.8em;
+  --gutter: calc(var(--font-size)*1.2);
+  --gutter-d2: calc(var(--gutter)/2);
+  --gutter-d4: calc(var(--gutter)/4);
+  /* Color palette */
+  --color1: light-dark(#c1272d, #ff8a80);/* red/light-red: headings, current */
+  --color2: light-dark(#1d1b20, #e6e0e9);/* black/white: text */
+  --color3: light-dark(#2e3192, #adc6ff);/* blue/light-blue: links, icons, actions */
+  --color4: light-dark(#2e3192, #2a2f66);
+  --color5: light-dark(#406abf, #adc6ff);/* --mt-accent */
+  --color6: light-dark(#5f5c66, #b9b3c4);/* --hint */
+  --color7: light-dark(#e0e0e6, #48454e);/* --line */
+  --color8: light-dark(#f5a623, #48454e);/* orange */
+  /* Neutral Material Design 3 (light / dark) */
+  --color-background-main: light-dark(#f6f7f9, #141218);
+  --color-background-section1: light-dark(#ffffff, #1e1f20);
+  --color-background-section2: light-dark(#eef0f3, #2a282f);
+  --color-background-section3: light-dark(#f4f5f8, #11111b);
+  --color-text: var(--color2);
+  --color-text-neg: light-dark(#e6e0e9, #1d1b20);
+  --color-link: var(--color3);
+  --color-heading: var(--color1);
+  --color-focus: var(--color-heading);
+  --color-active: var(--color-heading);
+  --color-inactive: gray;
+  --color-hover: var(--color-heading);
+  --color-line: var(--color7);       /* separatori: bordi di card, righe, campi */
+  --color-hint: var(--color6);
+  --color-warning: var(--color8);
+  --color-background-warning: light-dark(#fff4e5, #3a2f1c);
+  --color-success: light-dark(#146c2e, #a6e3a1);
+  --color-danger: light-dark(#c1272d, #ff8a80);
+  --color-background-danger: light-dark(#fdeceb, #3a201f);
+  --color-line-track: var(--color-heading);
+  --color-line-track-over: var(--color-text);
+  --color-ok: light-dark(#2e7d32, #a6e3a1);
+
+  --border-width: 2px;
+
+  /* Header */
+  --color-background-header: var(--color-background-main);
+  /* Events */
+  --color-past: light-dark(#6b6870, #8a8590);
+
+  /* Colori scena (waterfront) tema-aware: chiari in light, desaturati/scuri in dark */
+  --color-sea: light-dark(#91daee, #14343f);
+  --color-sand: light-dark(#ebe9e5, #24211d);
+  --color-park: light-dark(#c2f1d5, #172c20);
+  --metro: light-dark(#2e3192, #2a2f66);   /* binario centrale (metro-line) = blu scuro */
+  --rail: light-dark(#8ba5c2, #3f4d5e);    /* binari esterni (waterfront/street) = blu-grigio */
+  --rail-text: light-dark(#2e3192, #dfe4ff);
+  --wave-url: url('media-sources/meetoo-wave-band.svg');   /* onda (variante scura via override) */
+
+  --md-sys-color-surface: #FEF7FF;
+  --md-sys-color-on-surface: #1D1B20;
+  --md-sys-color-on-surface-variant: #49454F;
+  --md-sys-color-background: #F4F5F7;
+  --border-radius: var(--gutter-d2);
+  --icon-size: calc(var(--font-size)*1.5);
+
+  --button-background: var(--color-link);
+  --button-color: var(--color-text-neg);
+  --button-background-hover: var(--color-hover);
+  --button-color-hover: var(--color-text-neg);
+  --button-font-size: var(--font-size);
+  --button-icon-size: var(--icon-size);
+  --button-padding: var(--gutter-d4) var(--gutter-d2);
+  --button-large-padding: var(--gutter-d2) var(--gutter);
+  --button-border-radius: var(--border-radius);
+
+  --card-background: var(--color-background-section1);
+  --card-border-color: var(--card-background);
+  --card-focus-border-color: var(--color1);
+
+  --base-vw: 33.33;   /* larghezza fermata (vw); più grande su mobile */
+  /* Altezza dello slot-card: su desktop riempie l'area disponibile (header 96 + 3 binari da 48). */
+  /* Altezza uniforme (più bassa) di: righe header, le 3 line, e i quadrati-tab. */
+  --line-h: 40px;
+  /* card-slot: riempie l'area disponibile = 100vh - header(2·line-h) - metro-area(5·line-h + 8px gap), /2 */
+  --card-slot: clamp(170px, calc(50svh - 3.5 * var(--line-h) - 4px), 460px);
+}
+
+/* Token dell header condiviso (derivati da quelli sopra). */
+:root {
+  --mt-red: var(--color1); 
+  --mt-blue: var(--color-link); 
+  --mt-accent: light-dark(#406abf, #adc6ff);
+  --mt-hint: var(--color-hint); --mt-text: var(--color-text); --mt-card: var(--color-background-section1);
+  --mt-line: light-dark(rgba(0,0,0,.08), rgba(255,255,255,.10)); --mt-h: 44px;
+  /* Larghezza della colonna dell'header: allineata a .wrap */
+  --mt-w: 960px;
+}

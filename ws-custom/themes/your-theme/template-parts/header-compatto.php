@@ -21,10 +21,12 @@
 	/* La transizione è sulle misure, non su `height`: così il contenuto non si
 	   schiaccia, si accorcia il contorno. */
 	.header-compatto {
-		--header-logo: 3.5rem;
-		--header-aria: 1rem;
+		/* Quanto è alto il logo a riposo lo decide il sito, non questo file: il
+		   logo orizzontale di Meetoo a 1,5rem si legge già tutto, quello di
+		   isotype all'apertura vuole i suoi 4em. Il tema lo dice una volta con
+		   `--header-logo-aperto`; qui c'è solo la misura di chi non lo dice. */
+		--header-logo: var(--header-logo-aperto, 1.5rem);
 		transition: padding .22s cubic-bezier(.22,1,.36,1), box-shadow .22s ease;
-		padding-block: var(--header-aria);
 		position: sticky; top: 0; z-index: 40;
 	}
 	.header-compatto img, .header-compatto svg, .header-compatto .logo {
@@ -39,18 +41,22 @@
 	/* E sui telefoni parte già più piccolo: l'impressione grande la può dare uno
 	   schermo grande, qui lo spazio è tutto quello che c'è. */
 	@media (max-width: 30rem) {
-		.header-compatto { --header-logo: 2.25rem; }
+		.header-compatto { --header-logo: var(--header-logo-stretto, 1.5rem); }
 	}
 	.header-compatto .header-espanso-solo {
 		transition: opacity .18s ease, max-height .22s cubic-bezier(.22,1,.36,1);
 		overflow: hidden; max-height: 6rem; opacity: 1;
 	}
 	.header-compatto.stretto {
-		--header-logo: 2rem;
-		--header-aria: .375rem;
+		--header-logo: var(--header-logo-stretto, 1.5rem);
+		--header-aria: 0rem;
 		box-shadow: 0 1px 0 0 var(--mt-border, rgba(0,0,0,.12));
 	}
-	.header-compatto.stretto .header-espanso-solo { max-height: 0; opacity: 0; }
+	/* `max-height` stringe il contenuto, non il bordo: la barra dei contatti di
+	   isotype ha una riga sotto, e chiusa sarebbe rimasta lì da sola. */
+	.header-compatto.stretto .header-espanso-solo {
+		max-height: 0; opacity: 0; border-width: 0;
+	}
 	@media (prefers-reduced-motion: reduce) {
 		.header-compatto, .header-compatto img, .header-compatto .header-espanso-solo { transition: none; }
 	}

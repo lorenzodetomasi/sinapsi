@@ -690,8 +690,7 @@ $GLOBALS['ws_scripts']['bodyend']['meetoo_carte'] = '<script defer="defer" src="
 // Le liste lunghe che si allungano mentre si scorre.
 $GLOBALS['ws_scripts']['bodyend']['meetoo_liste'] = '<script defer="defer" src="'.$ws_theme_url.'js/lista.js"></script>';
 
-// L'header che si restringe al primo scorrimento vive nel tema genitore, perché
-// serve a tutti i siti: qui si accende soltanto.
-$GLOBALS['ws_html_attributes']['header']['class'][] = 'header-compatto';
+// L'header che si restringe al primo scorrimento vive nel tema genitore, ed è
+// acceso lì per tutti i siti: qui non serve più dire niente.
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'meetoo';
 ?>

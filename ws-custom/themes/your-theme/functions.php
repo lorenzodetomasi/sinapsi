@@ -353,9 +353,29 @@ if(!function_exists('ws_nav_items')){
 }
 
 /* L'header che si restringe al primo scorrimento: markup zero, solo stile e un
- * ascoltatore. Si accende aggiungendo la classe `header-compatto` all'header —
- * lo fa il tema figlio che lo vuole (vedi meetoo/functions.php). */
+ * ascoltatore. */
 ob_start();
 include_template('template-parts/header-compatto');
 $GLOBALS['ws_styles']['head']['header_compatto'] = ob_get_clean();
+
+/* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
+ * un'intestazione grande all'apertura e discreta durante la lettura non è un
+ * gusto di quel sito, è come si legge una pagina lunga ovunque. Un tema figlio
+ * che non lo voglia toglie la classe:
+ *   $GLOBALS['ws_html_attributes']['header']['class'] = array_diff(
+ *       $GLOBALS['ws_html_attributes']['header']['class'], array('header-compatto'));
+ */
+$GLOBALS['ws_html_attributes']['header']['class'][] = 'header-compatto';
+
+/* La barra dei contatti in cima — dov'è, la mail, il telefono, le lingue — è la
+ * prima cosa che deve cedere il posto: serve quando si arriva, non mentre si
+ * legge. È l'unica parte che si chiude; nome e logo restano, perché sono
+ * l'orientamento. */
+$GLOBALS['ws_html_attributes']['header-top']['class'][] = 'header-espanso-solo';
+
+/* E con lei il sottotitolo: dice cos'è il sito, e serve a chi arriva. Chi sta
+ * leggendo lo sa già, e quella riga è quasi tutta l'altezza che l'header si
+ * porta dietro — senza, l'intestazione stretta è davvero stretta. Il nome
+ * resta. */
+$GLOBALS['ws_html_attributes']['header1-headline']['class'][] = 'header-espanso-solo';
 ?>
