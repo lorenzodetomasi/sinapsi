@@ -124,7 +124,7 @@ h3.sec-head .count { font-size: .75rem; border-width: 1px; }
   text-align: center;
   color: var(--color-heading); 
   border-color: var(--color-heading); 
-  padding: .25em .5em;
+  padding: 0;
   border: 2px solid;
   border-radius: 1em;
   min-width: 2em;
@@ -489,3 +489,25 @@ section.collections .sec-head .material-symbols-outlined { color: var(--color1);
   .mt-crumbs { font-size: .9rem; }
   .mt-admin { display: none; }
 }
+
+/* ---------- Il profilo, nel suo riquadro ----------
+   Stesso guscio delle Impostazioni (.mt-ov / .mt-modal / .mt-modal-scroll): qui
+   ci sono solo le parti proprie. Cresceranno — il profilo avanzato ha decine di
+   campi — e per questo il guscio scorre già. */
+.mt-prof-testa { text-align: center; padding-bottom: 18px; border-bottom: 1px solid var(--color-line); }
+.mt-prof-foto { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; }
+.mt-prof-nome { font-family: 'Roboto Slab', Georgia, serif; font-size: 1.0625rem; font-weight: 600; }
+.mt-prof-email { color: var(--color-hint); font-size: .9rem; margin-top: 2px; }
+.mt-prof-pillole { display: flex; justify-content: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.mt-pillola {
+  font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; font-weight: 700;
+  color: var(--color-hint); border: 1px solid var(--color-line); border-radius: 999px; padding: 2px 10px;
+}
+.mt-prof-azioni { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
+.mt-prof-btn {
+  display: block; text-align: center; padding: 10px 16px; border-radius: 999px;
+  border: 1px solid var(--color-line); color: var(--color-text); text-decoration: none; font-weight: 600;
+}
+.mt-prof-btn:hover { border-color: var(--color-link); color: var(--color-link); }
+.mt-prof-esci { color: var(--color-hint); }
+.mt-prof-vuoto { color: var(--color-hint); text-align: center; margin: 0; }

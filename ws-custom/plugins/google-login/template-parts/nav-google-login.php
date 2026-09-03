@@ -150,24 +150,40 @@ $portal_org_logo = $profilo['org_logo'];
         <li class="avatar-wrapper">
             <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar-circle logged-in" onclick="toggleGoogleProfileCard(event)">
             
+            <?php
+            /* Il contenuto del profilo, con le classi del tema: lo stesso vestito
+             * di ogni altro riquadro di Meetoo. Prima aveva i suoi — bianchi,
+             * grigi e blu di Google — e dentro una pagina scura si vedeva che era
+             * arrivato da un'altra parte.
+             *
+             * Il riquadro lo mette `header.js` (`Meetoo.openProfilo`), centrato e
+             * con lo scorrimento: questo nodo resta nascosto e serve solo a
+             * portare il contenuto, che è il server a saperlo.
+             *
+             * Gli indirizzi sono RELATIVI alla radice: scritti come
+             * `https://www.isotype.org/…` funzionavano su un sito solo, e questo
+             * file gira anche altrove. */
+            // Con la guardia: questo template sta nell'header di OGNI pagina, e
+            // una funzione che non c'è qui non fa un avviso, spegne il sito.
+            $ws_radice = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
+            ?>
             <div id="google-profile-card" class="profile-popup hidden">
-                <div class="popup-user-info">
-                    <img src="<?= htmlspecialchars($google_session->picture) ?>" class="popup-big-avatar" alt="">
-                    <div class="popup-name"><?= htmlspecialchars($google_session->name) ?></div>
-                    <div class="popup-email"><?= htmlspecialchars($google_session->email) ?></div>
-                    
-                    <div class="popup-meta">
-                        <span class="meta-pill role-pill"><?= htmlspecialchars($display_role) ?></span>
-                        <span class="meta-pill lang-pill" title="Lingua Profilo"><?= htmlspecialchars($display_locale) ?></span>
+                <div class="mt-prof-testa">
+                    <img src="<?= htmlspecialchars($google_session->picture) ?>" class="mt-prof-foto" alt="" referrerpolicy="no-referrer">
+                    <div class="mt-prof-nome"><?= htmlspecialchars($google_session->name) ?></div>
+                    <div class="mt-prof-email"><?= htmlspecialchars($google_session->email) ?></div>
+                    <div class="mt-prof-pillole">
+                        <span class="mt-pillola"><?= htmlspecialchars($display_role) ?></span>
+                        <span class="mt-pillola" title="Lingua del profilo"><?= htmlspecialchars($display_locale) ?></span>
                     </div>
                 </div>
-                <div class="popup-actions">
+                <div class="mt-prof-azioni">
                     <?php if ($is_registered_user): ?>
-                        <a href="https://www.isotype.org/profilo-utente" class="google-action-btn edit-btn">✏️ Modifica Profilo</a>
+                        <a href="<?= htmlspecialchars($ws_radice) ?>/profilo-utente" class="mt-prof-btn">Modifica il profilo</a>
                     <?php else: ?>
-                        <a href="https://www.isotype.org/profilo-utente?init=register" class="google-action-btn register-btn">➕ Registrati</a>
+                        <a href="<?= htmlspecialchars($ws_radice) ?>/profilo-utente?init=register" class="mt-prof-btn">Completa la registrazione</a>
                     <?php endif; ?>
-                    <a href="?logout=1" class="google-logout-btn">Esci</a>
+                    <a href="?logout=1" class="mt-prof-btn mt-prof-esci">Esci</a>
                 </div>
             </div>
         </li>

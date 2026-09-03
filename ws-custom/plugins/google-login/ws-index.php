@@ -164,15 +164,25 @@ $GLOBALS['ws_scripts']['bodyend']['google-login'] = "
         .catch(err => alert('Impossibile contattare il server.'));
     }
 
+    /* Il profilo si apre AL CENTRO, nel riquadro di Meetoo — lo stesso delle
+     * Impostazioni, con lo stesso scorrimento. Prima era una tendina appesa
+     * all'avatar, larga 280px e vestita coi colori di Google: andava bene per
+     * tre righe, non per un profilo che crescera'.
+     *
+     * Il contenuto lo sa il SERVER (se sei registrato, che ruolo hai, dove si va
+     * per modificare) e lo passa cosi' com'e'; il guscio lo mette header.js, che
+     * e' l'unico file caricato sia qui sia in Gestione. */
     function toggleGoogleProfileCard(event) {
         event.stopPropagation();
-        document.getElementById('google-profile-card').classList.toggle('hidden');
+        var card = document.getElementById('google-profile-card');
+        if (!card) return;
+        if (window.Meetoo && window.Meetoo.openProfilo) {
+            window.Meetoo.openProfilo(card.innerHTML);
+            return;
+        }
+        // Senza header.js (pagina che non lo carica): la tendina di prima.
+        card.classList.toggle('hidden');
     }
-
-    document.addEventListener('click', function() {
-        const popup = document.getElementById('google-profile-card');
-        if (popup && !popup.classList.contains('hidden')) popup.classList.add('hidden');
-    });
 </script>";
 $GLOBALS['ws_styles']['head']['google-login'] = '<style>
     #google-user-registered { background: #f0fdf4; border: 1px solid #bbf7d0; }

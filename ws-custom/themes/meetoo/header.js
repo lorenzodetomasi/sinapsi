@@ -255,7 +255,10 @@
   modal.innerHTML =
     '<div class="mt-modal"><button class="mt-modal-close" id="mt-set-close"><span class="material-symbols-outlined">close</span></button>' +
     '<div class="mt-modal-scroll"><h2 class="mt-modal-title">Impostazioni</h2>' +
-      '<div id="mt-userblock"></div>' +
+      /* NIENTE informazioni utente qui. Chi sei sta nel tuo profilo, che è un
+       * posto solo; qui ci sono i comandi — come vuoi vedere le cose e come
+       * vuoi essere avvisato. Erano insieme perché il modale era uno, non
+       * perché fossero la stessa cosa. */
       '<div class="mt-set-group"><div class="mt-set-label">Aspetto</div><div class="mt-theme" id="mt-theme">' +
         '<button data-tm="auto"><span class="material-symbols-outlined">brightness_auto</span>Automatico</button>' +
         '<button data-tm="light"><span class="material-symbols-outlined">light_mode</span>Chiaro</button>' +
@@ -270,6 +273,54 @@
   modal.addEventListener('click', function (e) { if (e.target === modal) closeSettings(); });
   document.getElementById('mt-set-close').onclick = closeSettings;
   document.getElementById('mt-settings').onclick = openSettings;
+
+  /* ============ Modale del PROFILO ============
+   * Lo stesso riquadro centrato delle Impostazioni — stesso guscio, stesso
+   * scorrimento — perché è la stessa cosa vista da chi guarda: un pannello che
+   * si apre in mezzo alla pagina. Qui dentro sta CHI SEI; di là stanno i comandi.
+   *
+   * Il CONTENUTO non lo decide questo file. Sul sito pubblico lo sa il server
+   * (il plugin del login: se sei registrato, che ruolo hai, dove si va per
+   * modificare il profilo), in Gestione lo sa la sessione. Chi lo sa lo passa;
+   * qui c'è il posto dove metterlo, che è l'unica cosa che serve sia uguale. */
+  var profilo = document.getElementById('mt-profilo-modal');
+  if (!profilo) {
+    profilo = document.createElement('div');
+    profilo.className = 'mt-ov'; profilo.id = 'mt-profilo-modal';
+    profilo.innerHTML =
+      '<div class="mt-modal"><button class="mt-modal-close" id="mt-prof-close"><span class="material-symbols-outlined">close</span></button>' +
+      '<div class="mt-modal-scroll"><h2 class="mt-modal-title">Il tuo profilo</h2>' +
+        '<div id="mt-profilo-corpo"></div>' +
+      '</div></div>';
+    document.body.appendChild(profilo);
+    profilo.addEventListener('click', function (e) { if (e.target === profilo) chiudiProfilo(); });
+    document.getElementById('mt-prof-close').onclick = chiudiProfilo;
+  }
+  function chiudiProfilo() { profilo.classList.remove('open'); }
+  /** Apre il profilo. Con `html` mette quello; senza, disegna ciò che sa la sessione. */
+  function openProfilo(html) {
+    var box = document.getElementById('mt-profilo-corpo');
+    if (typeof html === 'string' && html) box.innerHTML = html;
+    else box.innerHTML = profiloDaSessione();
+    var esci = box.querySelector('[data-mt-logout]');
+    if (esci) esci.onclick = function (e) { e.preventDefault(); S.logout(); chiudiProfilo(); };
+    profilo.classList.add('open');
+  }
+  function profiloDaSessione() {
+    if (!S.user) {
+      return '<p class="mt-prof-vuoto">Non sei collegato.</p>';
+    }
+    return '<div class="mt-prof-testa">' +
+        (S.user.picture ? '<img class="mt-prof-foto" src="' + esc(S.user.picture) + '" alt="" referrerpolicy="no-referrer">' : '') +
+        '<div class="mt-prof-nome">' + esc(S.user.name || S.user.email) + '</div>' +
+        '<div class="mt-prof-email">' + esc(S.user.email || '') + '</div>' +
+        (S.user.role ? '<div class="mt-prof-pillole"><span class="mt-pillola">' + esc(S.user.role) + '</span></div>' : '') +
+      '</div>' +
+      '<div class="mt-prof-azioni">' +
+        '<a class="mt-prof-btn" href="' + esc(SITE_ROOT + 'profilo-utente') + '">Modifica il profilo</a>' +
+        '<a class="mt-prof-btn mt-prof-esci" href="#" data-mt-logout>Esci</a>' +
+      '</div>';
+  }
 
   /* ============ Drawer (hamburger) ============ */
   var drawer = document.querySelector('.mt-drawer');
@@ -344,13 +395,9 @@
     // Tema attivo
     var m = 'auto'; try { m = localStorage.getItem(THEME_KEY) || 'auto'; } catch (e) {}
     document.querySelectorAll('#mt-theme button').forEach(function (b) { b.onclick = function () { setTheme(b.dataset.tm); }; b.classList.toggle('active', b.dataset.tm === m); });
-    // Utente + preferenze
-    var ub = document.getElementById('mt-userblock'), pf = document.getElementById('mt-prefs');
+    // Le preferenze: sono di chi è collegato, quindi si vedono solo da collegati.
+    var pf = document.getElementById('mt-prefs');
     if (S.user) {
-      ub.innerHTML = (S.user.picture ? '<img src="' + esc(S.user.picture) + '" alt="" referrerpolicy="no-referrer">' : '') +
-        '<div><div class="nm">' + esc(S.user.name || S.user.email) + '</div><div class="em">' + esc(S.user.email || '') + '</div></div>' +
-        '<button id="mt-logout">Esci</button>';
-      ub.querySelector('#mt-logout').onclick = function () { S.logout(); closeSettings(); };
       var lang = (S.prefs && S.prefs.language) || 'it';
       var noti = !!(S.prefs && S.prefs.notifications);
       pf.innerHTML = '<div class="mt-set-group"><div class="mt-set-label">Preferenze</div>' +
@@ -359,8 +406,9 @@
       pf.querySelector('#mt-lang').onchange = function () { savePrefs({ language: this.value }); };
       pf.querySelector('#mt-noti').onchange = function () { savePrefs({ notifications: this.checked ? '1' : '0' }); };
     } else {
-      ub.innerHTML = CFG.noAuth ? '' : '<div style="color:var(--mt-hint);font-size:.9rem">Accedi con Google per registrarti agli eventi e salvare le tue preferenze.</div>';
-      pf.innerHTML = '';
+      pf.innerHTML = CFG.noAuth ? ''
+        : '<div class="mt-set-group"><div style="color:var(--mt-hint);font-size:.9rem">'
+          + 'Accedi con Google per registrarti agli eventi e salvare le tue preferenze.</div></div>';
     }
   }
   function savePrefs(p) { S.api('prefs', p).then(function (r) { if (r.status === 200 && r.body && r.body.prefs) S.prefs = r.body.prefs; }); }
@@ -383,7 +431,10 @@
       el.innerHTML = S.user.picture
         ? '<img class="mt-avatar" src="' + esc(S.user.picture) + '" alt="" title="' + esc(S.user.name || '') + '" referrerpolicy="no-referrer">'
         : '<button class="mt-avatar-fallback" title="' + esc(S.user.name || '') + '">' + esc((S.user.name || S.user.email || '?').charAt(0).toUpperCase()) + '</button>';
-      el.firstChild.onclick = openSettings; // clic sull'avatar → impostazioni/logout
+      /* L'avatar apre il PROFILO: è la tua faccia, e cliccandola ci si aspetta
+       * di trovare sé stessi, non i comandi del tema. Le impostazioni hanno la
+       * loro rotella accanto. */
+      el.firstChild.onclick = function () { openProfilo(); };
     } else {
       el.innerHTML = '';
       /* Segnato come NOSTRO: la guardia qui sopra non tocca ciò che ha scritto il
@@ -416,6 +467,8 @@
     },
     // Slot opzionale per bottoni info/legenda a sinistra delle azioni.
     siteRoot: function () { return SITE_ROOT; },
+    openProfilo: openProfilo,
+    closeProfilo: chiudiProfilo,
     contentBase: contentBase,
     urlPagina: urlPagina,
     setActions: function (html) { var s = document.getElementById('mt-slot'); if (s) s.innerHTML = html || ''; },
