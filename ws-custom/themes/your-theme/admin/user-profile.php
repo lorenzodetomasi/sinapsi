@@ -268,45 +268,56 @@ $genders_json_content = file_exists($genders_json_path) ? file_get_contents($gen
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Profilo e Privacy</title>
 <?php endif; ?>
+<?php
+/* GLI STILI NON DEVONO USCIRE DAL RIQUADRO.
+ *
+ * Incorporata, questa pagina viene inserita con `innerHTML` — e un `<style>`
+ * messo così SI APPLICA A TUTTA LA PAGINA che lo ospita. Le regole qui sotto si
+ * chiamano `.card`, `.btn`, `body`, `:root`: nomi che nel tema di Meetoo
+ * esistono già e vogliono dire altro. Il risultato era il modulo illeggibile e
+ * la pagina dietro spaginata — le schede del sito ridisegnate dai bottoni di un
+ * modulo di privacy.
+ *
+ * Quindi: incorporata, ogni regola vive sotto `#mt-profilo-corpo`, e `:root` e
+ * `body` non si scrivono affatto (non ci sono, lì dentro: c'è il riquadro).
+ * A pagina intera resta tutto com'era. */
+$q = $embed ? '#mt-profilo-corpo ' : '';
+?>
     <style>
+<?php if (!$embed): ?>
         :root { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: var(--color-text, #202124); }
         body { max-width: 680px; margin: 3rem auto; padding: 0 1.5rem; background: var(--color-background, #f8f9fa); }
-        .card { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
-        h1 { font-size: 1.5rem; margin-top: 0; color: var(--color-link, #1a73e8); }
-        .id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; }
-        .uuid-badge { font-family: monospace; background: var(--color-background-section1, #fff); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--color-line, #cce3ff); font-size: 13px; color: var(--color-link, #1967d2); }
-        .switch-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--color-line, #f1f3f4); }
-        .switch-row:last-of-type { border-bottom: none; }
-        input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-link, #1a73e8); margin-top: 3px; cursor: pointer; }
-        .switch-label { font-weight: 600; display: block; margin-bottom: 2px; }
-        .switch-hint { font-size: 0.85rem; color: var(--color-hint, #5f6368); margin: 0; }
-        
-        .search-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--color-line, #dadce0); background: var(--color-background-section2, #fff); color: var(--color-text, #202124); box-sizing: border-box; font-size: 14px; }
-        .search-input:focus { border-color: var(--color-link, #1a73e8); outline: none; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
-        
-        .restore-btn { background: #f1f3f4; border: 1px solid #dadce0; border-radius: 6px; padding: 6px 10px; cursor: pointer; color: #5f6368; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .restore-btn:hover { background: #e8eaed; color: #1a73e8; border-color: #cce3ff; }
-
-        .autocomplete-container { position: relative; }
-        .suggestions-list { 
-            position: absolute; top: 100%; left: 0; right: 0; 
-            background: white; border: 1px solid #ccc; border-radius: 4px; 
-            max-height: 180px; overflow-y: auto; list-style: none; padding: 0; margin: 4px 0 0 0; 
-            z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: none; 
+        <?= $q ?>.card { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
+<?php else: ?>
+        /* Nel riquadro la scheda non ha bisogno di un secondo bordo: ce l'ha già
+           il modale, e il testo eredita da lì tipo, dimensione e colore. */
+        <?= $q ?>.card { background: transparent; border: none; padding: 0; }
+<?php endif; ?>
+        <?= $q ?>h1 { font-size: <?= $embed ? '1.125rem' : '1.5rem' ?>; margin-top: 0; color: var(--color-link, #1a73e8); }
+        <?= $q ?>.id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        <?= $q ?>.uuid-badge { font-family: monospace; background: var(--color-background-section1, #fff); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--color-line, #cce3ff); font-size: 13px; color: var(--color-link, #1967d2); overflow-wrap: anywhere; }
+        <?= $q ?>.switch-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-line, #f1f3f4); }
+        <?= $q ?>.switch-row:last-of-type { border-bottom: none; }
+        <?= $q ?>input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-link, #1a73e8); margin-top: 3px; cursor: pointer; }
+        <?= $q ?>.switch-label { font-weight: 600; display: block; margin-bottom: 2px; }
+        <?= $q ?>.switch-hint { font-size: 0.85rem; color: var(--color-hint, #5f6368); margin: 0; }
+        <?= $q ?>.search-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--color-line, #dadce0); background: var(--color-background-section2, #fff); color: var(--color-text, #202124); box-sizing: border-box; font-size: 14px; font-family: inherit; }
+        <?= $q ?>.search-input:focus { border-color: var(--color-link, #1a73e8); outline: none; }
+        <?= $q ?>.restore-btn { background: var(--color-background-section2, #f1f3f4); border: 1px solid var(--color-line, #dadce0); border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--color-hint, #5f6368); display: flex; align-items: center; justify-content: center; }
+        <?= $q ?>.restore-btn:hover { color: var(--color-link, #1a73e8); }
+        <?= $q ?>.autocomplete-container { position: relative; }
+        <?= $q ?>.suggestions-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--color-background-section1, #fff); border: 1px solid var(--color-line, #ccc); border-radius: 8px;
+            max-height: 180px; overflow-y: auto; list-style: none; padding: 4px; margin: 4px 0 0 0;
+            z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: none;
         }
-        .suggestions-list li { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px; }
-        .suggestions-list li:hover, .autocomplete-active { background-color: #e8f0fe !important; }
-
-        .btn { background: var(--color-link, #1a73e8); color: var(--color-background-header, #fff); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none;}
-        .btn:hover { background: #1557b0; }
-        .btn-outline { background: transparent; color: var(--color-hint, #5f6368); border: 1px solid var(--color-line, #dadce0); margin-left: 8px; }
-        
-        .input-group { display: flex; gap: 8px; align-items: center; }
-        .salvato { color: var(--color-link, #1a73e8); font-weight: 600; margin: 0 0 1rem; }
-        /* Incorporata nel riquadro: la card non ha bisogno di un secondo bordo,
-           ce l'ha gia' il modale. */
-        .mt-modal .card { background: transparent; border: none; padding: 0; }
-        .mt-modal h1 { font-size: 1.125rem; }
+        <?= $q ?>.suggestions-list li { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; }
+        <?= $q ?>.suggestions-list li:hover, <?= $q ?>.autocomplete-active { background: var(--color-background-section2, #e8f0fe); }
+        <?= $q ?>.btn { background: var(--color-link, #1a73e8); color: var(--color-background-header, #fff); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none; font-family: inherit; }
+        <?= $q ?>.btn-outline { background: transparent; color: var(--color-hint, #5f6368); border: 1px solid var(--color-line, #dadce0); margin-left: 8px; }
+        <?= $q ?>.input-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        <?= $q ?>.salvato { color: var(--color-link, #1a73e8); font-weight: 600; margin: 0 0 1rem; }
     </style>
 <?php if (!$embed): ?>
 </head>
