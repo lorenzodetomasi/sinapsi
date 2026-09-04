@@ -37,8 +37,8 @@ function ws_slug($name) {
 }
 // Verifica se la cartella dell'@id esiste già in ws-custom.
 function ws_id_exists($id) {
-    if (!preg_match('#^(places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+|organizations/[A-Za-z0-9._-]+)$#', $id)) return false;
-    $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
+    $dir = ws_id_to_path($id);
+    if ($dir === null) return false;
     return is_dir($dir) || is_file($dir . '/index.json') || is_file($dir . '/index.xml');
 }
 // Legge i dati salvati di un @id. Ritorna [google_place_id|null, stored[], parseError].
@@ -601,12 +601,23 @@ if ($action === 'save') {
     }
     $newEntity = $decoded['mainEntity'] ?? $decoded;
     $id = $newEntity['@id'] ?? '';
-    // Solo il formato atteso: niente path traversal.
-    if (!preg_match('#^(places/[A-Za-z0-9._-]+/[A-Za-z0-9._-]+|organizations/[A-Za-z0-9._-]+)$#', $id)) {
-        echo json_encode(["error" => "@id non valido o mancante: '$id'."]);
+    /* La stessa regola con cui si APRE, che è anche quella scritta per essere
+     * sicura (`ws_id_to_path`: solo places/organizations, un alfabeto ristretto
+     * per ogni pezzo, niente `..`).
+     *
+     * Prima qui c'era una regola sua, che voleva tre pezzi per un luogo. Ma i
+     * luoghi hanno due forme, e sono nei contenuti tutte e due: `places/IT00122/
+     * feltrinelli-ostia` per quelli che vengono da Google, e `places/roma`,
+     * `places/lido-di-ostia` per le zone, scritte a mano. Con la regola stretta
+     * una zona si poteva aprire e non si poteva risalvare — e chi provava a
+     * creare un luogo senza CAP si sentiva dire soltanto «@id non valido».
+     * L'@id con la regione vuota (`places//nome`) resta rifiutato: il pezzo
+     * vuoto non passa l'alfabeto, ed è esattamente il blocco che serve. */
+    $dir = ws_id_to_path($id);
+    if ($dir === null) {
+        echo json_encode(["error" => "@id non valido o mancante: '$id'. Un luogo è `places/IT00122/nome` (o `places/zona`), un gruppo `organizations/nome`."]);
         exit;
     }
-    $dir = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT/' . $id;
     $file = $dir . '/index.json';
     $existed = is_file($file);
     $storedFull = $existed ? json_decode(@file_get_contents($file), true) : null;
