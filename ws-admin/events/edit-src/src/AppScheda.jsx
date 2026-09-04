@@ -253,6 +253,33 @@ export default function AppScheda() {
     } catch { return null; }
   }, [esisteSulServer, data, tipo]);
 
+  /* Il JSON del pannello torna nel modulo.
+   *
+   * Il riquadro si poteva già modificare, e il bottone «Applica» c'era: solo
+   * che qui non gli veniva passato niente da applicare. Si scriveva, si
+   * premeva, e il testo spariva al primo ridisegno — il modulo non l'aveva mai
+   * visto. Chi correggeva un campo a mano credeva di averlo corretto.
+   *
+   * Si adotta il DOCUMENTO, non solo l'entità: `aJsonLd` riparte sempre
+   * dall'originale per non perdere i campi che il modulo non mostra, e se
+   * l'originale restasse quello di prima li rimetterebbe dentro un istante
+   * dopo, cancellando la modifica appena applicata.
+   *
+   * Non torna nessun campo «perso», e non è una svista: qui i campi che il
+   * modulo non mostra restano nel documento adottato. Negli eventi il JSON si
+   * ricostruisce da zero, e lì la lista serve. */
+  const applicaJson = useCallback((testo) => {
+    const letto = JSON.parse(testo);
+    if (!letto || typeof letto !== 'object' || Array.isArray(letto)) {
+      throw new Error('serve un oggetto JSON');
+    }
+    const nuovoDoc = (letto.mainEntity && typeof letto.mainEntity === 'object')
+      ? letto
+      : { '@context': 'https://schema.org', '@type': 'ItemPage', '@id': letto['@id'] || '', mainEntity: letto };
+    adotta(nuovoDoc, esisteSulServer);
+    return [];
+  }, [adotta, esisteSulServer]);
+
   const salva = useCallback(async (soloQuesti) => {
     if (!data.id) { avvisa('Manca l’indirizzo della scheda (@id).', 'ko'); return; }
     if (!data.name) { avvisa('Manca il nome.', 'ko'); return; }
@@ -369,6 +396,7 @@ export default function AppScheda() {
                   payload={payload}
                   validation={validazione}
                   onRevalidate={() => rivalida(payload)}
+                  onApply={applicaJson}
                 />
               </section>
             </div>
