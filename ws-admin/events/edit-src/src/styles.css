@@ -62,10 +62,17 @@ body {
 
 /* Breadcrumb nella riga delle azioni: stesso aspetto di quello dell header
    condiviso, ma qui convive con i pulsanti (l editor non ha una riga 2 libera). */
+/* Come nell'header del sito: le briciole scorrono invece di sparire fuori
+   dalla barra. Qui la tappa corrente è il nome di quello che si sta
+   modificando, ed è proprio quella che si vuole poter leggere. */
 .crumbs {
-  display: inline-flex; align-items: baseline; gap: var(--sp-sm);
+  display: flex; align-items: baseline; gap: var(--sp-sm);
   margin-right: var(--sp-sm); font-size: var(--fs-label); white-space: nowrap;
+  min-width: 0; overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain; scrollbar-width: none;
 }
+.crumbs::-webkit-scrollbar { height: 0; }
+.crumbs > * { flex: 0 0 auto; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .crumbs a { color: var(--accent); text-decoration: none; }
 .crumbs a:hover { text-decoration: underline; }
 .crumbs .sep { color: var(--text-dim); opacity: .6; }

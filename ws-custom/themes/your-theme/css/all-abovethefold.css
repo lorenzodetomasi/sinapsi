@@ -111,7 +111,7 @@ body {
     display: flex; }
     #header1 > div > [itemprop="logo"] > img {
       height: var(--header-logo, 4em);
-      margin-top: var(--header-aria, 1.5em);
+      margin-top: 0;
       margin-right: 1em;
       transition: height .22s cubic-bezier(.22, 1, .36, 1), margin-top .22s cubic-bezier(.22, 1, .36, 1); }
   .stretto #header1 h1, .stretto #header1 h2 {
@@ -127,8 +127,86 @@ body {
 .stretto #header1 [itemprop="logo"] img {
   height: var(--header-logo, 1.5rem); }
 
-#header.stretto {
+.stretto #header1 {
   padding-block: .5rem; }
+
+#header-top .content-container,
+#header-top ul,
+#header1,
+#header1 > div,
+#header1 .google-avatar {
+  align-items: center; }
+
+#header-top a,
+#header-top li,
+#header1 .google-avatar li {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem; }
+
+#header-top .material-symbols-outlined,
+#header-top .material-icons,
+#header1 .material-symbols-outlined {
+  line-height: 1;
+  display: block; }
+
+#header1 [itemprop="logo"] {
+  display: flex;
+  align-items: center; }
+  #header1 [itemprop="logo"] > img {
+    display: block; }
+
+#header1 {
+  gap: var(--gutter, 1rem); }
+  #header1 > div:first-child {
+    margin-right: auto; }
+  #header1 .google-avatar {
+    display: flex;
+    margin: 0;
+    padding: 0;
+    list-style: none; }
+
+#header2 {
+  border-top: 1px solid var(--color-line, #e6e6e6);
+  min-width: 0; }
+
+.crumbs-strip {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem var(--gutter, 1rem);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; }
+  .crumbs-strip::-webkit-scrollbar {
+    height: 0; }
+
+.crumb {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  font-size: .9rem; }
+
+.crumb-casa {
+  display: inline-flex;
+  align-items: center; }
+  .crumb-casa .material-symbols-outlined {
+    font-size: 1.125rem;
+    line-height: 1;
+    display: block; }
+
+.crumb-qui {
+  font-weight: 600;
+  color: var(--color-heading, #e30513); }
+
+.crumb-sep {
+  flex: 0 0 auto;
+  opacity: .55; }
 
 .ws-aspetto {
   display: flex;

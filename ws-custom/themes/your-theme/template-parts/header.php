@@ -52,7 +52,20 @@ echo get_media($logoImage, array('pictureAttributes' => array( 'itemprop' => 'lo
 								<ul><?php ws_nav_items($nav1); ?></ul>
 							</div>
 						</nav>
+<?php
+/* L'accesso, in fondo alla riga del nome: dopo l'ultima voce del menu.
+ * Prima stava nella barra dei contatti, che si chiude appena si comincia a
+ * leggere — e con lei spariva il modo di entrare. */
+include_template('template-parts/nav-google-login');
+?>
 					</div>
+<?php
+/* La terza riga: dove sei. Sta DENTRO l'header perché è parte
+ * dell'orientamento, come in Meetoo — e come il resto dell'header si stringe
+ * quando si legge, ma non sparisce: è l'unica cosa che dice a chi arriva da
+ * una ricerca in che punto del sito è finito. */
+include_template('template-parts/header2');
+?>
 				</div>
 			</header>
 			<div<?php echo ws_html_attributes('main-container'); ?>>

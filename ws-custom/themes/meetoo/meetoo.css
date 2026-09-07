@@ -400,8 +400,24 @@ section.collections .sec-head .material-symbols-outlined { color: var(--color1);
 }
 
 /* Breadcrumb (riga 2) */
-.mt-crumbs { font-family: var(--font-family1); display: flex; align-items: baseline; gap: 8px; min-width: 0; overflow: hidden; font-size: 1rem; }
-.mt-crumbs .c { white-space: nowrap; text-decoration: none; overflow: hidden; text-overflow: ellipsis; }
+/* Le briciole SCORRONO, non si troncano.
+   Un percorso troncato dice «sei in un posto di cui non puoi leggere il nome»:
+   l'informazione c'è e non si vede, e non c'è modo di arrivarci. Scorrendo la
+   si raggiunge, con un dito o con il mouse. Il troncamento resta l'ultima
+   spiaggia e vale per una tappa sola: nessun nome può essere più largo della
+   riga, se no si scorrerebbe per chilometri dentro una parola.
+   La barra di scorrimento non si mostra: sotto una riga di testo alta 20px
+   sarebbe più alta del testo. */
+.mt-crumbs {
+  font-family: var(--font-family1); display: flex; align-items: baseline; gap: 8px;
+  min-width: 0; font-size: 1rem;
+  overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.mt-crumbs::-webkit-scrollbar { height: 0; }
+.mt-crumbs .c { flex: 0 0 auto; white-space: nowrap; text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.mt-crumbs .sep { flex: 0 0 auto; }
 .mt-crumbs a.c { cursor: pointer; color: var(--color-link); }
 .mt-crumbs a.c:hover { text-decoration: underline; }
 .mt-crumbs .cur { color: var(--color-heading); font-weight: 600; }

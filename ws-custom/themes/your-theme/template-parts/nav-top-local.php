@@ -103,6 +103,12 @@ if(!empty($ws_content_languages)){
 <?php
 	}
 }
-include_template('template-parts/nav-google-login');
+/* L'accesso NON sta più qui.
+ *
+ * Stava in fondo alla barra dei contatti, che è la riga che si chiude quando si
+ * comincia a leggere: chi voleva entrare, mentre leggeva, non aveva più il
+ * pulsante. Adesso sta nella riga del nome, subito dopo le voci del menu — dove
+ * si guarda per andare da qualche parte, ed «entrare» è andare da qualche
+ * parte. Lo include `template-parts/header.php`. */
 ?>
 </div></nav>
