@@ -122,7 +122,8 @@ body {
 .stretto #header1,
 .stretto #header1 hgroup,
 .stretto #header1 [itemprop="logo"] {
-  height: auto; }
+  height: auto;
+  min-height: 0; }
 
 .stretto #header1 [itemprop="logo"] img {
   height: var(--header-logo, 1.5rem); }

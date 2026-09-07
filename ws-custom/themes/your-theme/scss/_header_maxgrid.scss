@@ -1,6 +1,8 @@
+// MINIMA, non fissa: l'header ha una terza riga (le briciole) e un'altezza
+// fissa non la conteneva — usciva dalla scatola e il contenuto ci finiva sopra.
 #header,
 #header > div {
-  height: $maxgrid-header-height;
+  min-height: $maxgrid-header-height;
 }
 #header1 {
   height: $maxgrid-header1-height;

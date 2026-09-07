@@ -305,8 +305,14 @@
 .flex.maxgrid-distribute-horizontal, .flex.maxgrid-distribute-horizontal.space-between {
   justify-content: space-between; }
 
+/* MINIMA, non fissa. Con due righe l'altezza era una misura giusta; con la
+   terza — le briciole — la scatola non le conteneva più: uscivano sotto il
+   bordo, il contenuto di #main cominciava dove finiva l'header e ci finiva
+   sopra (la freccia di nav-contents proprio sulle briciole), e il bordo delle
+   briciole a un pixel da quello dell'header faceva la seconda riga grigia.
+   Una sola causa, due cose storte. */
 #header, #header > div {
-  height: 8.25rem; }
+  min-height: 8.25rem; }
 
 #header1 {
   height: 6rem; }
