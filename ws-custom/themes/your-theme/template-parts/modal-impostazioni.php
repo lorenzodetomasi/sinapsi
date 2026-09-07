@@ -19,7 +19,7 @@
 	<div class="content-container background-white padding-h padding-bottom shadow-bottom">
 		<header class="flex align-middle">
 			<h1 class="flex1 h5" style="margin-bottom: 0; margin-top: 0;"><?php _e('Settings'); ?></h1>
-			<a class="close link h48" href="#" data-close="#impostazioni"><i class="material-icons">close</i><span class="button-text"><?php _e('Close'); ?></span></a>
+			<a class="close link h48" href="#" data-close="#impostazioni"><i class="material-symbols-outlined">close</i><span class="button-text"><?php _e('Close'); ?></span></a>
 		</header>
 		<div class="ws-aspetto" id="ws-aspetto" role="group" aria-label="<?php _e('Appearance'); ?>">
 			<p class="ws-aspetto-titolo"><?php _e('Appearance'); ?></p>

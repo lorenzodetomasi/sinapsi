@@ -17,26 +17,26 @@ if(!empty($_GET['prev'])){
 $next_page = $rewrite_rule->next->wspath;
 if(!empty($parent_page) or !empty($prev_page) or !empty($next_page)){
 ?>
-<nav class="flex nav"><div>
+<nav class="flex nav"><div class="content-container">
   <ul class="flex nav-contents align-right">
 <?php
 if(!empty($parent_page)){
 ?>
-    <li><a href="<?php echo ws_href($parent_page); ?>" title="<?php _e('Go to parent page'); ?>"><i class="material-icons">arrow_upward</i></a></li>
+    <li><a href="<?php echo ws_href($parent_page); ?>" title="<?php _e('Go to parent page'); ?>"><i class="material-symbols-outlined">arrow_upward</i></a></li>
 <?php
 }
 ?>
 <?php
 if(!empty($prev_page)){
 ?>
-    <li><a href="<?php echo ws_href($prev_page); ?>" title="<?php _e('Go to previous page', 'isotype'); ?>"><i class="material-icons">arrow_back</i></a></li>
+    <li><a href="<?php echo ws_href($prev_page); ?>" title="<?php _e('Go to previous page', 'isotype'); ?>"><i class="material-symbols-outlined">arrow_back</i></a></li>
 <?php
 }
 ?>
 <?php
 if(!empty($next_page)){
 ?>
-    <li><a href="<?php echo ws_href($next_page); ?>" title="<?php _e('Go to next page', 'isotype'); ?>"><i class="material-icons">arrow_forward</i></a></li>
+    <li><a href="<?php echo ws_href($next_page); ?>" title="<?php _e('Go to next page', 'isotype'); ?>"><i class="material-symbols-outlined">arrow_forward</i></a></li>
 <?php
 }
 ?>

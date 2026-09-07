@@ -66,6 +66,12 @@
 	.header-compatto.stretto:not(.in-cima) .header-cima-solo {
 		max-height: 0; opacity: 0; border-width: 0;
 	}
+	/* Al primo assestamento non si anima.
+	   Chi ricarica a metà pagina vedeva l'header aprirsi grande e rimpicciolirsi
+	   sotto gli occhi: la pagina si dipinge prima che lo script possa dire com'era.
+	   Per un fotogramma le transizioni si spengono, così si apre già stretta. */
+	.header-compatto.senza-moto,
+	.header-compatto.senza-moto * { transition: none !important; }
 	@media (prefers-reduced-motion: reduce) {
 		.header-compatto, .header-compatto img, .header-compatto .header-espanso-solo { transition: none; }
 	}
@@ -84,21 +90,45 @@
 	   data. Una volta che si legge, lo spazio serve alla lettura. */
 	var soglia = 24;
 	var fermo = false;
+
+	/* DUE soglie per la barra che va e viene, non una.
+	 *
+	 * Con una sola, l'header tremava a ogni ricaricamento. Non è un difetto di
+	 * disegno, è un anello: la barra si chiude → l'header si accorcia di 47px →
+	 * il browser sposta lo scorrimento per tenere fermo quello che si sta
+	 * guardando (scroll anchoring) → la quota riattraversa la soglia → la barra
+	 * si riapre → e da capo, finché non si scorre apposta e si esce dal giro.
+	 *
+	 * Con due soglie distanti più del salto che l'header stesso provoca, quel
+	 * salto non può più riportare la quota oltre l'altra soglia: fra 4 e 72 non
+	 * si decide niente e si tiene quello che c'è. È la stessa ragione per cui un
+	 * termostato non accende e spegne alla stessa temperatura. */
+	var APRE = 4;    // sotto: la barra torna
+	var CHIUDE = 72; // sopra: la barra se ne va
+
 	function guarda(){
 		fermo = false;
-		if(window.scrollY > soglia){
+		var y = window.scrollY;
+		if(y > soglia){
 			header.classList.add('stretto');
 		}
-		/* Questa invece va e viene: dice se siamo in cima. Quello che è appeso a
-		   `.header-cima-solo` torna quando si risale — l'header resta stretto. */
-		header.classList.toggle('in-cima', window.scrollY <= soglia);
+		if(y <= APRE){ header.classList.add('in-cima'); }
+		else if(y >= CHIUDE){ header.classList.remove('in-cima'); }
+		// In mezzo: si tiene lo stato che c'è. È la fascia dove il cambio
+		// d'altezza dell'header si rimangerebbe la propria decisione.
 	}
 	window.addEventListener('scroll', function(){
 		if(fermo) return;
 		fermo = true;
 		window.requestAnimationFrame(guarda);
 	}, { passive: true });
+	/* Lo stato iniziale si prende SENZA animarlo: due fotogrammi di silenzio,
+	   il tempo che il browser dipinga la pagina già com'era. */
+	header.classList.add('senza-moto');
 	guarda();
+	window.requestAnimationFrame(function(){
+		window.requestAnimationFrame(function(){ header.classList.remove('senza-moto'); });
+	});
 	}
 	if(document.readyState === 'loading'){
 		document.addEventListener('DOMContentLoaded', avvia);
