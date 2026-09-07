@@ -18,6 +18,10 @@ export default function JsonValidationPane({
   onApply,
   xml,
   xmlError,
+  /* Come si chiama questo riquadro. Negli eventi è «JSON-LD» e basta; nelle
+     schede dice anche da dove viene, perché lì accanto c'è il JSON di Google e
+     la domanda vera è quale dei due si sta guardando. */
+  etichetta = 'JSON-LD',
 }) {
   const [copied, setCopied] = useState(false);
   const [bozza, setBozza] = useState(null); // null = sola lettura
@@ -73,7 +77,7 @@ export default function JsonValidationPane({
   return (
     <div className="code-pane">
       <div className="code-header">
-        <span>JSON-LD</span>
+        <span>{etichetta}</span>
         <span className="head-actions">
           {bozza === null ? (
             <button type="button" onClick={() => { setEsito(null); setBozza(payload); }}>

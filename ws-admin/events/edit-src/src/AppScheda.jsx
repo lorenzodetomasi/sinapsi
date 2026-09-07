@@ -368,35 +368,35 @@ export default function AppScheda() {
           non è un'anteprima ma esattamente ciò che si sta per salvare. */}
       {modale && (
         <div className="modal-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget) setModale(false); }}>
-          <div className="modal-box modal-json" role="dialog" aria-modal="true" aria-label="I due JSON">
+          <div className="modal-box modal-json" role="dialog" aria-modal="true" aria-label="JSON">
             <div className="modal-head">
               <strong>Che cosa dice Google, e che cosa salviamo</strong>
               <button type="button" className="icon-btn" onClick={() => setModale(false)} title="Chiudi">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-            <div className="modal-json-corpo">
-              <section>
-                <h3>Da Google Maps</h3>
-                {grezzoGoogle ? (
+            <div className={'modal-json-corpo' + (grezzoGoogle ? '' : ' senza-google')}>
+              {/* Solo se Google ha davvero parlato. Prima, quando non c'era
+                  niente da mostrare, metà finestra la occupava una frase che
+                  diceva «qui non c'è niente» — e l'altra metà, dove c'era
+                  qualcosa da leggere, restava stretta per farle spazio. */}
+              {grezzoGoogle && (
+                <section>
+                  <h3>Da Google Maps</h3>
                   <pre>{JSON.stringify(grezzoGoogle, null, 2)}</pre>
-                ) : (
-                  <p className="modal-vuoto">
-                    Niente da mostrare: questa scheda non è stata (ancora) letta da Google
-                    in questa sessione. Cercala qui sopra, oppure usa «Aggiorna da Google».
-                  </p>
-                )}
-              </section>
-              <section>
-                <h3>Quello che salviamo</h3>
-                <pre>{payload}</pre>
-              </section>
+                </section>
+              )}
+              {/* Uno solo, e si può modificare. Prima ce n'erano due identici:
+                  quello di sola lettura e questo. Il primo si guardava, il
+                  secondo si usava — e non si capiva quale dei due contasse. */}
               <section className="pane-validation">
+                <h3>Quello che salviamo</h3>
                 <JsonValidationPane
                   payload={payload}
                   validation={validazione}
                   onRevalidate={() => rivalida(payload)}
                   onApply={applicaJson}
+                  etichetta="Generato da Meetoo (JSON-LD)"
                 />
               </section>
             </div>
@@ -465,7 +465,7 @@ export default function AppScheda() {
             onClick={() => setModale(true)}
             title="Confronta il JSON di Google con quello che verrà salvato"
           >
-            <span className="material-symbols-outlined">data_object</span> I due JSON
+            <span className="material-symbols-outlined">data_object</span> JSON
           </button>
           <span className={'ed-stato ed-stato-' + validazione.status} title={
             validazione.status === 'valid' ? 'JSON-LD valido'

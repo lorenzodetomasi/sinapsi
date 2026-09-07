@@ -440,6 +440,11 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
 @media (max-width: 62.5rem) {
   .ed-tabs .tabs { display: flex; gap: 0; align-self: stretch; }
   .ed-toggle { display: none; }
+  /* Ma nella SCHEDA questo bottone non commuta due colonne: apre la finestra
+     del JSON, e lì di schede che lo sostituiscano non ce ne sono. Nasconderlo
+     sotto i 1000px voleva dire, su un telefono in verticale, non poter più
+     aprire il JSON — nessuna strada, nemmeno una scomoda. */
+  .app-scheda .ed-toggle { display: inline-flex; }
   /* Schede, non pillole: la linea sotto quella attiva la lega al contenuto. */
   .ed-tabs .tabs button {
     border: 0; border-radius: 0; background: transparent;
@@ -475,6 +480,9 @@ h2 small { color: var(--text-dim); font-weight: 400; font-size: var(--fs-label);
   grid-template-columns: 1fr; overflow: auto; min-height: 0;
 }
 @media (min-width: 60rem) { .modal-json-corpo { grid-template-columns: 1fr 1fr; } }
+/* Se Google non ha parlato, la colonna è una sola e si prende tutto: due
+   colonne di cui una vuota non sono un confronto, sono metà finestra sprecata. */
+.modal-json-corpo.senza-google { grid-template-columns: minmax(0, 1fr); }
 .modal-json-corpo section { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .modal-json-corpo h3 {
   margin: 0 0 var(--sp-sm); font-size: var(--fs-label); font-weight: 600;
