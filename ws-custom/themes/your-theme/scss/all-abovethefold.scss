@@ -286,6 +286,37 @@ aside.meta {
     }
   }
 }
+// Le preferenze di chi è collegato. Una riga sopra le separa dall'aspetto:
+// sono due cose diverse — come si legge, e chi legge.
+.ws-preferenze {
+  border-top: 1px solid var(--color-line, #e0e0e6);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  .ws-pref-voce {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: 0 0 .5rem;
+  }
+  .ws-lingue {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    a {
+      display: inline-block;
+      padding: .4rem .8rem;
+      border: 1px solid var(--color-line, #e0e0e6);
+      border-radius: 999px;
+    }
+    .corrente a {
+      border-color: var(--color-link, #2e3192);
+      font-weight: 600;
+    }
+  }
+}
 #main-container {
   grid-area: main-container;
   overflow-y: auto;

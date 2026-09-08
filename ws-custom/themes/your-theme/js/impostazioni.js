@@ -71,7 +71,53 @@
 	   vedrebbe il lampo bianco di chi ha chiesto scuro. */
 	applica(scelto());
 
+	/* Aprire e chiudere la finestra.
+	 *
+	 * Il tema ha due convenzioni per farlo, e i suoi template usano quella che
+	 * non è implementata da nessuna parte: `data-toggle` e `data-close` sono
+	 * scritti nel markup (qui, nelle lingue, in «Condividi», in «Seguici»,
+	 * nella ricerca) ma nessuno script li ascolta — `functions.js` ne conosce
+	 * un'altra, fatta di classi `-toggle` e `-box-wrapper`. Perciò il comando
+	 * c'era e non apriva niente.
+	 *
+	 * Questa finestra se ne occupa da sé: apre chi la chiama, chiude la ✕, il
+	 * clic fuori e Esc. Niente di condiviso, perché non c'è ancora niente di
+	 * condiviso che funzioni. */
+	function apriChiudi() {
+		var box = document.getElementById('impostazioni');
+		if (!box) return;
+		var comando = document.querySelector('a[href="#impostazioni"]');
+
+		function apri(e) {
+			if (e) e.preventDefault();
+			box.style.display = '';
+			if (comando) comando.setAttribute('aria-expanded', 'true');
+			var primo = box.querySelector('[data-tema]');
+			if (primo) primo.focus();
+		}
+		function chiudi(e) {
+			if (e) e.preventDefault();
+			box.style.display = 'none';
+			if (comando) comando.setAttribute('aria-expanded', 'false');
+			if (comando) comando.focus();
+		}
+
+		if (comando) {
+			comando.setAttribute('aria-expanded', 'false');
+			comando.addEventListener('click', apri);
+		}
+		var chiusura = box.querySelector('[data-close]');
+		if (chiusura) chiusura.addEventListener('click', chiudi);
+		/* Il clic FUORI dal riquadro: la finestra copre tutta la pagina, quindi
+		   «fuori» vuol dire sulla finestra stessa e non su ciò che contiene. */
+		box.addEventListener('click', function (e) { if (e.target === box) chiudi(); });
+		document.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && box.style.display !== 'none') chiudi();
+		});
+	}
+
 	function avvia() {
+		apriChiudi();
 		var zona = document.getElementById('ws-aspetto');
 		if (!zona) return;
 		zona.addEventListener('click', function (e) {

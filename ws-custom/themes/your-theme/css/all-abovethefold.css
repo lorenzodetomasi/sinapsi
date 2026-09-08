@@ -237,6 +237,31 @@ body {
       color: var(--color-link, #2e3192);
       font-weight: 600; }
 
+.ws-preferenze {
+  border-top: 1px solid var(--color-line, #e0e0e6);
+  padding-top: 1rem;
+  padding-bottom: 1rem; }
+  .ws-preferenze .ws-pref-voce {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    margin: 0 0 .5rem; }
+  .ws-preferenze .ws-lingue {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0; }
+    .ws-preferenze .ws-lingue a {
+      display: inline-block;
+      padding: .4rem .8rem;
+      border: 1px solid var(--color-line, #e0e0e6);
+      border-radius: 999px; }
+    .ws-preferenze .ws-lingue .corrente a {
+      border-color: var(--color-link, #2e3192);
+      font-weight: 600; }
+
 #main-container {
   grid-area: main-container;
   overflow-y: auto; }

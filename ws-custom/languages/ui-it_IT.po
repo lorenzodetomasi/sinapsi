@@ -1048,6 +1048,10 @@ msgstr "Chiaro"
 msgid "Dark"
 msgstr "Scuro"
 
+msgid "Preferences"
+msgstr "Preferenze"
+
+
 #, fuzzy
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"
