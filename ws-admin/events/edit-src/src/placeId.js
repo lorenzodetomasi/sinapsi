@@ -105,15 +105,21 @@ function addr(components = []) {
   return { postalCode, country };
 }
 
-// A LIGHT diff (only the fields the editor holds from Google) between the picked
-// place and the stored one: lists the names of the fields that changed. For a
-// full comparison (website, rating, address) see places/edit/index.php.
+/* A LIGHT diff (only the fields the editor holds from Google) between the picked
+ * place and the stored one. For a full comparison (website, rating, address) see
+ * places/edit/index.php.
+ *
+ * It returns FIELD NAMES, not words for a reader: it used to hand back 'nome'
+ * and 'CAP', which the caller pasted straight into a sentence on screen — so a
+ * function about data decided what language the interface spoke. Now the
+ * interface picks the words, and this stays about the data.
+ */
 export function lightPlaceDiff(picked, stored) {
   if (!stored) return [];
   const changes = [];
   const norm = (s) => String(s ?? '').trim().toLowerCase();
-  if (norm(picked.name) !== norm(stored.name)) changes.push('nome');
+  if (norm(picked.name) !== norm(stored.name)) changes.push('name');
   const a = addr(picked.addressComponents);
-  if (a.postalCode && norm(a.postalCode) !== norm(stored.postalCode)) changes.push('CAP');
+  if (a.postalCode && norm(a.postalCode) !== norm(stored.postalCode)) changes.push('postalCode');
   return changes;
 }

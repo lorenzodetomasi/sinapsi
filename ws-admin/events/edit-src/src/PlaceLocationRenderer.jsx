@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { rankWith, and, uiTypeIs, schemaMatches } from '@jsonforms/core';
 import { withJsonFormsControlProps } from '@jsonforms/react';
 import EntityPicker, { descrizioneEntita } from './EntityPicker.jsx';
+import { t } from './i18n.js';
 import {
   detectPrimaryType,
   regionFromComponents,
@@ -42,7 +43,10 @@ const PlaceLocation = ({ data, handleChange, path, uischema, visible }) => {
     if (info.parse_error || !stored) {
       setStatus({ type: 'warn', msg: `Esiste già un @id (${id}) senza Google ID salvato: verifica se è lo stesso luogo.` });
     } else if (picked && stored === picked.placeId) {
-      const changes = lightPlaceDiff(picked, info.stored);
+      /* I nomi dei campi diventano parole QUI, non dentro la funzione che li
+         trova: una che confronta dati non deve decidere in che lingua si legge. */
+      const etichette = { name: t('name'), postalCode: t('postcode') };
+      const changes = lightPlaceDiff(picked, info.stored).map((c) => etichette[c] ?? c);
       const extra = changes.length ? ` Aggiornamenti su Google: ${changes.join(', ')} — aggiornali in places/edit.` : '';
       setStatus({ type: 'ok', msg: `Luogo già presente: collegato al suo @id.${extra}` });
     } else if (picked) {
