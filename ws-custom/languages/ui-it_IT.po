@@ -1052,6 +1052,201 @@ msgid "Preferences"
 msgstr "Preferenze"
 
 
+msgid "Accessibility"
+msgstr "Accessibilità"
+
+msgid "Open"
+msgstr "Aperta"
+
+msgid "Business"
+msgstr "Attività commerciale"
+
+msgid "Postcode"
+msgstr "CAP"
+
+msgid "What it is"
+msgstr "Che cos’è"
+
+msgid "Who else can edit it"
+msgstr "Chi altro può modificarla"
+
+msgid "Who else can edit its page"
+msgstr "Chi altro può modificarne la scheda"
+
+msgid "Who works on it"
+msgstr "Chi ci mette le mani"
+
+msgid "Who runs it"
+msgstr "Chi lo gestisce"
+
+msgid "Who answers for it"
+msgstr "Chi risponde"
+
+msgid "Permanently closed"
+msgstr "Chiusa definitivamente"
+
+msgid "Temporarily closed"
+msgstr "Chiusa temporaneamente"
+
+msgid "Also known as"
+msgstr "Come lo chiamano"
+
+msgid "Cover image"
+msgstr "Copertina"
+
+msgid "View credits"
+msgstr "Crediti della vista"
+
+msgid "Available"
+msgstr "C’è"
+
+msgid "From Google and from ratings"
+msgstr "Da Google e dai voti"
+
+msgid "Legal name"
+msgstr "Denominazione ufficiale"
+
+msgid "Search engine description"
+msgstr "Descrizione per i motori di ricerca"
+
+msgid "Where"
+msgstr "Dove"
+
+msgid "Where it is (@id)"
+msgstr "Dove si trova (@id)"
+
+msgid "Price range"
+msgstr "Fascia di prezzo"
+
+msgid "Legal form"
+msgstr "Forma giuridica"
+
+msgid "Free"
+msgstr "Gratuito"
+
+msgid "Verified group"
+msgstr "Gruppo verificato"
+
+msgid "Icon"
+msgstr "Icona"
+
+msgid "The group"
+msgstr "Il gruppo"
+
+msgid "Images"
+msgstr "Immagini"
+
+msgid "Page address (@id)"
+msgstr "Indirizzo della scheda (@id)"
+
+msgid "Wheelchair accessible entrance"
+msgstr "Ingresso accessibile in sedia a rotelle"
+
+msgid "Latitude"
+msgstr "Latitudine"
+
+msgid "Town"
+msgstr "Località"
+
+msgid "Longitude"
+msgstr "Longitudine"
+
+msgid "Place"
+msgstr "Luogo"
+
+msgid "Linked maps"
+msgstr "Mappe collegate"
+
+msgid "Minors only if accompanied"
+msgstr "Minori solo se accompagnati"
+
+msgid "Landmark or historical building"
+msgstr "Monumento o edificio storico"
+
+msgid "Group name"
+msgstr "Nome del gruppo"
+
+msgid "Country"
+msgstr "Paese"
+
+msgid "Accessible parking"
+msgstr "Parcheggio accessibile"
+
+msgid "Keywords"
+msgstr "Parole chiave"
+
+msgid "Accessible seating"
+msgstr "Posti a sedere accessibili"
+
+msgid "Audience"
+msgstr "Pubblico"
+
+msgid "Additional types"
+msgstr "Qualifiche"
+
+msgid "This place suits"
+msgstr "Questo luogo è adatto a"
+
+msgid "The story"
+msgstr "Racconto"
+
+msgid "Written reviews"
+msgstr "Recensioni scritte"
+
+msgid "Region and province"
+msgstr "Regione e provincia"
+
+msgid "Amenities"
+msgstr "Servizi"
+
+msgid "Amenities and accessibility"
+msgstr "Servizi e accessibilità"
+
+msgid "Accessible toilets"
+msgstr "Servizi igienici accessibili"
+
+msgid "Amenity"
+msgstr "Servizio"
+
+msgid "Social and other profiles"
+msgstr "Social e altri profili"
+
+msgid "Separated parents only"
+msgstr "Solo genitori separati"
+
+msgid "Contained in (@id)"
+msgstr "Sta dentro (@id)"
+
+msgid "Business status"
+msgstr "Stato dell’attività"
+
+msgid "Public facility"
+msgstr "Struttura pubblica"
+
+msgid "Street and number"
+msgstr "Via e numero"
+
+msgid "Satellite view"
+msgstr "Vista dal satellite"
+
+msgid "Ratings"
+msgstr "Voti"
+
+msgid "Rating"
+msgstr "Voto"
+
+msgid "Area served"
+msgstr "Zona in cui opera"
+
+msgid "It is a group, not a physical place"
+msgstr "È un gruppo, non un luogo fisico"
+
+msgid "name"
+msgstr "nome"
+
+msgid "postcode"
+msgstr "CAP"
+
 #, fuzzy
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"
