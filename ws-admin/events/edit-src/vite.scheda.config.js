@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import poCatalogue from './vite-po.js';
 import { renameSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ export default defineConfig({
     rollupOptions: { input: 'scheda.html' },
   },
   plugins: [
+    poCatalogue(),
     react(),
     /* Il file di partenza si chiama `scheda.html` perché nella cartella dei
      * sorgenti c'è già l'`index.html` dell'editor eventi; ma all'arrivo deve

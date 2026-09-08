@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import poCatalogue from './vite-po.js';
 
 // PoC dev server. Il proxy /api inoltra al convertitore PHP (json-xml/index.php)
 // se lo avvii su :8080, così si può chiudere il ciclo JSON-LD -> XML con CDATA.
@@ -13,7 +14,7 @@ export default defineConfig({
     outDir: '../edit',
     emptyOutDir: true,
   },
-  plugins: [react()],
+  plugins: [react(), poCatalogue()],
   server: {
     port: 5173,
     proxy: {
