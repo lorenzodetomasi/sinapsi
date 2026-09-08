@@ -21,7 +21,7 @@ import JsonValidationPane from './JsonValidationPane.jsx';
 import DiffModal from './DiffModal.jsx';
 import { diffForm, mergeChoices } from './diff.js';
 import { API_BASE } from './config.js';
-import { completaId, idIncompleto } from './placeId.js';
+import { completeId, isIdIncomplete } from './placeId.js';
 
 /* L'editor delle SCHEDE: un luogo, un'attività, un gruppo.
  *
@@ -148,8 +148,8 @@ export default function AppScheda() {
    * non c'è, il segnale resta — ed è giusto che resti, perché manca davvero
    * qualcosa. */
   useEffect(() => {
-    if (!idIncompleto(data.id)) return;
-    const riparato = completaId(data.id, data.addressCountry, data.postalCode);
+    if (!isIdIncomplete(data.id)) return;
+    const riparato = completeId(data.id, data.addressCountry, data.postalCode);
     if (riparato !== data.id) setData((d) => ({ ...d, id: riparato }));
   }, [data.id, data.addressCountry, data.postalCode]);
 

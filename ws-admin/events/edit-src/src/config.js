@@ -1,22 +1,24 @@
-// Endpoint del backend PHP (convertitore/validatore/upload).
-// In sviluppo resta "/api" (proxy di Vite verso :8080). In produzione su
-// isotype.org NON c'è il proxy: imposta VITE_API_BASE (in .env.local o a build)
-// all'URL reale di json-xml/index.php, es. "../json-xml/index.php" oppure
+// Backend PHP endpoint (converter / validator / upload).
+// In development this stays "/api" (Vite proxies it to :8080). In production on
+// isotype.org there is NO proxy: set VITE_API_BASE (in .env.local or at build
+// time) to the real URL of json-xml/index.php, e.g. "../json-xml/index.php" or
 // "https://www.isotype.org/ws-admin/json-xml/index.php".
 export const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? '/api' : '../../json-xml/index.php');
 
-// Endpoint che verifica se un @id di place/localbusiness esiste già
-// (ws-admin/places/id-exists.php). Se vuoto, il controllo live è disattivato.
+// Endpoint that checks whether a place/localbusiness @id already exists
+// (ws-admin/places/id-exists.php). Empty disables the live check.
 export const ID_CHECK_URL = import.meta.env.VITE_ID_CHECK_URL || (import.meta.env.DEV ? '' : '../../places/id-exists.php');
 
-// Base dei CONTENUTI (per aprire un evento dal web via @id/percorso).
-// In produzione l'editor è servito da isotype.org, stessa origine dei contenuti:
-// path assoluto relativo alla root del sito. In sviluppo si usa il proxy /content
-// di Vite (vedi vite.config.js) verso un server statico locale del repo.
-// La radice del sito si ricava da dove è servito l'editor, tagliando su
-// /ws-admin/: oggi dà '/sinapsi/', dopo il trasloco darà '/'. Prima era scritta
-// a mano ('/sinapsi/…') e il trasloco l'avrebbe rotta in silenzio.
-const RADICE = typeof location !== 'undefined'
+// Base of the CONTENT tree (to open an event from the web by @id/path).
+// In production the editor is served by isotype.org, same origin as the content:
+// an absolute path from the site root. In development it goes through Vite's
+// /content proxy (see vite.config.js) to a local static server on the repo.
+//
+// The site root is derived from where the editor is served, cutting at
+// /ws-admin/: today that gives '/sinapsi/', after the move it will give '/'. It
+// used to be written by hand ('/sinapsi/…') and the move would have broken it
+// silently.
+const SITE_ROOT = typeof location !== 'undefined'
   ? location.pathname.replace(/\/ws-admin\/.*/, '/')
   : '/';
 
@@ -24,24 +26,24 @@ export const CONTENT_BASE =
   import.meta.env.VITE_CONTENT_BASE ||
   (import.meta.env.DEV
     ? '/content/ws-custom/contents/meetoo/it_IT/'
-    : RADICE + 'ws-custom/contents/meetoo/it_IT/');
+    : SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/');
 
-// Indice degli eventi (per il picker con ricerca). Popolato al salvataggio web (Fase 4).
+// Event index (for the search picker). Written when saving from the web.
 export const EVENTS_INDEX_URL =
   import.meta.env.VITE_EVENTS_INDEX_URL || CONTENT_BASE + 'events/_index/events.json';
 
-// Endpoint di salvataggio EVENTO sul web (ws-admin/events/save-event.php).
-// In produzione è a fianco dell'editor: ../save-event.php. In sviluppo si usa il
-// proxy /save-event di Vite verso il PHP server locale del repo.
+// Endpoint that SAVES an event to the web (ws-admin/events/save-event.php).
+// In production it sits next to the editor: ../save-event.php. In development it
+// goes through Vite's /save-event proxy to the repo's local PHP server.
 export const SAVE_EVENT_URL =
   import.meta.env.VITE_SAVE_EVENT_URL || (import.meta.env.DEV ? '/save-event' : '../save-event.php');
 
-// Google Identity (login per il salvataggio sul web). Client id pubblico (frontend).
+// Google Identity (sign-in for saving to the web). Public client id (frontend).
 export const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
   '947742864411-rs99t8lkv5qcv4f5afb3pnhi0lkegbk3.apps.googleusercontent.com';
 
-// Endpoint delle immagini di copertina (carica nella cartella dell evento,
-// genera la versione 1920x1080, riusa gli originali gia presenti).
+// Cover image endpoint: uploads into the event's own folder, produces the
+// 1920x1080 version, reuses originals that are already there.
 export const MEDIA_URL =
   import.meta.env.VITE_MEDIA_URL || (import.meta.env.DEV ? '/save-event/../media.php' : '../media.php');

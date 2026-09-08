@@ -1,13 +1,14 @@
 import { ID_CHECK_URL } from './config.js';
 
-// Generazione @type/@id dei places — stessa logica del PHP (google_place-json.php).
-// Tipo primario: LocalBusiness se è un'attività (establishment), altrimenti Place.
+// Builds the @type/@id of a place — same logic as the PHP side
+// (google_place-json.php). Primary type: LocalBusiness when it is an
+// establishment, Place otherwise.
 export function detectPrimaryType(types = []) {
   return (types || []).includes('establishment') ? 'LocalBusiness' : 'Place';
 }
 
-// Cartella unica: LocalBusiness È un Place (schema.org), quindi entrambi stanno
-// sotto places/. Il tipo preciso resta nel @type, non nel percorso.
+// One folder for both: a LocalBusiness IS a Place (schema.org), so both live
+// under places/. The precise type stays in @type, not in the path.
 export function folderForType(_type) {
   return 'places';
 }
@@ -16,8 +17,8 @@ export function slugify(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-// Regione dell'@id = paese (short) + CAP, es. "IT" + "00124" = "IT00124".
-// Ritorna '' se manca il CAP o il paese.
+// The region part of an @id is country (short) + postcode, e.g. "IT" + "00124"
+// = "IT00124". Returns '' when either is missing.
 export function regionFromComponents(components = []) {
   let country = '';
   let postal = '';
@@ -33,36 +34,37 @@ export function buildPlaceId(type, region, slug) {
   return `${folderForType(type)}/${region}/${slug}`;
 }
 
-/* Un @id con la regione vuota — `places//statuadinettuno` — non è un errore di
- * stampa: è il segnale che il server manda quando Google non ha dato il CAP
- * (google_place-json.php, `id_region_missing`). Il doppio taglio rende l'@id
- * invalido apposta, così il salvataggio si blocca invece di creare una scheda
- * a un indirizzo sbagliato.
+/* An @id with an empty region — `places//statuadinettuno` — is not a typo: it is
+ * the signal the server sends when Google gave no postcode
+ * (google_place-json.php, `id_region_missing`). The double slash makes the @id
+ * invalid on purpose, so that saving is blocked instead of filing a place under
+ * a wrong address.
  *
- * Ma il segnale non è una risposta: il CAP, in genere, chi compila ce l'ha. Se
- * nel modulo c'è, l'indirizzo si ricompone da sé; se non c'è ancora, il segnale
- * resta lì a dire che manca qualcosa. */
-export function completaId(id, country, postalCode) {
+ * But a signal is not an answer: whoever is filling the form usually knows the
+ * postcode. Once it is in the form the address puts itself back together; until
+ * then the signal stays, because something really is missing.
+ */
+export function completeId(id, country, postalCode) {
   const m = String(id || '').match(/^([A-Za-z]+)\/\/(.+)$/);
   if (!m) return id;
-  const paese = String(country || '').trim();
-  const cap = String(postalCode || '').trim();
-  return (paese && cap) ? `${m[1]}/${paese}${cap}/${m[2]}` : id;
+  const land = String(country || '').trim();
+  const post = String(postalCode || '').trim();
+  return (land && post) ? `${m[1]}/${land}${post}/${m[2]}` : id;
 }
 
-/** Vero quando l'@id porta ancora il segnale del CAP mancante. */
-export function idIncompleto(id) {
+/** True while the @id still carries the missing-postcode signal. */
+export function isIdIncomplete(id) {
   return /^[A-Za-z]+\/\/.+$/.test(String(id || ''));
 }
 
-// Cambia solo il prefisso (localbusinesses|places) di un @id in base al tipo.
+// Changes only the prefix (localbusinesses|places) of an @id, by type.
 export function swapIdPrefix(id, type) {
   const m = String(id || '').match(/^(?:places|localbusinesses)\/(.*)$/);
   return m ? `${folderForType(type)}/${m[1]}` : id;
 }
 
-// Interroga il backend sull'@id. Ritorna l'oggetto { exists, google_place_id,
-// stored, parse_error } oppure null se il controllo non è disponibile.
+// Asks the backend about an @id. Returns { exists, google_place_id, stored,
+// parse_error }, or null when the check is unavailable.
 export async function lookupId(id) {
   if (!ID_CHECK_URL || !id) return null;
   try {
@@ -74,11 +76,12 @@ export async function lookupId(id) {
   }
 }
 
-/** «Questo luogo di Google è già sul sito?» — cerca per Google Place ID nell'indice
- *  di deduplica. È la domanda giusta quando si sceglie un suggerimento di Google:
- *  il Place ID è l'identità del luogo, mentre l'@id costruito da nome e CAP cambia
- *  se il nome è scritto diversamente e mancherebbe la corrispondenza.
- *  Ritorna { id, name, type } se c'è, altrimenti null. */
+/** «Is this Google place already on the site?» — looks it up by Google Place ID
+ *  in the deduplication index. That is the right question when picking one of
+ *  Google's suggestions: the Place ID is the place's identity, while an @id
+ *  built from name and postcode changes if the name is spelled differently, and
+ *  the match would be missed.
+ *  Returns { id, name, type } when found, otherwise null. */
 export async function lookupPlaceId(placeId) {
   if (!ID_CHECK_URL || !placeId) return null;
   try {
@@ -90,7 +93,7 @@ export async function lookupPlaceId(placeId) {
   }
 }
 
-// Componenti indirizzo Google → { postalCode, country }.
+// Google address components → { postalCode, country }.
 function addr(components = []) {
   let postalCode = '';
   let country = '';
@@ -102,9 +105,9 @@ function addr(components = []) {
   return { postalCode, country };
 }
 
-// Diff LEGGERO (solo i campi che l'editor ha da Google) tra il luogo scelto e
-// quello salvato: elenca i nomi dei campi cambiati. Per un confronto completo
-// (sito, rating, indirizzo) si usa places/edit/index.php.
+// A LIGHT diff (only the fields the editor holds from Google) between the picked
+// place and the stored one: lists the names of the fields that changed. For a
+// full comparison (website, rating, address) see places/edit/index.php.
 export function lightPlaceDiff(picked, stored) {
   if (!stored) return [];
   const changes = [];

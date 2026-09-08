@@ -1,31 +1,32 @@
 import { CONTENT_BASE } from './config.js';
 
-// Elenco di chi può organizzare un evento (organizations + luoghi/attività), letto
-// da _index/entities.json — l'indice che rigenerano places/rebuild-index.php e la
-// manutenzione dell'hub. Serve a scegliere l'organizzatore da una lista invece che
-// digitarne l'@id a memoria, e a risalire al nome partendo dall'@id.
+// Everyone who can organise an event (organizations plus places/businesses),
+// read from _index/entities.json — the index rebuilt by
+// places/rebuild-index.php and by the hub's maintenance page. It exists so the
+// organiser can be picked from a list instead of typing an @id from memory, and
+// so a name can be resolved back from an @id.
 //
-// Si scarica UNA volta per sessione dell'editor: è un file piccolo e statico, e
-// l'alternativa (una richiesta per riga di organizzatore) sarebbe solo più lenta.
+// Fetched ONCE per editor session: it is a small static file, and the
+// alternative — one request per organiser row — would only be slower.
 
 export const ENTITIES_URL = CONTENT_BASE + '_index/entities.json';
 
-let promessa = null;
+let pending = null;
 
-/** Ritorna la lista (array, eventualmente vuoto). Non lancia: l'editor deve
- *  restare usabile anche se l'indice non c'è ancora sul server. */
+/** Returns the list (an array, possibly empty). Never throws: the editor has to
+ *  stay usable even when the index is not on the server yet. */
 export function loadEntities() {
-  if (!promessa) {
-    promessa = fetch(ENTITIES_URL)
+  if (!pending) {
+    pending = fetch(ENTITIES_URL)
       .then((r) => (r.ok ? r.json() : []))
       .then((j) => (Array.isArray(j) ? j : []))
       .catch(() => []);
   }
-  return promessa;
+  return pending;
 }
 
-/** Cerca per @id, confronto esatto e poi tollerante (spazi, maiuscole, slash
- *  finale): chi incolla un @id non deve essere punito per un dettaglio. */
+/** Look up by @id: exact match first, then a forgiving one (whitespace, case,
+ *  trailing slash). Pasting an @id should not be punished for a detail. */
 export function findEntityById(list, id) {
   const v = (id ?? '').trim();
   if (!v) return null;
@@ -35,8 +36,8 @@ export function findEntityById(list, id) {
   return list.find((e) => norm(e['@id']) === norm(v)) || null;
 }
 
-/** Cerca per nome esatto (case-insensitive): serve quando si sceglie dalla lista,
- *  perché un <datalist> restituisce il testo dell'opzione, non un identificativo. */
+/** Look up by exact name (case-insensitive): needed when picking from the list,
+ *  because a <datalist> hands back the option's text, not an identifier. */
 export function findEntityByName(list, name) {
   const v = (name ?? '').trim().toLowerCase();
   if (!v) return null;
