@@ -261,12 +261,22 @@ if (!file_exists($genders_json_path)) {
 $genders_json_content = file_exists($genders_json_path) ? file_get_contents($genders_json_path) : '{"categories":[]}';
 ?>
 <?php if (!$embed): ?>
-<!DOCTYPE html>
-<html lang="<?= htmlspecialchars(substr($current_locale, 0, 2)) ?>">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestione Profilo e Privacy</title>
+<?php
+/* A PAGINA INTERA QUESTA È UNA PAGINA DEL SITO, non un foglio a sé.
+ *
+ * Apriva un `<html>` suo con dentro tre regole di stile, e usciva bianca in
+ * mezzo al nulla: nessuna intestazione, nessun piè di pagina, un altro
+ * carattere, altri colori. Sembrava — ed era — un pezzo di un altro sito.
+ *
+ * Ora usa il guscio del tema, esattamente come `page.php`: stessa
+ * intestazione, stesse briciole, stesso piè di pagina. Incorporata nel riquadro
+ * di Meetoo (`?embed=1`) resta invece il solo frammento, che è quello che il
+ * riquadro si aspetta. */
+$GLOBALS['ws_html_attributes']['html']['class'][] = 'page';
+include_template('template-parts/header');
+?>
+<div<?php echo ws_html_attributes('main-content'); ?>>
+  <div class="content-container">
 <?php endif; ?>
 <?php
 /* GLI STILI NON DEVONO USCIRE DAL RIQUADRO.
@@ -295,8 +305,8 @@ $scheda = $embed ? 'scheda-profilo' : 'card';
 ?>
     <style>
 <?php if (!$embed): ?>
-        :root { font-family: system-ui, -apple-system, sans-serif; line-height: 1.5; color: var(--color-text, #202124); }
-        body { max-width: 680px; margin: 3rem auto; padding: 0 1.5rem; background: var(--color-background, #f8f9fa); }
+        /* Carattere, colori e larghezza della colonna li dà il tema: qui resta
+           soltanto la scheda, che è l'unica cosa che questa pagina possiede. */
         <?= $q ?>.<?= $scheda ?> { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
 <?php else: ?>
         /* Nel riquadro la scheda non ha bisogno di un secondo bordo: ce l'ha già
@@ -576,6 +586,7 @@ $scheda = $embed ? 'scheda-profilo' : 'card';
         });
     </script>
 <?php if (!$embed): ?>
-</body>
-</html>
+  </div>
+</div>
+<?php include_template('template-parts/footer'); ?>
 <?php endif; ?>
