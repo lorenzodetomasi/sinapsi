@@ -1247,6 +1247,90 @@ msgstr "nome"
 msgid "postcode"
 msgstr "CAP"
 
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Edit profile"
+msgstr "Modifica Profilo"
+
+msgid "Google pseudonymous ID"
+msgstr "ID Pseudonimo di Google"
+
+msgid "Job title:"
+msgstr "Ruolo lavorativo:"
+
+msgid "Leave it empty and you will appear as “Utente Anonimo”."
+msgstr "Se lasci il campo vuoto, risulterai \"Utente Anonimo\"."
+
+msgid "Logo in use. Upload a new one to replace it."
+msgstr "Logo in uso. Caricane uno nuovo per sostituirlo."
+
+msgid "Make your <strong>email</strong> public:"
+msgstr "Rendi pubblica la tua <strong>Email</strong>:"
+
+msgid "Organization"
+msgstr "Organizzazione"
+
+msgid "Organization logo:"
+msgstr "Logo dell'organizzazione:"
+
+msgid "Organization name:"
+msgstr "Nome dell'organizzazione:"
+
+msgid "Register"
+msgstr "Registrazione al Portale"
+
+msgid "Restore Google email"
+msgstr "Ripristina email Google"
+
+msgid "Restore Google name"
+msgstr "Ripristina nome Google"
+
+msgid "Restore Google photo"
+msgstr "Ripristina foto Google"
+
+msgid "Save and continue"
+msgstr "Salva e Accedi"
+
+msgid "Saved."
+msgstr "Salvato."
+
+msgid "Session error: the Sub ID is missing. Sign out and sign in again."
+msgstr "Errore di sessione: Sub ID mancante. Effettua il logout e riaccedi."
+
+msgid "Show your <strong>name</strong>:"
+msgstr "Mostra il tuo <strong>Nome</strong>:"
+
+msgid "Sign in to complete your profile."
+msgstr "Accedi per completare il tuo profilo."
+
+msgid "Start typing…"
+msgstr "Inizia a digitare..."
+
+msgid "To stay anonymous you can use a pseudonym."
+msgstr "Per mantenere l'anonimato, puoi inserire uno pseudonimo."
+
+msgid "Your name or pseudonym"
+msgstr "Il tuo nome o pseudonimo"
+
+msgid "Your public email"
+msgstr "La tua email pubblica"
+
+msgid "e.g. Designer"
+msgstr "Es. Designer"
+
+msgid "e.g. ISOTYPE.ORG"
+msgstr "Es. ISOTYPE.ORG"
+
+msgid "Show your <strong>profile photo</strong>"
+msgstr "Mostra la tua <strong>Foto profilo</strong>"
+
+msgid "Show your <strong>gender</strong>"
+msgstr "Mostra il tuo <strong>Genere</strong>"
+
+msgid "Show your <strong>occupation</strong>"
+msgstr "Mostra la tua <strong>Professione</strong>"
+
 #, fuzzy
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"
