@@ -10,7 +10,17 @@
  */
 global $ws_query, $ws_content_root;
 $ws_theme_url = ws_theme_url();
-$ws_parent_theme_url = ws_parent_theme_url();
+/* Where the shared stylesheets and scripts are served from.
+ *
+ * They belong to THIS theme. A child theme (isotype, meetoo) reaches them
+ * through its parent; this theme, which has no parent, reaches them as itself.
+ * ws_parent_theme_url() has no answer for "no parent": it builds …/themes//,
+ * an empty segment, and every link made from it is a 404. That is how
+ * /profilo-utente — served with theme=your-theme directly — lost all.css,
+ * vgrid, hgrid and maxgrid, and with hgrid the footer's two-column grid: the
+ * inline above-the-fold sheets come from disk and survived, the linked ones did
+ * not, and the footer stacked into one column. */
+$ws_assets_theme_url = ws_parent_theme_id() ? ws_parent_theme_url() : ws_theme_url();
 $ws_content_root_url = ws_content_root_url();
 
 ws_globals_set(array('ws_links'), array(
@@ -77,10 +87,10 @@ ws_stile_se_esiste('hgrid', 'screen and (min-width: 1000px)', 'css/hgrid-aboveth
 ws_stile_se_esiste('maxgrid', 'screen and (min-width: 1280px)', 'css/maxgrid-abovethefold.css');
 // 2. Linked
 ws_globals_set(array('ws_links'), array(
-	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_parent_theme_url.'css/all.css" />',
-	'<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_parent_theme_url.'css/vgrid.css" />',
-	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_parent_theme_url.'css/hgrid.css" />',
-	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.$ws_parent_theme_url.'css/maxgrid.css" />'
+	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_assets_theme_url.'css/all.css" />',
+	'<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_assets_theme_url.'css/vgrid.css" />',
+	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_assets_theme_url.'css/hgrid.css" />',
+	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.$ws_assets_theme_url.'css/maxgrid.css" />'
 ));
 // If page has a section[class="form"]
 
@@ -364,7 +374,7 @@ $GLOBALS['ws_styles']['head']['header_compatto'] = ob_get_clean();
  * disegni, se no chi ha chiesto scuro vede il lampo bianco. È un file piccolo,
  * e quel lampo si nota molto più di qualche millesimo di secondo. */
 $GLOBALS['ws_scripts']['head']['ws_impostazioni'] =
-	'<script src="'.$ws_parent_theme_url.'js/impostazioni.js"></script>';
+	'<script src="'.$ws_assets_theme_url.'js/impostazioni.js"></script>';
 
 /* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
  * un'intestazione grande all'apertura e discreta durante la lettura non è un
