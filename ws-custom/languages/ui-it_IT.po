@@ -1331,6 +1331,57 @@ msgstr "Mostra il tuo <strong>Genere</strong>"
 msgid "Show your <strong>occupation</strong>"
 msgstr "Mostra la tua <strong>Professione</strong>"
 
+msgid "Leave it empty and you will appear as “Anonymous user”."
+msgstr "Se lasci il campo vuoto, risulterai \"Utente Anonimo\"."
+
+msgid "Restore Name from Google"
+msgstr "Ripristina il nome da Google"
+
+msgid "This code protects your privacy in our databases."
+msgstr "Questo codice protegge la tua anagrafica nei database."
+
+msgid "Public Email"
+msgstr "Email pubblica"
+
+msgid "Display this only if you wish to be contacted directly."
+msgstr "Mostrala solo se vuoi essere contattato direttamente."
+
+msgid "Restore Email from Google"
+msgstr "Ripristina l'email da Google"
+
+msgid "Gender"
+msgstr "Genere"
+
+msgid "State how you prefer to be addressed within the community."
+msgstr "Indica come preferisci essere chiamato nella comunità."
+
+msgid "Your short bio."
+msgstr "La tua breve biografia."
+
+msgid "Occupation"
+msgstr "Professione"
+
+msgid "Organization Logo"
+msgstr "Logo dell'organizzazione"
+
+msgid "Role"
+msgstr "Ruolo"
+
+msgid "Profile photo"
+msgstr "Foto profilo"
+
+msgid "Restore Profile photo from Google"
+msgstr "Ripristina la foto profilo da Google"
+
+msgid "Publish your job title and your organization details."
+msgstr "Pubblica il tuo ruolo lavorativo e i riferimenti dell'organizzazione."
+
+msgid "Show your avatar. Upload a photo or use the one from Google."
+msgstr "Rendi visibile il tuo avatar. Carica una foto o usa quella di Google."
+
+msgid "Current logo"
+msgstr "Logo attuale"
+
 #, fuzzy
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"

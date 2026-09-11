@@ -21,7 +21,7 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         echo '<p class="mt-prof-vuoto">' . __('Sign in to complete your profile.') . '</p>';
         exit;
     }
-    header('Location: ' . $site_root . '/eventi');
+    header('Location: ' . $site_root);
     exit;
 }
 
@@ -65,40 +65,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
 
         $now = date('c');
 
-        // Name and pseudonym
-        if (isset($_POST['show_name'])) {
-            $input_name = trim($_POST['custom_name'] ?? '');
+        // 1. Name and pseudonym
+        if (isset($_POST['is_name_public'])) {
+            $input_name = trim($_POST['name'] ?? '');
             $final_name = ($input_name === '') ? 'Utente Anonimo' : $input_name;
             
             if (!isset($target_user->name)) $target_user->addChild('name');
             $target_user->name[0] = $final_name;
             $target_user->name['consented_at'] = $now;
-        } else { 
-            unset($target_user->name); 
-        }
+        } else { unset($target_user->name); }
 
-        // Custom email
-        if (isset($_POST['show_email'])) {
-            $input_email = trim($_POST['custom_email'] ?? '');
-            $final_email = ($input_email === '') ? $_SESSION['user_email'] : $input_email;
+        // 2. Custom email
+        if (isset($_POST['is_email_public'])) {
+            $input_email = trim($_POST['email'] ?? '');
+            $final_email = ($input_email === '') ? ($_SESSION['user_email'] ?? '') : $input_email;
             
             if (!isset($target_user->email)) $target_user->addChild('email');
             $target_user->email[0] = $final_email;
             $target_user->email['consented_at'] = $now;
         } else { unset($target_user->email); }
 
-        // Profile picture
-        if (isset($_POST['show_picture'])) {
-            $pic_path = isset($target_user->image) ? (string)$target_user->image : $_SESSION['user_picture'];
+        // 3. Description 
+        if (isset($_POST['is_description_public'])) {
+            $input_description = trim($_POST['description'] ?? '');
+            if ($input_description !== '') {
+                if (!isset($target_user->description)) $target_user->addChild('description');
+                $target_user->description[0] = $input_description;
+                $target_user->description['consented_at'] = $now;
+            } else { unset($target_user->description); }
+        } else { unset($target_user->description); }
+
+        // 4. Profile picture
+        if (isset($_POST['is_image_public'])) {
+            $pic_path = isset($target_user->image) ? (string)$target_user->image : ($_SESSION['user_picture'] ?? '');
             
             if (isset($_POST['restore_google_photo']) && $_POST['restore_google_photo'] === '1') {
-                $pic_path = $_SESSION['user_picture'];
-            } elseif (isset($_FILES['custom_picture']) && $_FILES['custom_picture']['error'] === UPLOAD_ERR_OK) {
+                $pic_path = $_SESSION['user_picture'] ?? '';
+            } elseif (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 $upload_dir = ws_content_root_abspath() . '/media/';
                 if (!is_dir($upload_dir)) @mkdir($upload_dir, 0755, true);
-                $ext = pathinfo($_FILES['custom_picture']['name'], PATHINFO_EXTENSION);
+                $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
                 $filename = 'avatar_' . substr(md5($user_sub_id . time()), 0, 10) . '.' . strtolower($ext);
-                if (move_uploaded_file($_FILES['custom_picture']['tmp_name'], $upload_dir . $filename)) {
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $upload_dir . $filename)) {
                     $pic_path = '/media/' . $filename; 
                 }
             }
@@ -108,43 +116,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
             $target_user->image['consented_at'] = $now;
         } else { unset($target_user->image); }
 
-        // Job title
-        if (isset($_POST['show_person'])) {
+        // 5. Gender
+        if (isset($_POST['is_gender_public'])) {
             $person = $target_user->person ?? $target_user->addChild('person');
-            $job_title_input = trim($_POST['job_title'] ?? '');
+            $gender_text = trim($_POST['GenderType'] ?? '');
             
-            if (!empty($job_title_input)) {
+            if (!empty($gender_text)) {
+                if (!isset($person->gender)) $person->addChild('gender');
+                $person->gender[0] = $gender_text;
+                $person->gender['consented_at'] = $now;
+                unset($person->gender['id']); // Non usiamo più ID JSON per il datalist nativo
+            } else { unset($person->gender); }
+        } else {
+            if (isset($target_user->person->gender)) unset($target_user->person->gender);
+        }
+
+        // 6. Organization Role
+        if (isset($_POST['is_role_public'])) {
+            $person = $target_user->person ?? $target_user->addChild('person');
+            $organizationRole_input = trim($_POST['organizationRole'] ?? '');
+            
+            if (!empty($organizationRole_input)) {
                 if (!isset($person->jobTitle)) $person->addChild('jobTitle');
-                $person->jobTitle[0] = $job_title_input; 
+                $person->jobTitle[0] = $organizationRole_input; 
                 $person->jobTitle['consented_at'] = $now;
             } else { unset($person->jobTitle); }
         } else {
             if (isset($target_user->person->jobTitle)) unset($target_user->person->jobTitle);
         }
 
-        // Gender
-        if (isset($_POST['show_gender'])) {
-            $person = $target_user->person ?? $target_user->addChild('person');
-            $gender_text = trim($_POST['gender_text'] ?? '');
-            $gender_id   = trim($_POST['gender_id'] ?? '');
-            
-            if (!empty($gender_text)) {
-                if (!isset($person->gender)) $person->addChild('gender');
-                $person->gender[0] = $gender_text;
-                $person->gender['consented_at'] = $now;
-                
-                // Attach the unique id
-                if ($gender_id !== '') $person->gender['id'] = $gender_id;
-                else unset($person->gender['id']);
-            } else { unset($person->gender); }
-        } else {
-            if (isset($target_user->person->gender)) unset($target_user->person->gender);
-        }
-
-        // Organization
+        // 7. Organization Name & Logo
         $existing_logo = isset($target_user->person->worksFor->organization->logo) ? (string)$target_user->person->worksFor->organization->logo : '';
 
-        if (isset($_POST['show_org']) && !empty(trim($_POST['org_name']))) {
+        if (isset($_POST['is_organizationName_public']) && !empty(trim($_POST['organizationName'] ?? ''))) {
             $person = $target_user->person ?? $target_user->addChild('person');
             $worksFor = $person->worksFor ?? $person->addChild('worksFor');
             $worksFor['type'] = 'Organization';
@@ -152,18 +156,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
             
             // Organization name
             if (!isset($org->name)) $org->addChild('name');
-            $org->name[0] = trim($_POST['org_name']); 
+            $org->name[0] = trim($_POST['organizationName']); 
             $org->name['consented_at'] = $now;
             
             // Logo upload
             $logo_path = $existing_logo; 
             
-            if (isset($_FILES['org_logo']) && $_FILES['org_logo']['error'] === UPLOAD_ERR_OK) {
+            if (isset($_FILES['organizationLogo']) && $_FILES['organizationLogo']['error'] === UPLOAD_ERR_OK) {
                 $upload_dir = ws_content_root_abspath() . '/media/';
                 if (!is_dir($upload_dir)) @mkdir($upload_dir, 0755, true);
-                $ext = pathinfo($_FILES['org_logo']['name'], PATHINFO_EXTENSION);
+                $ext = pathinfo($_FILES['organizationLogo']['name'], PATHINFO_EXTENSION);
                 $filename = 'logo_' . substr(md5($user_sub_id . time()), 0, 10) . '.' . strtolower($ext);
-                if (move_uploaded_file($_FILES['org_logo']['tmp_name'], $upload_dir . $filename)) {
+                if (move_uploaded_file($_FILES['organizationLogo']['tmp_name'], $upload_dir . $filename)) {
                     $logo_path = '/media/' . $filename; 
                 }
             }
@@ -188,13 +192,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
         $dom->loadXML($xml->asXML());
         $dom->save($XML_FILE_PATH);
 
-        /* After saving: on a full page we leave, as before; inside a panel we
-         * STAY — a modal that empties itself and sends you to the events page
-         * does not say «saved», it says «something happened». */
         if ($embed) {
             $saved = true;
         } else {
-            header('Location: ' . $site_root . '/eventi');
+            header('Location: ' . $site_root);
             exit;
         }
     }
@@ -212,107 +213,55 @@ if (file_exists($XML_FILE_PATH)) {
 }
 
 $is_registered         = ($current_xml_user !== null);
-$has_consented_name    = isset($current_xml_user->name['consented_at']);
-$has_consented_email   = isset($current_xml_user->email['consented_at']);
-$has_consented_picture = isset($current_xml_user->image['consented_at']);
+$is_name_public        = isset($current_xml_user->name['consented_at']);
+$is_email_public       = isset($current_xml_user->email['consented_at']);
+$is_image_public       = isset($current_xml_user->image['consented_at']);
+$is_description_public = isset($current_xml_user->description['consented_at']);
 
-$current_name_val = $has_consented_name ? (string)$current_xml_user->name : ($_SESSION['user_name'] ?? '');
-if ($has_consented_name && $current_name_val === 'Utente Anonimo') $current_name_val = '';
+$current_name_val  = $is_name_public ? (string)$current_xml_user->name : ($_SESSION['user_name'] ?? '');
+if ($is_name_public && $current_name_val === 'Utente Anonimo') $current_name_val = '';
+$current_email_val = $is_email_public ? (string)$current_xml_user->email : ($_SESSION['user_email'] ?? '');
+$current_pic_val   = $is_image_public ? (string)$current_xml_user->image : ($_SESSION['user_picture'] ?? '');
+$current_description = $is_description_public ? (string)$current_xml_user->description : '';
 
-$current_email_val = $has_consented_email ? (string)$current_xml_user->email : ($_SESSION['user_email'] ?? '');
-$current_pic_val = $has_consented_picture ? (string)$current_xml_user->image : ($_SESSION['user_picture'] ?? '');
+// Values related to the <person> node
+$is_role_public             = false;
+$is_gender_public           = false;
+$is_organizationName_public = false;
 
-$has_consented_person  = false;
-$has_consented_gender  = false;
-$has_consented_org     = false;
-
-$current_job_title     = '';
-$current_gender_text   = '';
-$current_gender_id     = '';
-$current_org_name      = '';
-$current_org_logo      = '';
+$current_organizationRole  = '';
+$current_gender_text       = '';
+$current_organizationName  = '';
+$current_org_logo          = '';
 
 if ($current_xml_user !== null && isset($current_xml_user->person)) {
     $p = $current_xml_user->person;
-    $has_consented_person = isset($p->jobTitle['consented_at']);
-    $current_job_title = (string)($p->jobTitle ?? '');
     
-    $has_consented_gender = isset($p->gender['consented_at']);
+    $is_role_public = isset($p->jobTitle['consented_at']);
+    $current_organizationRole = (string)($p->jobTitle ?? '');
+    
+    $is_gender_public = isset($p->gender['consented_at']);
     $current_gender_text = (string)($p->gender ?? '');
-    $current_gender_id   = (string)($p->gender['id'] ?? '');
     
     if (isset($p->worksFor->organization)) {
         $org = $p->worksFor->organization;
-        $has_consented_org = isset($org->name['consented_at']);
-        $current_org_name = (string)($org->name ?? '');
+        $is_organizationName_public = isset($org->name['consented_at']);
+        $current_organizationName = (string)($org->name ?? '');
         $current_org_logo = (string)($org->logo ?? '');
     }
 }
-
-$current_locale = (string)($current_xml_user->locale ?? $_SESSION['user_locale'] ?? 'it');
-
-// The genders, from JSON
-$genders_json_path = ws_content_root_abspath() . '/users/genders.json';
-if (!file_exists($genders_json_path)) {
-    $genders_json_path = __DIR__ . '/genders.json'; 
-}
-$genders_json_content = file_exists($genders_json_path) ? file_get_contents($genders_json_path) : '{"categories":[]}';
 ?>
 <?php if (!$embed): ?>
 <?php
-/* AS A FULL PAGE THIS IS A PAGE OF THE SITE, not a sheet of its own.
- *
- * It used to open an `<html>` of its own with three style rules inside, and it
- * came out white in the middle of nothing: no header, no footer, another
- * typeface, other colours. It read as a piece of a different site.
- *
- * It now uses the theme shell exactly as page.php does: same header, same
- * breadcrumbs, same footer. Embedded in Meetoo's panel (`?embed=1`) it stays a
- * bare fragment instead, which is what the panel expects. */
+/* AS A FULL PAGE THIS IS A PAGE OF THE SITE, not a sheet of its own. */
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'page';
 include_template('template-parts/header');
 ?>
 <div<?php echo ws_html_attributes('main-content'); ?>>
   <div class="content-container">
 <?php endif; ?>
-<?php
-/* THE STYLES MUST NOT ESCAPE THE PANEL.
- *
- * Embedded, this page is inserted with `innerHTML` — and a `<style>` put in
- * that way APPLIES TO THE WHOLE HOSTING PAGE. The rules below are called
- * `.card`, `.btn`, `body`, `:root`: names that already exist in Meetoo's theme
- * and mean something else there. The result was an unreadable form and a
- * mangled page behind it — the site's cards repainted by the buttons of a
- * privacy form.
- *
- * So: embedded, every rule lives under `#mt-profilo-corpo`, and `:root` and
- * `body` are not written at all (there is no such thing in there: there is a
- * panel). As a full page nothing changes. */
-$q = $embed ? '#mt-profilo-corpo ' : '';
-
-/* AND IT MUST NOT BE NAMED AFTER SOMETHING THAT ALREADY EXISTS.
- *
- * Scoping the rules under `#mt-profilo-corpo` stops this page from getting out;
- * it does not stop Meetoo from getting in. Over there `.card` is an event card
- * — `display:flex`, `align-items:stretch`, `overflow:hidden` — and the form
- * ended up inside it sideways: the title in one column, the id box in another,
- * the rest cut away. Inside the panel the card has a name of its own. As a full
- * page it stays `card`, which is the right name at home. */
-$card_class = $embed ? 'scheda-profilo' : 'card';
-?>
-    <style>
-<?php if (!$embed): ?>
-        /* Typeface, colours and column width come from the theme: what stays
-           here is the card, the one thing this page really owns. */
-        <?= $q ?>.<?= $card_class ?> { background: var(--color-background-section1, #fff); border-radius: var(--border-radius, 16px); padding: 2rem; border: 1px solid var(--color-line, #dadce0); }
-<?php else: ?>
-        /* Inside the panel the card needs no second border: the modal already
-           has one, and the text inherits face, size and colour from it. */
-        <?= $q ?>.<?= $card_class ?> { display: block; background: transparent; border: none; padding: 0; }
-<?php endif; ?>
-        <?= $q ?>h1 { font-size: <?= $embed ? '1.125rem' : '1.5rem' ?>; margin-top: 0; color: var(--color-link, #1a73e8); }
-        <?= $q ?>.id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        <?= $q ?>.uuid-badge { font-family: monospace; background: var(--color-background-section1, #fff); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--color-line, #cce3ff); font-size: 13px; color: var(--color-link, #1967d2); overflow-wrap: anywhere; }
+    <style>        <?= $q ?>.id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        <?= $q ?>.uuid-badge { font-family: monospace; overflow-wrap: anywhere; }
         <?= $q ?>.switch-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-line, #f1f3f4); }
         <?= $q ?>.switch-row:last-of-type { border-bottom: none; }
         <?= $q ?>input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-link, #1a73e8); margin-top: 3px; cursor: pointer; }
@@ -322,264 +271,225 @@ $card_class = $embed ? 'scheda-profilo' : 'card';
         <?= $q ?>.search-input:focus { border-color: var(--color-link, #1a73e8); outline: none; }
         <?= $q ?>.restore-btn { background: var(--color-background-section2, #f1f3f4); border: 1px solid var(--color-line, #dadce0); border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--color-hint, #5f6368); display: flex; align-items: center; justify-content: center; }
         <?= $q ?>.restore-btn:hover { color: var(--color-link, #1a73e8); }
-        <?= $q ?>.autocomplete-container { position: relative; }
-        <?= $q ?>.suggestions-list {
-            position: absolute; top: 100%; left: 0; right: 0;
-            background: var(--color-background-section1, #fff); border: 1px solid var(--color-line, #ccc); border-radius: 8px;
-            max-height: 180px; overflow-y: auto; list-style: none; padding: 4px; margin: 4px 0 0 0;
-            z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); display: none;
-        }
-        <?= $q ?>.suggestions-list li { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 14px; }
-        <?= $q ?>.suggestions-list li:hover, <?= $q ?>.autocomplete-active { background: var(--color-background-section2, #e8f0fe); }
         <?= $q ?>.btn { background: var(--color-link, #1a73e8); color: var(--color-background-header, #fff); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none; font-family: inherit; }
         <?= $q ?>.btn-outline { background: transparent; color: var(--color-hint, #5f6368); border: 1px solid var(--color-line, #dadce0); margin-left: 8px; }
         <?= $q ?>.input-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
         <?= $q ?>.salvato { color: var(--color-link, #1a73e8); font-weight: 600; margin: 0 0 1rem; }
     </style>
-<?php if (!$embed): ?>
-</head>
-<body>
-<?php endif; ?>
-    <div class="<?= $card_class ?>">
+    <script defer="defer" src="https://isotype.org/ws-custom/plugins/forms/js/fields.js"></script>
 <?php if (!empty($saved)): ?>
-        <p class="salvato"><?php _e('Saved.'); ?></p>
+    <p class="salvato"><?php _e('Saved.'); ?></p>
 <?php endif; ?>
-        <h1><?= $is_registered ? __('Edit profile') : __('Register') ?></h1>
+    <h1><?= $is_registered ? __('Edit profile') : __('Register') ?></h1>
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="save_privacy_settings" value="1">
+
+        <!-- Edit Name -->
+        <p class="question">
+            <label class="field vertical width-full">
+                <strong><?php _e('Name'); ?></strong><br />
+                <small><?php _e('To stay anonymous you can use a pseudonym.'); ?> <br /><?php _e('Leave it empty and you will appear as “Anonymous user”.'); ?></small><br />
+                <span class="input">
+                    <input type="text" id="name" name="name" value="<?= htmlspecialchars($current_name_val) ?>" class="search-input" placeholder="<?php _e('Your name or pseudonym'); ?>" />
+                    <button type="button" class="material-symbols-outlined restore-btn" onclick="restoreGoogleValue('name')" title="<?php _e('Restore Name from Google'); ?>">cloud_download</button>
+                    <!-- Hidden real checkbox for form submission -->
+                    <input type="checkbox" name="is_name_public" value="1" <?= !empty($is_name_public) ? 'checked' : '' ?> style="display: none;" />
+                    <!-- Visual Material Icon Toggle -->
+                    <button type="button" 
+                            title="<?= !empty($is_name_public) ? 'Your Name is public' : 'Your Name is hidden' ?>" 
+                            class="material-symbols-outlined icon-toggle" 
+                            data-icon-toggle="'visibility', 'Your Name is public' : 'visibility_off', 'Your Name is hidden'">
+                        <?= !empty($is_name_public) ? 'visibility' : 'visibility_off' ?>
+                    </button>
+                </span>
+            </label>
+            <small class="hint">
+                <?php _e('Google pseudonymous ID'); ?>: <span class="uuid-badge"><?= htmlspecialchars($user_sub_id) ?></span><br />
+                <?php _e('This code protects your privacy in our databases.'); ?>
+            </small>
+        </p>
         
-        <div class="id-box">
-            <div>
-                <div style="font-size:12px; font-weight:700; text-transform:uppercase; color:#1967d2;"><?php _e('Google pseudonymous ID'); ?></div>
-                <div style="font-size:13px; color:#5f6368;">Questo codice protegge la tua anagrafica nei database. Lingua rilevata: <strong style="text-transform:uppercase;"><?= htmlspecialchars($current_locale) ?></strong></div>
-            </div>
-            <div class="uuid-badge"><?= htmlspecialchars($user_sub_id) ?></div>
-        </div>
+        <!-- Edit Email -->
+        <p class="question">
+            <label class="field vertical width-full">
+                <strong><?php _e('Public Email'); ?></strong><br />
+                <small><?php _e('Display this only if you wish to be contacted directly.'); ?></small><br />
+                <span class="input">
+                    <input type="email" id="custom_email" name="email" value="<?= htmlspecialchars($current_email_val) ?>" class="search-input" placeholder="<?php _e('Your public email'); ?>" />
+                    <button type="button" class="material-symbols-outlined restore-btn" onclick="restoreGoogleValue('email')" title="<?php _e('Restore Email from Google'); ?>">cloud_download</button>
+                    <input type="checkbox" name="is_email_public" value="1" <?= !empty($is_email_public) ? 'checked' : '' ?> style="display: none;" />
+                    <button type="button" 
+                            title="<?= !empty($is_email_public) ? 'Your Email is public' : 'Your Email is hidden' ?>" 
+                            class="material-symbols-outlined icon-toggle" 
+                            data-icon-toggle="'visibility', 'Your Email is public' : 'visibility_off', 'Your Email is hidden'">
+                        <?= !empty($is_email_public) ? 'visibility' : 'visibility_off' ?>
+                    </button>
+                </span>
+            </label>
+        </p>
 
-        <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="save_privacy_settings" value="1">
-
-            <!-- MODIFICA NOME -->
-            <div class="switch-row" style="flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <input type="checkbox" id="cb_name" name="show_name" value="1" <?= $has_consented_name ? 'checked' : '' ?>>
-                    <div>
-                        <label for="cb_name" class="switch-label"><?php _e('Show your <strong>name</strong>:'); ?></label>
-                        <p class="switch-hint"><?php _e('To stay anonymous you can use a pseudonym.'); ?><br><?php _e('Leave it empty and you will appear as “Utente Anonimo”.'); ?></p>
-                    </div>
-                </div>
-                <div style="margin-left:30px; width:calc(100% - 30px);">
-                    <div class="input-group">
-                        <input type="text" id="custom_name" name="custom_name" value="<?= htmlspecialchars($current_name_val) ?>" class="search-input" placeholder="<?php _e('Your name or pseudonym'); ?>">
-                        <button type="button" class="restore-btn" onclick="restoreGoogleValue('name')" title="<?php _e('Restore Google name'); ?>">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODIFICA FOTO -->
-            <div class="switch-row" style="flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <input type="checkbox" id="cb_picture" name="show_picture" value="1" <?= $has_consented_picture ? 'checked' : '' ?>>
-                    <div>
-                        <label for="cb_picture" class="switch-label"><?php _e('Show your <strong>profile photo</strong>'); ?></label>
-                        <p class="switch-hint">Rendi visibile il tuo avatar. Carica una foto o usa quella di Google.</p>
-                    </div>
-                </div>
-                <div style="margin-left:30px; width:calc(100% - 30px);">
-                    <div class="input-group" style="background:#f8f9fa; padding:8px; border:1px solid #dadce0; border-radius:6px;">
-                        <img id="current_photo_preview" src="<?= htmlspecialchars($current_pic_val) ?>" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #ccc;">
-                        <input type="file" id="custom_picture" name="custom_picture" accept="image/png, image/jpeg, image/webp" style="flex:1; font-size:12px;">
-                        <input type="hidden" id="restore_google_photo" name="restore_google_photo" value="0">
-                        <button type="button" class="restore-btn" onclick="restoreGoogleValue('photo')" title="<?php _e('Restore Google photo'); ?>">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODIFICA EMAIL -->
-            <div class="switch-row" style="flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <input type="checkbox" id="cb_email" name="show_email" value="1" <?= $has_consented_email ? 'checked' : '' ?>>
-                    <div>
-                        <label for="cb_email" class="switch-label"><?php _e('Make your <strong>email</strong> public:'); ?></label>
-                        <p class="switch-hint">Consigliato solo se desideri essere contattato per i progetti.</p>
-                    </div>
-                </div>
-                <div style="margin-left:30px; width:calc(100% - 30px);">
-                    <div class="input-group">
-                        <input type="text" id="custom_email" name="custom_email" value="<?= htmlspecialchars($current_email_val) ?>" class="search-input" placeholder="<?php _e('Your public email'); ?>">
-                        <button type="button" class="restore-btn" onclick="restoreGoogleValue('email')" title="<?php _e('Restore Google email'); ?>">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- MODIFICA GENERE -->
-            <div class="switch-row" style="flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <input type="checkbox" id="cb_gender" name="show_gender" value="1" <?= $has_consented_gender ? 'checked' : '' ?>>
-                    <div>
-                        <label for="cb_gender" class="switch-label"><?php _e('Show your <strong>gender</strong>'); ?></label>
-                        <p class="switch-hint">Dichiara come preferisci che ci si rivolga a te all'interno della community.</p>
-                    </div>
-                </div>
-                <div style="margin-left:30px; width:calc(100% - 30px);" class="autocomplete-container">
-                    <input type="text" id="gender_input" name="gender_text" class="search-input" value="<?= htmlspecialchars($current_gender_text) ?>" placeholder="<?php _e('Start typing…'); ?>" autocomplete="off">
-                    <input type="hidden" id="gender_id" name="gender_id" value="<?= htmlspecialchars($current_gender_id) ?>">
-                    <ul id="suggestions_list" class="suggestions-list"></ul>
-                </div>
-            </div>
-
-            <!-- DATI PROFESSIONALI & ORGANIZZAZIONE -->
-            <div class="switch-row" style="flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:12px; align-items:flex-start;">
-                    <input type="checkbox" id="cb_person" name="show_person" value="1" <?= $has_consented_person ? 'checked' : '' ?>>
-                    <div>
-                        <label for="cb_person" class="switch-label"><?php _e('Show your <strong>occupation</strong>'); ?></label>
-                        <p class="switch-hint">Pubblica il tuo ruolo lavorativo e i riferimenti dell'organizzazione.</p>
-                    </div>
-                </div>
-                
-                <div style="margin-left:30px; display:flex; flex-direction:column; gap:12px; width:calc(100% - 30px); margin-top:8px;">
-                    <div>
-                        <label style="font-size: 12px; font-weight: 600; color: #5f6368; display:block; margin-bottom:4px;"><?php _e('Job title:'); ?></label>
-                        <input type="text" name="job_title" value="<?= htmlspecialchars($current_job_title) ?>" placeholder="<?php _e('e.g. Designer'); ?>" class="search-input">
-                    </div>
+        <!-- Edit Gender -->
+        <p class="question">
+            <label class="field vertical width-full">
+                <strong><?php _e('Gender'); ?></strong><br />
+                <small class="hint"><?php _e('State how you prefer to be addressed within the community.'); ?></small><br />
+                <span class="input">
+                    <input type="search" name="GenderType" list="genders" class="search-input" value="<?= htmlspecialchars($current_gender_text) ?>" />
                     
-                    <!-- Box Organizzazione Inclusa -->
-                    <div style="background:#f8f9fa; border:1px solid #dadce0; border-radius:8px; padding:12px;">
-                        <h4 style="margin:0 0 10px 0; font-size:13px; color:#1a73e8; text-transform:uppercase;"><?php _e('Organization'); ?></h4>
-                        
-                        <div style="margin-bottom:12px;">
-                            <label style="font-size: 12px; font-weight: 600; color: #5f6368; display:block; margin-bottom:4px;"><?php _e('Organization name:'); ?></label>
-                            <input type="text" name="org_name" value="<?= htmlspecialchars($current_org_name) ?>" placeholder="<?php _e('e.g. ISOTYPE.ORG'); ?>" class="search-input">
-                        </div>
-                        
-                        <div>
-                            <label style="font-size: 12px; font-weight: 600; color: #5f6368; display:block; margin-bottom:4px;"><?php _e('Organization logo:'); ?></label>
-                            <?php if ($current_org_logo): ?>
-                                <div style="display:flex; align-items:center; gap: 10px; margin-bottom:8px; padding: 4px 8px; background: #fff; border: 1px dashed #ccc; border-radius: 6px;">
-                                    <img src="<?= htmlspecialchars($current_org_logo) ?>" alt="Current Logo" style="height:24px; object-fit:contain;">
-                                    <span style="font-size:11px; color:#666;"><?php _e('Logo in use. Upload a new one to replace it.'); ?></span>
-                                </div>
-                            <?php endif; ?>
-                            <input type="file" name="org_logo" accept="image/png, image/jpeg, image/svg+xml" style="font-size:13px; color:#5f6368; width: 100%;">
-                        </div>
-                    </div>
-                </div>
-            </div>
+                    <input type="checkbox" name="is_gender_public" value="1" <?= !empty($is_gender_public) ? 'checked' : '' ?> style="display: none;" />
+                    <button type="button" 
+                            title="<?= !empty($is_gender_public) ? 'Your Gender is public' : 'Your Gender is hidden' ?>" 
+                            class="material-symbols-outlined icon-toggle" 
+                            data-icon-toggle="'visibility', 'Your Gender is public' : 'visibility_off', 'Your Gender is hidden'">
+                        <?= !empty($is_gender_public) ? 'visibility' : 'visibility_off' ?>
+                    </button>
+                    
+                    <!-- Native HTML5 Datalist -->
+                    <datalist id="genders">
+                      <option value="Not specified"></option>
+                      <option value="Female"></option>
+                      <option value="Male"></option>
+                      <option value="Other"></option>
+                    </datalist>
+                </span>
+            </label>
+        </p>
 
-            <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid #dadce0; display:flex; justify-content:flex-end;">
-                <a href="https://www.isotype.org/eventi" class="btn btn-outline"><?php _e('Cancel'); ?></a>
-                <button type="submit" class="btn" style="margin-left:12px;"><?php _e('Save and continue'); ?></button>
-            </div>
-        </form>
-    </div>
+        <!-- Edit Description -->
+        <p class="question">
+            <label class="field textarea vertical width-full">
+                <strong><?php _e('Description'); ?></strong><br />
+                <small><?php _e('Your short bio.'); ?></small><br />
+                <span class="input">
+                    <textarea name="description" class="search-input"><?= htmlspecialchars($current_description) ?></textarea>
+                    
+                    <input type="checkbox" name="is_description_public" value="1" <?= !empty($is_description_public) ? 'checked' : '' ?> style="display: none;" />
+                    <button type="button" 
+                            title="<?= !empty($is_description_public) ? 'Your Description is public' : 'Your Description is hidden' ?>" 
+                            class="material-symbols-outlined icon-toggle" 
+                            data-icon-toggle="'visibility', 'Your Description is public' : 'visibility_off', 'Your Description is hidden'">
+                        <?= !empty($is_description_public) ? 'visibility' : 'visibility_off' ?>
+                    </button>
+                </span>
+            </label>
+        </p>
+
+        <!-- Occupation Fieldset -->
+        <fieldset class="fieldset">
+            <legend><?php _e('Occupation'); ?></legend>
+            <p>
+                <label class="field vertical width-full">
+                    <strong><?php _e('Organization'); ?></strong><br />
+                    <span class="input">
+                        <input type="text" name="organizationName" class="search-input" value="<?= htmlspecialchars($current_organizationName) ?>" placeholder="<?php _e('e.g. ISOTYPE.ORG'); ?>" />
+                        
+                        <input type="checkbox" name="is_organizationName_public" value="1" <?= !empty($is_organizationName_public) ? 'checked' : '' ?> style="display: none;" />
+                        <button type="button" 
+                                title="<?= !empty($is_organizationName_public) ? 'Your Organization Name is public' : 'Your Organization Name is hidden' ?>" 
+                                class="material-symbols-outlined icon-toggle" 
+                                data-icon-toggle="'visibility', 'Your Organization Name is public' : 'visibility_off', 'Your Organization Name is hidden'">
+                            <?= !empty($is_organizationName_public) ? 'visibility' : 'visibility_off' ?>
+                        </button>
+                    </span>
+                </label>
+            </p>
+            <p>
+                <label class="field vertical width-full">
+                    <strong><?php _e('Organization Logo'); ?></strong><br />
+                    <?php if ($current_org_logo): ?>
+                        <img src="<?= htmlspecialchars($current_org_logo) ?>" alt="<?php _e('Current logo'); ?>" style="height:24px; object-fit:contain; margin-bottom:8px;">
+                    <?php endif; ?>
+                    <input type="file" name="organizationLogo" accept="image/png, image/jpeg, image/svg+xml" />
+                </label>
+            </p>
+            <p class="question">
+                <label class="field vertical width-full">
+                    <strong><?php _e('Role'); ?></strong><br />
+                    <small class="hint"><?php _e('Publish your job title and your organization details.'); ?></small><br />
+                    <span class="input">
+                        <input type="text" name="organizationRole" class="search-input" value="<?= htmlspecialchars($current_organizationRole) ?>" placeholder="<?php _e('e.g. Designer'); ?>" />
+                        
+                        <input type="checkbox" name="is_role_public" value="1" <?= !empty($is_role_public) ? 'checked' : '' ?> style="display: none;" />
+                        <button type="button" 
+                                title="<?= !empty($is_role_public) ? 'Your Role is public' : 'Your Role is hidden' ?>" 
+                                class="material-symbols-outlined icon-toggle" 
+                                data-icon-toggle="'visibility', 'Your Role is public' : 'visibility_off', 'Your Role is hidden'">
+                            <?= !empty($is_role_public) ? 'visibility' : 'visibility_off' ?>
+                        </button>
+                    </span>
+                </label>
+            </p>
+        </fieldset>
+
+        <!-- Edit Profile Photo -->
+        <p class="question">
+            <label class="field file profile-photo vertical width-full">
+                <strong><?php _e('Profile photo'); ?></strong><br />
+                <small class="hint"><?php _e('Show your avatar. Upload a photo or use the one from Google.'); ?></small><br />
+                <span class="input">
+                    <img id="current_photo_preview" src="<?= htmlspecialchars($current_pic_val) ?>" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #ccc; margin-right:8px; vertical-align:middle;">
+                    
+                    <input type="file" name="image" id="image" accept="image/png, image/jpeg, image/webp" />
+                    <input type="hidden" name="restore_google_photo" id="restore_google_photo" value="0" />
+                    
+                    <button type="button" class="material-symbols-outlined restore-btn" onclick="restoreGoogleValue('photo')" title="<?php _e('Restore Profile photo from Google'); ?>">cloud_download</button>
+                    
+                    <!-- Fixed specific role mismatch here -->
+                    <input type="checkbox" name="is_image_public" value="1" <?= !empty($is_image_public) ? 'checked' : '' ?> style="display: none;" />
+                    <button type="button" 
+                            title="<?= !empty($is_image_public) ? 'Your Photo is public' : 'Your Photo is hidden' ?>" 
+                            class="material-symbols-outlined icon-toggle" 
+                            data-icon-toggle="'visibility', 'Your Photo is public' : 'visibility_off', 'Your Photo is hidden'">
+                        <?= !empty($is_image_public) ? 'visibility' : 'visibility_off' ?>
+                    </button>
+                </span>
+            </label>
+        </p>
+
+        <a href="https://www.isotype.org/eventi" class="btn btn-outline"><?php _e('Cancel'); ?></a>
+        <button type="submit" class="btn" style="margin-left:12px;"><?php _e('Save and continue'); ?></button>
+    </form>
 
     <script>
         // --- Restoring the data Google gave us ---
         function restoreGoogleValue(field) {
             if (field === 'name') {
-                document.getElementById('custom_name').value = <?= json_encode($_SESSION['user_name'] ?? '') ?>;
+                const nameInput = document.getElementById('name');
+                if (nameInput) nameInput.value = <?= json_encode($_SESSION['user_name'] ?? '') ?>;
             } else if (field === 'email') {
-                document.getElementById('custom_email').value = <?= json_encode($_SESSION['user_email'] ?? '') ?>;
+                const emailInput = document.getElementById('custom_email');
+                if (emailInput) emailInput.value = <?= json_encode($_SESSION['user_email'] ?? '') ?>;
             } else if (field === 'photo') {
-                document.getElementById('custom_picture').value = ''; 
-                document.getElementById('restore_google_photo').value = '1'; 
-                document.getElementById('current_photo_preview').src = <?= json_encode($_SESSION['user_picture'] ?? '') ?>;
+                const imageInput = document.getElementById('image');
+                const restoreInput = document.getElementById('restore_google_photo');
+                const previewImg = document.getElementById('current_photo_preview');
+                
+                if (imageInput) imageInput.value = ''; 
+                if (restoreInput) restoreInput.value = '1'; 
+                if (previewImg) previewImg.src = <?= json_encode($_SESSION['user_picture'] ?? '') ?>;
             }
         }
 
-        document.getElementById('custom_picture').addEventListener('change', function() {
-            document.getElementById('restore_google_photo').value = '0';
-        });
+        // Live preview for profile picture when a file is selected
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageInput = document.getElementById('image');
+            const restoreInput = document.getElementById('restore_google_photo');
+            const previewImg = document.getElementById('current_photo_preview');
 
-        // --- Autocomplete for the gender field ---
-        document.addEventListener("DOMContentLoaded", function() {
-            const input = document.getElementById("gender_input");
-            const hiddenId = document.getElementById("gender_id");
-            const suggestionsList = document.getElementById("suggestions_list");
-            let currentFocusIdx = -1;
-            
-            // The site language, handed over by PHP
-            const userLocale = <?= json_encode(substr($current_locale, 0, 2)) ?>;
-            
-            const data = <?= $genders_json_content ?>;
-            const options = [];
-            
-            if (data.categories) {
-                data.categories.forEach(cat => {
-                    cat.values.forEach(val => {
-                        // Matching testuale in base al locale
-                        const text = (val.translations && val.translations[userLocale]) 
-                            ? val.translations[userLocale] 
-                            : val.english_text;
-                            
-                        options.push({ id: val.id, text: text });
-                    });
+            if (imageInput && previewImg) {
+                imageInput.addEventListener('change', function() {
+                    if (restoreInput) restoreInput.value = '0';
+                    
+                    const file = this.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewImg.src = e.target.result;
+                        }
+                        reader.readAsDataURL(file);
+                    }
                 });
             }
-
-            input.addEventListener("input", function() {
-                const val = this.value;
-                hiddenId.value = ''; // Resetta l'ID nascosto se l'utente digita liberamente
-                closeDropdown();
-                if (!val) return;
-                
-                currentFocusIdx = -1;
-                const filteredData = options.filter(item => item.text.toLowerCase().includes(val.toLowerCase()));
-                
-                if (filteredData.length > 0) {
-                    suggestionsList.style.display = 'block';
-                    filteredData.forEach(item => {
-                        const li = document.createElement("li");
-                        const regex = new RegExp("(" + val + ")", "gi");
-                        li.innerHTML = item.text.replace(regex, "<strong>$1</strong>");
-                        
-                        li.addEventListener("click", function() {
-                            input.value = item.text;
-                            hiddenId.value = item.id; // Assegnazione ID
-                            closeDropdown();
-                        });
-                        suggestionsList.appendChild(li);
-                    });
-                }
-            });
-
-            input.addEventListener("keydown", function(e) {
-                const items = suggestionsList.getElementsByTagName("li");
-                if (e.key === "ArrowDown") {
-                    e.preventDefault(); currentFocusIdx++; addActive(items);
-                } else if (e.key === "ArrowUp") {
-                    e.preventDefault(); currentFocusIdx--; addActive(items);
-                } else if (e.key === "Enter") {
-                    if (currentFocusIdx > -1 && items.length > 0) { e.preventDefault(); items[currentFocusIdx].click(); }
-                } else if (e.key === "Escape") { closeDropdown(); }
-            });
-            
-            function addActive(items) {
-                if (!items) return;
-                removeActive(items);
-                if (currentFocusIdx >= items.length) currentFocusIdx = 0;
-                if (currentFocusIdx < 0) currentFocusIdx = items.length - 1;
-                items[currentFocusIdx].classList.add("autocomplete-active");
-                items[currentFocusIdx].scrollIntoView({ block: "nearest" }); 
-            }
-            
-            function removeActive(items) {
-                for (let i = 0; i < items.length; i++) items[i].classList.remove("autocomplete-active");
-            }
-            
-            function closeDropdown() {
-                suggestionsList.innerHTML = "";
-                suggestionsList.style.display = 'none';
-            }
-            
-            document.addEventListener("click", function(e) {
-                if (e.target !== input) closeDropdown();
-            });
         });
     </script>
 <?php if (!$embed): ?>
