@@ -533,6 +533,20 @@ ul, ol, dl {
     -webkit-box-orient: vertical;
     overflow: hidden; }
 
+/* A grid of TEXT cells is as tall as its text, not as wide as its cell.
+   The square ratio is the logos': a logo fills its square, a name with a
+   line under it does not, and the square showed 81px of nothing above the
+   name. The row still lines up - flex stretches every cell of a row to the
+   tallest - so the borders stay a grid, only without the air. */
+.grid-container.grid-text .grid-cell {
+  aspect-ratio: auto; }
+  /* And the names sit at the top of their cells, on one line across the
+     row: a row of text cells is read like a menu, not looked at like a
+     wall of logos, and a short name centred in a tall cell reads as a name
+     with a hole above it. */
+  .grid-container.grid-text .grid-link {
+    justify-content: flex-start; }
+
 /* RESPONSIVITÀ (Container Queries) */
 /* < 1000px: 2 colonne */
 .grid-cell {

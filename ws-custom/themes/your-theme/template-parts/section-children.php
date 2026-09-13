@@ -27,7 +27,7 @@ if(empty($children)){
 $section_name = !empty($ws_content->name) ? trim(strip_tags($ws_content->name->innerHTML())) : '';
 ?>
 				<nav class="section-children" itemprop="mainEntity" itemscope itemtype="https://schema.org/ItemList"<?php if($section_name){ ?> aria-label="<?php echo htmlspecialchars($section_name); ?>"<?php } ?>>
-					<ul class="grid-container">
+					<ul class="grid-container grid-text">
 <?php
 $position = 0;
 foreach($children as $child){
