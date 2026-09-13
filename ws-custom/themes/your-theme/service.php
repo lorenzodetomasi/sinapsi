@@ -38,20 +38,19 @@ if($ws_content->mainContentOfPage){
 	ws_echo($ws_content->mainContentOfPage->innerHTML());
 }
 ?>
-				<section>
-					<!-- A second h1 on the page was a second title: this is a heading inside
-					     the page, and h2 is what it is. The look stays the h1 one. -->
-					<h2 class="h1"><?php _e('We have designed many logos'); ?></h2>
-<?php
-global $itemListElements;
-$itemListElements = $ws_content->xpath("grid[@id='clients']/itemList/itemListElement[contains(concat(' ', normalize-space(@class), ' '), ' logo-design ')]");
-include_template('template-parts/grid-1_1');
-?>
-				</section>
 				<div class="content">
 <?php
+global $section;
 foreach ($ws_content->section as $section) {
-	ws_echo($section->innerHTML());
+    if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
+		/* NOT require_once, which is include_template's default: this runs once
+		   per grid, and the second grid would find the file already included
+		   and silently get nothing. That is how the home showed the clients
+		   and not the awards. */
+		include_template('template-parts/grid-1_1', array('require_once' => false));
+    } else {
+        ws_echo($section->innerHTML());     
+    }
 }
 ?>
 				</div>

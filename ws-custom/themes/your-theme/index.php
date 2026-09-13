@@ -28,9 +28,6 @@ if($ws_content->description){
 	</div>
 <?php
 }
-//include_template('locations/_clients');
-//include_template('locations/_awards');
-//include_template('locations/_locations');
 ?>
 	<div class="content">
 <?php if($ws_headings->wip == "true"){ ?><p><?php _e("Website under construction."); ?></p><?php } ?>
@@ -40,36 +37,20 @@ if($ws_content->mainContentOfPage){
 }
 ?>
 	</div>
-	<section id="competenze">
-		<h1>Le nostre competenze</h1>
-		<ul>
-			<li>Design della comunicazione. Direzione creativa e del progetto. Strategie di comunicazione</li>
-			<li>Brand Design. Immagine coordinata. Naming e progetto grafico del logotipo</li>
-			<li>Progettazione e realizzazione di libri cartacei e digitali (ebook in formato epub e Amazon Kindle), progetto grafico e cartografico del libro, copertine e impaginazione, servizi per l’editoria, self-publishing, pubblicazione su Amazon Kindle Direct Publishing (KDP)</li>
-			<li>Architettura dell’informazione, Information design, infografiche, tabelle e grafici, ottimizzati per stampa, ebbok o web, a partire da dati o fogli di calcolo</li>
-			<li>Progettazione di interfacce multimodali innovative, progetto grafico dell’interfaccia di siti web adaptive/responsive e app</li>
-			<li>Illustrazioni originali 2D e 3D</li>
-			<li>Progetti specifici per l’infanzia</li>
-			<li>Docenze</li>
-		</ul>
-	</section>
-	<section id="clienti">
-		<h1>I nostri principali clienti</h1>
 <?php
-global $itemListElements;
-// $itemListElements = $ws_content->xpath("section[@id='clients']/itemList/itemListElement[not(@class='logo-design')]");
-$itemListElements = $ws_content->xpath("section[@id='clients']/itemList/itemListElement[contains(concat(' ', normalize-space(@class), ' '), ' main ')]");
-include_template('template-parts/grid-1_1', $args = array('require_once' => false));
+global $section;
+foreach ($ws_content->section as $section) {
+    if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
+		/* NOT require_once, which is include_template's default: this runs once
+		   per grid, and the second grid would find the file already included
+		   and silently get nothing. That is how the home showed the clients
+		   and not the awards. */
+		include_template('template-parts/grid-1_1', array('require_once' => false));
+    } else {
+        ws_echo($section->innerHTML());     
+    }
+}
 ?>
-	</section>
-	<section id="premi">
-		<h1>I premi che abbiamo ricevuto</h1>
-<?php
-$itemListElements = $ws_content->xpath("section[@id='awards']/itemList/itemListElement[contains(concat(' ', normalize-space(@class), ' '), ' main ')]");
-include_template('template-parts/grid-1_1', $args = array('require_once' => false));
-?>
-		</ul>
-	</section>
 </div>
 <?php
 include_template('template-parts/footer');
