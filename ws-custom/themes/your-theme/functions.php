@@ -397,4 +397,50 @@ $GLOBALS['ws_html_attributes']['header-top']['class'][] = 'header-cima-solo';
  * porta dietro — senza, l'intestazione stretta è davvero stretta. Il nome
  * resta. */
 $GLOBALS['ws_html_attributes']['header1-headline']['class'][] = 'header-espanso-solo';
+
+/* ---------- Where a page stands in the site map ----------
+ *
+ * Every page names its parent in its own content, and the site map carries
+ * that relation (the `parent` xi:includes in ws_sitemap.wsx). So "what is
+ * under /servizi" and "what stands next to /servizi/book-design" are questions
+ * the map already answers, and no second list has to be kept in step with it:
+ * a page is listed because it exists, and it disappears when it does not.
+ *
+ * A page whose robots say noindex is left out. It is not finished for readers,
+ * so it is not finished for a menu either — and that is the switch to use for
+ * a page that exists but is not ready to be found. */
+if(!function_exists('ws_sitemap_normalize_path')){
+function ws_sitemap_normalize_path($wspath){
+	$p = '/' . trim((string)$wspath, "/ \t\n\r");
+	return $p;
+}
+}
+if(!function_exists('ws_sitemap_entry')){
+/** The map entry of a page, by wspath — or null. */
+function ws_sitemap_entry($wspath){
+	global $ws_sitemap;
+	if(empty($ws_sitemap)) return null;
+	$wanted = ws_sitemap_normalize_path($wspath);
+	foreach($ws_sitemap->url as $entry){
+		if(!empty($entry->wspath) and ws_sitemap_normalize_path($entry->wspath) === $wanted) return $entry;
+	}
+	return null;
+}
+}
+if(!function_exists('ws_sitemap_children')){
+/** The pages under a page, in map order, ready to be found. */
+function ws_sitemap_children($wspath){
+	global $ws_sitemap;
+	$children = array();
+	if(empty($ws_sitemap)) return $children;
+	$wanted = ws_sitemap_normalize_path($wspath);
+	foreach($ws_sitemap->url as $entry){
+		if(empty($entry->parent) or empty($entry->parent->wspath)) continue;
+		if(ws_sitemap_normalize_path($entry->parent->wspath) !== $wanted) continue;
+		if(stripos((string)$entry->robots, 'noindex') !== false) continue;
+		$children[] = $entry;
+	}
+	return $children;
+}
+}
 ?>

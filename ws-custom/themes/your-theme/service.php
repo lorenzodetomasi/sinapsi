@@ -39,7 +39,9 @@ if($ws_content->mainContentOfPage){
 }
 ?>
 				<section>
-					<h1>Abbiamo progettato molti loghi</h1>
+					<!-- A second h1 on the page was a second title: this is a heading inside
+					     the page, and h2 is what it is. The look stays the h1 one. -->
+					<h2 class="h1"><?php _e('We have designed many logos'); ?></h2>
 <?php
 global $itemListElements;
 $itemListElements = $ws_content->xpath("grid[@id='clients']/itemList/itemListElement[contains(concat(' ', normalize-space(@class), ' '), ' logo-design ')]");
@@ -54,6 +56,9 @@ foreach ($ws_content->section as $section) {
 ?>
 				</div>
 <?php
+/* The sisters of this page, under the same parent: names only, the current one
+ * marked. What the section shows as cards, the page inside it shows as a list. */
+include_template('template-parts/section-siblings');
 include_template('template-parts/locations');
 ?>
 			</div>

@@ -1382,6 +1382,9 @@ msgstr "Rendi visibile il tuo avatar. Carica una foto o usa quella di Google."
 msgid "Current logo"
 msgstr "Logo attuale"
 
+msgid "We have designed many logos"
+msgstr "Abbiamo progettato molti loghi"
+
 #, fuzzy
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"
