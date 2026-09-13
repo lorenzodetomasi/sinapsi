@@ -370,6 +370,52 @@ aside.meta {
   [aria-current] { font-weight: 600; }
 }
 
+// ---------- The theme's windows: share, languages, settings ----------
+//
+// The overlay rules lived in scss/_header_all.scss, a partial no sheet
+// imports: no compiled CSS carried `.modal`, so every window rendered as a
+// plain block wherever it sat in the document — after the footer. This is
+// the rule that was missing, written where it is read. The markup's utility
+// classes (background-white, h48, align-middle…) do not exist either, so the
+// window styles its own parts and depends on none of them.
+.modal.full-page {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: clamp(1rem, 6vh, 4rem) 1rem;
+  overflow: auto;
+  background: rgba(0, 0, 0, .5);
+  > .content-container {
+    width: min(100%, 40rem);
+    box-sizing: border-box;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    padding: 1rem 1.5rem 1.5rem;
+    background: var(--color-superficie, #fff);
+    color: var(--color-text, #{$text-color});
+    border-radius: var(--border-radius, .75rem);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    h1 { flex: 1; margin: 0; font-size: 1.25rem; }
+    .close {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      text-decoration: none;
+      .material-symbols-outlined { line-height: 1; }
+    }
+  }
+}
+
 #main-container {
   grid-area: main-container;
   overflow-y: auto;

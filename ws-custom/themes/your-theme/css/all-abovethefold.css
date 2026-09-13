@@ -310,6 +310,44 @@ body {
   .section-siblings [aria-current] {
     font-weight: 600; }
 
+.modal.full-page {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: clamp(1rem, 6vh, 4rem) 1rem;
+  overflow: auto;
+  background: rgba(0, 0, 0, .5); }
+  .modal.full-page > .content-container {
+    width: min(100%, 40rem);
+    box-sizing: border-box;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    padding: 1rem 1.5rem 1.5rem;
+    background: var(--color-superficie, #fff);
+    color: var(--color-text, #444);
+    border-radius: var(--border-radius, .75rem);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .35); }
+  .modal.full-page header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem; }
+    .modal.full-page header h1 {
+      flex: 1;
+      margin: 0;
+      font-size: 1.25rem; }
+    .modal.full-page header .close {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      text-decoration: none; }
+      .modal.full-page header .close .material-symbols-outlined {
+        line-height: 1; }
+
 #main-container {
   grid-area: main-container;
   overflow-y: auto; }
