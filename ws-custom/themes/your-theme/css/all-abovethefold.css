@@ -273,33 +273,6 @@ body {
       border-color: var(--color-link, #2e3192);
       font-weight: 600; }
 
-.section-cards {
-  list-style: none;
-  margin: 2rem 0 0;
-  padding: 0;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr)); }
-  .section-cards > li {
-    margin: 0; }
-  .section-cards a {
-    display: block;
-    height: 100%;
-    box-sizing: border-box;
-    padding: 1rem;
-    border: 1px solid var(--color-line, #e6e6e6);
-    border-radius: var(--border-radius, .5rem);
-    background: var(--color-superficie, #fff);
-    color: inherit;
-    text-decoration: none;
-    transition: border-color .15s ease; }
-    .section-cards a:hover, .section-cards a:focus-visible {
-      border-color: var(--color-link, #2e3192); }
-  .section-cards h3 {
-    margin: 0 0 .5rem; }
-  .section-cards p {
-    margin: 0; }
-
 .section-siblings {
   margin-top: 2rem;
   padding-top: 1rem;
@@ -521,6 +494,44 @@ ul, ol, dl {
   height: 100%;
   display: block;
   fill: #555; }
+
+/* A grid cell that holds TEXT, not a logo: the pages of a section.
+   Same square, same borders, same hover as the logo cells; inside, the name
+   and a short description, centred, the whole cell one link. The grid is a
+   white island in both themes (see .grid-container), so the text inside is
+   set in the light colours by hand - a light-theme grey on white stays
+   readable when the page around it goes dark. The description is clamped
+   to three lines: a square has room for a title and a hint, not a story. */
+.grid-cell .grid-item {
+  display: flex;
+  align-self: stretch;
+  flex: 1 1 100%;
+  min-width: 0; }
+.grid-cell .grid-link {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: 1rem;
+  text-align: center;
+  text-decoration: none;
+  color: #444; }
+  .grid-cell .grid-link h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    line-height: 1.25;
+    color: #e30513; }
+  .grid-cell .grid-link p {
+    margin: 0;
+    font-size: .85rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden; }
 
 /* RESPONSIVITÀ (Container Queries) */
 /* < 1000px: 2 colonne */

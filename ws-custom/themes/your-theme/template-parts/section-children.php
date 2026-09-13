@@ -1,14 +1,18 @@
 <?php
 /**
- * The pages under this one, as cards.
+ * The pages under this one, as cells of the same grid the logos use.
  *
- * Read from the site map, not from a list of their own: a card is here because
+ * Read from the site map, not from a list of their own: a cell is here because
  * the page exists, and it goes away when the page does. Nothing to keep in step.
+ *
+ * Same markup as grid-1_1.php — ul.grid-container, li.grid-cell — so a section
+ * of pages and a section of logos are one thing to the eye: square cells, two
+ * across, four from a thousand pixels. The cell holds the name and a short
+ * description instead of an image, and the whole cell is the link.
  *
  * In schema.org this is the page's `mainEntity`: an ItemList whose ListItems
  * hold the pages themselves, each typed as its content declares (a Service, a
- * Product, an Article…). Microdata, like the rest of the theme. The whole card
- * is the link, so it reads as one thing and is one thing to click.
+ * Product, an Article…). Microdata, like the rest of the theme.
  *
  * @package WS
  * @subpackage Your Theme
@@ -23,7 +27,7 @@ if(empty($children)){
 $section_name = !empty($ws_content->name) ? trim(strip_tags($ws_content->name->innerHTML())) : '';
 ?>
 				<nav class="section-children" itemprop="mainEntity" itemscope itemtype="https://schema.org/ItemList"<?php if($section_name){ ?> aria-label="<?php echo htmlspecialchars($section_name); ?>"<?php } ?>>
-					<ol class="section-cards">
+					<ul class="grid-container">
 <?php
 $position = 0;
 foreach($children as $child){
@@ -34,10 +38,10 @@ foreach($children as $child){
 	$name = !empty($child->name) ? $child->name->innerHTML() : (string)$child->title;
 	$description = !empty($child->description) ? trim($child->description->innerHTML()) : '';
 ?>
-						<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+						<li class="grid-cell" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
 							<meta itemprop="position" content="<?php echo $position; ?>">
-							<div itemprop="item" itemscope itemtype="https://schema.org/<?php echo htmlspecialchars($type); ?>">
-								<a itemprop="url" href="<?php echo ws_href($child->wspath); ?>">
+							<div class="grid-item" itemprop="item" itemscope itemtype="https://schema.org/<?php echo htmlspecialchars($type); ?>">
+								<a class="grid-link" itemprop="url" href="<?php echo ws_href($child->wspath); ?>">
 									<h3 itemprop="name"><?php echo $name; ?></h3>
 <?php if($description !== ''){ ?>
 									<p itemprop="description"><?php echo $description; ?></p>
@@ -48,5 +52,5 @@ foreach($children as $child){
 <?php
 }
 ?>
-					</ol>
+					</ul>
 				</nav>
