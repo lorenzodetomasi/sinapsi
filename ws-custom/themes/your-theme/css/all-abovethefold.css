@@ -23,7 +23,12 @@
   --color-heading: light-dark(#e30513, #ff6b6b);
   --color-text: light-dark(#444, #e6e0e9);
   --color-line: light-dark(#e6e6e6, #48454e);
-  --color-superficie: light-dark(#ffffff, #1e1f20); }
+  --color-superficie: light-dark(#ffffff, #1e1f20);
+  /* Header and footer: in the light they are exactly what they were - white,
+     and the grey they have always had. The token in _tokens.css would have
+     given the header a grey tint in the light too, so it is overridden here. */
+  --color-background-header: light-dark(#ffffff, #1e1f20);
+  --color-background-footer: light-dark(#e6e6e6, #2a282f); }
 
 @font-face {
   font-family: system;
@@ -155,7 +160,13 @@ body {
   display: flex;
   align-items: center; }
   #header1 [itemprop="logo"] > img {
-    display: block; }
+    display: block;
+    /* The site logo is red and near-black, drawn for white. On the dark
+       header the black half would vanish, so in the dark it keeps a white
+       plate of its own size; in the light the plate is transparent and
+       nothing moves - no padding, so the two themes share every pixel. */
+    background-color: light-dark(transparent, #fff);
+    border-radius: .25rem; }
 
 #header1 {
   gap: var(--gutter, 1rem); }
@@ -366,7 +377,11 @@ main {
     margin: 0; }
 
 img[itemprop="primaryImageOfPage"] {
-  width: 100%; }
+  width: 100%;
+  /* Same reason as the logo grid: the cover is an SVG of dark figures on
+     nothing, and took its white from the page. The page can now be dark;
+     the cover keeps its own. */
+  background-color: #fff; }
 
 a {
   color: var(--color-link); }
@@ -476,8 +491,11 @@ ul, ol, dl {
   container-type: inline-size;
   container-name: myGrid;
   border: 1px solid var(--color-line, #e6e6e6);
-  /* Colore di sfondo opzionale per evitare pixel vuoti nel rendering sub-pixel */
-  background-color: var(--color-superficie, white); }
+  /* WHITE ON PURPOSE, in both themes. The logos are SVGs drawn for a white
+     ground - dark marks, transparent behind - and on a dark surface they
+     vanish. Until negative versions of those files exist, the grid stays a
+     white island, hover included, whatever the theme around it does. */
+  background-color: #fff; }
 
 /* CELLA: Disegna i bordi in alto e a sinistra */
 .grid-cell {
@@ -491,7 +509,7 @@ ul, ol, dl {
   transition: background-color 0.2s; }
 
 .grid-cell:hover {
-  background-color: var(--color-line, #e6e6e6);
+  background-color: #e6e6e6;
   cursor: pointer;
   /* Per evidenziare il bordo attivo sopra gli altri (opzionale):
    z-index: 1;

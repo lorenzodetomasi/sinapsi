@@ -27,10 +27,10 @@
   max-width: 1280px; }
 
 #header {
-  background-color: #fff; }
+  background-color: var(--color-background-header, #fff); }
 
 #footer {
-  background-color: #e6e6e6; }
+  background-color: var(--color-background-footer, #e6e6e6); }
 
 nav.vertical > h3 {
   margin-bottom: 0.5rem; }
