@@ -506,19 +506,26 @@ ul, ol, dl {
   display: flex;
   align-self: stretch;
   flex: 1 1 100%;
-  min-width: 0; }
+  min-width: 0;
+  min-height: 0; }
 .grid-cell .grid-link {
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: .5rem;
   padding: 1rem;
   text-align: center;
   text-decoration: none;
-  color: #444; }
+  color: #444;
+  /* In the SQUARE format a text that does not fit its square scrolls inside
+     the cell instead of being cut; in the text format the cell is as tall as
+     the text and there is nothing to scroll. Same rule serves both. */
+  overflow-y: auto;
+  scrollbar-width: thin; }
   .grid-cell .grid-link h3 {
     margin: 0;
     font-size: 1.125rem;
@@ -527,11 +534,7 @@ ul, ol, dl {
   .grid-cell .grid-link p {
     margin: 0;
     font-size: .85rem;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden; }
+    line-height: 1.4; }
 
 /* A grid of TEXT cells is as tall as its text, not as wide as its cell.
    The square ratio is the logos': a logo fills its square, a name with a
@@ -540,12 +543,6 @@ ul, ol, dl {
    tallest - so the borders stay a grid, only without the air. */
 .grid-container.grid-text .grid-cell {
   aspect-ratio: auto; }
-  /* And the names sit at the top of their cells, on one line across the
-     row: a row of text cells is read like a menu, not looked at like a
-     wall of logos, and a short name centred in a tall cell reads as a name
-     with a hole above it. */
-  .grid-container.grid-text .grid-link {
-    justify-content: flex-start; }
 
 /* RESPONSIVITÀ (Container Queries) */
 /* < 1000px: 2 colonne */

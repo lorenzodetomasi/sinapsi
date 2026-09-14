@@ -25,9 +25,21 @@ if(empty($children)){
 	return;
 }
 $section_name = !empty($ws_content->name) ? trim(strip_tags($ws_content->name->innerHTML())) : '';
+
+/* Two shapes for the same grid.
+ *   'text'   - the default - makes each cell as tall as its text.
+ *   'square' - keeps the logos' squares; a text that does not fit its square
+ *              scrolls inside the cell instead of being cut.
+ * In both the names sit at the top of their cells, on one line across the
+ * row. The template that includes this part chooses by setting
+ * $section_children_format before the include; one that says nothing gets
+ * 'text'. */
+global $section_children_format;
+$grid_format = ($section_children_format === 'square') ? 'square' : 'text';
+$grid_classes = 'grid-container' . ($grid_format === 'text' ? ' grid-text' : '');
 ?>
 				<nav class="section-children" itemprop="mainEntity" itemscope itemtype="https://schema.org/ItemList"<?php if($section_name){ ?> aria-label="<?php echo htmlspecialchars($section_name); ?>"<?php } ?>>
-					<ul class="grid-container grid-text">
+					<ul class="<?php echo $grid_classes; ?>">
 <?php
 $position = 0;
 foreach($children as $child){
