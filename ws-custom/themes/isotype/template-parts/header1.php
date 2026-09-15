@@ -12,7 +12,7 @@ $index_url = $ws_headings->url[0];
 			<a href="#nav1" onclick="toggle('nav1', this);" title="<?php _e('Show main menu'); ?>" class="link"><i class="material-icons menu">menu</i></a>
 		</div>
 		<hgroup class="flex align-middle vgrid-padding-left">
-			<h1 itemprop="name">
+			<h1 class="site-name">
 <?php
 $logoImage = $ws_headings->xpath("id('logo')")[0];
 $vgridLogoImage = $ws_headings->xpath("id('logo-vgrid')")[0];
@@ -21,12 +21,12 @@ if(file_exists(ws_contents_abspath().'/'.$logoImage->source->relpath)){
 				<a href="<?php echo $index_url; ?>" title="<?php _e('Go to homepage'); ?>" class="logo-container">
 <?php
 if(!empty($vgridLogoImage->source->relpath) and file_exists(ws_contents_abspath().'/'.$vgridLogoImage->source->relpath)){
-echo get_media($vgridLogoImage, array('pictureAttributes' => array( 'itemprop' => 'logo', 'class' => 'hgrid-display-none maxgrid-display-none')));
+echo get_media($vgridLogoImage, array('pictureAttributes' => array( 'class' => 'site-logo hgrid-display-none maxgrid-display-none')));
 $logoImageClass = 'vgrid-display-none';
 }
 ?>
 <?php
-echo get_media($logoImage, array('pictureAttributes' => array( 'itemprop' => 'logo', 'class' => $logoImageClass)));
+echo get_media($logoImage, array('pictureAttributes' => array( 'class' => trim('site-logo '.($logoImageClass ?? '')))));
 ?>
 				</a>
 <?php
@@ -39,7 +39,7 @@ echo get_media($logoImage, array('pictureAttributes' => array( 'itemprop' => 'lo
 }
 ?>
 			</h1>
-			<h2 itemprop="headline"<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
+			<h2<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
 		</hgroup>
 		<nav id="nav1"<?php echo ws_html_attributes('nav1'); ?>>
 			<div class="flex align-middle width-full hgrid-display-none maxgrid-display-none">

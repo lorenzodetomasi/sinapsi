@@ -316,7 +316,7 @@
 
 #header1 {
   height: 6rem; }
-  #header1 [itemprop="logo"] {
+  #header1 .site-logo {
     height: 3rem; }
 
 #header-top, #header-top > div {

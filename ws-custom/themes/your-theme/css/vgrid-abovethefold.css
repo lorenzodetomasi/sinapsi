@@ -31,12 +31,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between; }
-    #header1 > div > [itemprop="logo"] > img {
+    #header1 > div > .site-logo > img {
       margin-top: 0;
       margin-right: 0; }
-  #header1 h1[itemprop="name"] {
+  #header1 h1 {
     margin-bottom: 0.2em; }
-  #header1 h2[itemprop="headline"] {
+  #header1 h2 {
     margin-top: 0; }
 
 #header1-nav1 h3 {

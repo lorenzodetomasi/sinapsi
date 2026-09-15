@@ -26,9 +26,9 @@ if(!empty($ws_content->datePublished)){
 	$datePublished = DateTime::createFromFormat(DATE_ATOM, $ws_content->datePublished);
 ?>
 			<p class="content-container small meta padding-v">
-				<span itemprop="datePublished"><?php printf(__('Page published on %s'), $longDateTime->format($datePublished)); ?></span><?php
+				<span class="date-published"><?php printf(__('Page published on %s'), $longDateTime->format($datePublished)); ?></span><?php
 if($dateModified and $dateModified != $datePublished){
-?> <span itemprop="dateModified"><?php printf(__('and modified on %s'), $longDateTime->format($dateModified)); ?></span><?php
+?> <span class="date-modified"><?php printf(__('and modified on %s'), $longDateTime->format($dateModified)); ?></span><?php
 }
 ?>
 			</p>

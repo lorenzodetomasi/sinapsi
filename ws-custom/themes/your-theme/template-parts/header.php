@@ -38,11 +38,11 @@ if($ws_headings->header_top){
 						<div>
 <?php
 $logoImage = $ws_headings->xpath("id('logo')");
-echo get_media($logoImage, array('pictureAttributes' => array( 'itemprop' => 'logo', 'class' => '')));
+echo get_media($logoImage, array('pictureAttributes' => array( 'class' => 'site-logo')));
 ?>
 							<hgroup><a href="<?php echo $index_url; ?>" title="<?php _e('Go to homepage'); ?>">
-								<h1 itemprop="name"><?php echo $ws_headings->mainEntity->name->innerHTML(); ?></h1>
-								<h2 itemprop="headline"<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
+								<h1 class="site-name"><?php echo $ws_headings->mainEntity->name->innerHTML(); ?></h1>
+								<h2<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
 							</a></hgroup>
 							<a href="#nav1" onclick="toggle('header1-nav1', this);" class="vgrid" title="<?php _e('Show the Main menu'); ?>"><span class="icon material-symbols-outlined">menu</span> <span class="text-label all-no"><?php _e('Main menu'); ?></span></a>
 						</div>
