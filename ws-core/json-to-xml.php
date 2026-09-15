@@ -20,7 +20,15 @@ if (!function_exists('jsonToWsx')) {
      * inline preservati); un oggetto con il solo "@id" diventa un <xi:include>
      * (riferimento puro a file esterno).
      */
-    function jsonToWsx(string $jsonString): string {
+    /**
+     * @param array $options  'default_namespace' (bool, default true): whether the
+     *   root declares xmlns="https://schema.org". Meetoo entities do. Site PAGES
+     *   must not: the site map reaches into a page's XML with unprefixed XPointers
+     *   (xpointer(/*[1]/wspath)) and query.php looks pages up with unprefixed
+     *   XPath, and an unprefixed name never matches an element in a namespace.
+     *   The schema.org truth is the JSON; the XML is the CMS's own artefact.
+     */
+    function jsonToWsx(string $jsonString, array $options = []): string {
         $data = json_decode($jsonString, true);
         if (!is_array($data)) return '{"error": "JSON non valido"}';
 
@@ -39,7 +47,9 @@ if (!function_exists('jsonToWsx')) {
             }
         }
 
-        $root->setAttribute('xmlns', 'https://schema.org');
+        if ($options['default_namespace'] ?? true) {
+            $root->setAttribute('xmlns', 'https://schema.org');
+        }
         $root->setAttribute('xmlns:meetoo', $meetooNs);
         $root->setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
         $root->setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
@@ -82,6 +92,15 @@ if (!function_exists('jsonToWsx')) {
         $buildXml = function (array $dataArray, DOMElement $parentElement, string $parentKey) use (&$buildXml, &$appendNode, $dom) {
             foreach ($dataArray as $key => $value) {
                 $key = (string)$key;
+
+                // "#text": the element's own content, next to its attributes - the
+                // same key json2dom already understands. Without it an element
+                // could carry attributes or text, never both, and a <section
+                // xml:id="…"> holding HTML had no way to be written.
+                if ($key === '#text') {
+                    appendTextOrCdata($dom, $parentElement, $value);
+                    continue;
+                }
 
                 if (strpos($key, '@') === 0) {
                     if ($key === '@id') {
