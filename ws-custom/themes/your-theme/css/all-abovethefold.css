@@ -114,7 +114,7 @@ body {
   justify-content: space-between; }
   #header1 > div {
     display: flex; }
-    #header1 > div > [itemprop="logo"] > img {
+    #header1 > div > .site-logo > img {
       height: var(--header-logo, 4em);
       margin-top: 0;
       margin-right: 1em;
@@ -126,11 +126,11 @@ body {
 #header.stretto > div,
 .stretto #header1,
 .stretto #header1 hgroup,
-.stretto #header1 [itemprop="logo"] {
+.stretto #header1 .site-logo {
   height: auto;
   min-height: 0; }
 
-.stretto #header1 [itemprop="logo"] img {
+.stretto #header1 .site-logo img {
   height: var(--header-logo, 1.5rem); }
 
 .stretto #header1 {
@@ -156,10 +156,10 @@ body {
   line-height: 1;
   display: block; }
 
-#header1 [itemprop="logo"] {
+#header1 .site-logo {
   display: flex;
   align-items: center; }
-  #header1 [itemprop="logo"] > img {
+  #header1 .site-logo > img {
     display: block;
     /* The site logo is red and near-black, drawn for white. On the dark
        header the black half would vanish, so in the dark it keeps a white
@@ -294,6 +294,82 @@ body {
   .section-siblings [aria-current] {
     font-weight: 600; }
 
+/* The offer catalogue of a service: levels as headings, services as a list.
+   Drawn by template-parts/offer-catalog.php from the content's
+   hasOfferCatalog; a level nested in a level is a section in a section, one
+   heading deeper, and the list keeps the same shape at every depth. */
+#main .offer-catalog {
+  /* Not a page section: `#main section` pads every level by 2rem, and four
+     nested levels make a page of gaps. The headings space the levels. */
+  padding-block: 0; }
+.offer-catalog .offer-catalog {
+  margin-top: 1.5rem; }
+.offer-catalog .offer-catalog-alt {
+  font-weight: 300;
+  font-size: .75em;
+  color: var(--color-text, #444); }
+  .offer-catalog .offer-catalog-alt::before {
+    content: "\2014\00a0"; }
+.offer-catalog .offers {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  display: grid;
+  gap: .75rem 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+  .offer-catalog .offer {
+    margin: 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--color-line, #e6e6e6); }
+  .offer-catalog .offer-name {
+    display: block;
+    color: var(--color-heading, #e30513); }
+    .offer-catalog .offer-name a {
+      color: inherit; }
+  .offer-catalog .offer-alt {
+    display: block;
+    font-size: .875em;
+    font-style: italic; }
+  .offer-catalog .offer-description {
+    display: block;
+    font-size: .9375em; }
+  .offer-catalog .offer-price {
+    display: block;
+    margin-top: .25rem;
+    font-weight: 600; }
+/* A description may carry a table (the payoff / tagline / headline one). */
+.offer-catalog table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0 1.5rem;
+  font-size: .9375em; }
+  .offer-catalog th, .offer-catalog td {
+    padding: .5rem .75rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--color-line, #e6e6e6); }
+  .offer-catalog thead th {
+    border-bottom-width: 2px; }
+  .offer-catalog tbody th {
+    font-weight: 600;
+    white-space: nowrap; }
+.content > .offer-catalog table {
+  display: block;
+  overflow-x: auto; }
+
+/* The page's call to action: what it asks, and the way in. */
+.call-to-action {
+  margin: 2rem 0 0;
+  padding: 1.5rem;
+  border-radius: .5rem;
+  background-color: var(--color-background-section2, #eef0f3);
+  text-align: center; }
+  .call-to-action p {
+    margin: 0 0 1rem;
+    font-size: 1.125em; }
+  .call-to-action p:last-child {
+    margin-bottom: 0; }
+
 .modal.full-page {
   position: fixed;
   inset: 0;
@@ -349,7 +425,7 @@ main {
   .cover h1 {
     margin: 0; }
 
-img[itemprop="primaryImageOfPage"] {
+img.primary-image {
   width: 100%;
   /* Same reason as the logo grid: the cover is an SVG of dark figures on
      nothing, and took its white from the page. The page can now be dark;

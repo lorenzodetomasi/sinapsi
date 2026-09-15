@@ -104,10 +104,13 @@ $translationLink = '<link rel="alternate" hreflang="'.$lang.'" href="/'.$lang.'/
 // 2. https://schema.org/workTranslation
 $translationA = '<a href="" itemprop="workTranslation" itemscope itemtype="https://schema.org/CreativeWork" itemid="'.$translationUrl.'">'.$langName.'</a>';
 // WS Html Attributes
-$GLOBALS['ws_html_attributes']['body'] = array(
-  'itemscope' => null,
-  'itemtype' => "http://schema.org/WebPage"
-);
+/* The body used to open a microdata scope (`itemscope itemtype=WebPage`) and
+ * the templates filled it with itemprops. Not any more: what a page is, it now
+ * says once, as JSON-LD in the head (see ws_page_jsonld below), from the same
+ * content the templates draw. Two declarations of the same thing drift apart -
+ * the header was naming the site inside the page's scope, the h1 and the h2
+ * gave the page a second `name` and `headline` - and a search engine reading
+ * both cannot tell which to believe. */
 ws_globals_set(array('ws_html_attributes', 'page', 'class'), array('center'));
 ws_globals_set(array('ws_html_attributes', 'header-content', 'id'), array('header-content'));
 ws_globals_set(array('ws_html_attributes', 'header-top', 'class'), array('nav', 'horizontal', 'padding-h-d2'));
@@ -443,4 +446,145 @@ function ws_sitemap_children($wspath){
 	return $children;
 }
 }
+
+/* ---------- What the page is, declared once, in the head ----------
+ *
+ * A page's schema.org lives in its content: `index.json` is JSON-LD, and the
+ * XML twin the CMS reads is made from it. The head says it back, as a
+ * <script type="application/ld+json">, with three things the content does not
+ * author because the site already knows them:
+ *   - `hasPart`   the pages under this one, from the site map;
+ *   - `isPartOf`  the page above, or the site itself for a top-level page;
+ *   - `publisher` the organisation the headings name.
+ * Content ids (`services/brand-design`, `…#service`) become the page's own
+ * URL; relative `url`s become absolute. The CMS's routing and SEO fields
+ * (wspath, query, title, robots…) and the HTML bodies are the page's business,
+ * not the declaration's, and stay out of it.
+ *
+ * A page that still lives in XML alone gets the short form - its type, name,
+ * headline, description, dates, and the same three derived relations - so no
+ * page is left saying nothing while the rest catch up. */
+if(!function_exists('ws_page_jsonld')){
+function ws_page_jsonld(){
+	global $ws_content, $ws_headings, $rewrite_rule;
+	if(empty($ws_content)) return '';
+	$wspath = !empty($ws_content->wspath) ? (string)$ws_content->wspath : (string)($rewrite_rule->wspath ?? '');
+	if($wspath === '') return '';
+	$page_url = ws_href($wspath);
+	$page_id = '';
+
+	// The content: its JSON when it has one, its XML otherwise.
+	$json_abspath = preg_replace('/\.(xml|wsx|json)$/', '.json', ws_content_abspath());
+	$data = null;
+	if(is_file($json_abspath)){
+		$data = json_decode((string)file_get_contents($json_abspath), true);
+	}
+	if(is_array($data)){
+		$page_id = (string)($data['@id'] ?? '');
+		// The CMS's own fields, the SEO ones and the HTML bodies are not schema.org.
+		foreach(array('wspath', 'query', 'type', 'parent', 'title', 'keywords', 'changefreq', 'priority', 'robots', 'cta', 'section', 'mainContentOfPage', 'xi:include') as $cms){
+			unset($data[$cms]);
+		}
+	} else {
+		$data = array('@context' => 'https://schema.org', '@type' => ws_page_type($ws_content->type, $wspath));
+		foreach(array('name', 'headline', 'description', 'inLanguage', 'dateCreated', 'datePublished', 'dateModified') as $field){
+			if(!empty($ws_content->$field)) $data[$field] = trim(strip_tags($ws_content->$field->innerHTML()));
+		}
+	}
+	$data['@id'] = $page_url;
+	$data['url'] = $page_url;
+	if(empty($data['inLanguage'])) $data['inLanguage'] = str_replace('_', '-', ws_lang());
+
+	// The page above - or the site, for a page at the top.
+	$parent = !empty($ws_content->parent->wspath) ? ws_sitemap_entry($ws_content->parent->wspath) : null;
+	if($parent and ws_sitemap_normalize_path($parent->wspath) !== '/'){
+		$data['isPartOf'] = array(
+			'@type' => ws_page_type($parent->type, $parent->wspath),
+			'@id' => ws_href($parent->wspath),
+			'name' => trim(strip_tags(!empty($parent->name) ? $parent->name->innerHTML() : (string)$parent->title)),
+		);
+	} else if(!empty($ws_headings)){
+		$data['isPartOf'] = array(
+			'@type' => 'WebSite',
+			'@id' => rtrim((string)$ws_headings->url, '/') . '/#website',
+			'url' => (string)$ws_headings->url,
+			'name' => trim(strip_tags(!empty($ws_headings->title) ? $ws_headings->title->innerHTML() : '')),
+		);
+	}
+	// The pages under this one.
+	$parts = array();
+	foreach(ws_sitemap_children($wspath) as $child){
+		$part = array(
+			'@type' => ws_page_type($child->type, $child->wspath),
+			'@id' => ws_href($child->wspath),
+			'name' => trim(strip_tags(!empty($child->name) ? $child->name->innerHTML() : (string)$child->title)),
+		);
+		if(!empty($child->description)) $part['description'] = trim(strip_tags($child->description->innerHTML()));
+		$parts[] = $part;
+	}
+	if($parts) $data['hasPart'] = $parts;
+	// Who publishes it.
+	if(!empty($ws_headings->mainEntity->name)){
+		$data['publisher'] = array(
+			'@type' => 'Organization',
+			'name' => trim(strip_tags($ws_headings->mainEntity->name->innerHTML())),
+			'url' => (string)$ws_headings->url,
+		);
+		if(!empty($ws_headings->mainEntity->image[0]->source->relpath)){
+			$data['publisher']['logo'] = ws_contents_url() . (string)$ws_headings->mainEntity->image[0]->source->relpath;
+		}
+	}
+
+	ws_jsonld_clean($data, $page_id, $page_url);
+	$json = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+	if($json === false) return '';
+	// `</script` inside a string would close the block early; JSON allows the escape.
+	$json = str_replace('</', '<\/', $json);
+	return "\n<script type=\"application/ld+json\">\n" . $json . "\n</script>";
+}
+}
+if(!function_exists('ws_page_type')){
+/**
+ * The schema.org type of a PAGE, from what its content or map entry says.
+ * A page's `type` is either a page type (ContactPage, AboutPage…) or the type
+ * of what the page is about (Service, Product); only the first names the
+ * page. The rest are a WebPage - a CollectionPage when pages stand under it.
+ */
+function ws_page_type($type, $wspath){
+	$type = trim((string)$type);
+	if($type !== '' and substr($type, -4) === 'Page') return $type;
+	return ws_sitemap_children($wspath) ? 'CollectionPage' : 'WebPage';
+}
+}
+if(!function_exists('ws_jsonld_clean')){
+/**
+ * The tree made fit to declare, top to bottom.
+ * Content ids become URLs: the page's own id (`services/brand-design`) is
+ * its URL, an anchor on it (`services/brand-design#service`) an anchor on
+ * that URL; a `url` that begins with `/` is on this site. Anything else is
+ * left as written. And a text that carries HTML - a description with a
+ * table in it, written to be drawn - is declared as text: tags become
+ * spaces, entities become characters.
+ */
+function ws_jsonld_clean(array &$node, $page_id, $page_url){
+	foreach($node as $key => &$value){
+		if(is_array($value)){
+			ws_jsonld_clean($value, $page_id, $page_url);
+		} else if(!is_string($value)){
+			continue;
+		} else if($key === '@id'){
+			if($page_id !== '' and $value === $page_id){
+				$value = $page_url;
+			} else if($page_id !== '' and strpos($value, $page_id . '#') === 0){
+				$value = $page_url . substr($value, strlen($page_id));
+			}
+		} else if($key === 'url'){
+			if(strpos($value, '/') === 0) $value = ws_href($value);
+		} else if(strpos($value, '<') !== false or strpos($value, '&') !== false){
+			$value = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(preg_replace('/<[^>]+>/', ' ', $value)), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+		}
+	}
+}
+}
+$GLOBALS['ws_scripts']['head']['jsonld'] = ws_page_jsonld();
 ?>
