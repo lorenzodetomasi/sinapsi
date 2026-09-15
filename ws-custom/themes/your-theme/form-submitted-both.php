@@ -154,7 +154,7 @@ if($_POST){
 <?php
 	if($ws_content->name){
 ?>
-	<h1 itemprop="name"><?php echo $ws_content->name->innerHTML(); ?></h1>
+	<h1><?php echo $ws_content->name->innerHTML(); ?></h1>
 <?php
 	}
 ?>

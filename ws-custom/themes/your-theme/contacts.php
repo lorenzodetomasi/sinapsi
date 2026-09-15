@@ -33,14 +33,14 @@ if($ws_content->primaryImage){
 <?php
 if($ws_content->name){
 ?>
-				<h1 itemprop="name"><?php echo $ws_content->name->innerHTML(); ?></h1>
+				<h1><?php echo $ws_content->name->innerHTML(); ?></h1>
 <?php
 }
 ?>
 <?php
 if($ws_content->headline){
 ?>
-				<h2 itemprop="headline">
+				<h2>
 					<?php echo $ws_content->headline->innerHTML(); ?>
 				</h2>
 <?php

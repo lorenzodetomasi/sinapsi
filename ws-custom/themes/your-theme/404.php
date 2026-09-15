@@ -26,22 +26,22 @@ include_template('template-parts/header');
 <?php
 if(!empty($ws_content->name)){
 ?>
-                <h1 itemprop="name"><?php echo $ws_content->name->innerHTML(); ?></h1>
+                <h1><?php echo $ws_content->name->innerHTML(); ?></h1>
 <?php
 } else {
 ?>
-                <h1 itemprop="name"><?php _e('Page not found'); ?></h1>
+                <h1><?php _e('Page not found'); ?></h1>
 <?php
 }
 ?>
 <?php
 if(!empty($ws_content->headline)){
 ?>
-                <h2 itemprop="headline"><?php echo $ws_content->headline->innerHTML(); ?></h2>
+                <h2><?php echo $ws_content->headline->innerHTML(); ?></h2>
 <?php
 } else {
 ?>
-                <h2 itemprop="headline"><?php _e('Error 404'); ?></h2>
+                <h2><?php _e('Error 404'); ?></h2>
 <?php
 }
 ?>

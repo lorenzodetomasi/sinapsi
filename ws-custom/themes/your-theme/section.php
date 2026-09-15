@@ -20,7 +20,6 @@
 global $ws_content, $ws_headings;
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'page';
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'section';
-$GLOBALS['ws_html_attributes']['body']['itemtype'] = 'https://schema.org/CollectionPage';
 include_template('template-parts/header');
 ?>
 			<div<?php echo ws_html_attributes('main-content'); ?>>
@@ -30,12 +29,12 @@ if(!empty($ws_content->primaryImageOfPage)){
 }
 if(!empty($ws_content->name)){
 ?>
-				<h1 itemprop="name"><?php echo $ws_content->name->innerHTML(); ?></h1>
+				<h1><?php echo $ws_content->name->innerHTML(); ?></h1>
 <?php
 }
 if(!empty($ws_content->headline)){
 ?>
-				<h2 itemprop="headline"><?php echo $ws_content->headline->innerHTML(); ?></h2>
+				<h2><?php echo $ws_content->headline->innerHTML(); ?></h2>
 <?php
 }
 ?>

@@ -18,7 +18,7 @@ foreach ($awards as $award) {
 		$image = $award->image->source;
 	}
 ?>
-		<a href="<?php echo $award->url; ?>" target="_blank" title="<?php printf(__('Visit “%s” website'), $award->name); ?>"><img itemprop="award" lang="en" style="width: 120px; height: auto;" alt="<?php echo $image->alt; ?>" src="<?php echo $ws_contents_url.'/'.$image->relpath; ?>" /></a>
+		<a href="<?php echo $award->url; ?>" target="_blank" title="<?php printf(__('Visit “%s” website'), $award->name); ?>"><img class="award" lang="en" style="width: 120px; height: auto;" alt="<?php echo $image->alt; ?>" src="<?php echo $ws_contents_url.'/'.$image->relpath; ?>" /></a>
 <?php
 }
 ?>
