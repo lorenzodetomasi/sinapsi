@@ -18,16 +18,26 @@ input:not([type]), input[type="datetime"], input[type="datetime-local"], input[t
   font-family: inherit;
   font-size: 1rem;
   border: none;
-  border-bottom: 2px solid var(--color-link);
+  border-bottom: var(--field-border-width) solid var(--field-border-color);
   border-radius: 0;
   padding: 0.5em 0;
   outline: none;
   background: transparent;
   box-shadow: none;
-  transition: all 0.3s; }
-  input:not([type]):hover, input[type="color"]:hover, input[type="datetime"]:hover, input[type="datetime-local"]:hover, input[type="date"]:hover, input[type="time"]:hover, input[type="week"]:hover, input[type="email"]:hover, input[type="month"]:hover, input[type="number"]:hover, input[type="password"]:hover, input[type="search"]:hover, input[type="tel"]:hover, input[type="text"]:hover, input[type="url"]:hover, textarea:hover, select:hover, input:not([type]):focus, input[type="color"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="month"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="text"]:focus, input[type="url"]:focus, textarea:focus, select:focus, input:not([type]):active, input[type="color"]:active, input[type="datetime"]:active, input[type="datetime-local"]:active, input[type="date"]:active, input[type="time"]:active, input[type="week"]:active, input[type="email"]:active, input[type="month"]:active, input[type="number"]:active, input[type="password"]:active, input[type="search"]:active, input[type="tel"]:active, input[type="text"]:active, input[type="url"]:active, textarea:active, select:active {
-    border-color: var(--color-link); }
-
+  transition: all 0.3s;
+  &:hover,
+  &:focus,
+  &:active {
+    border-color: var(--field-hover-border-color);
+  }
+}
+label.required strong:before {
+  content: '* ';
+  color: var(--color-danger);
+}
+input:not([type]):hover, input[type="color"]:hover, input[type="datetime"]:hover, input[type="datetime-local"]:hover, input[type="date"]:hover, input[type="time"]:hover, input[type="week"]:hover, input[type="email"]:hover, input[type="month"]:hover, input[type="number"]:hover, input[type="password"]:hover, input[type="search"]:hover, input[type="tel"]:hover, input[type="text"]:hover, input[type="url"]:hover, textarea:hover, select:hover, input:not([type]):focus, input[type="color"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="month"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="text"]:focus, input[type="url"]:focus, textarea:focus, select:focus, input:not([type]):active, input[type="color"]:active, input[type="datetime"]:active, input[type="datetime-local"]:active, input[type="date"]:active, input[type="time"]:active, input[type="week"]:active, input[type="email"]:active, input[type="month"]:active, input[type="number"]:active, input[type="password"]:active, input[type="search"]:active, input[type="tel"]:active, input[type="text"]:active, input[type="url"]:active, textarea:active, select:active {
+    border-color: var(--field-border-color); }
+/*
 [type="checkbox"] {
   appearance: none;
   -moz-appearance: none;
@@ -38,7 +48,7 @@ input:not([type]), input[type="datetime"], input[type="datetime-local"], input[t
   z-index: -10000;
   width: 1.5em;
   height: 1.5em;
-  border: 2px solid var(--color-link);
+  border: var(--field-border-width) solid var(--field-border-color);
   border-radius: 0;
   transition: 0.2s;
   margin-right: 0.5em;
@@ -49,10 +59,10 @@ input:not([type]), input[type="datetime"], input[type="datetime-local"], input[t
   left: -5px;
   width: 0.5em;
   height: 1em;
-  border-top: 2px solid transparent;
-  border-left: 2px solid transparent;
-  border-right: 2px solid #444;
-  border-bottom: 2px solid #444;
+  border-top: var(--field-border-width) solid transparent;
+  border-left: var(--field-border-width) solid transparent;
+  border-right: var(--field-border-width) solid #444;
+  border-bottom: var(--field-border-width) solid #444;
   -webkit-transform: rotate(40deg);
   transform: rotate(40deg);
   -webkit-backface-visibility: hidden;
@@ -63,8 +73,19 @@ input:not([type]), input[type="datetime"], input[type="datetime-local"], input[t
 input[type="color"] {
   background-color: white;
   block-size: 4em;
-} 
+}
+*/
 /* Fieldsets */
+fieldset.fieldset,
+.fieldset {
+  margin-bottom: var(--gutter);
+  border: var(--fieldset-border-width) solid var(--fieldset-border-color);
+  legend {
+    color: var(--fieldset-legend-color);
+    padding: var(--fieldset-legend-padding);
+    font-weight: bold;
+  }
+}
 fieldset {
   &.question {
     padding: 0;
@@ -113,7 +134,7 @@ fieldset.fieldset,;
     align-self: baseline;
     background-color: transparent;
     border: 0 none;
-    .material-symbols-outlined {
+    &.material-symbols-outlined {
       color: var(--color-link);
     }
   }
@@ -126,6 +147,7 @@ fieldset.fieldset,;
     width: 100%;
     .input {
       display: inline-flex;
+      align-items: center;
       width: 100%;
       input,
       textarea,
@@ -166,20 +188,56 @@ fieldset.fieldset,;
   }
   .tags {
     .input.tag {
-      border: var(--border-width) solid var(--color-link);
-      border-radius: var(--button-border-radius);
+      border: var(--field-border-width) solid var(--field-border-color);
+      border-radius: var(--field-border-radius);
       align-items: center;
-      .tag-handle {
+      .tag-handle,
+      button {
         padding-top: .35rem;
       }
       input {
         border-bottom: 0 none;
       }
       button {
-        padding-top: .35rem;
         align-self: center;
       }
     }
+  }
+}
+label.field textarea {
+  position: relative;
+  top: 0.1em;
+}
+select {
+
+}
+input[type="date"] {
+  width: 10em;
+}
+select {
+  -webkit-appearance: button;
+  padding: .5em;
+}
+select,
+.field.datalist {
+  background-image:
+    linear-gradient(60deg, transparent 50%, $field-border-color 50%),
+    linear-gradient(120deg, var(--field-border-color) 50%, transparent 50%);
+  background-position:
+    calc(100% - 1.15em) calc(0.8em),
+    calc(100% - 0.75em) calc(0.8em);
+  background-size:
+    0.4em 0.7em,
+    0.4em 0.7em;
+  background-repeat: no-repeat;
+}
+select,
+.field.datalist {
+  &:hover,
+  &:focus {
+  background-image:
+    linear-gradient(60deg, transparent 50%, var(--field-hover-border-color) 50%),
+    linear-gradient(120deg, var(--field-hover-border-color) 50%, transparent 50%);
   }
 }
 .field.tag-array {
@@ -196,8 +254,33 @@ fieldset.fieldset,;
   }
 }
 
+::-webkit-inner-spin-button {
+  color: $field-border-color;
+}
+::-webkit-calendar-picker-indicator {
+  color: $field-hover-border-color;
+  background: transparent;
+}
+input[type="search"] {
+        -webkit-appearance: textfield;
+}
+input[type="search"]::-webkit-search-decoration {
+        -webkit-appearance: none;
+}
+#current_photo_preview,
+img.profile-image {
+  width:3em;
+  height:3em; 
+  border-radius:50%; 
+  object-fit:cover; 
+  border:1px solid #ccc; 
+  margin-right:8px; 
+  vertical-align:middle;
+}
+
+
 .button {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   border: 0 none;
   border-radius: 0.5em;
@@ -251,15 +334,6 @@ fieldset {
     & + * {
       clear: both;
     }
-  }
-}
-fieldset.fieldset,
-.fieldset {
-  margin-bottom: $gutter;
-  border: $fieldset-border;
-  legend {
-    color: $fieldset-legend-color;
-    padding: $fieldset-legend-padding;
   }
 }
 // Fields
@@ -394,19 +468,6 @@ select,
     linear-gradient(120deg, $field-hover-border-color 50%, transparent 50%);
 //    linear-gradient(to right, $field-hover-border-color, $field-hover-border-color);
   }
-}
-::-webkit-inner-spin-button {
-  color: $field-border-color;
-}
-::-webkit-calendar-picker-indicator {
-  color: $field-hover-border-color;
-  background: transparent;
-}
-input[type="search"] {
-        -webkit-appearance: textfield;
-}
-input[type="search"]::-webkit-search-decoration {
-        -webkit-appearance: none;
 }
 textarea {
         overflow: auto;

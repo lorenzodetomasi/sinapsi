@@ -45,7 +45,7 @@ foreach ($ws_content->section as $section) {
 		   per grid, and the second grid would find the file already included
 		   and silently get nothing. That is how the home showed the clients
 		   and not the awards. */
-		include_template('template-parts/grid-1_1', array('require_once' => false));
+		include_template('template-parts/grid-1_1-image_gallery', array('require_once' => false));
     } else {
         ws_echo($section->innerHTML());     
     }

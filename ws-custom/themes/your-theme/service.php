@@ -28,6 +28,7 @@ if($ws_content->headline){
 				<h2 itemprop="headline">
 					<?php echo $ws_content->headline->innerHTML(); ?>
 				</h2>
+				<div class="content">
 <?php
 }
 if($ws_headings->wip == "true"){ ?>
@@ -38,16 +39,11 @@ if($ws_content->mainContentOfPage){
 	ws_echo($ws_content->mainContentOfPage->innerHTML());
 }
 ?>
-				<div class="content">
 <?php
 global $section;
 foreach ($ws_content->section as $section) {
     if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
-		/* NOT require_once, which is include_template's default: this runs once
-		   per grid, and the second grid would find the file already included
-		   and silently get nothing. That is how the home showed the clients
-		   and not the awards. */
-		include_template('template-parts/grid-1_1', array('require_once' => false));
+		include_template('template-parts/grid-1_1-image_gallery', array('require_once' => false));
     } else {
         ws_echo($section->innerHTML());     
     }

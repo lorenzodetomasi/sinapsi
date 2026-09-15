@@ -9,7 +9,7 @@
  * =========================================================================== */
 
 :root {
-  /* Tipografia: font1 = titoli (serif), font2 = testo */
+  /* Tipography */
   color-scheme: light dark;
   --font-family1: 'Roboto Slab', Georgia, serif;
   --font-family2: 'Roboto', system-ui, sans-serif;
@@ -28,7 +28,7 @@
   --color6: light-dark(#5f5c66, #b9b3c4);/* --hint */
   --color7: light-dark(#e0e0e6, #48454e);/* --line */
   --color8: light-dark(#f5a623, #48454e);/* orange */
-  /* Neutrali Material Design 3 (light / dark) */
+  /* Neutral Material Design 3 (light / dark) */
   --color-background-main: light-dark(#f6f7f9, #141218);
   --color-background-section1: light-dark(#ffffff, #1e1f20);
   --color-background-section2: light-dark(#eef0f3, #2a282f);
@@ -50,17 +50,14 @@
   --color-background-danger: light-dark(#fdeceb, #3a201f);
   --color-line-track: var(--color-heading);
   --color-line-track-over: var(--color-text);
+  --color-ok: light-dark(#2e7d32, #a6e3a1);
 
+  --border-width: 2px;
+
+  /* Header */
+  --color-background-header: var(--color-background-main);
   /* Events */
   --color-past: light-dark(#6b6870, #8a8590);
-
-  /* Stati
-  --past: light-dark(#6b6870, #8a8590);
-  --warn-bg: light-dark(#fff4e5, #3a2f1c);
-  --warn-fg: light-dark(#8a5300, #ffcf8a);
-  --danger-bg: light-dark(#fdeceb, #3a201f);
-  --danger-fg: light-dark(#c1272d, #ff8a80);
-  --ok-fg: light-dark(#2e7d32, #a6e3a1);
 
   /* Colori scena (waterfront) tema-aware: chiari in light, desaturati/scuri in dark */
   --color-sea: light-dark(#91daee, #14343f);
@@ -80,6 +77,8 @@
 
   --button-background: var(--color-link);
   --button-color: var(--color-text-neg);
+  --button-background-hover: var(--color-hover);
+  --button-color-hover: var(--color-text-neg);
   --button-font-size: var(--font-size);
   --button-icon-size: var(--icon-size);
   --button-padding: var(--gutter-d4) var(--gutter-d2);
@@ -98,33 +97,13 @@
   --card-slot: clamp(170px, calc(50svh - 3.5 * var(--line-h) - 4px), 460px);
 }
 
-/*
-:root {
-  color-scheme: light dark;
-
-  /* Superfici e testo
-  --bg: light-dark(#f6f7f9, #141218);
-  --surface: light-dark(#ffffff, #1e1f20);
-  --surface-2: light-dark(#eef0f3, #2a282f);
-  --text: light-dark(#1d1b20, #e6e0e9);
-  --hint: light-dark(#5f5c66, #b9b3c4);
-  --line: light-dark(#e0e0e6, #48454e);
-
-  /* Colori istituzionali
-  --accent: light-dark(#2e3192, #adc6ff);
-  --on-accent: light-dark(#ffffff, #0b1020);
-  /* Blu accento (pill/legend) e blu breadcrumb: dark = tonalità più chiara MD
-  --accent-blue: var(--mt-accent);
-  --crumb-blue: var(--color-link);
-
-  /* Editor di codice (pagine admin)
-  --editor-bg: light-dark(#f4f5f8, #11111b);
-
-}
-*/
 /* Token dell header condiviso (derivati da quelli sopra). */
-:root { --mt-red: var(--color1); --mt-blue: var(--color-link); --mt-accent: light-dark(#406abf, #adc6ff);
-        --mt-hint: var(--color-hint); --mt-text: var(--color-text); --mt-card: var(--color-background-section1);
-        --mt-line: light-dark(rgba(0,0,0,.08), rgba(255,255,255,.10)); --mt-h: 44px;
-        /* Larghezza della colonna dell'header: allineata a .wrap */
-        --mt-w: 960px; }
+:root {
+  --mt-red: var(--color1); 
+  --mt-blue: var(--color-link); 
+  --mt-accent: light-dark(#406abf, #adc6ff);
+  --mt-hint: var(--color-hint); --mt-text: var(--color-text); --mt-card: var(--color-background-section1);
+  --mt-line: light-dark(rgba(0,0,0,.08), rgba(255,255,255,.10)); --mt-h: 44px;
+  /* Larghezza della colonna dell'header: allineata a .wrap */
+  --mt-w: 960px;
+}

@@ -43,11 +43,11 @@
   --color-hover: var(--color-heading);
   --color-line: var(--color7);       /* separatori: bordi di card, righe, campi */
   --color-hint: var(--color6);
+  --color-danger: var(--color1);
+  --color-background-danger: light-dark(#fdeceb, #3a201f);
   --color-warning: var(--color8);
   --color-background-warning: light-dark(#fff4e5, #3a2f1c);
   --color-success: light-dark(#146c2e, #a6e3a1);
-  --color-danger: light-dark(#c1272d, #ff8a80);
-  --color-background-danger: light-dark(#fdeceb, #3a201f);
   --color-line-track: var(--color-heading);
   --color-line-track-over: var(--color-text);
   --color-ok: light-dark(#2e7d32, #a6e3a1);
@@ -85,9 +85,19 @@
   --button-large-padding: var(--gutter-d2) var(--gutter);
   --button-border-radius: var(--border-radius);
 
+  --field-border-width: var(--border-width);
+  --field-border-radius: var(--border-radius);
+  --field-border-color: var(--color-link);
+  --field-hover-border-color: var(--color-hover);
+
   --card-background: var(--color-background-section1);
   --card-border-color: var(--card-background);
   --card-focus-border-color: var(--color1);
+
+  --fieldset-border-width: var(--border-width);
+  --fieldset-border-color: var(--color-heading);
+  --fieldset-legend-color:  var(--color-heading);
+  --fieldset-legend-padding: var(--gutter-d2);
 
   --base-vw: 33.33;   /* larghezza fermata (vw); più grande su mobile */
   /* Altezza dello slot-card: su desktop riempie l'area disponibile (header 96 + 3 binari da 48). */

@@ -1,6 +1,6 @@
 #google-user-registered { background: #f0fdf4; border: 1px solid #bbf7d0; }
 
-.google-avatar { position: relative; display: inline-block; font-family: "Google Sans", Roboto, Arial, sans-serif; user-select: none; }
+.google-avatar { position: relative; top: 0.2rem; display: inline-block; font-family: "Google Sans", Roboto, Arial, sans-serif; user-select: none; }
 .avatar-circle { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; box-sizing: border-box; border: 2px solid transparent; transition: box-shadow 0.15s; }
 .avatar-circle.logged-in:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); }
 .google-login-trigger { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }

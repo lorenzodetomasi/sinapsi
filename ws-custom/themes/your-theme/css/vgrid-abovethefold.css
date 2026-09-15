@@ -46,3 +46,9 @@
   width: 100%; }
   .nav.vgrid-fullwidth > div > ul > li a, .nav.vgrid-fullwidth > div > ol > li a {
     width: 100%; }
+.flex {
+  flex-flow: column;
+  .nav {
+    padding: 0;
+  }
+}

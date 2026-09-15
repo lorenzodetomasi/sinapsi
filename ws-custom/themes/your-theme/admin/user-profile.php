@@ -260,28 +260,12 @@ include_template('template-parts/header');
 <div<?php echo ws_html_attributes('main-content'); ?>>
   <div class="content-container">
 <?php endif; ?>
-    <style>        <?= $q ?>.id-box { background: var(--color-background-section2, #e8f0fe); border-radius: 12px; padding: 1.2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        <?= $q ?>.uuid-badge { font-family: monospace; overflow-wrap: anywhere; }
-        <?= $q ?>.switch-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-line, #f1f3f4); }
-        <?= $q ?>.switch-row:last-of-type { border-bottom: none; }
-        <?= $q ?>input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--color-link, #1a73e8); margin-top: 3px; cursor: pointer; }
-        <?= $q ?>.switch-label { font-weight: 600; display: block; margin-bottom: 2px; }
-        <?= $q ?>.switch-hint { font-size: 0.85rem; color: var(--color-hint, #5f6368); margin: 0; }
-        <?= $q ?>.search-input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--color-line, #dadce0); background: var(--color-background-section2, #fff); color: var(--color-text, #202124); box-sizing: border-box; font-size: 14px; font-family: inherit; }
-        <?= $q ?>.search-input:focus { border-color: var(--color-link, #1a73e8); outline: none; }
-        <?= $q ?>.restore-btn { background: var(--color-background-section2, #f1f3f4); border: 1px solid var(--color-line, #dadce0); border-radius: 6px; padding: 6px 10px; cursor: pointer; color: var(--color-hint, #5f6368); display: flex; align-items: center; justify-content: center; }
-        <?= $q ?>.restore-btn:hover { color: var(--color-link, #1a73e8); }
-        <?= $q ?>.btn { background: var(--color-link, #1a73e8); color: var(--color-background-header, #fff); border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; text-decoration: none; font-family: inherit; }
-        <?= $q ?>.btn-outline { background: transparent; color: var(--color-hint, #5f6368); border: 1px solid var(--color-line, #dadce0); margin-left: 8px; }
-        <?= $q ?>.input-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        <?= $q ?>.salvato { color: var(--color-link, #1a73e8); font-weight: 600; margin: 0 0 1rem; }
-    </style>
-    <script defer="defer" src="https://isotype.org/ws-custom/plugins/forms/js/fields.js"></script>
 <?php if (!empty($saved)): ?>
     <p class="salvato"><?php _e('Saved.'); ?></p>
 <?php endif; ?>
     <h1><?= $is_registered ? __('Edit profile') : __('Register') ?></h1>
     <form method="POST" enctype="multipart/form-data">
+        <script defer="defer" src="https://isotype.org/ws-custom/plugins/forms/js/fields.js"></script>
         <input type="hidden" name="save_privacy_settings" value="1">
 
         <!-- Edit Name -->
@@ -427,7 +411,7 @@ include_template('template-parts/header');
                 <strong><?php _e('Profile photo'); ?></strong><br />
                 <small class="hint"><?php _e('Show your avatar. Upload a photo or use the one from Google.'); ?></small><br />
                 <span class="input">
-                    <img id="current_photo_preview" src="<?= htmlspecialchars($current_pic_val) ?>" style="width:40px; height:40px; border-radius:50%; object-fit:cover; border:1px solid #ccc; margin-right:8px; vertical-align:middle;">
+                    <img id="current_photo_preview" src="<?= htmlspecialchars($current_pic_val) ?>" />
                     
                     <input type="file" name="image" id="image" accept="image/png, image/jpeg, image/webp" />
                     <input type="hidden" name="restore_google_photo" id="restore_google_photo" value="0" />
@@ -445,9 +429,10 @@ include_template('template-parts/header');
                 </span>
             </label>
         </p>
-
-        <a href="https://www.isotype.org/eventi" class="btn btn-outline"><?php _e('Cancel'); ?></a>
-        <button type="submit" class="btn" style="margin-left:12px;"><?php _e('Save and continue'); ?></button>
+        <p>
+            <a class="link" href="https://www.isotype.org/eventi" class="btn btn-outline"><?php _e('Cancel'); ?></a>
+            <button class="button" type="submit" style="margin-left:12px;"><?php _e('Save and continue'); ?></button>
+        </p>
     </form>
 
     <script>
