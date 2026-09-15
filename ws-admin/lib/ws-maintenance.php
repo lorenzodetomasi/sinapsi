@@ -246,27 +246,35 @@ if (!function_exists('ws_maint_ops')) {
             ],
 
 
-            'xml-rebuild' => [
+            'contents' => [
                 'title' => 'Riallinea gli XML al JSON',
-                'meta'  => 'L\'XML è derivato: si rigenera dopo ogni migrazione',
-                'icon'  => 'sync_alt', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'option' => ['key' => 'root', 'label' => 'adotta la nuova radice'],
-                'confirm' => 'Riallineare gli XML? Verranno riscritti solo quelli generati dal JSON.',
+                'meta'  => 'Il JSON è la fonte, l\'XML il suo gemello derivato: qui si rifanno quelli vecchi o mancanti',
+                'icon'  => 'sync_alt', 'scope' => 'contents', 'preview' => true, 'since' => '2026.09',
+                'option' => ['key' => 'adopt_root', 'label' => 'adotta la nuova radice'],
+                'confirm' => 'Riallineare gli XML? Verranno riscritti solo i gemelli generati dal JSON.',
                 'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/ws-xml.php';
-                    $r = ws_xml_rebuild($base, $apply, !empty($o['create']), !empty($o['root']));
-                    $n = count($r['riscritti']) + count($r['creati']);
+                    // The generic module of the CMS (ws-admin/refresh-contents.php):
+                    // every content of the root, whatever the site. Staleness comes
+                    // from the derived-files manifest, not from dates or a diff.
+                    require_once __DIR__ . '/../refresh-contents.php';
+                    $r = ws_refresh_contents($base, $apply, ['adopt_root' => !empty($o['adopt_root'])]);
+                    $n = $r['changes'];
                     return [
                         'changes' => $n,
-                        'summary' => $n
-                            ? (count($r['riscritti']) . ' da riallineare, ' . count($r['creati']) . ' da creare')
-                            : 'Tutti gli XML sono in pari.'
-                            . ($r['mancanti'] ? " · {$r['mancanti']} entità senza gemello" : ''),
+                        'summary' => ($n
+                            ? ($apply
+                                ? count($r['rebuilt']) . ' riallineati, ' . count($r['created']) . ' creati'
+                                : "$n da riallineare o creare")
+                            : 'Tutti gli XML sono in pari.')
+                            . " · {$r['fresh']} in pari"
+                            . ($r['skipped'] ? ' · ⚠ ' . count($r['skipped']) . ' non gemelli' : '')
+                            . ($r['failed'] ? ' · ⚠ ' . count($r['failed']) . ' falliti' : ''),
                         'lines' => array_merge(
-                            array_map(fn($x) => "riallineato: $x", $r['riscritti']),
-                            array_map(fn($x) => "creato: $x", $r['creati']),
-                            array_map(fn($x) => "⚠ {$x['path']}: l'XML ha radice <{$x['root']}>, il JSON produrrebbe <{$x['atteso']}> — non lo tocco", $r['nonGemelli']),
-                            array_map(fn($x) => "⚠ {$x['path']}: {$x['why']}", $r['falliti'])
+                            array_map(fn($x) => "da rifare: $x", $r['stale']),
+                            array_map(fn($x) => "riallineato: $x", $r['rebuilt']),
+                            array_map(fn($x) => "creato: $x", $r['created']),
+                            array_map(fn($x) => "⚠ {$x['path']}: {$x['why']}", $r['skipped']),
+                            array_map(fn($x) => "⚠ {$x['path']}: {$x['why']}", $r['failed'])
                         ),
                     ];
                 },

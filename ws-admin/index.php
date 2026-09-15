@@ -11,6 +11,31 @@
 
 require_once __DIR__ . '/lib/ws-auth.php';
 
+/**
+ * The content roots the hub can work on: `contents/<site>/<locale>` for
+ * every locale directory a site has, `contents/<site>` for a site without.
+ * Keyed by their id (`meetoo/it_IT`, `isotype/it_IT`); a `-` in front of a
+ * name switches the site off (a reminder, a work in progress).
+ */
+function ws_admin_sites(string $contents): array {
+    $out = [];
+    foreach (glob(rtrim($contents, '/') . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+        $site = basename($dir);
+        if ($site[0] === '-' || $site[0] === '_' || $site[0] === '.') continue;
+        $locales = array_filter(glob("$dir/*", GLOB_ONLYDIR) ?: [], fn($d) => preg_match('/^[a-z]{2}_[A-Z]{2}$/', basename($d)));
+        if ($locales) {
+            foreach ($locales as $l) {
+                $id = "$site/" . basename($l);
+                $out[$id] = ['id' => $id, 'label' => "$site · " . basename($l), 'path' => $l];
+            }
+        } else {
+            $out[$site] = ['id' => $site, 'label' => $site, 'path' => $dir];
+        }
+    }
+    ksort($out);
+    return $out;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
     // La pagina fa anche da endpoint JSON: gli errori PHP non devono finire nel corpo.
@@ -41,7 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
         require_once $registro;
-        $base = __DIR__ . '/../ws-custom/contents/meetoo/it_IT';
+        /* Which site. The hub governs every content root the CMS serves, one
+         * at a time: `site` names it as `<site>/<locale>` (or `<site>` when the
+         * site has no locale) and must be one of the roots that exist - a
+         * path is never taken from the request as it comes. Meetoo stays the
+         * default so that nothing changes for who does not choose. A root
+         * whose name begins with `-` is switched off and is not offered. */
+        $sites = ws_admin_sites(__DIR__ . '/../ws-custom/contents');
+        $site  = (string)($_POST['site'] ?? 'meetoo/it_IT');
+        if (!isset($sites[$site])) { http_response_code(400); echo json_encode(['error' => "Sito sconosciuto: $site"]); exit; }
+        $base = $sites[$site]['path'];
 
         // maint-list: che cosa esiste, quando è stata eseguita l'ultima volta e —
         // per chi sa dirlo senza scrivere — quante cose sono in attesa. È questo
@@ -56,7 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 unset($op);
             }
-            echo json_encode(['success' => true, 'version' => MEETOO_VERSION, 'ops' => $ops]);
+            echo json_encode(['success' => true, 'version' => MEETOO_VERSION, 'ops' => $ops,
+                              'site' => $site, 'sites' => array_values($sites)]);
             exit;
         }
 
@@ -149,6 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2 class="sec-head"><span class="material-symbols-outlined">construction</span>Manutenzione<span class="count" id="maint-version"></span></h2>
         <p class="maint-intro">Tutte le operazioni disponibili in questa versione: è da qui che si completa un aggiornamento.
           Ognuna mostra prima <b>cosa farebbe</b>; si scrive solo premendo «Applica».</p>
+        <p class="maint-intro"><label>Sito <select id="maint-site"></select></label></p>
         <div class="cards" id="sec-manutenzione"></div>
         <pre id="maint-out" hidden></pre>
       </section>
@@ -237,6 +273,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
      * si governa un aggiornamento di Meetoo, e non può restare indietro.
      * Regola invariata: prima ANTEPRIMA (non scrive), poi APPLICA con conferma. */
     let MAINT = [];
+    // The site the operations run on. Chosen in the select; sent with every
+    // call, so the registry works on the root the user is looking at.
+    let SITE = '';
+
+    function maintSites(sites, site) {
+      const sel = document.getElementById('maint-site');
+      sel.innerHTML = sites.map((s) => '<option value="' + s.id + '"' + (s.id === site ? ' selected' : '') + '>' + s.label + '</option>').join('');
+      SITE = site;
+      sel.onchange = () => { SITE = sel.value; caricaMaint(); };
+    }
 
     function maintShow(titolo, r) {
       const out = document.getElementById('maint-out');
@@ -290,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           const extra = {};
           az.querySelectorAll('[data-opt]:checked').forEach((c) => { extra[c.dataset.opt] = '1'; });
           b.disabled = true; b.textContent = '…';
-          api('maint', Object.assign({ op: m.id, apply: applica ? '1' : '' }, extra))
+          api('maint', Object.assign({ op: m.id, apply: applica ? '1' : '', site: SITE }, extra))
             .then((r) => {
               b.disabled = false; b.textContent = applica ? (m.preview ? 'Applica' : 'Esegui') : 'Anteprima';
               if (r.status !== 200) { maintShow(m.title, { summary: r.body.error || 'Operazione fallita.', lines: [] }); return; }
@@ -305,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Chiede al registro l'elenco aggiornato; probe=1 fa girare le anteprime,
     // così le card sanno dire se c'è ancora qualcosa da fare.
     function caricaMaint() {
-      return api('maint-list', { probe: '1' }).then((r) => {
+      return api('maint-list', Object.assign({ probe: '1' }, SITE ? { site: SITE } : {})).then((r) => {
         if (r.status !== 200 || !r.body.ops) {
           // Meglio dire perché la sezione è vuota che lasciarla vuota e basta.
           document.getElementById('sec-manutenzione').innerHTML =
@@ -313,6 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           return;
         }
         MAINT = r.body.ops;
+        if (r.body.sites) maintSites(r.body.sites, r.body.site);
         document.getElementById('maint-version').textContent = 'Meetoo ' + r.body.version;
         renderMaint();
       });

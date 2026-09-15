@@ -383,7 +383,7 @@ pagine, li stamperà lui. Senza i meta si ricade sulla deduzione di prima: **ogg
 (verificate le cinque pagine, base risolta correttamente e contenuti caricati). `?base=` continua a
 scavalcare tutto, per provare una copia dei contenuti.
 
-**Riallinea gli XML al JSON** (nuova voce di manutenzione, `lib/ws-xml.php`): l'XML è **derivato**,
+**Riallinea gli XML al JSON** (voce di manutenzione `contents`; dal 15 settembre 2026 è il modulo generico del CMS, `ws-admin/refresh-contents.php` + `_refresh-content.php`, che ha preso il posto di `lib/ws-xml.php` e lavora su qualunque sito, con il manifest dei derivati `_index/derived.json` — vedi `ws-admin/README.md`): l'XML è **derivato**,
 ma le migrazioni riscrivevano solo il JSON — quella degli `@id` ha lasciato un evento con il vecchio
 identificativo nell'XML. Ora c'è la rete di sicurezza da passare dopo ogni migrazione, con anteprima
 e opzione «crea anche i mancanti» (oggi 57 entità non hanno il gemello).
