@@ -12,6 +12,14 @@
  * caricare anche un endpoint che il CMS non lo avvia.
  */
 
+/* The generator's version. It is part of what the derived-files manifest
+ * records with every XML twin (see ws-admin/lib/derived.php): bump it when
+ * the conversion changes shape, and every twin becomes stale at once - the
+ * source has not moved, but what it produces has. */
+if (!defined('WS_JSON_TO_XML_VERSION')) {
+    define('WS_JSON_TO_XML_VERSION', 'json-to-xml 2026.09.15');
+}
+
 if (!function_exists('jsonToWsx')) {
     /**
      * Converte JSON (Schema.org) in XML (Meetoo).

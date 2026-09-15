@@ -19,22 +19,28 @@ function ws_content_relpath($content_path = null){
 	}
 	$content_relpath = WS_CONTENTS_RELPATH . "/$content_path";
 	$content_abspath = ws_root_abspath() . "/$content_relpath";
-	/* Un contenuto può vivere in XML o in JSON. Quando ci sono entrambi vince il
-	 * PIÙ RECENTE: il JSON è la fonte e l'XML una copia derivata, quindi una copia
-	 * vecchia non deve mai coprire l'originale appena salvato — è il modo tipico in
-	 * cui un sito comincia a mostrare cose che nei file non ci sono più. */
+	/* The JSON is the source; the XML is its derived twin, and what the CMS
+	 * reads. When a content has a JSON, its twin is made fresh here - built
+	 * or rebuilt if the JSON changed since the twin was recorded in the
+	 * derived-files manifest (ws-admin/_refresh-content.php) - and then read.
+	 * That is the lazy refresh: the page that is asked for is the page that
+	 * gets its files done, and nothing else moves.
+	 *
+	 * It used to pick the NEWER of the two by date and, when that was the
+	 * JSON, convert it in memory on every request. Dates lie after an FTP
+	 * upload, and converting each time paid for the same work forever; the
+	 * manifest remembers. When the twin cannot be had (the tree is not
+	 * writable, the JSON is not a content) the JSON is read as before. */
 	foreach(array('', '/index') as $suffisso){
 		$xml = $content_abspath.$suffisso.'.xml';
 		$json = $content_abspath.$suffisso.'.json';
-		$c_xml = file_exists($xml);
-		$c_json = file_exists($json);
-		if($c_xml or $c_json){
-			if($c_xml and $c_json){
-				$scelto = (filemtime($json) >= filemtime($xml)) ? '.json' : '.xml';
-			} else {
-				$scelto = $c_json ? '.json' : '.xml';
-			}
-			return $content_relpath.$suffisso.$scelto;
+		if(file_exists($json)){
+			require_once( ws_admin_abspath() . '/_refresh-content.php' );
+			$twin = ws_content_ensure_xml($json);
+			return $content_relpath.$suffisso.($twin !== '' ? '.xml' : '.json');
+		}
+		if(file_exists($xml)){
+			return $content_relpath.$suffisso.'.xml';
 		}
 		if($suffisso === '' and !is_dir($content_abspath)){
 			break;

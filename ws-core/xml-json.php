@@ -36,6 +36,11 @@ function ws_load_file( $abspath, $args = array() ){
 		$dom->load($abspath) or die(sprintf(__('Unable to load file %1$s.', 'ws').' '.__('<a href="%2$s">Debug</a>', 'ws'), $abspath, abspath2url($abspath)));
 		if($args['xinclude'] === true){
 			$dom->xinclude();
+			/* An XML twin is the pure conversion of its JSON: its xi:includes
+			 * point at other twins, and a twin that nobody has asked for yet
+			 * does not exist. What libxml left unresolved is resolved from the
+			 * JSON, as the JSON branch below has always done. */
+			ws_xinclude_da_json($dom, dirname($abspath));
 		}
 		foreach(libxml_get_errors() as $errore){
 			$ws_logs[] = 'XML: '.trim($errore->message).' ('.basename($abspath).')';
@@ -108,6 +113,12 @@ function ws_xinclude_da_json(DOMDocument $dom, string $dir, int $profondita = 0)
 	foreach(iterator_to_array($rimasti) as $inclusione){
 		$href = $inclusione->getAttribute('href');
 		if($href === ''){
+			continue;
+		}
+		/* An include that asks for a PART of the file (the site maps do:
+		 * xpointer(/*[1]/wspath)) cannot be honoured by dropping in the whole
+		 * converted document. It stays unresolved rather than wrong. */
+		if($inclusione->hasAttribute('xpointer')){
 			continue;
 		}
 		$json = ws_riferimento_a_file($dir, $href);
