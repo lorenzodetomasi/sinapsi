@@ -21,16 +21,25 @@ if (!function_exists('jsonToWsx')) {
      * (riferimento puro a file esterno).
      */
     /**
-     * @param array $options  'default_namespace' (bool, default true): whether the
-     *   root declares xmlns="https://schema.org". Meetoo entities do. Site PAGES
-     *   must not: the site map reaches into a page's XML with unprefixed XPointers
-     *   (xpointer(/*[1]/wspath)) and query.php looks pages up with unprefixed
-     *   XPath, and an unprefixed name never matches an element in a namespace.
-     *   The schema.org truth is the JSON; the XML is the CMS's own artefact.
+     * @param array $options  'default_namespace' (bool|null, default null): whether
+     *   the root declares xmlns="https://schema.org". Meetoo entities do. Site
+     *   PAGES must not: the site map reaches into a page's XML with unprefixed
+     *   XPointers (xpointer(/*[1]/wspath)) and query.php looks pages up with
+     *   unprefixed XPath, and an unprefixed name never matches an element in a
+     *   namespace. The schema.org truth is the JSON; the XML is the CMS's own
+     *   artefact.
+     *   Left null, the content decides: what carries a `wspath` is a page of the
+     *   site and gets no default namespace; anything else is an entity and gets
+     *   it. The same rule then holds on disk and in memory - ws_load_file()
+     *   converts a JSON page at request time, and a page served from its JSON
+     *   must be the same XML as the twin it would have been served from.
      */
     function jsonToWsx(string $jsonString, array $options = []): string {
         $data = json_decode($jsonString, true);
         if (!is_array($data)) return '{"error": "JSON non valido"}';
+        if (!isset($options['default_namespace'])) {
+            $options['default_namespace'] = !array_key_exists('wspath', $data);
+        }
 
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
@@ -47,7 +56,7 @@ if (!function_exists('jsonToWsx')) {
             }
         }
 
-        if ($options['default_namespace'] ?? true) {
+        if ($options['default_namespace']) {
             $root->setAttribute('xmlns', 'https://schema.org');
         }
         $root->setAttribute('xmlns:meetoo', $meetooNs);
