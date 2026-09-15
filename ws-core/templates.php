@@ -80,7 +80,7 @@ function locate_file($basenames, $args = array() ) {
 		 * sintomo così non porta a guardare qui.
 		 *
 		 * L'amministrazione resta come ULTIMA risorsa, che è il suo mestiere: dà i
-		 * template che nessun tema fornisce (refresh, refresh-contents…). Quello che
+		 * template che nessun tema fornisce (refresh, refresh-images…). Quello che
 		 * un tema fornisce, però, è del tema. */
 		foreach ( (array) $basenames as $basename ) {
 			if ( !$basename )

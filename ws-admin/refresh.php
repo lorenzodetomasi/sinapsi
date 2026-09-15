@@ -1,9 +1,6 @@
 <?php
 global $ws_logs;
 $ws_root_url = ws_root_url();
-// https://scssphp.github.io/scssphp/docs/
-require_once ws_core_abspath().'/libraries/php/scssphp/scss.inc.php';
-use ScssPhp\ScssPhp\Compiler;
 $ws_custom_url = ws_custom_url();
 ?>
 <h1><a href="<?php echo $ws_root_url; ?>"><?php echo $ws_root_url; ?></a></h1>
@@ -280,94 +277,15 @@ if(isset($_POST['css']) and $_POST['css'] == 'on'){
 	<strong><?php _e('Refreshing CSS files'); ?></strong>
 	<ol>
 <?php
-if(WS_PARSE_SCSS){
-	try {
-	    $scss = new Compiler();
-
-	    echo $scss->compile($content);
-	} catch (\Exception $e) {
-	    echo '';
-	    syslog(LOG_ERR, 'scssphp: Unable to compile content');
-	}
-	$ws_scss = new Compiler();
-	if((isset($_GET['debug']) and $_GET['debug'] == 'true') or WS_DEBUG == true){
-		$ws_scss->setLineNumberStyle(Compiler::LINE_COMMENTS);
+/* The compiler is the optional `scss` plugin (ws-custom/plugins/scss), off
+ * unless a theme lists it: the stylesheets are CSS edited by hand, and a
+ * recompile of the obsolete .scss sources would overwrite them. */
+if(function_exists('ws_scss_refresh')){
+	ws_scss_refresh($ws_themes_abspath, $ws_custom_url);
+} else {
 ?>
-				<li>
-					<?php echo $ws_log = '<strong class="alert">'.__('SCSS debugging is active. Remember to disable on production.').'</strong>'; ?>
-				</li>
+			<li><?php _e('SCSS plugin not active: stylesheets left as they are.'); ?></li>
 <?php
-	}
-	// Find SCSS Directories
-	foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($ws_themes_abspath)) as $result){
-		$file_pathinfo = pathinfo($result);
-		if ($result->getFilename() == '..' and str_ends_with($result->getPathname(), '/scss/..')){
-			$scss_dir_abspath = substr_replace($result->getPathname(),"",-2);
-			$scss_dir_url = abspath2url($scss_dir_abspath);
-			$ws_log = sprintf(__('SCSS directory %1$s found.'),
-				'<code>'.remove_start($scss_dir_url, $ws_custom_url).'</code>'
-			);
-?>
-			<li>
-				<?php echo $ws_log; ?>
-<?php
-			// Set scss directory as scss import path
-			echo './'.remove_start($scss_dir_abspath, ws_root_abspath());
-			$ws_scss->setImportPaths('./'.remove_start($scss_dir_abspath, ws_root_abspath()));
-			// Find .scss files not starting with _
-?>
-				<ol>
-<?php
-			$scss_files_abspaths = array();
-			foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($scss_dir_abspath)) as $result){
-				$file_pathinfo = pathinfo($result);
-				if ($file_pathinfo["extension"] == "scss" and !str_starts_with($file_pathinfo["filename"], '_')) {
-					$scss_file_abspath = $result->getPathname();
-					$scss_files_abspaths[] = $scss_file_abspath;
-					$scss_file_pathinfo = pathinfo($scss_file_abspath);
-					$scss_file_url = abspath2url($scss_file_abspath);
-					$ws_log = sprintf(__('SCSS file %1$s found.'),
-						'<code>'.remove_start($scss_file_url, $ws_custom_url).'</code>'
-					);
-?>
-						<li><?php echo $ws_log; ?></li>
-<?php
-					// Compile .scss file
-					$ws_scss->compile(file_get_contents($scss_file_abspath));
-					$scss_url = abspath2url($scss_file_abspath);
-					$ws_log = sprintf(__('SCSS file <a href="%1$s">%2$s</a> compiled.'),
-						$scss_url,
-						remove_start($scss_file_url, $ws_custom_url)
-					);
-?>
-						<li><?php echo $ws_log; ?></li>
-<?php
-					// and save as ../css/filename.css
-					$css_file_relpath = $scss_file_pathinfo['filename'].'.css';
-					$css_file_abspath = dirname($scss_file_pathinfo['dirname']).'/css/'.$css_file_relpath;
-					$css_url = abspath2url($css_file_abspath);
-					$ws_log = sprintf(__('File <a href="%1$s">%2$s</a> (%3$s bytes) saved.'),
-						$css_url,
-						remove_start($css_url, $ws_custom_url),
-						file_put_contents($css_file_abspath, $ws_scss->compile(file_get_contents($scss_file_abspath)))
-					);
-?>
-						<li><?php echo $ws_log; ?></li>
-<?php
-				}
-			}
-			if(count($scss_files_abspaths) == 0){
-				$ws_log = __('No SCSS files found.');
-?>
-					<li><?php echo $ws_log; ?></li>
-<?php
-			}
-?>
-				</ol>
-			</li>
-<?php
-		}
-	}
 }
 ?>
 		</ol>

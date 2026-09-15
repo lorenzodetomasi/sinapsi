@@ -1,7 +1,7 @@
 // maxgrid-abovethefold.scss
 @import
   "settings",
-  "../../../../ws-core/scss/core/grid_maxgrid",
+  "../../../plugins/scss/scss/core/grid_maxgrid",
   "header_maxgrid",
   "header_top_maxgrid";
 @include grid('maxgrid-');

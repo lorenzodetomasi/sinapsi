@@ -12,6 +12,6 @@ $ws_themes[] = [
   'author_name' => 'Localbiz.it',
   'author_uri' => 'https://localbiz.it',
   'tags' => 'scss, microdata',
-  'plugins' => ['sassphp','bourbon'],
+  'plugins' => [],
 ];
 ?>

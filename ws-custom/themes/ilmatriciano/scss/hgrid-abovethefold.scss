@@ -1,9 +1,9 @@
 @import
   "settings",
-  "../../../../ws-core/scss/core/grid_hgrid",
+  "../../../plugins/scss/scss/core/grid_hgrid",
   "header_hgrid",
   "header_top_hgrid",
-  "../../../../ws-core/scss/core/reviews/hgrid";
+  "../../../plugins/scss/scss/core/reviews/hgrid";
 @include navs('hgrid-');
 // Grid
 .vgrid,
