@@ -411,27 +411,50 @@ $GLOBALS['ws_html_attributes']['header1-headline']['class'][] = 'header-espanso-
  *
  * A page whose robots say noindex is left out. It is not finished for readers,
  * so it is not finished for a menu either — and that is the switch to use for
- * a page that exists but is not ready to be found. */
+ * a page that exists but is not ready to be found.
+ *
+ * The map the CMS routes with is ONE for every site it serves (isotype,
+ * your-website, meetoo, the admin's pages), and every site's top pages name
+ * `/` as their parent. Asked for the pages under `/`, the map would answer
+ * with all of them - and /servizi listed your-website's /menu and /news among
+ * its siblings. So every answer here is confined to the site the request is
+ * for: an entry belongs to the site its query's `content=` names, the same
+ * key query.php routes by. */
 if(!function_exists('ws_sitemap_normalize_path')){
 function ws_sitemap_normalize_path($wspath){
 	$p = '/' . trim((string)$wspath, "/ \t\n\r");
 	return $p;
 }
 }
+if(!function_exists('ws_sitemap_site_of')){
+/** The site a map entry belongs to: the first segment of its query's `content=`, '' if none. */
+function ws_sitemap_site_of($entry){
+	if(!empty($entry->query) and preg_match('/(?:^|[?&;])content=([^\/&;\s]+)/', (string)$entry->query, $m)) return $m[1];
+	return '';
+}
+}
+if(!function_exists('ws_sitemap_is_ours')){
+/** Whether a map entry is a page of the site this request is for. */
+function ws_sitemap_is_ours($entry){
+	static $site = null;
+	if($site === null) $site = (string)ws_content_root();
+	return $site === '' or ws_sitemap_site_of($entry) === $site;
+}
+}
 if(!function_exists('ws_sitemap_entry')){
-/** The map entry of a page, by wspath — or null. */
+/** The map entry of a page of this site, by wspath — or null. */
 function ws_sitemap_entry($wspath){
 	global $ws_sitemap;
 	if(empty($ws_sitemap)) return null;
 	$wanted = ws_sitemap_normalize_path($wspath);
 	foreach($ws_sitemap->url as $entry){
-		if(!empty($entry->wspath) and ws_sitemap_normalize_path($entry->wspath) === $wanted) return $entry;
+		if(!empty($entry->wspath) and ws_sitemap_normalize_path($entry->wspath) === $wanted and ws_sitemap_is_ours($entry)) return $entry;
 	}
 	return null;
 }
 }
 if(!function_exists('ws_sitemap_children')){
-/** The pages under a page, in map order, ready to be found. */
+/** The pages of this site under a page, in map order, ready to be found. */
 function ws_sitemap_children($wspath){
 	global $ws_sitemap;
 	$children = array();
@@ -441,9 +464,21 @@ function ws_sitemap_children($wspath){
 		if(empty($entry->parent) or empty($entry->parent->wspath)) continue;
 		if(ws_sitemap_normalize_path($entry->parent->wspath) !== $wanted) continue;
 		if(stripos((string)$entry->robots, 'noindex') !== false) continue;
+		if(!ws_sitemap_is_ours($entry)) continue;
 		$children[] = $entry;
 	}
 	return $children;
+}
+}
+if(!function_exists('ws_sitemap_of_type')){
+/** The first page of this site the map gives a type - a role - to (ContactPage, PrivacyPage…), or null. */
+function ws_sitemap_of_type($type){
+	global $ws_sitemap;
+	if(empty($ws_sitemap)) return null;
+	foreach($ws_sitemap->url as $entry){
+		if(trim((string)$entry->type) === $type and ws_sitemap_is_ours($entry)) return $entry;
+	}
+	return null;
 }
 }
 
