@@ -230,8 +230,13 @@ if (!function_exists('ws_migrate_page')) {
         if (!empty($options['collection']) || $type === 'CollectionPage') $types[] = 'CollectionPage';
         $entityType = '';
         $vocabulary = false;
-        if ($type === '' || $type === 'WebPage' || $type === 'CollectionPage' || $type === 'Page' || $type === 'Index') {
-            // A page and nothing more. `Index` named the home; the home is the CollectionPage at "/".
+        $isHome = ($type === 'Index' || rtrim($wspath, '/') === '');
+        if ($type === '' || $type === 'WebPage' || $type === 'CollectionPage' || $type === 'Page' || $isHome) {
+            // A page and nothing more. `Index` named the home: schema.org has
+            // no such type, and the home is the page at "/" that is ABOUT the
+            // site - its mainEntity is the WebSite, as Meetoo's map already
+            // says (<type>WebSite</type>).
+            if ($isHome) $entityType = 'WebSite';
         } elseif (in_array($type, $schemaPages, true)) {
             $types[] = $type;
         } elseif (substr($type, -4) === 'Page') {
@@ -291,6 +296,13 @@ if (!function_exists('ws_migrate_page')) {
             $brand = $options['brand'] ?? ['name' => 'ISOTYPE.ORG', 'url' => 'https://www.isotype.org/'];
             $mainEntity = ['@type' => $entityType, '@id' => "$id#" . strtolower($entityType)];
             if (!empty($data['name'])) $mainEntity['name'] = ws_migrate_text(strip_tags((string)$data['name']));
+            if ($entityType === 'WebSite') {
+                // The site: its name, its address, its language - what the headings say of it.
+                $mainEntity['url'] = $brand['url'];
+                if (!empty($data['inLanguage'])) $mainEntity['inLanguage'] = (string)$data['inLanguage'];
+                if (!empty($data['description']) && is_string($data['description'])) $mainEntity['description'] = ws_migrate_text(strip_tags($data['description']));
+                $out['notes'][] = 'the home is about the site: mainEntity WebSite';
+            } else {
             if ($entityType === 'Service' && !empty($data['headline']) && is_string($data['headline'])) $mainEntity['slogan'] = ws_migrate_text(strip_tags($data['headline']));
             if (!empty($data['description']) && is_string($data['description'])) $mainEntity['description'] = ws_migrate_text(strip_tags($data['description']));
             $mainEntity['url'] = $wspath;
@@ -300,6 +312,7 @@ if (!function_exists('ws_migrate_page')) {
                 $mainEntity['provider'] = ['@type' => 'Organization', 'name' => $brand['name'], 'url' => $brand['url']];
             }
             $out['notes'][] = "mainEntity $entityType written from name, headline and description: enrich it";
+            }
         }
 
         // 5. Assemble, in a readable order: routing, SEO, dates, content, entity, sections.

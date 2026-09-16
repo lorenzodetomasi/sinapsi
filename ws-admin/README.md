@@ -113,7 +113,11 @@ in `xsi:type`, so every page's twin has the same root and the specific
 type sits where the CMS reads it.
 
 What a page is *about* is its `mainEntity` (a Service, a Person, an
-Event), as Meetoo's `ItemPage` pages already do. There is no `type` key:
+Event), as Meetoo's `ItemPage` pages already do. The home is the page at
+`/` that is about the site: its `mainEntity` is the `WebSite` (the same
+`#website` node every page names in `isPartOf`), so the map says
+`WebSite` for it, as Meetoo's map already did. There is no `Index` type:
+schema.org has none, and nothing looked one up. There is no `type` key:
 the CMS's `type` - the one the site map carries and the templates look
 up (`url[type = "ContactPage"]`, `$rewrite_rule->type`) - is derived
 where the map is built: the mainEntity's most specific type when there
