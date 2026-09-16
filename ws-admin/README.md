@@ -97,7 +97,7 @@ no bookkeeping: the twin is stale only when *its* source changes. The cost
 of resolution is paid once per page by the HTML cache, not here.
 
 Guards, inherited from Meetoo's `xml-rebuild`:
-- a JSON without `@type` is not a content (a datalist, a settings file): skipped;
+- a JSON without `@context` and `@type` is not a content (a datalist, an RSVP list, a settings file): skipped;
 - an existing XML whose root element differs from what the JSON would
   produce is not a twin (the `users/` record, a hand-written file): left
   alone and reported, unless the operation is told to adopt the new root;
