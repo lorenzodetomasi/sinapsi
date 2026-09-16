@@ -20,6 +20,15 @@ if (!defined('WS_JSON_TO_XML_VERSION')) {
     define('WS_JSON_TO_XML_VERSION', 'json-to-xml 2026.09.15');
 }
 
+/* The CMS's own vocabulary, for what schema.org has no word for: the ROLE
+ * of a page that the CMS looks up (ws:PrivacyPage, ws:CookiesPage,
+ * ws:DisclaimerPage…). Declared in a content's @context next to schema.org,
+ * the way Meetoo declares `meetoo:` - so `"@type": ["WebPage", "ws:PrivacyPage"]`
+ * is proper JSON-LD, and the head publishes only the schema.org half. */
+if (!defined('WS_VOCABULARY')) {
+    define('WS_VOCABULARY', 'https://localbiz.it/ws#');
+}
+
 if (!function_exists('jsonToWsx')) {
     /**
      * Converte JSON (Schema.org) in XML (Meetoo).
@@ -56,18 +65,24 @@ if (!function_exists('jsonToWsx')) {
         $rootName = $types[0];
         $root = $dom->createElement($rootName);
 
-        $meetooNs = 'https://meetoo.eu';
+        // Every vocabulary the context declares beside schema.org becomes a
+        // namespace prefix on the root (meetoo:, ws:…), so a prefixed type in
+        // xsi:type has its declaration. Meetoo's is there even when undeclared,
+        // as it always was.
+        $prefixes = ['meetoo' => 'https://meetoo.eu'];
         foreach ((array)($data['@context'] ?? []) as $contextEntry) {
-            if (is_array($contextEntry) && isset($contextEntry['meetoo'])) {
-                $meetooNs = $contextEntry['meetoo'];
-                break;
+            if (!is_array($contextEntry)) continue;
+            foreach ($contextEntry as $prefix => $uri) {
+                if (is_string($prefix) && is_string($uri) && preg_match('/^[A-Za-z_][\w.-]*$/', $prefix)) $prefixes[$prefix] = $uri;
             }
         }
 
         if ($options['default_namespace']) {
             $root->setAttribute('xmlns', 'https://schema.org');
         }
-        $root->setAttribute('xmlns:meetoo', $meetooNs);
+        foreach ($prefixes as $prefix => $uri) {
+            $root->setAttribute('xmlns:' . $prefix, $uri);
+        }
         $root->setAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
         $root->setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
         $root->setAttribute('xmlns:xi', 'http://www.w3.org/2001/XInclude');

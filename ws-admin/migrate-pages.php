@@ -84,8 +84,8 @@ if (!function_exists('ws_migrate_pages')) {
                 'brand' => $options['brand'] ?? ['name' => 'ISOTYPE.ORG', 'url' => 'https://www.isotype.org/'],
             ]);
             switch ($r['status']) {
-                case 'migrated': $rep['migrated'][] = ['path' => $rel, 'type' => $r['json']['@type'], 'notes' => $r['notes']]; break;
-                case 'would':    $rep['would'][]    = ['path' => $rel, 'type' => $r['json']['@type'], 'notes' => $r['notes'], 'json' => $r['json']]; break;
+                case 'migrated': $rep['migrated'][] = ['path' => $rel, 'type' => implode(' › ', (array)$r['json']['@type']), 'notes' => $r['notes']]; break;
+                case 'would':    $rep['would'][]    = ['path' => $rel, 'type' => implode(' › ', (array)$r['json']['@type']), 'notes' => $r['notes'], 'json' => $r['json']]; break;
                 case 'skipped':  $rep['skipped'][]  = ['path' => $rel, 'why' => $r['why']]; break;
                 default:         $rep['failed'][]   = ['path' => $rel, 'why' => $r['why']];
             }

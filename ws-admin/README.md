@@ -59,7 +59,7 @@ ws-admin/
 |---|---|---|---|
 | `refresh-contents.php` | `_refresh-content.php` | `index.json` → `index.xml` | built |
 | `migrate-pages.php` | `_migrate-page.php` | a hand-written `index.wsx` → `index.json` (+ its twin); the `.wsx` is set aside as `-index.wsx` | built |
-| `refresh-sitemaps.php` | `_refresh-sitemap.php` | every page of a root → `ws_sitemap.wsx`, then the public `sitemap.xml` | built, not yet applied |
+| `refresh-sitemaps.php` | `_refresh-sitemap.php` | every page of a root → `ws_sitemap.wsx`, then the public `sitemap.xml` | built, applied on isotype |
 | `refresh-html.php` | `_refresh-html.php` | a page → `<cache>/<host>/<path>.html`, only when `output` lists `html` and the visitor has no session | then |
 | `refresh-images.php` | `_refresh-image.php` | `<image>` sources → the declared destinations | later |
 | (amp plugin) | | a page → `amp/index.html` when `output` lists `amp` | later |
@@ -102,6 +102,35 @@ Guards, inherited from Meetoo's `xml-rebuild`:
   produce is not a twin (the `users/` record, a hand-written file): left
   alone and reported, unless the operation is told to adopt the new root;
 - `users/`, `_index/`, `_trash/` and `-`-prefixed directories are never scanned.
+
+## What a page is, and what it is about
+
+`@type` is an array, general to specific: every page is a `WebPage`; a
+page with pages under it adds `CollectionPage`; a page with a schema.org
+role adds it (`["WebPage", "AboutPage"]`, `["WebPage", "ContactPage"]`).
+The converter makes the first the twin's root element and lists them all
+in `xsi:type`, so every page's twin has the same root and the specific
+type sits where the CMS reads it.
+
+What a page is *about* is its `mainEntity` (a Service, a Person, an
+Event), as Meetoo's `ItemPage` pages already do. There is no `type` key:
+the CMS's `type` - the one the site map carries and the templates look
+up (`url[type = "ContactPage"]`, `$rewrite_rule->type`) - is derived
+where the map is built: the mainEntity's most specific type when there
+is one, else the page's own most specific type.
+
+A role schema.org has no word for (PrivacyPage, CookiesPage,
+DisclaimerPage: what the legal menu and the forms look up) is a type in
+the CMS's own vocabulary, declared in the context beside schema.org the
+way Meetoo declares `meetoo:`:
+
+```json
+"@context": ["https://schema.org", {"ws": "https://localbiz.it/ws#"}],
+"@type": ["WebPage", "ws:PrivacyPage"]
+```
+
+The map strips the prefix (`<type>PrivacyPage</type>`, as always); the
+head publishes the schema.org types only.
 
 ## What a content declares
 
@@ -155,6 +184,8 @@ brand's name in a title, the cover) become literal values; whole-file
 includes (the clients, the awards) stay references; attributes become
 `@name` and `id` becomes `@xml:id`; `<grid>` becomes a section of class
 `grid` with the name and xpath the template needs; `<htmlcache>` becomes
-`output: ["html"]`; a Service page gets a minimal `mainEntity` to enrich.
+`output: ["html"]`; the old `type` becomes the page's `@type` (a schema.org
+role or a `ws:` one) or its `mainEntity` (a Service, a Person), with a
+minimal entity to enrich.
 Comments and empty elements are dropped and counted; every such decision
 is in the report. The `.wsx` is kept beside the JSON as `-index.wsx`.

@@ -482,9 +482,15 @@ function ws_page_jsonld(){
 	if(is_array($data)){
 		$page_id = (string)($data['@id'] ?? '');
 		// The CMS's own fields, the SEO ones and the HTML bodies are not schema.org.
-		foreach(array('wspath', 'query', 'type', 'parent', 'title', 'keywords', 'changefreq', 'priority', 'robots', 'cta', 'section', 'mainContentOfPage', 'xi:include') as $cms){
+		foreach(array('wspath', 'query', 'type', 'parent', 'title', 'keywords', 'changefreq', 'priority', 'robots', 'cta', 'section', 'mainContentOfPage', 'output', 'xi:include') as $cms){
 			unset($data[$cms]);
 		}
+		// A page's ROLE in the CMS's own vocabulary (ws:PrivacyPage) is for
+		// the CMS to look up, not for the engines to read: the head declares
+		// the schema.org types alone, and drops the vocabulary with them.
+		$types = array_values(array_filter((array)($data['@type'] ?? array()), function($t){ return strpos((string)$t, ':') === false; }));
+		$data['@type'] = count($types) === 1 ? $types[0] : ($types ?: 'WebPage');
+		if(is_array($data['@context'] ?? null)) $data['@context'] = 'https://schema.org';
 	} else {
 		$data = array('@context' => 'https://schema.org', '@type' => ws_page_type($ws_content->type, $wspath));
 		foreach(array('name', 'headline', 'description', 'inLanguage', 'dateCreated', 'datePublished', 'dateModified') as $field){
@@ -552,7 +558,10 @@ if(!function_exists('ws_page_type')){
  */
 function ws_page_type($type, $wspath){
 	$type = trim((string)$type);
-	if($type !== '' and substr($type, -4) === 'Page') return $type;
+	// The map's `type` is the page's role or what it is about; only a
+	// schema.org page type among them names the page itself.
+	static $pages = array('AboutPage', 'CheckoutPage', 'CollectionPage', 'ContactPage', 'FAQPage', 'ItemPage', 'MedicalWebPage', 'ProfilePage', 'QAPage', 'RealEstateListing', 'SearchResultsPage', 'WebPage');
+	if(in_array($type, $pages, true)) return $type;
 	return ws_sitemap_children($wspath) ? 'CollectionPage' : 'WebPage';
 }
 }

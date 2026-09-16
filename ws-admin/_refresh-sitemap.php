@@ -75,6 +75,22 @@ if (!function_exists('ws_refresh_sitemap')) {
         return ['pages' => array_values($pages), 'submaps' => $submaps];
     }
 
+    /**
+     * The map's `type` of a page, from its JSON-LD: what the page is ABOUT
+     * when it is about something (mainEntity's most specific type), else
+     * what it IS (its own most specific type) - without the vocabulary
+     * prefix, so that a lookup by role (`url[type = "PrivacyPage"]`) reads
+     * as it always did. This is the one place `type` is computed.
+     */
+    function ws_sitemap_type(array $d): string {
+        $of = function ($t): string {
+            $t = is_array($t) ? (string)end($t) : (string)$t;
+            return preg_replace('/^[A-Za-z_][\w.-]*:/', '', $t);
+        };
+        if (!empty($d['mainEntity']['@type'])) return $of($d['mainEntity']['@type']);
+        return !empty($d['@type']) ? $of($d['@type']) : 'WebPage';
+    }
+
     /** A map entry from a page's JSON: the fields, as strings; null when the page has no wspath. */
     function ws_sitemap_entry_from_json(array $d): ?array {
         $wspath = trim((string)($d['wspath'] ?? ''));
@@ -86,6 +102,7 @@ if (!function_exists('ws_refresh_sitemap')) {
                 if ($p !== '') $e['parent'] = $p;
                 continue;
             }
+            if ($f === 'type') { $e['type'] = ws_sitemap_type($d); continue; }
             $v = $d[$f] ?? null;
             if (is_array($v)) $v = $v['#text'] ?? '';
             $v = trim(strip_tags((string)$v));

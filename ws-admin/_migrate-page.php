@@ -14,19 +14,24 @@
  *    `"xi:include": {"@href": …}`, resolved by the CMS at request time.
  *
  * What the new page says (see ws-admin/README.md):
- *  - @context, @type (the old `type` when it is a schema.org page type -
- *    AboutPage, ContactPage… - else CollectionPage when pages stand under
- *    it, else WebPage), @id (the content path);
- *  - the CMS's routing keys as they were (wspath, query, type, parent…);
+ *  - @context and @type, general to specific: every page is a WebPage;
+ *    CollectionPage when pages stand under it; then the old `type` - as a
+ *    schema.org page type when it is one (AboutPage, ContactPage), as a
+ *    role in the CMS's own vocabulary when it is not (ws:PrivacyPage,
+ *    ws:CookiesPage: what the legal menu and the forms look up);
+ *  - @id, the content path;
+ *  - the CMS's routing keys as they were (wspath, query, parent…) - but no
+ *    `type`: it is derived from @type and mainEntity wherever it is read;
+ *  - for a page ABOUT something (the old `type` was Service, Person…), a
+ *    mainEntity of that type from what the page already says (name,
+ *    headline, description, path) - to be enriched by hand, as Brand
+ *    Design was;
  *  - `output: ["html"]` in place of `<htmlcache>true</htmlcache>`;
  *  - attributes as `@name`, and `id` as `@xml:id` (in JSON `@id` means a
  *    reference, not an anchor);
  *  - sections as an array; the old `<grid id=…>` becomes a section of class
  *    `grid`, with the name and xpath the template needs, taken from what
  *    the home page says for the same list;
- *  - for a page about a Service, a minimal mainEntity from what the page
- *    already says (name, headline, description, path) - to be enriched by
- *    hand, as Brand Design was.
  *
  * Comments are dropped and counted; empty elements are dropped; every
  * decision that a reader should check is in the report's notes.
@@ -213,18 +218,36 @@ if (!function_exists('ws_migrate_page')) {
         if (!empty($notes['dropped'])) $out['notes'][] = 'empty element(s) dropped: ' . implode(', ', array_unique($notes['dropped']));
         unset($data['@xmlns:xi']);
 
-        // 4. The page's own shape.
+        // 4. The page's own shape: what it IS (@type, general to specific) and
+        //    what it is ABOUT (mainEntity). The old `type` said one or the
+        //    other without saying which; it is not kept.
         $wspath = (string)($data['wspath'] ?? '');
-        $type = (string)($data['type'] ?? '');
-        // Only a schema.org page type names the page; the CMS's own types
-        // (PrivacyPage, ReviewsPage, Index…) stay in `type` for the routing
-        // and the templates, and the page is a WebPage - a CollectionPage
-        // when pages stand under it.
+        $type = trim((string)($data['type'] ?? ''));
+        unset($data['type']);
         $schemaPages = ['AboutPage', 'CheckoutPage', 'CollectionPage', 'ContactPage', 'FAQPage', 'ItemPage', 'MedicalWebPage',
                         'ProfilePage', 'QAPage', 'RealEstateListing', 'SearchResultsPage', 'WebPage'];
-        $pageType = in_array($type, $schemaPages, true) ? $type : (!empty($options['collection']) ? 'CollectionPage' : 'WebPage');
+        $types = ['WebPage'];
+        if (!empty($options['collection']) || $type === 'CollectionPage') $types[] = 'CollectionPage';
+        $entityType = '';
+        $vocabulary = false;
+        if ($type === '' || $type === 'WebPage' || $type === 'CollectionPage' || $type === 'Page' || $type === 'Index') {
+            // A page and nothing more. `Index` named the home; the home is the CollectionPage at "/".
+        } elseif (in_array($type, $schemaPages, true)) {
+            $types[] = $type;
+        } elseif (substr($type, -4) === 'Page') {
+            // A role the CMS looks up and schema.org has no word for.
+            $types[] = 'ws:' . $type;
+            $vocabulary = true;
+            $out['notes'][] = "$type is not a schema.org type: kept as the page's role, ws:$type";
+        } else {
+            $entityType = $type;
+        }
         $id = ws_derived_rel($root, $dir);
-        $doc = ['@context' => 'https://schema.org', '@type' => $pageType, '@id' => $id];
+        $doc = [
+            '@context' => $vocabulary ? ['https://schema.org', ['ws' => WS_VOCABULARY]] : 'https://schema.org',
+            '@type' => count($types) === 1 ? $types[0] : $types,
+            '@id' => $id,
+        ];
 
         // The query's htmlcache attribute and the htmlcache element say one
         // thing: which outputs the page wants.
@@ -262,23 +285,25 @@ if (!function_exists('ws_migrate_page')) {
             unset($data[$k]);
         }
 
-        // A page about a service says so, from what it already says.
+        // A page about something says what, from what it already says.
         $mainEntity = null;
-        if ($type === 'Service') {
+        if ($entityType !== '') {
             $brand = $options['brand'] ?? ['name' => 'ISOTYPE.ORG', 'url' => 'https://www.isotype.org/'];
-            $mainEntity = ['@type' => 'Service', '@id' => "$id#service"];
+            $mainEntity = ['@type' => $entityType, '@id' => "$id#" . strtolower($entityType)];
             if (!empty($data['name'])) $mainEntity['name'] = ws_migrate_text(strip_tags((string)$data['name']));
-            if (!empty($data['headline']) && is_string($data['headline'])) $mainEntity['slogan'] = ws_migrate_text(strip_tags($data['headline']));
+            if ($entityType === 'Service' && !empty($data['headline']) && is_string($data['headline'])) $mainEntity['slogan'] = ws_migrate_text(strip_tags($data['headline']));
             if (!empty($data['description']) && is_string($data['description'])) $mainEntity['description'] = ws_migrate_text(strip_tags($data['description']));
             $mainEntity['url'] = $wspath;
-            if (!empty($mainEntity['name'])) $mainEntity['serviceType'] = $mainEntity['name'];
-            $mainEntity['areaServed'] = ['@type' => 'Country', 'name' => 'Italia'];
-            $mainEntity['provider'] = ['@type' => 'Organization', 'name' => $brand['name'], 'url' => $brand['url']];
-            $out['notes'][] = 'mainEntity Service written from name, headline and description: enrich it (offer catalogue, slogan)';
+            if ($entityType === 'Service') {
+                if (!empty($mainEntity['name'])) $mainEntity['serviceType'] = $mainEntity['name'];
+                $mainEntity['areaServed'] = ['@type' => 'Country', 'name' => 'Italia'];
+                $mainEntity['provider'] = ['@type' => 'Organization', 'name' => $brand['name'], 'url' => $brand['url']];
+            }
+            $out['notes'][] = "mainEntity $entityType written from name, headline and description: enrich it";
         }
 
         // 5. Assemble, in a readable order: routing, SEO, dates, content, entity, sections.
-        $order = ['wspath', 'query', 'type', 'parent', 'inLanguage', 'workTranslation', 'title', 'description', 'keywords',
+        $order = ['wspath', 'query', 'parent', 'inLanguage', 'workTranslation', 'title', 'description', 'keywords',
                   'changefreq', 'priority', 'robots', 'dateCreated', 'datePublished', 'dateModified',
                   'name', 'headline', 'alternateName', 'cta', 'primaryImageOfPage', 'mainContentOfPage'];
         foreach ($order as $k) if (isset($data[$k])) { $doc[$k] = $data[$k]; unset($data[$k]); }
