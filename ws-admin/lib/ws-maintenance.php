@@ -280,6 +280,63 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
+            'migrate' => [
+                'title' => 'Migra le pagine da .wsx a JSON',
+                'meta'  => 'Il JSON diventa la fonte della pagina; il .wsx resta accanto, disattivato con il trattino',
+                'icon'  => 'move_up', 'scope' => 'contents', 'preview' => true, 'since' => '2026.09',
+                'confirm' => 'Migrare le pagine? Per ognuna si scrive index.json e il suo gemello XML; index.wsx viene rinominato -index.wsx.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/../migrate-pages.php';
+                    $r = ws_migrate_pages($base, $apply);
+                    $lines = [];
+                    foreach ($r['would'] as $w) {
+                        $lines[] = "{$w['path']} → {$w['type']}";
+                        foreach ($w['notes'] as $n) $lines[] = "    · $n";
+                    }
+                    foreach ($r['migrated'] as $w) {
+                        $lines[] = "migrata: {$w['path']} → {$w['type']}";
+                        foreach ($w['notes'] as $n) $lines[] = "    · $n";
+                    }
+                    foreach ($r['skipped'] as $x) $lines[] = "saltata: {$x['path']}: {$x['why']}";
+                    foreach ($r['failed'] as $x)  $lines[] = "⚠ {$x['path']}: {$x['why']}";
+                    $n = $r['changes'];
+                    return [
+                        'changes' => $n,
+                        'summary' => ($n ? ($apply ? "$n pagine migrate" : "$n pagine da migrare") : 'Nessuna pagina in .wsx: tutte in JSON.')
+                            . ($r['skipped'] ? ' · ' . count($r['skipped']) . ' non pagine' : '')
+                            . ($r['failed'] ? ' · ⚠ ' . count($r['failed']) . ' fallite' : ''),
+                        'lines' => $lines,
+                    ];
+                },
+            ],
+
+            'sitemaps' => [
+                'title' => 'Rigenera la mappa del sito dalle pagine',
+                'meta'  => 'Una pagina è sulla mappa perché il suo index.json esiste; poi il sitemap.xml per i motori',
+                'icon'  => 'map', 'scope' => 'contents', 'preview' => true, 'since' => '2026.09',
+                'confirm' => 'Rigenerare la mappa? ws_sitemap.wsx di questo sito e sitemap.xml generale verranno riscritti.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/../refresh-sitemaps.php';
+                    $r = ws_refresh_sitemaps($base, $apply);
+                    $m = $r['map'];
+                    $lines = [];
+                    if ($m['status'] === 'skipped' || $m['status'] === 'failed') {
+                        return ['changes' => 0, 'summary' => ($m['status'] === 'failed' ? '⚠ ' : '') . $m['why'], 'lines' => []];
+                    }
+                    $lines[] = "{$m['pages']} pagine sulla mappa: {$m['json']} da JSON, {$m['wsx']} ancora da .wsx";
+                    foreach ($m['fragments'] as $f)   $lines[] = "inclusa come frammento: $f";
+                    foreach ($m['legacy_maps'] as $f) $lines[] = "⚠ mappa scritta a mano, non più letta (le sue pagine sono già qui): $f";
+                    foreach ($m['problems'] as $pr)   $lines[] = "⚠ $pr";
+                    if ($r['public']) $lines[] = 'sitemap.xml per i motori: ' . $r['public']['why'];
+                    return [
+                        'changes' => $r['changes'],
+                        'summary' => $m['status'] === 'fresh' ? 'La mappa è in pari.'
+                            : ($apply ? "Mappa {$m['status']}: {$m['pages']} pagine" : "Mappa da rifare: {$m['pages']} pagine"),
+                        'lines' => $lines,
+                    ];
+                },
+            ],
+
             'covers' => [
                 'title' => 'Genera le copertine 1920×1080',
                 'meta'  => 'Dalle immagini già caricate; l\'originale resta in media-sources',

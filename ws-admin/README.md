@@ -58,7 +58,8 @@ ws-admin/
 | Module | Unit | Source → target | State |
 |---|---|---|---|
 | `refresh-contents.php` | `_refresh-content.php` | `index.json` → `index.xml` | built |
-| `refresh-sitemaps.php` | `_refresh-sitemap.php` | every `index.json` of a root → `ws_sitemap.wsx` + `.xml`, and the public `sitemap.xml` | next |
+| `migrate-pages.php` | `_migrate-page.php` | a hand-written `index.wsx` → `index.json` (+ its twin); the `.wsx` is set aside as `-index.wsx` | built |
+| `refresh-sitemaps.php` | `_refresh-sitemap.php` | every page of a root → `ws_sitemap.wsx`, then the public `sitemap.xml` | built, not yet applied |
 | `refresh-html.php` | `_refresh-html.php` | a page → `<cache>/<host>/<path>.html`, only when `output` lists `html` and the visitor has no session | then |
 | `refresh-images.php` | `_refresh-image.php` | `<image>` sources → the declared destinations | later |
 | (amp plugin) | | a page → `amp/index.html` when `output` lists `amp` | later |
@@ -127,11 +128,33 @@ some `.wsx` files means `"output": ["html"]`.
 - Pages with user state are never cached; the login widget will move to
   the client so more pages qualify.
 
-## The site map (plan)
+## The site map
 
-Derived from the `index.json` files of a root, as Meetoo's `ws-mappa`
-already does: a page exists because its JSON exists, and its `wspath`,
-`query`, `parent`, `type`, `robots`, `title`, `description` come from it.
-The hand-written per-folder `ws_sitemap.wsx` files disappear with the
-migration. The root `contents/ws_sitemap.wsx` composes the sites' maps and
-the admin's, as today.
+`<root>/ws_sitemap.wsx` is derived from the pages of the root: a page is on
+the map because its `index.json` exists and says where it stands
+(`wspath`, `query`, `parent`, `type`, `robots`, `title`, `description`…).
+While the migration lasts, a page still written as `index.wsx` is mapped
+too, from its own fields. Tree order: a page before the pages under it,
+siblings by path. A sub-map in a folder without pages of its own (the
+admin's) is included as a fragment; a sub-map beside pages is the old way
+and is reported until it is removed. The manifest records the map against
+the hash of every page's hash; a twin rebuilt by a request makes the map
+stale, and the hub rebuilds it. The root `contents/ws_sitemap.wsx`
+composes the sites' maps and the admin's, as today, and the public
+`sitemap.xml` for the search engines follows it (Meetoo's
+`ws_mappa_sitemap_pubblico`, which knows the mounts).
+
+**A page that exists is a page that is published.** A draft, a leftover,
+a page not meant to be found is switched off by its folder's name:
+`-awards/`. That is the one decision the derivation cannot make.
+
+## The migration
+
+`migrate` turns a hand-written page into JSON: fragment includes (the
+brand's name in a title, the cover) become literal values; whole-file
+includes (the clients, the awards) stay references; attributes become
+`@name` and `id` becomes `@xml:id`; `<grid>` becomes a section of class
+`grid` with the name and xpath the template needs; `<htmlcache>` becomes
+`output: ["html"]`; a Service page gets a minimal `mainEntity` to enrich.
+Comments and empty elements are dropped and counted; every such decision
+is in the report. The `.wsx` is kept beside the JSON as `-index.wsx`.
