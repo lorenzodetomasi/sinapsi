@@ -3,8 +3,9 @@
  * Every content of a root: JSON → XML twin.
  *
  * The module over _refresh-content.php. Walks a content root
- * (`contents/<site>/<locale>`), finds every JSON that is a content (a
- * JSON-LD document: @context and @type), and makes - or, in preview, counts - the twins that are stale or
+ * (`contents/<site>/<locale>`), finds every source - a JSON that is a
+ * content (a JSON-LD document: @context and @type), or a .wsx not yet
+ * migrated - and makes, or in preview counts, the twins that are stale or
  * missing. Reads the manifest once, saves it once.
  *
  * Skipped on the way: directories switched off with a leading `-`, `_index`
@@ -22,7 +23,11 @@ require_once __DIR__ . '/_refresh-content.php';
 
 if (!function_exists('ws_refresh_contents')) {
 
-    /** Every *.json under a root that may be a content, as absolute paths, sorted. */
+    /**
+     * Every source under a root, as absolute paths, sorted: every *.json
+     * that may be a content, and every *.wsx not yet migrated (see
+     * ws_content_wsx_is_source()).
+     */
     function ws_content_sources(string $root): array {
         $out = [];
         $walk = function (string $dir) use (&$walk, &$out) {
@@ -34,6 +39,8 @@ if (!function_exists('ws_refresh_contents')) {
                 if (is_dir($p)) {
                     if (!ws_derived_skip_dir($e)) $walk($p);
                 } elseif (substr($e, -5) === '.json' && $e[0] !== '-' && $e[0] !== '.') {
+                    $out[] = $p;
+                } elseif (substr($e, -4) === '.wsx' && ws_content_wsx_is_source($p)) {
                     $out[] = $p;
                 }
             }

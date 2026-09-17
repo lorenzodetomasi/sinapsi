@@ -34,10 +34,19 @@ function ws_content_relpath($content_path = null){
 	foreach(array('', '/index') as $suffisso){
 		$xml = $content_abspath.$suffisso.'.xml';
 		$json = $content_abspath.$suffisso.'.json';
+		$wsx = $content_abspath.$suffisso.'.wsx';
 		if(file_exists($json)){
 			require_once( ws_admin_abspath() . '/_refresh-content.php' );
 			$twin = ws_content_ensure_xml($json);
 			return $content_relpath.$suffisso.($twin !== '' ? '.xml' : '.json');
+		}
+		/* A content not yet migrated is a hand-written .wsx: the same lazy
+		 * twin, resolved this time, so that an edit to the headings or a
+		 * location reaches the page without an admin refresh. */
+		if(file_exists($wsx)){
+			require_once( ws_admin_abspath() . '/_refresh-content.php' );
+			$twin = ws_content_ensure_xml($wsx);
+			return $content_relpath.$suffisso.($twin !== '' ? '.xml' : '.wsx');
 		}
 		if(file_exists($xml)){
 			return $content_relpath.$suffisso.'.xml';

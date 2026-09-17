@@ -57,7 +57,7 @@ ws-admin/
 
 | Module | Unit | Source → target | State |
 |---|---|---|---|
-| `refresh-contents.php` | `_refresh-content.php` | `index.json` → `index.xml` | built |
+| `refresh-contents.php` | `_refresh-content.php` | `index.json` → `index.xml`; until migrated, a hand-written `.wsx` → its resolved `.xml` | built |
 | `migrate-pages.php` | `_migrate-page.php` | a hand-written `index.wsx` → `index.json` (+ its twin); the `.wsx` is set aside as `-index.wsx` | built |
 | `refresh-sitemaps.php` | `_refresh-sitemap.php` | every page of a root → `ws_sitemap.wsx`, then the public `sitemap.xml` | built, applied on isotype |
 | `refresh-html.php` | `_refresh-html.php` | a page → `<cache>/<host>/<path>.html`, only when `output` lists `html` and the visitor has no session | then |
@@ -95,6 +95,15 @@ elements left in place. The CMS resolves includes at request time (as it
 does for Meetoo's entities today), so an included file that changes needs
 no bookkeeping: the twin is stale only when *its* source changes. The cost
 of resolution is paid once per page by the HTML cache, not here.
+
+**A `.wsx` not yet migrated** (the headings, the locations, the shared
+lists, the pages still to migrate) is a source of the second kind: same
+manifest, same laziness, one difference in the build - its twin is the
+`.wsx` with its includes resolved, which is what the old admin refresh
+produced and what its readers expect. A `.wsx` beside a JSON of the same
+name is no longer a source; `ws_sitemap.wsx` never is. The headings are
+loaded the same way (`ws-settings.php`): source first, twin made fresh,
+twin read.
 
 Guards, inherited from Meetoo's `xml-rebuild`:
 - a JSON without `@context` and `@type` is not a content (a datalist, an RSVP list, a settings file): skipped;

@@ -384,16 +384,29 @@ $longTime = new IntlDateFormatter(
 // Load headings (header and footer data)
 // @since 1.0
 global $ws_logs;
-if(file_exists($ws_content_root_abspath.'/'.ws_locale().'/ws_headings.xml')){
-	$GLOBALS['ws_headings'] = ws_load_file($ws_content_root_abspath.'/'.ws_locale().'/ws_headings.xml');
-} else if(file_exists($ws_content_root_abspath.'/'.ws_locale().'/ws_headings.wsx')){
-	$GLOBALS['ws_headings'] = ws_load_file($ws_content_root_abspath.'/'.ws_locale().'/ws_headings.wsx');
-} else if(file_exists($ws_content_root_abspath.'/ws_headings.xml')){
-	$GLOBALS['ws_headings'] = ws_load_file($ws_content_root_abspath.'/ws_headings.xml');
-} else if(file_exists($ws_content_root_abspath.'/ws_headings.wsx')){
-	$GLOBALS['ws_headings'] = ws_load_file($ws_content_root_abspath.'/ws_headings.wsx');
+/* The headings live in the locale's folder, or the site's. Their source is
+ * ws_headings.json or, until migrated, ws_headings.wsx; what is loaded is
+ * the XML twin, made fresh on the way (ws_content_ensure_xml) - it used to
+ * be the .xml first, whatever its age, and an edit to the .wsx waited for
+ * an admin refresh to reach the site. */
+$ws_headings_abspath = '';
+foreach(array($ws_content_root_abspath.'/'.ws_locale(), $ws_content_root_abspath) as $ws_headings_dir){
+	foreach(array('json', 'wsx') as $ws_headings_ext){
+		if(file_exists($ws_headings_dir.'/ws_headings.'.$ws_headings_ext)){
+			require_once( ws_admin_abspath() . '/_refresh-content.php' );
+			$ws_headings_abspath = ws_content_ensure_xml($ws_headings_dir.'/ws_headings.'.$ws_headings_ext) ?: $ws_headings_dir.'/ws_headings.'.$ws_headings_ext;
+			break 2;
+		}
+	}
+	if(file_exists($ws_headings_dir.'/ws_headings.xml')){
+		$ws_headings_abspath = $ws_headings_dir.'/ws_headings.xml';
+		break;
+	}
+}
+if($ws_headings_abspath !== ''){
+	$GLOBALS['ws_headings'] = ws_load_file($ws_headings_abspath);
 } else {
-  $ws_logs[] = sprintf(__('File %s doesn’t exists.'), '<code>'.$ws_content_root_abspath.'/'.ws_locale().'/ws_headings.xml</code> or <code>.wsx</code>');
+  $ws_logs[] = sprintf(__('File %s doesn’t exists.'), '<code>'.$ws_content_root_abspath.'/'.ws_locale().'/ws_headings.json</code> or <code>.wsx</code>');
 }
 if(file_exists($ws_content_root_abspath.'/ws_sitemap.xml')){
   $GLOBALS['ws_contentmap'] = ws_load_file($ws_content_root_abspath.'/ws_sitemap.xml');
