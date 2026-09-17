@@ -12,7 +12,7 @@ $index_url = $ws_headings->ws_path[0];
 include_template('template-parts/contacts-basic');
 include_template('template-parts/user-checkboxes');
 ?>
-	<p class="small">Compila tutti i campi obbligatori (in <strong>grassetto</strong>).</p>
+	<p class="small required"><?php printf(__('Fill in every %s field.'), '<strong>'.__('required').'</strong>'); ?></p>
 	<p class="submit">
 		<button type="submit" class="button g-recaptcha"
 		data-sitekey="<?php echo GOOGLE_RECAPTCHA_SITE_KEY; ?>" 

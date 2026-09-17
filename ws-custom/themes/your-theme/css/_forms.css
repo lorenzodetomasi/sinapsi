@@ -11,7 +11,22 @@ fieldset.field>legend {
     display: block;
     font-size: 0.8em; }
 
-input:not([type]), input[type="datetime"], input[type="datetime-local"], input[type="date"], input[type="time"], input[type="week"], input[type="email"], input[type="month"], input[type="number"], input[type="password"], input[type="search"], input[type="tel"], input[type="text"], input[type="url"], textarea, select {
+input:not([type]), 
+input[type="datetime"], 
+input[type="datetime-local"], 
+input[type="date"], 
+input[type="time"], 
+input[type="week"], 
+input[type="email"], 
+input[type="month"], 
+input[type="number"], 
+input[type="password"], 
+input[type="search"], 
+input[type="tel"], 
+input[type="text"], 
+input[type="url"], 
+textarea, 
+select {
   box-sizing: border-box;
   min-width: 100px;
   min-height: 2.5rem;
@@ -31,13 +46,10 @@ input:not([type]), input[type="datetime"], input[type="datetime-local"], input[t
     border-color: var(--field-hover-border-color);
   }
 }
-label.required strong:before {
+.required strong:before {
   content: '* ';
   color: var(--color-danger);
 }
-input:not([type]):hover, input[type="color"]:hover, input[type="datetime"]:hover, input[type="datetime-local"]:hover, input[type="date"]:hover, input[type="time"]:hover, input[type="week"]:hover, input[type="email"]:hover, input[type="month"]:hover, input[type="number"]:hover, input[type="password"]:hover, input[type="search"]:hover, input[type="tel"]:hover, input[type="text"]:hover, input[type="url"]:hover, textarea:hover, select:hover, input:not([type]):focus, input[type="color"]:focus, input[type="datetime"]:focus, input[type="datetime-local"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="week"]:focus, input[type="email"]:focus, input[type="month"]:focus, input[type="number"]:focus, input[type="password"]:focus, input[type="search"]:focus, input[type="tel"]:focus, input[type="text"]:focus, input[type="url"]:focus, textarea:focus, select:focus, input:not([type]):active, input[type="color"]:active, input[type="datetime"]:active, input[type="datetime-local"]:active, input[type="date"]:active, input[type="time"]:active, input[type="week"]:active, input[type="email"]:active, input[type="month"]:active, input[type="number"]:active, input[type="password"]:active, input[type="search"]:active, input[type="tel"]:active, input[type="text"]:active, input[type="url"]:active, textarea:active, select:active {
-    border-color: var(--field-border-color); }
-/*
 [type="checkbox"] {
   appearance: none;
   -moz-appearance: none;
@@ -45,7 +57,10 @@ input:not([type]):hover, input[type="color"]:hover, input[type="datetime"]:hover
   display: inline-block;
   position: relative;
   top: 0.5em;
-  z-index: -10000;
+  /* No negative z-index: it painted the box behind the background of any
+     ancestor that has one (a card, the settings panel) and took it out of
+     hit-testing. The box needs neither: with appearance none it is a plain
+     bordered inline-block, and the label toggles it either way. */
   width: 1.5em;
   height: 1.5em;
   border: var(--field-border-width) solid var(--field-border-color);
@@ -55,14 +70,14 @@ input:not([type]):hover, input[type="color"]:hover, input[type="datetime"]:hover
   border-radius: 1px; }
 
 [type="checkbox"]:checked {
-  top: 0px;
-  left: -5px;
-  width: 0.5em;
-  height: 1em;
+  top: 0.25em;
+  width: 1em;
+  height: 1.5em;
+  margin-right: 1em;
   border-top: var(--field-border-width) solid transparent;
   border-left: var(--field-border-width) solid transparent;
-  border-right: var(--field-border-width) solid #444;
-  border-bottom: var(--field-border-width) solid #444;
+  border-right: var(--field-border-width) solid var(--field-border-color);
+  border-bottom: var(--field-border-width) solid var(--field-border-color);
   -webkit-transform: rotate(40deg);
   transform: rotate(40deg);
   -webkit-backface-visibility: hidden;
@@ -74,7 +89,7 @@ input[type="color"] {
   background-color: white;
   block-size: 4em;
 }
-*/
+
 /* Fieldsets */
 fieldset.fieldset,
 .fieldset {

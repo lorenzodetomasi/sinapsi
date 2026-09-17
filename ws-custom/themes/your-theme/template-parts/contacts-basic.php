@@ -24,7 +24,7 @@ if(!empty($current_user)){
 }
 ?>
 <p class="question width-full">
-	<label class="flex field width-full">
+	<label class="required flex field width-full">
 		<strong class="label"><?php _e('Your email'); ?></strong>
 		<input type="email" name="email"<?php echo $emailValueAttr; ?> class="input flex1" placeholder="<?php _e('your@email.com'); ?>" required />
 	</label>
@@ -36,7 +36,7 @@ if(!empty($current_user)){
 	</label>
 </p>
 <p class="question width-full">
-	<label class="field textarea width-full">
+	<label class="required field textarea width-full">
 		<strong class="label"><?php _e('Message'); ?></strong><br />
 		<textarea class="width-full" name="message" placeholder="<?php _e('Why are you contacting us?'); ?>" required></textarea>
 	</label>

@@ -47,7 +47,7 @@ Per ricevere comunicazioni personalizzate, quindi per attività di profilazione 
 Per effettuare rilevazioni del grado di soddisfazione sulla qualità dei servizi forniti (anche tramite soggetti terzi)
 */ ?>
 <p class="question">
-	<label class="field checkbox acceptance">
+	<label class="required field checkbox acceptance">
 		<input name="acceptance" required type="checkbox"<?php echo $acceptanceCheckedAttr; ?> />
 		<span class="label">
 			<strong class="label-text"><?php printf(__('Accept our %s'), ws_pageLink('PrivacyPage', __('Privacy Policy'))); ?></strong>

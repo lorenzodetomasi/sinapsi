@@ -127,6 +127,15 @@ msgstr "Modulo di contatto"
 msgid "Bold fields are required."
 msgstr "I campi in grassetto sono obbligatori."
 
+#: template-parts/contact-form.php
+#, php-format
+msgid "Fill in every %s field."
+msgstr "Compila tutti i campi %s."
+
+#: template-parts/contact-form.php
+msgid "required"
+msgstr "obbligatori"
+
 #: ui.php:30
 msgid "Leave your contact information: will answer you as soon as possible."
 msgstr "Lasciaci i tuoi contatti: ti risponderemo il prima possibile."
