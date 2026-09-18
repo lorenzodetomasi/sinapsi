@@ -163,12 +163,18 @@ if (!function_exists('ws_refresh_content')) {
             if (trim((string)$xml) === '' || $xml[0] === '{') { $out['why'] = 'conversion returned nothing'; return $out; }
         }
 
-        if ($exists && empty($options['adopt_root'])) {
+        // The root guard is for an XML of unknown provenance. One the manifest
+        // records as derived from THIS source is a twin whatever its root -
+        // the source's @type may have changed since, and that is exactly what
+        // a rebuild is for. Without this, a page whose types were reordered
+        // stayed stuck behind "not a twin" until someone ticked adopt_root.
+        $recorded = (($manifest[$out['target']]['source'] ?? null) === $out['source']);
+        if ($exists && !$recorded && empty($options['adopt_root'])) {
             $old_root = ws_content_xml_root((string)file_get_contents($xml_abspath));
             $new_root = ws_content_xml_root($xml);
             if ($old_root !== '' && $old_root !== $new_root) {
                 $out['status'] = 'skipped';
-                $out['why'] = "not a twin: the XML's root is <$old_root>, the JSON would produce <$new_root>";
+                $out['why'] = "not a twin: the XML's root is <$old_root>, the source would produce <$new_root>";
                 return $out;
             }
         }
