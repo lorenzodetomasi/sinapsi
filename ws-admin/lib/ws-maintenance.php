@@ -44,6 +44,31 @@ if (!function_exists('ws_maint_state_path')) {
 if (!function_exists('ws_maint_ops')) {
     function ws_maint_ops(): array {
         return [
+            /* The index of the events of ANY content root, in schema.org's own
+             * shape - the one a list page matches its `about` against. Distinct
+             * from `events-index` below, which is Meetoo's: that one normalises
+             * references and builds Meetoo's own groupings (by-cap,
+             * by-organizer) into events/_index/. This one knows nothing about
+             * zones or postal areas and works on a site that has never heard of
+             * them. When Meetoo becomes a WS site like the others, the two
+             * become one. */
+            'root-events-index' => [
+                'title' => 'Indice degli eventi del sito',
+                'meta'  => 'Raccoglie gli eventi di questa radice in _index/events.json, in forma schema.org',
+                'icon'  => 'event_list', 'scope' => 'tutti', 'preview' => true, 'since' => '2026.09',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/../_refresh-events-index.php';
+                    $r = ws_events_index_build($base, $apply);
+                    return [
+                        'changes' => $r['changed'] ? 1 : 0,
+                        'summary' => "{$r['indexed']} eventi"
+                            . ($r['skipped'] ? " · {$r['skipped']} saltati" : '')
+                            . ($r['changed'] ? ($apply ? ' · indice riscritto' : ' · l\'indice e\' da rifare') : ' · indice aggiornato'),
+                        'lines' => array_map(fn($p) => "⚠ $p", $r['problems']),
+                    ];
+                },
+            ],
+
             'events-index' => [
                 'title' => 'Rigenera l\'indice degli eventi',
                 'meta'  => 'Normalizza i riferimenti e ricostruisce gli indici; segnala i problemi',
