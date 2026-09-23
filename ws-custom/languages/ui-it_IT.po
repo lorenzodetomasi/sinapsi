@@ -1398,3 +1398,19 @@ msgstr "Abbiamo progettato molti loghi"
 #~| msgid "Opening Hours"
 #~ msgid "Opening times"
 #~ msgstr "Orari di apertura"
+
+#: template-parts/event-list.php
+msgid "Coming up"
+msgstr "Prossimi eventi"
+
+#: template-parts/event-list.php
+msgid "Past events"
+msgstr "Eventi passati"
+
+#: template-parts/event-list.php
+msgid "No events yet."
+msgstr "Non ci sono ancora eventi."
+
+#: template-parts/locations.php
+msgid "Our locations"
+msgstr "Le nostre sedi"

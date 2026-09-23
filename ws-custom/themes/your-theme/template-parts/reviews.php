@@ -1,7 +1,8 @@
 <?php
 // Displays Reviews from Google My Business
 global $ws_headings, $ws_query, $ws_contents_url, $ws_content, $location_id, $google_place_id, $show_reviews;
-$xml_file_abspath = ws_content_root_abspath().'/'.langArray()[0].'/locations/'.$location_id.'/'.$google_place_id.'.xml';
+// `langArray()` is not a function: the locale folder is `ws_locale()`, as header.php asks for it.
+$xml_file_abspath = ws_content_root_abspath().'/'.ws_locale().'/locations/'.$location_id.'/'.$google_place_id.'.xml';
 $google_place_obj = ws_load_file( $xml_file_abspath, $args = array( 'format_output' => true, 'input_type' => 'xml', 'output_type' => 'simplexml' ) );
 $reviews = ($google_place_obj->result->review);
 $reviews_url = $ws_headings->mainEntity->reviews_url;

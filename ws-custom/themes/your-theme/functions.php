@@ -281,27 +281,31 @@ if(!function_exists('PostalAddress')){
 	      return $html;
 	    }
 	  } elseif($args['format'] == 'singleline') {
-	    if($args['output'] == 'microdata') {
-	      $html = $address->streetAddress.', ';
-	      $html .= $address->postalCode.' ';
-	      if(!empty($address->district)){
-	        $html .= $address->district.', ';
-	      }
-	      $html .= $address->addressLocality.' ';
-	      $html .= ' ('.$address->addressRegion.'), ';
-	      $html .= $address->administrativeArea;
-	      $html .= ', '.$address->addressCountry;
-	      return $html;
-	    } else if($args['output'] == 'text'){
-	      $html = $address->streetAddress.', ';
-	//      $html .= $address->district.'<br />';
-	      $html .= $address->postalCode.' ';
-	      $html .= $address->addressLocality.' ';
-	      $html .= ' ('.$address->addressRegion.'), ';
-	      $html .= $address->administrativeArea;
-	      $html .= ', '.$address->addressCountry;
-	      return $html;
+	    /* One line, and the punctuation belongs to the pieces that are there.
+	     *
+	     * This used to concatenate every field with its separator whether the
+	     * field had a value or not, so an address with nothing in it printed
+	     * ", 0, ," - which is what a brand-new site showed in its footer, and
+	     * what any site shows for a location it has not filled in yet. The
+	     * commas are put BETWEEN the parts that exist, so an empty address
+	     * prints nothing at all, which is the truth. */
+	    $parts = array();
+	    $street = trim((string)$address->streetAddress);
+	    if($street !== ''){ $parts[] = $street; }
+
+	    $town = trim(trim((string)$address->postalCode).' '.trim((string)$address->addressLocality));
+	    $region = trim((string)$address->addressRegion);
+	    if($region !== ''){ $town = trim($town.' ('.$region.')'); }
+	    if($town !== ''){ $parts[] = $town; }
+
+	    $district = trim((string)$address->district);
+	    if($district !== ''){ array_splice($parts, 1, 0, array($district)); }
+
+	    foreach(array($address->administrativeArea, $address->addressCountry) as $more){
+	      $more = trim((string)$more);
+	      if($more !== ''){ $parts[] = $more; }
 	    }
+	    return implode(', ', $parts);
 	  }
 	}
 }
@@ -631,4 +635,150 @@ function ws_jsonld_clean(array &$node, $page_id, $page_url){
 }
 }
 $GLOBALS['ws_scripts']['head']['jsonld'] = ws_page_jsonld();
-?>
+
+
+/*
+ * Resolving a reference.
+ *
+ * Content in this CMS names other content by `@id` and never copies it: the
+ * site's headings say `{"@id": "places/IT00122/…"}` and the address, the
+ * telephone and the VAT number live in that one place. Somebody has to follow
+ * the pointer, and until now nobody did — which is why a site whose business
+ * was properly referenced showed an empty footer.
+ *
+ * `ws_entity()` follows it. Loading goes through `ws_content()`, the CMS's own
+ * reader, so the referenced file gets the same lazy twin as any other content
+ * and no second way of opening a file appears in the theme.
+ *
+ * Answers are kept for the request: a page asks for the same business in the
+ * header, in the footer and beside every location, and reading it four times
+ * from disk to get the same four answers is work nobody asked for.
+ */
+if(!function_exists('ws_entity')){
+	function ws_entity($id){
+		global $ws_content_root;
+		static $cache = array();
+
+		$id = trim((string)$id, '/');
+		/* A reference is a path inside the locale, and nothing else: no
+		 * absolute path, no climbing out of the content tree. */
+		if($id === '' or strpos($id, '..') !== false or $id[0] === '/'){
+			return null;
+		}
+		if(array_key_exists($id, $cache)){
+			return $cache[$id];
+		}
+
+		/* The locale folder, as header.php already asks for it. */
+		$content = ws_content($ws_content_root.'/'.ws_locale().'/'.$id);
+		/* The content of an entity is a page ABOUT it: what the caller wants is
+		 * the thing, not the page around it. */
+		$entity = ($content and isset($content->mainEntity)) ? $content->mainEntity : $content;
+		$cache[$id] = $entity ?: null;
+		return $cache[$id];
+	}
+}
+
+/*
+ * The @id a node points at, whichever way the twin wrote it.
+ *
+ * Going from JSON to XML, the `@id` of the root becomes the `id` attribute and
+ * the `@id` of a node inside becomes `xlink:href` — because there it is a
+ * REFERENCE to something else, not this thing's own name. Both are looked at,
+ * so a caller does not have to know where in the tree it is standing. (Meetoo
+ * has the same function under its own name; when Meetoo is a WS site like the
+ * others, this is the one that stays.)
+ */
+if(!function_exists('ws_reference')){
+	function ws_reference($node){
+		if(!is_object($node)){
+			return '';
+		}
+		$href = $node->attributes('http://www.w3.org/1999/xlink');
+		$id = ($href !== null and isset($href->href)) ? (string)$href->href : '';
+		if($id === ''){
+			$own = $node->attributes();
+			$id = ($own !== null and isset($own->id)) ? (string)$own->id : '';
+		}
+		return trim($id);
+	}
+}
+
+/*
+ * A node, with what it points at behind it.
+ *
+ * Returns the referenced entity when the node is a reference and the entity can
+ * be read, and the node itself otherwise. That is what lets a template write
+ * `ws_resolved($ws_headings->mainEntity)->vatID` without asking first whether
+ * the business was written out or pointed at: both are answered the same way,
+ * and a reference that cannot be followed degrades to what is on the node
+ * rather than to a fatal error.
+ */
+if(!function_exists('ws_resolved')){
+	function ws_resolved($node){
+		$id = ws_reference($node);
+		if($id === ''){
+			return $node;
+		}
+		$entity = ws_entity($id);
+		return $entity ?: $node;
+	}
+}
+
+/*
+ * The opening hours of a place, as a definition list.
+ *
+ * A function and not a template part on purpose: `include_template()` loads
+ * with `require_once`, so a page with two locations would print the first
+ * one's hours and then silently nothing for the second.
+ *
+ * schema.org records one `OpeningHoursSpecification` per stretch, so a place
+ * that shuts for lunch has two for that day; they are grouped back under the
+ * day here, which is how a person reads them ("Monday 9:30-13:00, 15:00-19:00")
+ * and not how the data is shaped.
+ *
+ * The order is the week's, starting on Monday, whatever order the file is in:
+ * hours that come back from Google start on Sunday, and a list that begins on
+ * Sunday looks like a mistake to everyone who reads it.
+ */
+if(!function_exists('ws_opening_hours')){
+	function ws_opening_hours($specs){
+		if(empty($specs)){
+			return '';
+		}
+		$week = array('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
+		$names = array(
+			'Monday' => __('Monday'), 'Tuesday' => __('Tuesday'), 'Wednesday' => __('Wednesday'),
+			'Thursday' => __('Thursday'), 'Friday' => __('Friday'), 'Saturday' => __('Saturday'),
+			'Sunday' => __('Sunday'),
+		);
+
+		$byDay = array();
+		foreach($specs as $spec){
+			/* The day may be written as a bare word or as a schema.org URL
+			 * (http://schema.org/Monday): the last segment is the day either way. */
+			$day = trim((string)$spec->dayOfWeek);
+			if($day === ''){ continue; }
+			$day = substr($day, strrpos($day, '/') === false ? 0 : strrpos($day, '/') + 1);
+			$opens = trim((string)$spec->opens);
+			$closes = trim((string)$spec->closes);
+			if(!isset($byDay[$day])){ $byDay[$day] = array(); }
+			if(trim((string)$spec->isClosed) === 'true' or ($opens === '' and $closes === '')){
+				$byDay[$day][] = __('Closed');
+			} else {
+				$byDay[$day][] = substr($opens, 0, 5).'–'.substr($closes, 0, 5);
+			}
+		}
+		if(!$byDay){
+			return '';
+		}
+
+		$html = '<dl class="opening-hours">';
+		foreach($week as $day){
+			if(empty($byDay[$day])){ continue; }
+			$html .= '<dt class="opening-hours-day">'.($names[$day] ?? $day).'</dt>';
+			$html .= '<dd class="opening-hours-when">'.implode(', ', $byDay[$day]).'</dd>';
+		}
+		return $html.'</dl>';
+	}
+}
