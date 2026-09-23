@@ -8,6 +8,7 @@ import SeoDescrizioneRenderer, { seoDescrizioneTester } from './SeoDescrizioneRe
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
 import TagArrayRenderer, { tagArrayTester } from './TagArrayRenderer.jsx';
 import MultiSelectRenderer, { multiSelectTester } from './MultiSelectRenderer.jsx';
+import RepeatableObjectRenderer, { repeatableObjectTester } from './RepeatableObjectRenderer.jsx';
 import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
@@ -39,6 +40,9 @@ const renderers = [
   { tester: labeledEnumTester, renderer: LabeledEnumRenderer },
   { tester: tagArrayTester, renderer: TagArrayRenderer },
   { tester: multiSelectTester, renderer: MultiSelectRenderer },
+  /* Le sezioni sono un elenco di oggetti: senza questo le disegna il renderer
+   * generico, che ne fa una tabella con sei colonne strette e illeggibili. */
+  { tester: repeatableObjectTester, renderer: RepeatableObjectRenderer },
   { tester: fieldRowTester, renderer: FieldRowRenderer },
   { tester: iconTextTester, renderer: IconTextRenderer },
 ];
@@ -90,6 +94,36 @@ export default function AppPagina() {
   const [validazione, setValidazione] = useState({ status: 'idle', errors: [] });
   const seq = useRef(0);
 
+  /* La divisione fra le due colonne, come negli altri due editor: si trascina,
+   * si azzera con un doppio clic, e si ricorda. La chiave è la stessa, perché
+   * chi passa da un editor all'altro si aspetta la stessa larghezza. */
+  const [split, setSplit] = useState(() => Number(localStorage.getItem('split')) || 50);
+  useEffect(() => localStorage.setItem('split', String(split)), [split]);
+  const layoutRef = useRef(null);
+
+  function startDrag(e) {
+    e.preventDefault();
+    const el = layoutRef.current;
+    const cs = getComputedStyle(el);
+    const padL = parseFloat(cs.paddingLeft) || 0;
+    const padR = parseFloat(cs.paddingRight) || 0;
+    const move = (ev) => {
+      const rect = el.getBoundingClientRect();
+      const inner = rect.width - padL - padR;
+      setSplit(Math.min(75, Math.max(25, ((ev.clientX - rect.left - padL) / inner) * 100)));
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop);
+  }
+
   const avvisa = useCallback((testo, esito = 'ok') => {
     setMsg({ testo, esito });
     if (esito === 'ok') setTimeout(() => setMsg(null), 4000);
@@ -132,14 +166,24 @@ export default function AppPagina() {
     setCaricata(true);
   }, [nuova, site, idIniziale, avvisa]);
 
-  /* Si carica quando c'è una sessione: il backend chiede il gettone, e senza
-   * aspettarla la prima richiesta partirebbe sempre senza. */
+  /*
+   * Si carica quando c'è una sessione: il backend chiede il gettone, e senza
+   * aspettarla la prima richiesta partirebbe sempre senza.
+   *
+   * E quando la sessione dice che NON c'è nessuno, lo si scrive. Prima non
+   * succedeva niente: il modulo restava lì, vuoto, e sembrava una pagina senza
+   * contenuto invece di una pagina che non è stata nemmeno chiesta.
+   */
   useEffect(() => {
     let fatto = false;
     const prova = () => {
       if (fatto || !window.meetooSession) return;
       window.meetooSession.subscribe((user) => {
-        if (!user || fatto) return;
+        if (fatto) return;
+        if (!user) {
+          if (!nuova) avvisa('Accedi con Google (in alto a destra) per aprire la pagina.', 'ko');
+          return;
+        }
         fatto = true;
         carica();
       });
@@ -147,7 +191,7 @@ export default function AppPagina() {
     prova();
     const t = setInterval(prova, 200);
     return () => clearInterval(t);
-  }, [carica]);
+  }, [carica, nuova, avvisa]);
 
   const salva = useCallback(async (forza) => {
     if (!data.wspath) { avvisa('Manca l’indirizzo: senza, la pagina non sta sulla mappa.', 'ko'); return; }
@@ -222,24 +266,47 @@ export default function AppPagina() {
       )}
 
       {site && (
-        <div className="editor">
-          <JsonForms
-            schema={schema}
-            uischema={uischema}
-            data={data}
-            renderers={renderers}
-            cells={vanillaCells}
-            onChange={({ data: d }) => setData(d)}
+        /*
+         * `layout` e `pane` non sono nomi scelti qui: sono il contratto del
+         * foglio di stile. TUTTO `form.css` è agganciato a `.pane` — le
+         * etichette, i campi, le griglie — e `.pane` è anche l'unico
+         * contenitore con `overflow-y: auto`, cioè l'unica cosa che scorre.
+         *
+         * Con un `div class="editor"` al suo posto non si applicava niente di
+         * tutto questo: i campi uscivano nudi e la pagina non scorreva, perché
+         * `.app` è alta quanto lo schermo e taglia quello che esce.
+         */
+        <div className="layout" ref={layoutRef} style={{ '--split': split + '%' }}>
+          <section className="pane pane-form">
+            <JsonForms
+              schema={schema}
+              uischema={uischema}
+              data={data}
+              renderers={renderers}
+              cells={vanillaCells}
+              onChange={({ data: d }) => setData(d)}
+            />
+          </section>
+
+          <div
+            className="col-divider"
+            role="separator"
+            aria-orientation="vertical"
+            title="Trascina per ridimensionare · doppio clic per 50/50"
+            onPointerDown={startDrag}
+            onDoubleClick={() => setSplit(50)}
           />
-          {/* Il riquadro vuole il TESTO, non l'oggetto: quello che si legge
-              e' esattamente quello che verrebbe scritto sul file, virgole e
-              indentazione comprese. */}
-          <JsonValidationPane
-            payload={payload}
-            validation={validazione}
-            onRevalidate={() => rivalida(payload)}
-            etichetta="La pagina (JSON-LD)"
-          />
+
+          {/* Il riquadro vuole il TESTO, non l'oggetto: quello che si legge è
+              esattamente quello che verrebbe scritto sul file. */}
+          <section className="pane pane-validation">
+            <JsonValidationPane
+              payload={payload}
+              validation={validazione}
+              onRevalidate={() => rivalida(payload)}
+              etichetta="La pagina (JSON-LD)"
+            />
+          </section>
         </div>
       )}
     </div>

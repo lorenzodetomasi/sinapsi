@@ -172,6 +172,33 @@ export const schemaPagina = {
     mainContentOfPage: { type: 'string', title: t('Text'), format: 'xhtml' },
     cta: { type: 'string', title: t('Call to action') },
 
+    /*
+     * Le SEZIONI: i pezzi di cui è fatto il corpo della pagina.
+     *
+     * Sette pagine su nove ne hanno. Una sezione ha un'ancora (`@xml:id`), una
+     * classe che dice al tema come disegnarla, a volte un titolo, e poi o un
+     * testo XHTML o un RIFERIMENTO a qualcosa scritto altrove (`xi:include` con
+     * un `xpath`: i clienti, i premi, il modulo di contatto).
+     *
+     * Quelle che sono riferimenti si vedono e non si modificano: il loro corpo
+     * sta in un altro file, e un campo di testo che mostrasse il vuoto
+     * inviterebbe a riempirlo — cancellando il riferimento.
+     */
+    sections: {
+      type: 'array',
+      title: t('Sections'),
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', title: t('Heading') },
+          id: { type: 'string', title: t('Anchor'), description: t('Used by links that jump here.') },
+          cls: { type: 'string', title: t('Class'), description: t('What the theme uses to draw it: form, grid…') },
+          text: { type: 'string', title: t('Text'), format: 'xhtml' },
+          from: { type: 'string', title: t('Comes from elsewhere'), readOnly: true },
+        },
+      },
+    },
+
     /* --- di che cosa parla --- */
     mainEntity: {
       type: 'string',
@@ -231,6 +258,10 @@ export const uischemaPagina = {
       ctrl('#/properties/headline'),
       ctrl('#/properties/mainContentOfPage'),
       ctrl('#/properties/cta', { options: { icon: 'ads_click' } }),
+    ]),
+
+    gruppoCampi(t('Sections'), 'view_agenda', [
+      ctrl('#/properties/sections'),
     ]),
 
     gruppoCampi(t('What it is about'), 'hub', [

@@ -74,6 +74,8 @@ export function paginaDaJsonLd(doc) {
     mainContentOfPage: testo(d.mainContentOfPage),
     cta: testo(d.cta),
 
+    sections: sezioniDaJsonLd(d.section),
+
     mainEntity: rifId(d.mainEntity),
 
     id: testo(d['@id']),
@@ -137,6 +139,8 @@ export function paginaAJsonLd(d, docOriginale) {
   scrivi(out, 'mainContentOfPage', d.mainContentOfPage, docOriginale);
   scrivi(out, 'cta', d.cta, docOriginale);
 
+  scriviSezioni(out, d.sections, docOriginale);
+
   /*
    * Il mainEntity: si cambia SOLO l'@id, e il resto del nodo resta.
    *
@@ -190,6 +194,72 @@ function scriviLista(out, chiave, valore) {
   const v = (valore || []).map(testo).map((x) => x.trim()).filter(Boolean);
   if (v.length) out[chiave] = v;
   else delete out[chiave];
+}
+
+/* ------------------------------------------------------------- SEZIONI ---- */
+
+/*
+ * Una sezione, come la mostra il modulo.
+ *
+ * `from` dice che il corpo viene da un altro file — un `xi:include`, con o
+ * senza un `xpath` che ne sceglie un pezzo — ed è in sola lettura. Il modulo
+ * non offre di modificarlo perché non ce l'ha: offrirebbe un campo vuoto, e
+ * riempirlo cancellerebbe il riferimento.
+ */
+function sezioniDaJsonLd(x) {
+  return lista(x).map((s) => {
+    if (!s || typeof s !== 'object') return { name: '', id: '', cls: '', text: testo(s), from: '' };
+    const incl = s['xi:include'];
+    const da = incl
+      ? (typeof incl === 'object' ? testo(incl['@href'] || incl.href || '') : testo(incl))
+      : '';
+    return {
+      name: testo(s.name),
+      id: testo(s['@xml:id']),
+      cls: testo(s['@class']),
+      text: testo(s['#text']),
+      from: da || (s.xpath ? testo(s.xpath) : ''),
+    };
+  });
+}
+
+/*
+ * Le sezioni, riscritte sulle originali.
+ *
+ * Ogni sezione del modulo ritrova la sua nell'originale per `@xml:id`, e in
+ * mancanza di quello per posizione; poi si sovrascrivono i quattro campi che il
+ * modulo possiede e tutto il resto resta — `xi:include`, `xpath`,
+ * `itemOffered`, e qualunque cosa qualcuno abbia scritto a mano.
+ *
+ * Una sezione tolta dal modulo sparisce davvero: toglierla è una decisione, e
+ * conservarla «per prudenza» vorrebbe dire che il modulo non sa cancellare.
+ */
+function scriviSezioni(out, sezioni, docOriginale) {
+  const prima = lista((docOriginale || {}).section);
+  const perId = new Map();
+  prima.forEach((s, i) => {
+    if (s && typeof s === 'object' && s['@xml:id']) perId.set(String(s['@xml:id']), s);
+  });
+
+  const nuove = (sezioni || []).map((s, i) => {
+    const base = (s.id && perId.get(String(s.id)))
+      || (typeof prima[i] === 'object' && prima[i] !== null ? prima[i] : {});
+    const fuori = { ...base };
+
+    if (testo(s.id).trim()) fuori['@xml:id'] = testo(s.id).trim(); else delete fuori['@xml:id'];
+    if (testo(s.cls).trim()) fuori['@class'] = testo(s.cls).trim(); else delete fuori['@class'];
+    if (testo(s.name).trim()) fuori.name = testo(s.name).trim(); else delete fuori.name;
+    /* Il testo si scrive solo dove il modulo ce l'ha davvero: su una sezione
+     * che è un riferimento il campo è vuoto per costruzione, e scriverlo
+     * metterebbe un `#text` vuoto accanto all'include. */
+    if (testo(s.text) !== '') fuori['#text'] = testo(s.text);
+    else if (!fuori['xi:include'] && !fuori.xpath) delete fuori['#text'];
+
+    return fuori;
+  }).filter((s) => Object.keys(s).length > 0);
+
+  if (nuove.length) out.section = nuove;
+  else delete out.section;
 }
 
 /* ------------------------------------------------------------------ NUOVA -- */
