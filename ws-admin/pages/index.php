@@ -66,14 +66,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $root = ws_admin_site_path($siteId);
 
     if ($action === 'list') {
+        /*
+         * Senza un sito è la PRIMA richiesta: il pannello non sa ancora quali
+         * radici esistono e le chiede. Zero pagine, e va bene.
+         *
+         * Con un sito che non esiste è un'altra cosa, ed è un errore: prima
+         * rispondeva «riuscito, zero pagine» anche a questo, e chi guardava il
+         * pannello leggeva «nessuna pagina» dove la verità era «quella radice
+         * non c'è». Due guasti diversi non devono avere la stessa faccia.
+         */
         if ($root === null) {
             $sites = array_values(ws_admin_sites(ws_admin_contents_abspath()));
-            echo json_encode(['success' => true, 'sites' => $sites, 'pages' => [], 'summary' => null]);
+            if ($siteId !== '') {
+                http_response_code(404);
+                echo json_encode(['error' => "La radice «{$siteId}» non esiste su questo server.", 'sites' => $sites]);
+                exit;
+            }
+            echo json_encode(['success' => true, 'sites' => $sites, 'pages' => [], 'summary' => null, 'scanned' => 0]);
             exit;
         }
         $pages = ws_pages_list($root);
         echo json_encode([
             'success' => true,
+            /* Quante cartelle sono state guardate. Zero pagine dopo averne
+             * guardate quaranta e zero pagine dopo non averne guardata
+             * nessuna sono due guasti diversi, e senza questo numero si
+             * assomigliano troppo. */
+            'scanned' => count(ws_pages_scan($root)),
+            'root' => basename(dirname($root)) . '/' . basename($root),
             'sites'   => array_values(ws_admin_sites(ws_admin_contents_abspath())),
             'site'    => $siteId,
             'mount'   => ws_pages_mount($siteId),
@@ -252,13 +272,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       ]);
     })();
 
+    /*
+     * Una richiesta che non torna JSON NON è una risposta vuota.
+     *
+     * Prima qui c'era un `.catch(() => ({}))`, e la conseguenza è costata un
+     * pomeriggio a chi ha aperto il pannello sul server: un file mancante fa
+     * fallire il `require` di PHP, che risponde 500 con dell'HTML, che non è
+     * JSON — e il pannello diceva «Nessuna pagina con questi criteri», cioè la
+     * cosa più tranquillizzante e più falsa che potesse dire. Adesso il corpo
+     * che non si legge diventa un errore con dentro il suo stato e le sue
+     * prime righe, che è quello che serve per capire.
+     */
     const api = (action, extra) => {
       const body = new URLSearchParams(Object.assign({ action }, extra || {}));
       const token = window.meetooSession && meetooSession.getToken();
       if (token) body.set('credential', token);
       return fetch(location.pathname, {
         method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(),
-      }).then((r) => r.json().then((j) => ({ status: r.status, body: j }), () => ({ status: r.status, body: {} })));
+      }).then((r) => r.text().then((testo) => {
+        try {
+          return { status: r.status, body: JSON.parse(testo) };
+        } catch {
+          return {
+            status: r.status,
+            body: { error: 'Il server ha risposto ' + r.status + ' con qualcosa che non è JSON: '
+              + testo.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 300) },
+          };
+        }
+      }));
     };
 
     const $ = (id) => document.getElementById(id);
@@ -266,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const out = $('out');
     const show = (lines) => { out.hidden = false; out.innerHTML = lines.join('\n'); };
 
-    let PAGES = [], MOUNT = '', HAS_EDITOR = false;
+    let PAGES = [], MOUNT = '', HAS_EDITOR = false, SCANSIONATE = 0;
 
     /* L'indirizzo pubblico: il mount davanti al wspath. Il wspath di una home
      * è "/", e concatenarlo darebbe "/sito//" — il caso da togliere di mezzo
@@ -335,7 +376,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         box.appendChild(row);
       });
 
-      if (!shown) box.innerHTML = '<p class="intro">Nessuna pagina con questi criteri.</p>';
+      /* Zero perché non ce n'è, e zero perché i filtri le nascondono, sono due
+       * cose diverse: la prima è una domanda («l'ho caricata, questa radice?»),
+       * la seconda è una spiegazione. */
+      if (!shown) {
+        box.innerHTML = PAGES.length
+          ? '<p class="intro">Nessuna delle ' + PAGES.length + ' pagine risponde a questi criteri.</p>'
+          : '<p class="intro">Questa radice non ha pagine: nessuna delle <b>' + SCANSIONATE
+            + '</b> cartelle guardate ha un <code>index.json</code> di tipo WebPage né un <code>index.wsx</code> con un indirizzo.</p>';
+      }
     }
 
     /* La migrazione di una pagina: prima che cosa farebbe e che cosa ha dovuto
@@ -374,7 +423,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     function load() {
       api('list', { site: $('f-site').value }).then(({ status, body }) => {
-        if (status === 403 || body.error) { show(['<span class="err">✗ ' + esc(body.error || 'Non autorizzato') + '</span>']); return; }
+        /* `success` e basta: qualunque risposta che non lo dichiara è andata
+         * male, anche quando non porta un `error` da mostrare. */
+        if (!body.success) {
+          show(['<span class="err">✗ ' + esc(body.error || ('Il server ha risposto ' + status + '.')) + '</span>']);
+          $('rows').innerHTML = '';
+          $('counts').textContent = '';
+          return;
+        }
 
         const sel = $('f-site');
         if (!sel.options.length) {
@@ -395,6 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         PAGES = body.pages || [];
         MOUNT = body.mount || '';
+        SCANSIONATE = body.scanned || 0;
         const s = body.summary;
         $('counts').innerHTML = s
           ? '<b>' + s.total + '</b> pagine · <b>' + s.json + '</b> in JSON · <b>' + s.wsx + '</b> da migrare'
@@ -404,6 +461,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         render();
       });
     }
+
+    /*
+     * Aggiungi pagina: si apre l'editor senza `id`, e la cartella la ricava
+     * l'editor dall'indirizzo che si scrive.
+     *
+     * Non si chiede qui «come si chiamerà la cartella»: l'indirizzo lo si
+     * decide comunque nel modulo, e domandarlo due volte in due posti è il
+     * modo di ritrovarsi con una pagina il cui `@id` non c'entra niente con il
+     * suo `wspath`. Il sito invece si passa: è la scelta gia' fatta qui sopra,
+     * e ridomandarla sarebbe rifare una domanda con la risposta gia' in mano.
+     */
+    $('btn-new').addEventListener('click', () => {
+      window.location.href = 'edit/?site=' + encodeURIComponent($('f-site').value);
+    });
 
     ['f-state', 'f-q'].forEach((id) => $(id).addEventListener('input', render));
     $('f-site').addEventListener('change', load);

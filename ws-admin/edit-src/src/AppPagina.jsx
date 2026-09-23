@@ -159,8 +159,14 @@ export default function AppPagina() {
     try {
       const r = await api('save', {
         site, id, jsonld, template: data.template || 'page',
-        baseModified: base, ...(forza ? { force: 1 } : {}),
+        baseModified: base,
+        /* Chi crea lo dice: il server rifiuta una cartella che c'è già invece
+         * di scriverci sopra. Chi crea non ha una data di partenza, quindi il
+         * controllo dei conflitti da solo qui non protegge. */
+        ...(nuova ? { creating: 1 } : {}),
+        ...(forza ? { force: 1 } : {}),
       });
+      if (r.exists) { avvisa(r.error, 'ko'); return; }
       if (r.conflict) {
         avvisa('Qualcun altro ha salvato questa pagina mentre la modificavi. Ricarica, oppure salva lo stesso e sovrascrivi il suo lavoro.', 'ko');
         return;

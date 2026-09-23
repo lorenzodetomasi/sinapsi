@@ -128,6 +128,24 @@ if (trim((string)($doc['wspath'] ?? '')) === '') {
 $esisteva = is_file($file);
 
 /*
+ * «Aggiungi pagina» non sovrascrive mai.
+ *
+ * Il client dice `creating` quando sta creando, e allora una cartella che c'è
+ * già è un errore, non un salvataggio. Senza questo controllo bastava scrivere
+ * `/chi-siamo` in una pagina nuova per cancellare quella che esiste: il
+ * confronto delle date non protegge, perché chi crea non ha una data di
+ * partenza da confrontare.
+ */
+if (!empty($in['creating']) && $esisteva) {
+    http_response_code(409);
+    echo json_encode([
+        'error' => "Esiste già una pagina in «{$id}». Aprila dall’elenco, oppure dalle un altro indirizzo.",
+        'exists' => true, 'id' => $id,
+    ]);
+    exit;
+}
+
+/*
  * Due che salvano la stessa pagina.
  *
  * Il client manda la `dateModified` che aveva quando l'ha aperta. Se sul disco
