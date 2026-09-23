@@ -17,8 +17,8 @@
  *  - @context and @type, general to specific: every page is a WebPage;
  *    CollectionPage when pages stand under it; then the old `type` - as a
  *    schema.org page type when it is one (AboutPage, ContactPage), as a
- *    role in the CMS's own vocabulary when it is not (ws:PrivacyPage,
- *    ws:CookiesPage: what the legal menu and the forms look up);
+ *    role in `additionalType` when it is not (PrivacyPage, CookiesPage: what
+ *    the legal menu and the forms look up);
  *  - @id, the content path;
  *  - the CMS's routing keys as they were (wspath, query, parent…) - but no
  *    `type`: it is derived from @type and mainEntity wherever it is read;
@@ -229,7 +229,7 @@ if (!function_exists('ws_migrate_page')) {
         $types = ['WebPage'];
         if (!empty($options['collection']) || $type === 'CollectionPage') $types[] = 'CollectionPage';
         $entityType = '';
-        $vocabulary = false;
+        $role = '';
         $isHome = ($type === 'Index' || rtrim($wspath, '/') === '');
         if ($type === '' || $type === 'WebPage' || $type === 'CollectionPage' || $type === 'Page' || $isHome) {
             // A page and nothing more. `Index` named the home: schema.org has
@@ -240,19 +240,29 @@ if (!function_exists('ws_migrate_page')) {
         } elseif (in_array($type, $schemaPages, true)) {
             $types[] = $type;
         } elseif (substr($type, -4) === 'Page') {
-            // A role the CMS looks up and schema.org has no word for.
-            $types[] = 'ws:' . $type;
-            $vocabulary = true;
-            $out['notes'][] = "$type is not a schema.org type: kept as the page's role, ws:$type";
+            /* A role the CMS looks up and schema.org has no word for. It goes
+             * in `additionalType` - schema.org's OWN way of naming a type from
+             * another vocabulary - and not in `@type` with a `ws:` prefix, so
+             * that every KEY of a page stays a schema.org key and only the
+             * value is ours. The site map reads `additionalType` first, before
+             * the mainEntity and before the page's own types.
+             *
+             * This wrote `ws:$type` inside `@type` until the pages module
+             * settled the question the other way. Both still work - the map
+             * strips any prefix - but two ways of saying one thing is how a
+             * codebase ends up with a rule nobody can state. */
+            $role = $type;
+            $out['notes'][] = "$type is not a schema.org type: kept as the page's role, additionalType $type";
         } else {
             $entityType = $type;
         }
         $id = ws_derived_rel($root, $dir);
         $doc = [
-            '@context' => $vocabulary ? ['https://schema.org', ['ws' => WS_VOCABULARY]] : 'https://schema.org',
+            '@context' => 'https://schema.org',
             '@type' => count($types) === 1 ? $types[0] : $types,
             '@id' => $id,
         ];
+        if ($role !== '') $doc['additionalType'] = $role;
 
         // The query's htmlcache attribute and the htmlcache element say one
         // thing: which outputs the page wants.
