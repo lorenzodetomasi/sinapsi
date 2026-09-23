@@ -76,17 +76,28 @@ if (!function_exists('ws_refresh_sitemap')) {
     }
 
     /**
-     * The map's `type` of a page, from its JSON-LD: what the page is ABOUT
-     * when it is about something (mainEntity's most specific type), else
-     * what it IS (its own most specific type) - without the vocabulary
-     * prefix, so that a lookup by role (`url[type = "PrivacyPage"]`) reads
-     * as it always did. This is the one place `type` is computed.
+     * The map's `type` of a page, from its JSON-LD. Three answers, in order:
+     *
+     * 1. the page's own `additionalType` - the ROLE it plays in this CMS, for
+     *    the roles schema.org has no word for (Index, PrivacyPage, CookiesPage,
+     *    DisclaimerPage). It wins because it is the thing the CMS looks up
+     *    (`url[type = "PrivacyPage"]`), and because otherwise it would be lost
+     *    exactly where it matters: a home page that says what it is about gets
+     *    its type from the mainEntity, so the moment a site declared its
+     *    business the home stopped being an Index and became a RealEstateAgent.
+     * 2. what the page is ABOUT (the mainEntity's most specific type);
+     * 3. what the page IS (its own most specific type).
+     *
+     * Any vocabulary prefix is dropped, so a lookup by role reads as it always
+     * did; a full URL is reduced to its fragment, which is the same name.
      */
     function ws_sitemap_type(array $d): string {
         $of = function ($t): string {
             $t = is_array($t) ? (string)end($t) : (string)$t;
+            if (strpos($t, '#') !== false) $t = substr($t, strrpos($t, '#') + 1);
             return preg_replace('/^[A-Za-z_][\w.-]*:/', '', $t);
         };
+        if (!empty($d['additionalType'])) return $of($d['additionalType']);
         if (!empty($d['mainEntity']['@type'])) return $of($d['mainEntity']['@type']);
         return !empty($d['@type']) ? $of($d['@type']) : 'WebPage';
     }

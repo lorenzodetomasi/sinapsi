@@ -223,6 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/nuovo/' },
         { label: 'Luoghi e gruppi', icon: 'place', href: ADMIN + 'places/edit/' },
         { label: 'Utenti e ruoli', icon: 'manage_accounts', href: ADMIN + 'users/' },
+        { label: 'Siti', icon: 'language', href: ADMIN + 'sites.php' },
         { label: 'Convertitore JSON ⇄ XML', icon: 'sync_alt', href: ADMIN + 'json-xml/index.php' },
         { label: 'Vai al sito', icon: 'public', href: SITE_ROOT + 'meetoo/' },
       ]);
@@ -259,6 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { href: ADMIN + 'users/', icon: 'manage_accounts', title: 'Utenti e ruoli', meta: 'Chi c\'è, che ruolo ha, quali gruppi gestisce' },
       ],
       'sec-tools': [
+        { href: ADMIN + 'sites.php', icon: 'language', title: 'Siti', meta: 'Elenco, creazione, lingue, mainEntity' },
         { href: ADMIN + 'json-xml/index.php', icon: 'sync_alt', title: 'Convertitore JSON ⇄ XML', meta: 'Converte e valida i contenuti' },
         { href: SITE_ROOT + 'meetoo/', icon: 'public', title: 'Vai al sito', meta: 'Meetoo, come lo vede chi lo legge', external: true },
       ],
