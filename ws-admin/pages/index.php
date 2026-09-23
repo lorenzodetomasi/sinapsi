@@ -128,18 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-/*
- * Dove risponde un sito: il prefisso che il CMS gli mette davanti.
- *
- * L'indirizzo pubblico di una pagina è il mount più il suo `wspath`, e i
- * contenuti il mount non lo sanno — è il CMS che lo mette e lo toglie, così i
- * loro indirizzi restano quelli del giorno in cui avranno un dominio proprio.
- */
-function ws_pages_mount(string $siteId): string {
-    require_once __DIR__ . '/../_site.php';
-    $site = explode('/', $siteId)[0];
-    return (string)(array_search($site, site_mounts(), true) ?: '');
-}
 ?>
 <!DOCTYPE html>
 <html lang="it">

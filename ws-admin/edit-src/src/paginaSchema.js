@@ -103,6 +103,27 @@ const USCITE = [
   { const: 'amp', title: t('AMP page') },
 ];
 
+/*
+ * I template che `your-theme` offre, e che ogni tema figlio eredita.
+ *
+ * Sono i file .php alla radice del tema: `page` e' il caso normale, `index` la
+ * home, `contacts` la pagina con il modulo, `section` una pagina che raccoglie
+ * quelle sotto, `event-list` l'archivio degli eventi. Un tema figlio che ne
+ * aggiunge uno suo lo avra' in piu' e qui non comparira': l'elenco e' scritto,
+ * non scoperto, perche' il modulo gira nel browser e i file del tema stanno sul
+ * server.
+ */
+const TEMPLATE = [
+  { const: 'page', title: t('Normal page') },
+  { const: 'index', title: t('Home') },
+  { const: 'section', title: t('Collects the pages below') },
+  { const: 'contacts', title: t('With a contact form') },
+  { const: 'service', title: t('A service') },
+  { const: 'offer', title: t('What is on offer') },
+  { const: 'event-list', title: t('Archive of events') },
+  { const: 'page-protected', title: t('Behind a login') },
+];
+
 export const schemaPagina = {
   type: 'object',
   properties: {
@@ -158,9 +179,15 @@ export const schemaPagina = {
       description: t('The @id of a thing that lives on its own: a service, a business, a place. Leave empty when the page is only itself.'),
     },
 
+    /* Quale template disegna la pagina. E' una scelta vera — decide come la
+     * pagina SI VEDE — e per questo si modifica; quello che il modulo non
+     * scrive e' la `query`, che il server compone dal tema del sito, da questo
+     * template e dal percorso del contenuto. Un editor che se la scrivesse da
+     * solo la sbaglierebbe il giorno che il sito cambia tema. */
+    template: { type: 'string', title: t('Template'), oneOf: TEMPLATE },
+
     /* --- non si toccano --- */
     id: { type: 'string', title: t('Folder (@id)'), readOnly: true },
-    template: { type: 'string', title: t('Template'), readOnly: true },
     dateModified: { type: 'string', title: t('Last saved'), readOnly: true },
   },
   required: ['wspath', 'title'],

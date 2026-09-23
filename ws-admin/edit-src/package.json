@@ -3,14 +3,16 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "description": "L'editor dei contenuti del CMS: JSON Forms guidato da schema, con i renderer propri di questo progetto (XHTML, riferimenti per @id, date, immagini). Da questa sorgente si costruiscono piu' applicazioni, una per tipo di contenuto: eventi (build) e schede luogo (build:scheda).",
+  "description": "L'editor dei contenuti del CMS: JSON Forms guidato da schema, con i renderer propri di questo progetto (XHTML, riferimenti per @id, date, immagini). Da questa sorgente si costruiscono piu' applicazioni, una per tipo di contenuto: eventi (build), schede luogo (build:scheda) e pagine (build:pagina).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "vite build && rsync -avz --delete ../events/edit/ \"${DEPLOY_DEST:?imposta DEPLOY_DEST=utente@host:/percorso/ws-admin/events/edit/}\"",
     "build:scheda": "vite build --config vite.scheda.config.js",
-    "deploy:scheda": "vite build --config vite.scheda.config.js && rsync -avz --delete ../places/edit/ \"${DEPLOY_DEST_SCHEDA:?imposta DEPLOY_DEST_SCHEDA=utente@host:/percorso/ws-admin/places/edit/}\""
+    "deploy:scheda": "vite build --config vite.scheda.config.js && rsync -avz --delete ../places/edit/ \"${DEPLOY_DEST_SCHEDA:?imposta DEPLOY_DEST_SCHEDA=utente@host:/percorso/ws-admin/places/edit/}\"",
+    "build:pagina": "vite build --config vite.pagina.config.js",
+    "deploy:pagina": "vite build --config vite.pagina.config.js && rsync -avz --delete ../pages/edit/ \"${DEPLOY_DEST_PAGINA:?imposta DEPLOY_DEST_PAGINA=utente@host:/percorso/ws-admin/pages/edit/}\""
   },
   "dependencies": {
     "@jsonforms/core": "^3.8.0",

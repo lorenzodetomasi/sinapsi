@@ -243,3 +243,48 @@ function ws_pages_summary(array $pages): array {
     }
     return $out;
 }
+
+/* ---------------------------------------------------------------------------
+ * Il tema e il mount
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Il tema che le pagine di questa radice chiedono.
+ *
+ * Non è dichiarato dal sito da nessuna parte: sta nella `query` di ogni pagina
+ * (`/?theme=isotype&template=…`), e la home è quella da cui leggerlo. Un sito
+ * appena migrato può non avere ancora la home in JSON, e allora va bene
+ * qualunque pagina: la query porta lo stesso tema in tutte.
+ */
+function ws_pages_theme(string $root): string {
+    $home = rtrim($root, '/') . '/index/index.json';
+    $tema = ws_pages_theme_of($home);
+    if ($tema !== '') return $tema;
+
+    foreach (ws_pages_list($root) as $p) {
+        if ($p['state'] === 'wsx') continue;
+        $tema = ws_pages_theme_of(rtrim($root, '/') . '/' . $p['id'] . '/index.json');
+        if ($tema !== '') return $tema;
+    }
+    return '';
+}
+
+function ws_pages_theme_of(string $file): string {
+    if (!is_file($file)) return '';
+    $d = json_decode((string)@file_get_contents($file), true);
+    if (!is_array($d)) return '';
+    return preg_match('/[?&]theme=([a-z0-9_-]+)/i', (string)($d['query'] ?? ''), $m) ? $m[1] : '';
+}
+
+/*
+ * Dove risponde un sito: il prefisso che il CMS gli mette davanti.
+ *
+ * L'indirizzo pubblico di una pagina è il mount più il suo `wspath`, e i
+ * contenuti il mount non lo sanno — è il CMS che lo mette e lo toglie, così i
+ * loro indirizzi restano quelli del giorno in cui avranno un dominio proprio.
+ */
+function ws_pages_mount(string $siteId): string {
+    require_once __DIR__ . '/_site.php';
+    $site = explode('/', $siteId)[0];
+    return (string)(array_search($site, site_mounts(), true) ?: '');
+}

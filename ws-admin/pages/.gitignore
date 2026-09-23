@@ -1,0 +1,3 @@
+# La cartella è il RISULTATO della build (npm run build:pagina in ws-admin/edit-src):
+# non si modifica qui e non si versiona. La sorgente è in edit-src/src.
+/edit/
