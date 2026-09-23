@@ -11,7 +11,7 @@ export default defineConfig({
   // Sorgenti separati dal deploy: la build esce in ../edit (la cartella servita sul
   // server), così events/edit/ contiene SOLO i file compilati (niente src/config).
   build: {
-    outDir: '../edit',
+    outDir: '../events/edit',
     emptyOutDir: true,
   },
   plugins: [react(), poCatalogue()],

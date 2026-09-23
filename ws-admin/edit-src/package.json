@@ -1,0 +1,26 @@
+{
+  "name": "ws-editor",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "L'editor dei contenuti del CMS: JSON Forms guidato da schema, con i renderer propri di questo progetto (XHTML, riferimenti per @id, date, immagini). Da questa sorgente si costruiscono piu' applicazioni, una per tipo di contenuto: eventi (build) e schede luogo (build:scheda).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && rsync -avz --delete ../events/edit/ \"${DEPLOY_DEST:?imposta DEPLOY_DEST=utente@host:/percorso/ws-admin/events/edit/}\"",
+    "build:scheda": "vite build --config vite.scheda.config.js",
+    "deploy:scheda": "vite build --config vite.scheda.config.js && rsync -avz --delete ../places/edit/ \"${DEPLOY_DEST_SCHEDA:?imposta DEPLOY_DEST_SCHEDA=utente@host:/percorso/ws-admin/places/edit/}\""
+  },
+  "dependencies": {
+    "@jsonforms/core": "^3.8.0",
+    "@jsonforms/react": "^3.8.0",
+    "@jsonforms/vanilla-renderers": "^3.8.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7"
+  }
+}

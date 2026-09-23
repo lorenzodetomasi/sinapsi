@@ -1,8 +1,22 @@
-# Form Editor PoC — JSON Forms + JSON-LD
+# L'editor dei contenuti — JSON Forms + JSON-LD
 
-Proof-of-concept di un editor JSON-LD **schema-driven** basato su
-[JSON Forms](https://jsonforms.io) (React + vanilla renderers). Dimostra
-end-to-end i requisiti difficili individuati sul nostro `index.json`:
+L'editor JSON-LD **guidato da schema** del CMS, su
+[JSON Forms](https://jsonforms.io) (React + vanilla renderers).
+
+Da questa sola sorgente si costruiscono **piu' applicazioni, una per tipo di
+contenuto**, e la giuntura fra loro sono tre file: uno schema, un adattatore,
+una configurazione Vite.
+
+| Applicazione | Comando | Esce in |
+|---|---|---|
+| Eventi | `npm run build` | `../events/edit/` |
+| Schede luogo e gruppo | `npm run build:scheda` | `../places/edit/` |
+
+Stava sotto `ws-admin/events/edit-src` finche' l'editor era solo quello degli
+eventi. Da quando costruisce anche le schede, quel percorso diceva una cosa
+falsa a chiunque lo leggesse, ed e' salito di un livello.
+
+Quello che l'editor risolve, e che qualunque schema nuovo eredita:
 
 - **Fieldset ripetibili**: `organizer[]` (aggiungi/rimuovi righe) — array di oggetti.
 - **Oggetto annidato**: `offers` come gruppo.

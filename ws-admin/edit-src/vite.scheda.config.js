@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
  * che è il modo più sicuro per ritrovarsi con due React diversi in casa.
  */
 const QUI = dirname(fileURLToPath(import.meta.url));
-const USCITA = resolve(QUI, '../../places/edit');
+const USCITA = resolve(QUI, '../places/edit');
 
 export default defineConfig({
   base: './',

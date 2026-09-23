@@ -24,7 +24,7 @@ rispondeva *«Il tuo account (, ruolo ?) non è abilitato»*.
 ## 1) Build dell'editor
 
 ```bash
-cd ws-admin/events/edit-src && npm run build   # esce in ../edit (cartella servita)
+cd ws-admin/edit-src && npm run build   # esce in ../events/edit (cartella servita)
 ```
 
 ## 2) Cosa caricare, e dove
