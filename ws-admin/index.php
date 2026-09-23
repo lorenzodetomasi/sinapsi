@@ -10,31 +10,9 @@
  */
 
 require_once __DIR__ . '/lib/ws-auth.php';
-
-/**
- * The content roots the hub can work on: `contents/<site>/<locale>` for
- * every locale directory a site has, `contents/<site>` for a site without.
- * Keyed by their id (`meetoo/it_IT`, `isotype/it_IT`); a `-` in front of a
- * name switches the site off (a reminder, a work in progress).
- */
-function ws_admin_sites(string $contents): array {
-    $out = [];
-    foreach (glob(rtrim($contents, '/') . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
-        $site = basename($dir);
-        if ($site[0] === '-' || $site[0] === '_' || $site[0] === '.') continue;
-        $locales = array_filter(glob("$dir/*", GLOB_ONLYDIR) ?: [], fn($d) => preg_match('/^[a-z]{2}_[A-Z]{2}$/', basename($d)));
-        if ($locales) {
-            foreach ($locales as $l) {
-                $id = "$site/" . basename($l);
-                $out[$id] = ['id' => $id, 'label' => "$site · " . basename($l), 'path' => $l];
-            }
-        } else {
-            $out[$site] = ['id' => $site, 'label' => $site, 'path' => $dir];
-        }
-    }
-    ksort($out);
-    return $out;
-}
+/* The content roots are a library, not this page's own: the sites module and
+ * the pages module need the same list, and a second copy of it would drift. */
+require_once __DIR__ . '/lib/ws-sites.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -72,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
          * path is never taken from the request as it comes. Meetoo stays the
          * default so that nothing changes for who does not choose. A root
          * whose name begins with `-` is switched off and is not offered. */
-        $sites = ws_admin_sites(__DIR__ . '/../ws-custom/contents');
+        $sites = ws_admin_sites(ws_admin_contents_abspath());
         $site  = (string)($_POST['site'] ?? 'meetoo/it_IT');
         if (!isset($sites[$site])) { http_response_code(400); echo json_encode(['error' => "Sito sconosciuto: $site"]); exit; }
         $base = $sites[$site]['path'];
