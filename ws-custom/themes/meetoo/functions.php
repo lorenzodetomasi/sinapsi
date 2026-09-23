@@ -193,11 +193,22 @@ function meetoo_icona_nodo($nodo){
 	if(!is_object($nodo)){
 		return null;
 	}
-	$suoi = $nodo->children('meetoo', true);
-	if($suoi === null or !isset($suoi->icon)){
+	/* L'icona sta nel vocabolario del CMS, `ws:`. Si guarda anche il vecchio
+	 * `meetoo:`, che e' dove stava finche' Meetoo non e' diventato un sito WS
+	 * come gli altri: gli archivi e i file non ancora migrati non devono
+	 * perdere l'icona il giorno della rinomina. Prima il nuovo, cosi' un file
+	 * migrato non ricade mai sul vecchio. */
+	$ico = null;
+	foreach(array('ws', 'meetoo') as $vocabolario){
+		$suoi = $nodo->children($vocabolario, true);
+		if($suoi !== null and isset($suoi->icon)){
+			$ico = $suoi->icon;
+			break;
+		}
+	}
+	if($ico === null){
 		return null;
 	}
-	$ico = $suoi->icon;
 	/* `children()` a mani nude: l'icona sta nel namespace `meetoo:`, ma i suoi campi
 	 * — `class`, `name` — no, stanno in quello predefinito. Chiedendoli
 	 * direttamente (`$ico->name`) SimpleXML li cerca ancora fra i `meetoo:`, e non
@@ -207,7 +218,10 @@ function meetoo_icona_nodo($nodo){
 	 * `meetoo:icon` non c'è ambiguità da sciogliere — quei due campi non vogliono
 	 * dire niente altrove — ma un contenuto scritto con il prefisso non deve
 	 * diventare un'icona che sparisce. */
-	$pref = $ico->children('meetoo', true);
+	$pref = $ico->children('ws', true);
+	if($pref === null or (!isset($pref->name) and !isset($pref->class))){
+		$pref = $ico->children('meetoo', true);
+	}
 	$campo = function($come) use ($dentro, $pref){
 		if(isset($dentro->$come)){
 			return trim((string)$dentro->$come);
@@ -315,7 +329,8 @@ function meetoo_fascia_breve($v){
 /**
  * L'icona di un contenuto, dichiarata dal contenuto stesso.
  *
- * `"meetoo:icon": {"class": "material-symbols-outlined", "name": "water"}`.
+ * `"ws:icon": {"class": "material-symbols-outlined", "name": "water"}` (e il
+ * vecchio `"meetoo:icon"`, finche' resta qualche file non migrato).
  *
  * L'icona appartiene alla cosa, non a chi la nomina: così il lungomare ha la sua
  * onda dovunque compaia — nella zona, dentro una raccolta, in un elenco — e per
@@ -324,14 +339,14 @@ function meetoo_fascia_breve($v){
  */
 function meetoo_icona_di($rel, $salti = 0){
 	$doc = meetoo_contenuto($rel);
-	$ico = is_array($doc) ? ($doc['meetoo:icon'] ?? null) : null;
+	$ico = is_array($doc) ? ($doc['ws:icon'] ?? $doc['meetoo:icon'] ?? null) : null;
 	if(is_string($ico) and trim($ico) !== ''){
 		return array('name' => trim($ico), 'class' => '');
 	}
 	if(is_array($ico)){
-		$nome = (string)($ico['name'] ?? $ico['meetoo:name'] ?? '');
+		$nome = (string)($ico['name'] ?? $ico['ws:name'] ?? $ico['meetoo:name'] ?? '');
 		if($nome !== ''){
-			return array('name' => $nome, 'class' => (string)($ico['class'] ?? $ico['meetoo:class'] ?? ''));
+			return array('name' => $nome, 'class' => (string)($ico['class'] ?? $ico['ws:class'] ?? $ico['meetoo:class'] ?? ''));
 		}
 	}
 	/* Niente icona qui: la si chiede a ciò di cui questo contenuto PARLA.
