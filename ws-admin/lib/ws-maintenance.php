@@ -44,6 +44,32 @@ if (!function_exists('ws_maint_state_path')) {
 if (!function_exists('ws_maint_ops')) {
     function ws_maint_ops(): array {
         return [
+            /* Il vocabolario: le chiavi con prefisso che stavano sotto il
+             * proprietario sbagliato. `meetoo:icon` e' del CMS, non di Ostia.
+             * La modifica e' testuale — la riscrittura del JSON rifarebbe la
+             * formattazione di ogni file toccato — e viene verificata
+             * rileggendo il risultato: se non combacia, il file non si scrive. */
+            'vocabulary' => [
+                'title' => 'Allinea il vocabolario',
+                'meta'  => 'Rinomina le chiavi con prefisso finite sotto il proprietario sbagliato (meetoo:icon → ws:icon)',
+                'icon'  => 'label', 'scope' => 'tutti', 'preview' => true, 'since' => '2026.09',
+                'confirm' => 'Rinominare le chiavi? I file di contenuto verranno riscritti.',
+                'run' => function (string $base, bool $apply, array $o): array {
+                    require_once __DIR__ . '/../_migrate-vocabulary.php';
+                    $r = ws_vocabulary_migrate($base, $apply);
+                    $lines = [];
+                    foreach ($r['details'] as $rel => $d) $lines[] = "$rel — " . implode(' · ', $d);
+                    foreach ($r['problems'] as $p) $lines[] = "⚠ $p";
+                    return [
+                        'changes' => $r['files'],
+                        'summary' => $r['files']
+                            ? "{$r['files']} file, {$r['keys']} chiavi" . ($apply ? ' — rinominate' : ' da rinominare')
+                            : 'Vocabolario in pari',
+                        'lines' => $lines,
+                    ];
+                },
+            ],
+
             /* The index of the events of ANY content root, in schema.org's own
              * shape - the one a list page matches its `about` against. Distinct
              * from `events-index` below, which is Meetoo's: that one normalises
