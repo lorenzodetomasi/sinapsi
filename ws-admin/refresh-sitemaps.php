@@ -28,12 +28,27 @@ if (!function_exists('ws_refresh_sitemaps')) {
      */
     function ws_refresh_sitemaps(string $root, bool $apply, array $options = []): array {
         $root = rtrim($root, '/');
-        $rep = ['map' => null, 'public' => null, 'changes' => 0];
+        $rep = ['map' => null, 'frame' => null, 'public' => null, 'changes' => 0];
 
         $lock = $apply ? ws_derived_lock($root) : null;
         $rep['map'] = ws_refresh_sitemap($root, $apply, $options);
         if ($lock) ws_derived_unlock($lock);
         if (in_array($rep['map']['status'], ['stale', 'rebuilt', 'created'], true)) $rep['changes'] = 1;
+
+        /*
+         * Poi il TELAIO del sito, che compone le mappe delle sue lingue.
+         *
+         * Sta qui, in mezzo, perché è l'anello che mancava: la mappa della
+         * lingua non serve a niente se il sito non la include, ed è esattamente
+         * quello che è successo a isotype — mappe di lingua perfette, telaio
+         * schiacciato, e ogni pagina tranne la home caduta su un altro sito.
+         * Rifarlo a ogni passata costa la lettura di una cartella e toglie di
+         * mezzo un file che nessuno possedeva.
+         */
+        if (preg_match('/\/[a-z]{2}_[A-Z]{2}$/', $root)) {
+            $rep['frame'] = ws_refresh_site_frame(dirname($root), $apply);
+            if (in_array($rep['frame']['status'], ['stale', 'rebuilt', 'created'], true)) $rep['changes']++;
+        }
 
         // The public sitemap follows the general map, which includes this one.
         if ($rep['map']['status'] !== 'skipped' && $rep['map']['status'] !== 'failed') {

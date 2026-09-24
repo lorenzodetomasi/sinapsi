@@ -5,12 +5,32 @@
 // @since WS 1.0
 global $ws_query, $rewrite_rule, $ws_headings, $ws_contentmap, $ws_content, $ws_content_root, $ws_content_root_abspath;
 $index_url = $ws_headings->url[0];
-if(file_exists($ws_content_root_abspath.'/'.ws_locale().'/nav1.xml')){
-  $nav1 = ws_content($ws_content_root.'/'.ws_locale().'/nav1');
-} else if($ws_content_root_abspath.'/nav1.xml'){
-  $nav1 = ws_content($ws_content_root.'/nav1');
+
+/*
+ * Il menu: quello della lingua, se c'è; poi quello del sito; e se non c'è
+ * nessuno dei due, la mappa, che le voci ce le ha comunque.
+ *
+ * Le due righe di prima erano rotte in due modi che si nascondevano a vicenda.
+ * La seconda condizione — `if($percorso.'/nav1.xml')` — verifica una STRINGA
+ * non vuota, quindi è sempre vera: si caricava il menu del sito esistesse o no.
+ * E quando non esisteva, `ws_content()` tornava `false`, su cui `->count()` è
+ * un errore fatale.
+ *
+ * Nessuno se n'era accorto perché su isotype e Meetoo il menu della lingua c'è
+ * sempre. Si vede la prima volta che una lingua non ce l'ha: `/en` di isotype
+ * moriva così, con la pagina bianca e l'errore nel corpo.
+ */
+$nav1 = null;
+foreach(array($ws_content_root.'/'.ws_locale().'/nav1', $ws_content_root.'/nav1') as $nav1_relpath){
+  $nav1_abspath = ws_root_abspath().'/'.WS_CONTENTS_RELPATH.'/'.$nav1_relpath;
+  if(file_exists($nav1_abspath.'.xml') or file_exists($nav1_abspath.'.wsx') or file_exists($nav1_abspath.'.json')){
+    $nav1 = ws_content($nav1_relpath);
+    if($nav1){
+      break;
+    }
+  }
 }
-if($nav1->count() == 0){
+if(!$nav1 or $nav1->count() == 0){
   $nav1 = $ws_contentmap;
 }
 ?>

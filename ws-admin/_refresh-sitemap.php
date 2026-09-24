@@ -251,4 +251,134 @@ if (!function_exists('ws_refresh_sitemap')) {
         return $out;
     }
 }
+
+/*
+ * IL TELAIO DI UN SITO: `<sito>/ws_sitemap.wsx`, che compone le mappe delle sue
+ * lingue.
+ *
+ * Non era di nessuno. Non lo generava niente e niente lo proteggeva, e quando
+ * un'operazione pensata per un sito a lingua sola lo ha riscritto piatto,
+ * isotype ha perso ogni pagina tranne la home: gli indirizzi rimasti senza
+ * risposta sono caduti su un altro sito che li aveva uguali, e per giorni le
+ * pagine di your-website hanno risposto a nome di isotype. Un file che nessuno
+ * genera è un file che, perso, resta perso.
+ *
+ * Adesso è derivato come tutto il resto: si ricostruisce dalle lingue che
+ * esistono, e se sparisce torna.
+ *
+ * QUANDO NON SI TOCCA. Un sito a lingua sola può avere la mappa piatta nel sito
+ * stesso — è l'arrangiamento di Meetoo, dove `contents/meetoo/ws_sitemap.wsx`
+ * porta le 92 voci e `it_IT/` non ha una mappa sua. Lì un telaio che include
+ * mappe che non esistono cancellerebbe le uniche che ci sono. Il segnale non è
+ * quante lingue ci sono ma se le lingue hanno una mappa propria: se nessuna ce
+ * l'ha, questo file non è un telaio e non lo si riscrive.
+ */
+if (!function_exists('ws_refresh_site_frame')) {
+
+    function ws_refresh_site_frame(string $site_root, bool $apply): array {
+        $site_root = rtrim($site_root, '/');
+        $out = ['status' => 'skipped', 'why' => '', 'locales' => []];
+        if (!is_dir($site_root)) { $out['why'] = 'no such site'; return $out; }
+
+        $locales = ws_sitemap_frame_locales($site_root);
+        if (!$locales) {
+            /* Nessuna lingua con una mappa propria: o il sito non ha lingue, o
+             * le sue voci stanno qui dentro (Meetoo). In entrambi i casi non è
+             * un telaio. */
+            $out['why'] = 'no locale has a map of its own';
+            return $out;
+        }
+        $out['locales'] = $locales;
+
+        $target = $site_root . '/ws_sitemap.wsx';
+        $wanted = ws_sitemap_frame_xml($locales);
+        $current = is_file($target) ? (string)@file_get_contents($target) : '';
+
+        if ($current === $wanted) { $out['status'] = 'fresh'; return $out; }
+
+        /* Che cosa si sta sostituendo, detto nel rapporto: un telaio diverso è
+         * un riordino, una mappa piatta è un file che qualcuno aveva
+         * schiacciato e che torna al suo posto. */
+        $out['why'] = $current === '' ? 'missing'
+            : (strpos($current, '<url>') !== false ? 'was a flat map, not a frame' : 'includes changed');
+
+        if (!$apply) { $out['status'] = 'stale'; return $out; }
+
+        if (@file_put_contents($target, $wanted, LOCK_EX) === false) {
+            $out['status'] = 'failed'; $out['why'] = 'cannot write ws_sitemap.wsx'; return $out;
+        }
+        $out['status'] = $current === '' ? 'created' : 'rebuilt';
+        return $out;
+    }
+
+    /*
+     * Le lingue del sito, nell'ordine in cui vanno incluse.
+     *
+     * L'ordine conta: il CMS prende la PRIMA voce che risponde a un indirizzo,
+     * e la lingua primaria è quella che risponde alla radice. Lo dice
+     * `ws_languages.wsx`, che è il posto dove il sito dichiara le sue lingue e
+     * quale sta a `/`; in mancanza si va in ordine alfabetico, che almeno è
+     * stabile.
+     *
+     * Entrano solo le lingue che una mappa ce l'hanno davvero: includere un
+     * file che non c'è fa fallire la risoluzione dell'intero telaio, e con essa
+     * tutte le altre lingue.
+     */
+    function ws_sitemap_frame_locales(string $site_root): array {
+        $con_mappa = [];
+        foreach (glob($site_root . '/*', GLOB_ONLYDIR) ?: [] as $dir) {
+            $name = basename($dir);
+            if (!preg_match('/^[a-z]{2}_[A-Z]{2}$/', $name)) continue;
+            if (is_file($dir . '/ws_sitemap.wsx')) $con_mappa[] = $name;
+        }
+        if (!$con_mappa) return [];
+        sort($con_mappa);
+
+        $dichiarate = ws_sitemap_declared_locales($site_root);
+        $ordinate = [];
+        foreach ($dichiarate as $l) {
+            if (in_array($l, $con_mappa, true)) $ordinate[] = $l;
+        }
+        /* Una lingua che ha una mappa ma che `ws_languages.wsx` non nomina non
+         * si perde: va in fondo. Un file dimenticato non deve togliere pagine
+         * dal sito. */
+        foreach ($con_mappa as $l) {
+            if (!in_array($l, $ordinate, true)) $ordinate[] = $l;
+        }
+        return $ordinate;
+    }
+
+    /* Le lingue come le dichiara il sito, la primaria per prima. Si legge senza
+     * XML: il file è pieno di XInclude che solo il CMS risolve, e qui servono
+     * due elementi per voce. */
+    function ws_sitemap_declared_locales(string $site_root): array {
+        $file = $site_root . '/ws_languages.wsx';
+        if (!is_file($file)) return [];
+        $raw = (string)@file_get_contents($file);
+        if (!preg_match_all('#<item>(.*?)</item>#s', $raw, $m)) return [];
+
+        $prima = [];
+        $dopo = [];
+        foreach ($m[1] as $item) {
+            if (!preg_match('#<locale>\s*([a-z]{2}_[A-Z]{2})\s*</locale>#', $item, $l)) continue;
+            $wspath = preg_match('#<wspath>\s*([^<]*)</wspath>#', $item, $w) ? trim($w[1]) : '';
+            if ($wspath === '/') $prima[] = $l[1]; else $dopo[] = $l[1];
+        }
+        return array_merge($prima, $dopo);
+    }
+
+    function ws_sitemap_frame_xml(array $locales): string {
+        $righe = '';
+        foreach ($locales as $l) {
+            $righe .= "\t<xi:include href=\"$l/ws_sitemap.wsx\" xpointer=\"xpointer(/*[1]/*)\"/>\n";
+        }
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+             . "<!-- Derived from the site's language folders by ws-admin/_refresh-sitemap.php."
+             . " Do not edit: it comes back. -->\n"
+             . "<urlset xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n"
+             . $righe
+             . "</urlset>\n";
+    }
+}
+
 ?>
