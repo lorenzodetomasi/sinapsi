@@ -4,6 +4,12 @@
 // @subpackage Localbiz
 // @since WS 1.0
 global $ws_query, $ws_headings, $ws_content;
+
+/* Senza testate non c'e' niente da attribuire: si tace invece di riempire la
+ * pagina di avvisi. Vedi la nota in cima a `header.php`. */
+if(empty($ws_headings)){
+	return;
+}
 $legalName = $ws_headings->mainEntity->legalName;
 $copyrightYear = $ws_headings->mainEntity->copyrightYear;
 $currentYear = date(__('Y'));

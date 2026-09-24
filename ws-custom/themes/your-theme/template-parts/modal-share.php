@@ -29,7 +29,7 @@ global $rewrite_rule, $ws_headings;
  * e' una regola che prima o poi uno dei due dimentica. Senza, su Meetoo restava
  * una finestra nel documento che nessun comando apriva: l'inverso esatto del
  * difetto che questa riga di lavoro e' andata a togliere. */
-if((string)$ws_headings->share !== 'true'){
+if(empty($ws_headings) or (string)$ws_headings->share !== 'true'){
 	return;
 }
 

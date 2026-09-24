@@ -4,7 +4,29 @@
 // @subpackage Your Theme
 // @since WS 1.0
 global $ws_query, $rewrite_rule, $ws_headings, $ws_contentmap, $ws_content, $ws_content_root, $ws_content_root_abspath;
-$index_url = $ws_headings->url[0];
+
+/* SENZA TESTATE la pagina esce lo stesso, spoglia.
+ *
+ * `ws_headings` e' un file di contenuto, e i contenuti non stanno in git: si
+ * caricano a mano, e una volta su dieci arrivano dopo il codice che li usa.
+ * Quando e' successo - su /meetoo, in produzione - questo file e' morto sulla
+ * prima riga, e con lui la pagina: `Call to a member function innerHTML() on
+ * null`. Un errore fatale per un file che manca e' una punizione sproporzionata:
+ * il sito ha ancora il suo menu, il suo contenuto e le sue briciole, e puo'
+ * mostrarli mentre qualcuno si accorge che manca il resto.
+ *
+ * Il nome ripiega su quello della pagina d'ingresso nella mappa, che c'e'
+ * sempre; il marchio non si stampa affatto - `ws_brand_mark()` risponde gia'
+ * «niente disegno, scrivi il nome». */
+$ws_ha_testate = !empty($ws_headings);
+$index_url = $ws_ha_testate && !empty($ws_headings->url) ? (string)$ws_headings->url[0] : ws_href('');
+$ws_nome_sito = '';
+if($ws_ha_testate and !empty($ws_headings->mainEntity->name)){
+	$ws_nome_sito = $ws_headings->mainEntity->name->innerHTML();
+} else if(!empty($ws_contentmap)){
+	$prima = $ws_contentmap->xpath('url[1]/title');
+	$ws_nome_sito = $prima ? htmlspecialchars((string)$prima[0], ENT_QUOTES, 'UTF-8') : '';
+}
 
 /*
  * Il menu: quello della lingua, se c'è; poi quello del sito; e se non c'è
@@ -50,7 +72,7 @@ echo ws_links();
 			<header<?php echo ws_html_attributes('header'); ?>>
 				<div<?php echo ws_html_attributes('header-content'); ?>>
 <?php
-if($ws_headings->header_top){
+if($ws_ha_testate and $ws_headings->header_top){
 	include_template($ws_headings->header_top);
 }
 ?>
@@ -73,11 +95,11 @@ echo $marchio['html'];
 if($marchio['name']){
 ?>
 							<hgroup>
-								<h1><?php echo $ws_headings->mainEntity->name->innerHTML(); ?></h1>
+								<h1><?php echo $ws_nome_sito; ?></h1>
 <?php
 	/* L'occhiello si stampa se la marca ce l'ha. Un `<h2>` vuoto sotto al nome
 	   è una riga di niente che sposta tutto il resto. */
-	if(!empty($ws_headings->mainEntity->headline) and trim((string)$ws_headings->mainEntity->headline) !== ''){
+	if($ws_ha_testate and !empty($ws_headings->mainEntity->headline) and trim((string)$ws_headings->mainEntity->headline) !== ''){
 ?>
 								<h2<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
 <?php
