@@ -231,82 +231,6 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
-            'mappa-sito' => [
-                'title' => 'Rigenera la mappa del sito',
-                'meta'  => 'Un indirizzo per ogni contenuto: e\' cosi\' che le pagine diventano visibili al CMS e ai motori',
-                'icon'  => 'map', 'scope' => 'events', 'preview' => true, 'since' => '2026.08',
-                'confirm' => 'Rigenerare la mappa del sito? ws_sitemap.wsx verra\' riscritto.',
-                'run' => function (string $base, bool $apply, array $o): array {
-                    require_once __DIR__ . '/ws-mappa.php';
-                    // $base è la cartella del LOCALE (…/meetoo/it_IT): la mappa vive
-                    // un livello sopra, accanto ai locali, perché il sito è uno solo.
-                    $locale = basename(rtrim($base, '/'));
-                    $radiceSito = dirname(rtrim($base, '/'));
-                    $sito = basename($radiceSito);
-
-                    /*
-                     * UN SITO CON PIU' LINGUE QUI NON SI TOCCA.
-                     *
-                     * Questa operazione è nata per Meetoo, che ha una lingua sola:
-                     * lì `<sito>/ws_sitemap.wsx` E' la mappa, piatta, e riscriverla
-                     * è giusto. In un sito con due lingue quello stesso file non è
-                     * una mappa: è il TELAIO che include `it_IT/ws_sitemap.wsx` e
-                     * `en_US/ws_sitemap.wsx`. Riscriverlo piatto lo distrugge.
-                     *
-                     * E' successo su isotype, in produzione: il telaio è diventato
-                     * una mappa con dentro il solo `/`, e da quel momento ogni
-                     * pagina che non fosse la home non si trovava più. Il CMS
-                     * scorre le mappe dei siti in ordine e prende la prima che
-                     * risponde, così `/servizi`, `/chi-siamo` e `/contatti` —
-                     * indirizzi che your-website ha uguali — finivano lì: pagine
-                     * di un altro sito, con un'altra marca, a un indirizzo di
-                     * isotype. Per giorni, senza un errore da nessuna parte.
-                     *
-                     * Per quei siti la mappa della lingua la fa `sitemaps`, e il
-                     * telaio non lo tocca nessuno perché non è derivato.
-                     */
-                    $lingue = array_filter(glob($radiceSito . '/*', GLOB_ONLYDIR) ?: [],
-                        fn($d) => preg_match('/^[a-z]{2}_[A-Z]{2}$/', basename($d)));
-                    if (count($lingue) > 1) {
-                        $nomi = implode(', ', array_map('basename', $lingue));
-                        return [
-                            'changes' => 0,
-                            'summary' => "Non eseguita: «{$sito}» ha piu' lingue ($nomi), e li' "
-                                . "$sito/ws_sitemap.wsx e' il telaio che le include, non una mappa. "
-                                . "Usa «Rigenera le mappe» (sitemaps), che riscrive la mappa della lingua.",
-                            'lines' => [],
-                        ];
-                    }
-                    $r = ws_mappa_costruisci($radiceSito, $sito, $locale, $apply);
-                    $inn = ws_mappa_innesta(dirname($radiceSito), $sito, $apply);
-                    // Le due metà dello stesso lavoro: la mappa serve al CMS per
-                    // instradare, il sitemap.xml ai motori per trovare. Farne una
-                    // sola significa avere pagine che rispondono e che nessuno cerca.
-                    $mounts = is_array(WS_MOUNTS) ? WS_MOUNTS : array();  // ws-mappa.php la definisce
-                    $pub = ws_mappa_sitemap_pubblico(dirname($radiceSito), $mounts, $apply);
-                    $per = [];
-                    foreach ($r['voci'] as $v) $per[$v['template']][] = $v['wspath'];
-                    $righe = [];
-                    foreach ($per as $t => $w) {
-                        $righe[] = "$t: " . count($w) . ' pagine · ' . implode(', ', array_slice($w, 0, 3))
-                            . (count($w) > 3 ? ' …' : '');
-                    }
-                    $righe[] = 'mappa generale: ' . $inn['why'];
-                    $righe[] = 'sitemap.xml per i motori: ' . $pub['why'];
-                    return [
-                        'changes' => $r['changes'],
-                        'summary' => $r['changes']
-                            ? $r['changes'] . ' pagine' . ($apply ? ' scritte in ' . basename($r['file']) : ' da mappare')
-                              . (count($r['problemi']) ? ' · ⚠ ' . count($r['problemi']) : '')
-                            : 'Nessun contenuto da mappare.',
-                        'lines' => array_merge($righe, array_map(fn($x) => "⚠ $x", $r['problemi'])),
-                    ];
-                },
-            ],
-
-
-
-
             'lists' => [
                 'title' => 'Rigenera le liste con regola',
                 'meta'  => 'Chi soddisfa la regola entra; ciò che è stato curato a mano resta',
@@ -395,29 +319,103 @@ if (!function_exists('ws_maint_ops')) {
                 },
             ],
 
-            'sitemaps' => [
-                'title' => 'Rigenera la mappa del sito dalle pagine',
-                'meta'  => 'Una pagina è sulla mappa perché il suo index.json esiste; poi il sitemap.xml per i motori',
+            /*
+             * LE MAPPE, una voce sola.
+             *
+             * Ce n'erano due, con due titoli quasi uguali — «Rigenera la mappa
+             * del sito» e «Rigenera la mappa del sito dalle pagine» — e in
+             * ambiti diversi, così nel pannello sembravano due cose slegate.
+             * Non lo erano: erano i due modi in cui un indirizzo può nascere.
+             *
+             *   DICHIARATO   la pagina porta il suo `wspath` (isotype,
+             *                your-website, un sito fatto dal pannello Siti).
+             *   CALCOLATO    l'indirizzo viene dall'albero delle entità —
+             *                /roma/municipio10/lido-di-ostia — e nessuna
+             *                pagina lo scrive (Meetoo).
+             *
+             * E non si sovrappongono mai: su Meetoo il costruttore dichiarativo
+             * non trova niente da mappare, su isotype quello calcolato si
+             * rifiuta perché il sito ha due lingue. Una radice sola vuole
+             * sempre uno solo dei due.
+             *
+             * Se non si scontrano mai, non è una scelta: è una diagnosi, e la
+             * può fare il programma. Sceglierla a mano era solo il modo di
+             * sbagliarla — ed è stato sbagliato, su isotype, dove il
+             * costruttore di Meetoo ha schiacciato il telaio delle lingue e per
+             * giorni le pagine di un altro sito hanno risposto al suo posto.
+             */
+            'mappe' => [
+                'title' => 'Rigenera le mappe',
+                'meta'  => 'La mappa con cui il CMS instrada e il sitemap.xml per i motori; il modo giusto lo sceglie dal sito',
                 'icon'  => 'map', 'scope' => 'contents', 'preview' => true, 'since' => '2026.09',
-                'confirm' => 'Rigenerare la mappa? ws_sitemap.wsx di questo sito e sitemap.xml generale verranno riscritti.',
+                'confirm' => 'Rigenerare le mappe? ws_sitemap.wsx e sitemap.xml verranno riscritti.',
                 'run' => function (string $base, bool $apply, array $o): array {
                     require_once __DIR__ . '/../refresh-sitemaps.php';
-                    $r = ws_refresh_sitemaps($base, $apply);
-                    $m = $r['map'];
-                    $lines = [];
-                    if ($m['status'] === 'skipped' || $m['status'] === 'failed') {
-                        return ['changes' => 0, 'summary' => ($m['status'] === 'failed' ? '⚠ ' : '') . $m['why'], 'lines' => []];
+
+                    /* Si prova il modo dichiarativo in ANTEPRIMA: se trova
+                     * pagine, è quello giusto e si esegue davvero. La domanda
+                     * «questa radice ha pagine che dicono dove stanno?» non ha
+                     * una risposta più diretta di andare a guardare. */
+                    $prova = ws_refresh_sitemaps($base, false);
+                    $dichiarato = ($prova['map']['status'] ?? '') !== 'skipped';
+
+                    if ($dichiarato) {
+                        $r = $apply ? ws_refresh_sitemaps($base, true) : $prova;
+                        $righe = ['modo: gli indirizzi li dichiarano le pagine (wspath)'];
+                        if (!empty($r['frame'])) {
+                            $righe[] = 'telaio delle lingue: ' . $r['frame']['status']
+                                . ($r['frame']['why'] ? ' — ' . $r['frame']['why'] : '');
+                        }
+                        if (!empty($r['public'])) $righe[] = 'sitemap.xml per i motori: ' . $r['public']['why'];
+                        return [
+                            'changes' => $r['changes'],
+                            'summary' => 'Mappa: ' . $r['map']['status']
+                                . (($r['map']['pages'] ?? 0) ? ' · ' . $r['map']['pages'] . ' pagine' : '')
+                                . (!empty($r['frame']) && $r['frame']['status'] !== 'fresh' && $r['frame']['status'] !== 'skipped'
+                                    ? ' · telaio ' . $r['frame']['status'] : ''),
+                            'lines' => $righe,
+                        ];
                     }
-                    $lines[] = "{$m['pages']} pagine sulla mappa: {$m['json']} da JSON, {$m['wsx']} ancora da .wsx";
-                    foreach ($m['fragments'] as $f)   $lines[] = "inclusa come frammento: $f";
-                    foreach ($m['legacy_maps'] as $f) $lines[] = "⚠ mappa scritta a mano, non più letta (le sue pagine sono già qui): $f";
-                    foreach ($m['problems'] as $pr)   $lines[] = "⚠ $pr";
-                    if ($r['public']) $lines[] = 'sitemap.xml per i motori: ' . $r['public']['why'];
+
+                    /* Nessuna pagina dichiara un indirizzo: è un sito i cui
+                     * indirizzi si calcolano dall'albero delle entità. */
+                    require_once __DIR__ . '/ws-mappa.php';
+                    $locale = basename(rtrim($base, '/'));
+                    $radiceSito = dirname(rtrim($base, '/'));
+                    $sito = basename($radiceSito);
+
+                    /* La stessa guardia di prima, e per lo stesso motivo: in un
+                     * sito a più lingue `<sito>/ws_sitemap.wsx` non è una mappa
+                     * ma il telaio che le include, e questo costruttore lo
+                     * riscriverebbe piatto. */
+                    $lingue = array_filter(glob($radiceSito . '/*', GLOB_ONLYDIR) ?: [],
+                        fn($d) => preg_match('/^[a-z]{2}_[A-Z]{2}$/', basename($d)));
+                    if (count($lingue) > 1) {
+                        return [
+                            'changes' => 0,
+                            'summary' => "Non eseguita: nessuna pagina di questa radice dichiara un indirizzo, "
+                                . "ma «{$sito}» ha piu' lingue e la sua mappa e' un telaio. "
+                                . "Va capito che cosa manca prima di riscriverla.",
+                            'lines' => ['lingue: ' . implode(', ', array_map('basename', $lingue))],
+                        ];
+                    }
+
+                    $r = ws_mappa_costruisci($radiceSito, $sito, $locale, $apply);
+                    $inn = ws_mappa_innesta(dirname($radiceSito), $sito, $apply);
+                    $mounts = is_array(WS_MOUNTS) ? WS_MOUNTS : array();
+                    $pub = ws_mappa_sitemap_pubblico(dirname($radiceSito), $mounts, $apply);
+                    $per = [];
+                    foreach ($r['voci'] as $v) $per[$v['template']][] = $v['wspath'];
+                    $righe = ['modo: gli indirizzi si calcolano dall\'albero delle entita\''];
+                    foreach ($per as $t => $w) $righe[] = $t . ': ' . count($w);
+                    if (!empty($r['problemi'])) foreach ($r['problemi'] as $pb) $righe[] = '⚠ ' . $pb;
                     return [
-                        'changes' => $r['changes'],
-                        'summary' => $m['status'] === 'fresh' ? 'La mappa è in pari.'
-                            : ($apply ? "Mappa {$m['status']}: {$m['pages']} pagine" : "Mappa da rifare: {$m['pages']} pagine"),
-                        'lines' => $lines,
+                        'changes' => count($r['voci']),
+                        'summary' => count($r['voci']) . ' pagine ' . ($apply ? 'mappate' : 'da mappare')
+                            . (!empty($inn['why']) ? ' · ' . $inn['why'] : '')
+                            . ' · sitemap.xml: ' . $pub['why']
+                            . (!empty($r['problemi']) ? ' · ⚠ ' . count($r['problemi']) : ''),
+                        'lines' => $righe,
                     ];
                 },
             ],
