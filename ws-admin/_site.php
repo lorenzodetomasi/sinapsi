@@ -25,6 +25,9 @@
  */
 
 require_once __DIR__ . '/lib/ws-auth.php';
+/* L'elenco dei siti e la LETTURA di ciò che dichiarano: libreria leggera,
+ * perché la leggono in tanti. Qui dentro resta solo la scrittura. */
+require_once __DIR__ . '/lib/ws-sites.php';
 
 if (!defined('WS_SITE_GENERATOR')) {
     define('WS_SITE_GENERATOR', 'site-scaffold 2026.09.23');
@@ -1404,36 +1407,6 @@ function site_page_set_list_about(array &$rep, string $abspath, array $page, arr
 
 const SITE_FEATURES_OPEN  = '// --- What this site handles, beside its pages. Written by ws-admin/sites.php.';
 const SITE_FEATURES_CLOSE = '// --- end features';
-
-/* The capabilities on offer. A site that declares nothing handles its pages
- * and nothing else, which is what every site did until now. */
-function site_features_available(): array {
-    return [
-        'events' => 'Gestione degli eventi',
-    ];
-}
-
-/*
- * What a site declares, read from its file.
- *
- * Parsed and not included: see above. The regex is deliberately forgiving
- * about spacing and quotes, because this line is also written by hand.
- */
-function site_features(string $siteId): array {
-    $file = site_contents_abspath() . '/' . $siteId . '/ws-config.php';
-    if (!is_file($file)) return [];
-    $body = (string)@file_get_contents($file);
-    if (!preg_match('/define\s*\(\s*[\'"]WS_SITE_FEATURES[\'"]\s*,\s*(?:array\s*\(|\[)(.*?)(?:\)|\])\s*\)\s*;/s', $body, $m)) {
-        return [];
-    }
-    $out = [];
-    if (preg_match_all('/[\'"]([a-z0-9_-]+)[\'"]/i', $m[1], $f)) {
-        foreach ($f[1] as $name) {
-            if (isset(site_features_available()[$name]) && !in_array($name, $out, true)) $out[] = $name;
-        }
-    }
-    return $out;
-}
 
 /*
  * Turns a capability on or off, rewriting the whole declaration.

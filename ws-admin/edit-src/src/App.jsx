@@ -32,7 +32,7 @@ import DiffModal from './DiffModal.jsx';
 import RinominaModal from './RinominaModal.jsx';
 import { diffForm, mergeChoices, pathToClass } from './diff.js';
 import { difettoId, percorsoDa } from './eventId.js';
-import { API_BASE, CONTENT_BASE, SAVE_EVENT_URL } from './config.js';
+import { API_BASE, CONTENT_BASE, SAVE_EVENT_URL, SITE } from './config.js';
 import { supportsFs, ensurePermission, writeInto, downloadFile, idbGet, idbSet, idbDel } from './fsSave.js';
 
 const renderers = [
@@ -467,7 +467,10 @@ export default function App() {
     if (!authToken) { showFlash('Accedi con Google per salvare sul web', 'err'); return; }
     setSavingWeb(true);
     try {
-      const body = new URLSearchParams({ payload: payloadToSave, path: rel, credential: authToken });
+      /* `site` viaggia col salvataggio: il server lo indovina finché a gestire
+       * gli eventi è un sito solo, e questo editor non deve smettere di
+       * funzionare il giorno che diventano due. */
+      const body = new URLSearchParams({ payload: payloadToSave, path: rel, credential: authToken, site: SITE });
       /* L'ORIGINALE da cestinare: si manda solo quando l'utente ha scelto di
        * rinominare. Senza questo, il server non ha modo di sapere che quella
        * cartella non serve più — e infatti restava lì. */

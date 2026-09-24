@@ -22,11 +22,22 @@ const SITE_ROOT = typeof location !== 'undefined'
   ? location.pathname.replace(/\/ws-admin\/.*/, '/')
   : '/';
 
+// WHICH SITE'S content. Events are a capability a site declares in its own
+// ws-config.php, and the editor works on the one that asked for it: the panel
+// that opens the editor passes `?site=`, and it travels back with every save.
+//
+// Without it, `meetoo/it_IT`, because for now that is the only site that has
+// events switched on - the same rule the server applies when the parameter is
+// missing. The day there are two, the panel sends it and this is already ready.
+export const SITE = (typeof location !== 'undefined'
+  ? new URLSearchParams(location.search).get('site')
+  : '') || 'meetoo/it_IT';
+
 export const CONTENT_BASE =
   import.meta.env.VITE_CONTENT_BASE ||
   (import.meta.env.DEV
-    ? '/content/ws-custom/contents/meetoo/it_IT/'
-    : SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/');
+    ? '/content/ws-custom/contents/' + SITE + '/'
+    : SITE_ROOT + 'ws-custom/contents/' + SITE + '/');
 
 // Event index (for the search picker). Written when saving from the web.
 export const EVENTS_INDEX_URL =

@@ -67,3 +67,79 @@ if (!function_exists('ws_admin_site_path')) {
         return $sites[$id]['path'] ?? null;
     }
 }
+
+/* The capabilities on offer. A site that declares nothing handles its pages
+ * and nothing else, which is what every site did until now. */
+function site_features_available(): array {
+    return [
+        'events' => 'Gestione degli eventi',
+    ];
+}
+
+/*
+ * What a site declares, read from its file.
+ *
+ * Parsed and not included: see above. The regex is deliberately forgiving
+ * about spacing and quotes, because this line is also written by hand.
+ */
+function site_features(string $siteId): array {
+    $file = ws_admin_contents_abspath() . '/' . $siteId . '/ws-config.php';
+    if (!is_file($file)) return [];
+    $body = (string)@file_get_contents($file);
+    if (!preg_match('/define\s*\(\s*[\'"]WS_SITE_FEATURES[\'"]\s*,\s*(?:array\s*\(|\[)(.*?)(?:\)|\])\s*\)\s*;/s', $body, $m)) {
+        return [];
+    }
+    $out = [];
+    if (preg_match_all('/[\'"]([a-z0-9_-]+)[\'"]/i', $m[1], $f)) {
+        foreach ($f[1] as $name) {
+            if (isset(site_features_available()[$name]) && !in_array($name, $out, true)) $out[] = $name;
+        }
+    }
+    return $out;
+}
+
+/*
+ * Il sito su cui lavora una richiesta.
+ *
+ * Restituisce ['id', 'path', 'error']. Un endpoint chiama questa e non compone
+ * mai un percorso da sé: il nome deve essere una delle radici che esistono, e
+ * il controllo sta in un posto solo.
+ *
+ * SENZA UN SITO NELLA RICHIESTA si prende l'unico che dichiara la capacità
+ * chiesta. Non è una scorciatoia: finché una cosa la gestisce un sito solo, la
+ * domanda «quale?» non ha altre risposte, e obbligare a scriverla sarebbe
+ * chiedere di ripetere ciò che si sa già. Dal giorno che i siti sono due, la
+ * risposta non è più ovvia e il parametro diventa obbligatorio — cioè
+ * esattamente quando comincia a servire.
+ */
+function ws_admin_request_site(?string $asked, string $feature = ''): array {
+    $sites = ws_admin_sites(ws_admin_contents_abspath());
+    $asked = trim((string)$asked);
+
+    if ($asked !== '') {
+        if (!isset($sites[$asked])) return ['id' => '', 'path' => '', 'error' => "Radice sconosciuta: $asked"];
+        if ($feature !== '' && !in_array($feature, site_features(explode('/', $asked)[0]), true)) {
+            return ['id' => '', 'path' => '', 'error' =>
+                "«{$asked}» non ha attivato " . (site_features_available()[$feature] ?? $feature)
+                . ". Si attiva dal pannello Siti."];
+        }
+        return ['id' => $asked, 'path' => $sites[$asked]['path'], 'error' => ''];
+    }
+
+    if ($feature === '') return ['id' => '', 'path' => '', 'error' => 'Manca il sito.'];
+
+    $con = [];
+    foreach ($sites as $id => $s) {
+        if (in_array($feature, site_features(explode('/', $id)[0]), true)) $con[] = $id;
+    }
+    if (!$con) {
+        return ['id' => '', 'path' => '', 'error' =>
+            'Nessun sito ha attivato ' . (site_features_available()[$feature] ?? $feature) . '.'];
+    }
+    if (count($con) > 1) {
+        return ['id' => '', 'path' => '', 'error' =>
+            'Più siti gestiscono ' . (site_features_available()[$feature] ?? $feature)
+            . ' (' . implode(', ', $con) . '): dimmi quale.'];
+    }
+    return ['id' => $con[0], 'path' => $sites[$con[0]]['path'], 'error' => ''];
+}

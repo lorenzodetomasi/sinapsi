@@ -18,6 +18,7 @@
 ini_set('display_errors', '0');
 
 require_once __DIR__ . '/../lib/ws-auth.php';
+require_once __DIR__ . '/../lib/ws-sites.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json');
@@ -32,14 +33,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $canEdit = in_array($user['role'], ['user', 'client', 'admin', 'super-admin'], true);
 
     if ($action === 'auth') {
+        /* Con l'identità torna anche il sito: quale, e dove stanno i suoi
+         * contenuti. È il client che legge gli indici direttamente, e prima
+         * componeva quell'indirizzo da sé con `meetoo` scritto dentro — cioè
+         * leggeva gli eventi di Meetoo qualunque sito stesse guardando.
+         * L'errore, se c'è, torna come campo e non come 400: senza sito il
+         * pannello deve poter dire perché, non sparire. */
+        $s = ws_admin_request_site($_POST['site'] ?? null, 'events');
         echo json_encode([
             'uid' => $user['uid'], 'email' => $user['email'], 'role' => $user['role'],
             'name' => $user['name'] ?? '', 'canEdit' => $canEdit,
+            'site' => $s['id'],
+            'contentBase' => $s['id'] !== '' ? 'ws-custom/contents/' . $s['id'] . '/' : '',
+            'siteError' => $s['error'],
         ]);
         exit;
     }
 
-    $base = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
+    /* Su quale sito: quello che lo chiede, o l'unico che ha acceso gli eventi. */
+    $sito = ws_admin_request_site($_POST['site'] ?? null, 'events');
+    if ($sito['error'] !== '') { http_response_code(400); echo json_encode(['error' => $sito['error']]); exit; }
+    $base = $sito['path'];
 
     if ($action === 'check-refs') {
         if (!$canEdit) { http_response_code(403); echo json_encode(['error' => 'Permessi insufficienti.']); exit; }
@@ -257,8 +271,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <script>
   (function () {
     const SITE_ROOT = location.pathname.replace(/\/ws-admin\/.*/, '/');
-    const CONTENT_BASE = SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/';
+    /* Quale sito: lo dice il server, che sa chi ha acceso gli eventi. Scriverlo
+       qui voleva dire che la pagina degli eventi di qualunque sito leggeva gli
+       indici di Meetoo. Il valore arriva con `action=auth`, prima di ogni
+       lettura, ed è anche quello che si rimanda indietro a ogni richiesta. */
+    let SITE = new URLSearchParams(location.search).get('site') || '';
+    let CONTENT_BASE = '';
+    /* L'editor apre il sito che si sta guardando: senza, aprirebbe sempre
+       quello predefinito e si salverebbe nel posto sbagliato. */
     const EDIT = SITE_ROOT + 'ws-admin/events/edit/';
+    const editHref = (query) => EDIT + query + (SITE ? '&site=' + encodeURIComponent(SITE) : '');
     const NUOVO = SITE_ROOT + 'ws-admin/events/nuovo/';   // la scelta del tipo, prima del modulo
     const PAGE = 10;                       // quanti se ne mostrano per volta
     const esc = Meetoo.cardUtils.esc;
@@ -298,6 +320,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       const body = new URLSearchParams(Object.assign({ action }, fields || {}));
       const token = window.meetooSession && meetooSession.getToken();
       if (token) body.set('credential', token);
+      /* Il sito viaggia con ogni richiesta: il server lo indovina solo finché
+         a gestire gli eventi è un sito solo, e questa pagina non deve smettere
+         di funzionare il giorno che diventano due. */
+      if (SITE) body.set('site', SITE);
       return fetch(location.pathname, {
         method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(),
       }).then((r) => r.json().then((j) => ({ status: r.status, body: j }), () => ({ status: r.status, body: {} })));
@@ -323,21 +349,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       ...(state.urls[ev.path]
         ? [{ href: state.urls[ev.path], icon: 'visibility', label: 'Visualizza', title: 'Apri la pagina pubblica', external: true }]
         : []),
-      { href: EDIT + '?id=' + encodeURIComponent(ev.path), icon: 'edit', label: 'Modifica', title: 'Apri nell\'editor', primary: true },
-      { href: EDIT + '?from=' + encodeURIComponent(ev.path), icon: 'content_copy', label: 'Duplica', title: 'Nuovo evento a partire da questo' },
+      { href: editHref('?id=' + encodeURIComponent(ev.path)), icon: 'edit', label: 'Modifica', title: 'Apri nell\'editor', primary: true },
+      { href: editHref('?from=' + encodeURIComponent(ev.path)), icon: 'content_copy', label: 'Duplica', title: 'Nuovo evento a partire da questo' },
       { href: '#trash-' + encodeURIComponent(ev.path), icon: 'delete', label: 'Cestina', title: 'Sposta nel cestino (ripristinabile)' },
     ];
     /* Il titolo porta all'EDITOR, non alla pagina pubblica: in Gestione si apre
      * una scheda per cambiarla, e la pagina pubblica ha già il suo pulsante
      * («Visualizza», l'occhio) quando quell'indirizzo esiste. */
     const eventCard = (ev) => Meetoo.eventCard(ev, {
-      viewUrl: EDIT + '?id=' + encodeURIComponent(ev.path),
+      viewUrl: editHref('?id=' + encodeURIComponent(ev.path)),
       actions: actions(ev),
       badge: brokenBadge(ev.path),
       extraMeta: [{ icon: 'history', text: ev.dateModified ? 'agg. ' + fmtDate(ev.dateModified) : '' }],
     });
     const seriesCard = (ev) => Meetoo.tileCard({
-      href: EDIT + '?id=' + encodeURIComponent(ev.path),
+      href: editHref('?id=' + encodeURIComponent(ev.path)),
       icon: 'collections_bookmark',
       title: ev.name || ev.path,
       meta: (ev.organizer || 'Collezione di eventi'),
@@ -589,9 +615,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           return;
         }
         api('auth').then((r) => {
-          if (r.status === 200 && r.body.canEdit) start();
-          else document.getElementById('gate-msg').textContent =
-            'Il tuo account (' + (r.body.email || '') + ', ruolo ' + (r.body.role || '?') + ') non è abilitato a gestire gli eventi.';
+          if (r.status !== 200 || !r.body.canEdit) {
+            document.getElementById('gate-msg').textContent =
+              'Il tuo account (' + (r.body.email || '') + ', ruolo ' + (r.body.role || '?') + ') non è abilitato a gestire gli eventi.';
+            return;
+          }
+          /* Quale sito, e dove stanno i suoi contenuti: lo dice il server.
+             Senza, non si comincia — leggere gli indici di qualcun altro
+             sarebbe peggio che non leggerne nessuno. */
+          if (!r.body.contentBase) {
+            document.getElementById('gate-msg').textContent =
+              r.body.siteError || 'Nessun sito gestisce gli eventi.';
+            return;
+          }
+          SITE = r.body.site;
+          CONTENT_BASE = SITE_ROOT + r.body.contentBase;
+          start();
         });
       });
     })();

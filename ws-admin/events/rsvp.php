@@ -14,17 +14,18 @@
 require __DIR__ . '/../lib/ws-auth.php';
 require __DIR__ . '/../lib/ws-users.php';
 require_once __DIR__ . '/../lib/ws-private.php';
+require_once __DIR__ . '/../lib/ws-sites.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['error' => 'Solo POST']); exit; }
 
-$base       = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
 $action     = (string)($_POST['action'] ?? '');
 $credential = (string)($_POST['credential'] ?? '');
 $relPath    = trim((string)($_POST['path'] ?? ''), '/');
 $mode       = (string)($_POST['mode'] ?? 'offline');
 
 function fail(int $code, string $msg) { http_response_code($code); echo json_encode(['error' => $msg]); exit; }
+
 
 /* --- Chi sei: token o sessione ---
  *
@@ -47,6 +48,13 @@ if (!$user) {
         fail(403, 'Richiesta non riconosciuta: ricarica la pagina e riprova.');
     }
 }
+
+/* Su quale sito: quello che lo chiede, o l'unico che ha acceso gli eventi.
+ * Qui il percorso era scritto dentro, e le prenotazioni di chiunque sarebbero
+ * finite nell'archivio di Meetoo. */
+$sito = ws_admin_request_site($_POST['site'] ?? null, 'events');
+if ($sito['error'] !== '') fail(400, $sito['error']);
+$base = $sito['path'];
 if ($action === 'me') {
     if (!$user) fail(401, 'Login Google fallito o scaduto.');
     $p = ws_user_upsert($base, $user);

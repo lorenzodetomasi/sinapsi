@@ -19,6 +19,7 @@ require __DIR__ . '/../lib/events-index.php';
 require __DIR__ . '/../lib/events-migrate.php';
 require __DIR__ . '/../lib/events-normalize.php';
 require __DIR__ . '/../lib/events-check.php';
+require_once __DIR__ . '/../lib/ws-sites.php';
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -29,6 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $credential = (string)($_POST['credential'] ?? '');
 $action     = (string)($_POST['action'] ?? 'save');
+
 $payload    = (string)($_POST['payload'] ?? '');
 $relPath    = trim((string)($_POST['path'] ?? ''), '/');
 /* L'originale da cestinare quando un @id cambia.
@@ -50,6 +52,26 @@ if ($user === null) {
     exit;
 }
 
+/*
+ * SU QUALE SITO.
+ *
+ * C'era `contents/meetoo/it_IT` scritto tre volte dentro questo file, e finché
+ * Meetoo era l'unico sito con eventi non dava fastidio a nessuno. Adesso gli
+ * eventi sono una capacità che un sito dichiara nel suo `ws-config.php`, e
+ * questo endpoint lavora su quello che gliela chiede.
+ *
+ * Il parametro si può non mandare: finché la capacità ce l'ha un sito solo, la
+ * domanda «quale?» ha una risposta sola e farla scrivere sarebbe chiedere di
+ * ripetere ciò che si sa già. Dal secondo sito in poi diventa obbligatorio.
+ */
+$sito = ws_admin_request_site($_POST['site'] ?? null, 'events');
+if ($sito['error'] !== '') {
+    http_response_code(400);
+    echo json_encode(['error' => $sito['error']]);
+    exit;
+}
+$contentBase = $sito['path'];
+
 // Login frontend: restituisce identità + ruolo.
 if ($action === 'auth') {
     echo json_encode(['uid' => $user['uid'], 'email' => $user['email'], 'role' => $user['role'], 'locale' => $user['locale']]);
@@ -63,7 +85,6 @@ if ($action === 'rebuild-index') {
         echo json_encode(['error' => "Solo admin o super-admin possono ricostruire l'indice (ruolo: {$user['role']})."]);
         exit;
     }
-    $contentBase = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
     // Normalizza i riferimenti PRIMA di indicizzare (idempotente: tocca solo i file che
     // cambiano, quindi "solo quando necessario"), poi ricostruisce l'indice.
     $mig = event_migrate_refs($contentBase, true);
@@ -87,7 +108,6 @@ if ($action === 'normalize-content') {
         echo json_encode(['error' => "Solo admin o super-admin possono normalizzare i contenuti (ruolo: {$user['role']})."]);
         exit;
     }
-    $contentBase = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
     $norm = event_normalize($contentBase, true);
     event_migrate_refs($contentBase, true);
     $idx = event_index_rebuild($contentBase);
@@ -121,7 +141,7 @@ if ($relPath === '' || strpos($relPath, '..') !== false ||
     exit;
 }
 
-$base   = __DIR__ . '/../../ws-custom/contents/meetoo/it_IT';
+$base   = $contentBase;
 $dir    = $base . '/' . $relPath;
 $file   = "$dir/index.json";
 $exists = is_file($file);
