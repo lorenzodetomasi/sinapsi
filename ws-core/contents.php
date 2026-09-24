@@ -100,7 +100,16 @@ function ws_content_root_url($content_path = null) {
 	if(empty($content_path)){
 		$content_path = ws_content_id();
 	}
-	return ws_root_url().ws_content_root_relpath($content_path);
+	/* The slash in the middle. `ws_root_url()` ends without one and the relative
+	 * path starts without one, so this used to return
+	 * `https://www.isotype.orgws-custom/contents/...` - every link built on it
+	 * was broken, in five themes. Nobody had noticed because its one real use,
+	 * the favicon links, was being wiped by a later `ws_globals_set` before it
+	 * ever reached the page. `ws_admin_url()`, two functions down in
+	 * ws-library.php, has always spelled the slash out; this one had forgotten.
+	 * Trimmed on both sides so a WS_ROOT_URL written with a trailing slash does
+	 * not produce two. */
+	return rtrim(ws_root_url(), '/').'/'.ltrim(ws_content_root_relpath($content_path), '/');
 }
 
 function ws_content( $content_path, $args = array() ) {
