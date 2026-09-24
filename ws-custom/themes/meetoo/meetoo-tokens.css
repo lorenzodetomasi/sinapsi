@@ -31,6 +31,9 @@
   /* Neutral Material Design 3 (light / dark) */
   --color-background-main: light-dark(#f6f7f9, #141218);
   --color-background-section1: light-dark(#ffffff, #1e1f20);
+  /* Il nome che usa il tema genitore per la stessa cosa: la superficie su cui
+     si posa un pannello. Serve al cassetto e alle finestre, che sono suoi. */
+  --color-superficie: var(--color-background-section1);
   --color-background-section2: light-dark(#eef0f3, #2a282f);
   --color-background-section3: light-dark(#f4f5f8, #11111b);
   --color-text: var(--color2);

@@ -100,6 +100,9 @@ function ws_stile_se_esiste($chiave, $media, $basename){
 	}
 	$GLOBALS['ws_styles']['head'][$chiave] = '<style media="'.$media.'">'.file_get_contents($abspath).'</style>';
 }
+/* L'header per primo, e in un foglio suo: un sito puo' volere questo e non il
+   resto. Vedi la testa di header-abovethefold.css. */
+ws_stile_se_esiste('header', 'all', 'css/header-abovethefold.css');
 ws_stile_se_esiste('all', 'all', 'css/all-abovethefold.css');
 ws_stile_se_esiste('screen', 'screen', 'css/screen-abovethefold.css');
 ws_stile_se_esiste('vgrid', 'screen and (max-width: 999px)', 'css/vgrid-abovethefold.css');
@@ -907,9 +910,11 @@ if(!function_exists('ws_media_pair')){
 		if(empty($light)){
 			return '';
 		}
+		$piastra = !isset($args['plate']) || $args['plate'];
+		unset($args['plate']);
 		$was = isset($args['pictureAttributes']['class']) ? $args['pictureAttributes']['class'].' ' : '';
 		if(empty($dark)){
-			$args['pictureAttributes']['class'] = $was.'ws-media-plate';
+			if($piastra){ $args['pictureAttributes']['class'] = $was.'ws-media-plate'; }
 			return get_media($light, $args);
 		}
 		$html = '';
@@ -953,8 +958,17 @@ if(!function_exists('ws_brand_mark')){
 			$light = $ws_headings->xpath("id('".$id."')");
 			if(!empty($light)){
 				$dark = $ws_headings->xpath("id('".$id."-neg')");
+				/* NIENTE PIASTRA sul marchio. La piastra e' un'ipotesi - «questo
+				   disegno sul fondo scuro sparirebbe, mettiamogli il bianco
+				   sotto» - e su una marca l'ipotesi non serve: se il marchio ha
+				   bisogno di una versione scura, la marca la dichiara, ed e'
+				   quella la risposta giusta. Il marchio di Meetoo e' colorato e
+				   sullo scuro si legge da solo: la piastra gli metteva un
+				   riquadro bianco intorno per niente. Resta dove serve davvero,
+				   sull'immagine di una pagina, che puo' essere qualunque cosa e
+				   non la sceglie chi ha disegnato la marca. */
 				return array(
-					'html' => ws_media_pair($light, !empty($dark) ? $dark : null, $args),
+					'html' => ws_media_pair($light, !empty($dark) ? $dark : null, $args + array('plate' => false)),
 					'name' => ($id === 'logo'),
 				);
 			}

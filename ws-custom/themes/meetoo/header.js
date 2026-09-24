@@ -211,6 +211,28 @@
   })();
 
 
+  /* ============================================================================
+   * DA QUI IN GIU' SI DISEGNA - e quando l'header e' quello del tema comune non
+   * si disegna niente.
+   *
+   * Questo file nasce quando l'header di Meetoo era suo: lo costruiva, e con lui
+   * il cassetto, la finestra delle impostazioni, la scheda del profilo e le
+   * briciole. Da quando l'header e' del tema genitore quelle cose ci sono gia' -
+   * #drawer, #preferences, il profilo del plugin, #header2 - e rifarle vorrebbe
+   * dire averne due di ognuna: due cassetti nel DOM, due finestre, due modi di
+   * scegliere il tema che non si parlano.
+   *
+   * Quello che NON si spegne e' tutto cio' che sta sopra questa riga: la
+   * sessione Google, `window.meetooSession`, che serve a cards.js per il «mi
+   * interessa» e alla Gestione per sapere chi sei. E' il motivo per cui questo
+   * file resta caricato invece di sparire.
+   *
+   * In ws-admin non c'e' nessun #header1, quindi li' disegna tutto come prima.
+   * ==========================================================================*/
+  var DISEGNA = !document.getElementById('header1');
+
+  if (DISEGNA) {
+
   /* ============ Header HTML ============
    * Se l'header c'è già — lo serve il CMS, con dentro logo, briciole e voci di
    * menu che devono esistere anche senza JavaScript — lo si ADOTTA. Altrimenti lo
@@ -542,6 +564,15 @@
     // Impostazioni e SOTTO quelle dell'header (tema, preferenze).
     settingsSlot: function () { return document.getElementById('mt-page-settings'); },
   });
+
+  }   /* fine di `if (DISEGNA)` */
+
+  /* `renderAccount` la dichiara il blocco qui sopra, e la chiama l'avvio qui
+     sotto: quando non si disegna non esiste, e l'avvio morirebbe sull'ultima
+     riga. Senza disegno non c'e' niente da disegnare per davvero - il pulsante
+     di accesso, li', lo mette il plugin dentro l'header comune - quindi la
+     risposta giusta e' una funzione che non fa niente. */
+  if (!DISEGNA) { renderAccount = function () {}; }
 
   /* ============ GIS init ============ */
   function init() {

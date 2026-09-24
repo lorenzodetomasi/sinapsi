@@ -101,6 +101,17 @@ if($marchio['name']){
  * plugin: il tema non sa (e non deve sapere) come si entra. */
 ?>
 						<div<?php echo ws_html_attributes('header1-actions', array('id' => 'header1-actions')); ?>>
+<?php
+/* Le azioni che un sito ha IN PIU'. Meetoo ci mette il «+» per creare e la
+ * penna per modificare, che sono suoi e di nessun altro. Un tema figlio che
+ * porta questo file vince, perche' `locate_file` scorre i temi dal figlio al
+ * genitore e si ferma al primo: e' l'unico punto della cascata in cui il figlio
+ * arriva davvero prima. Stanno PRIMA delle preferenze perche' riguardano la
+ * pagina che si sta guardando, non chi la guarda. */
+if(locate_file('template-parts/header-actions.php')){
+	include_template('template-parts/header-actions');
+}
+?>
 							<a id="preferences-open" href="#preferences" title="<?php _e('Preferences'); ?>" aria-label="<?php _e('Preferences'); ?>" aria-expanded="false" aria-controls="preferences"><span class="material-symbols-outlined" aria-hidden="true">settings</span></a>
 <?php
 if(locate_file('template-parts/nav-google-login.php')){

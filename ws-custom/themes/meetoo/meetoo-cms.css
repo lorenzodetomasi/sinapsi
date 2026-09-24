@@ -437,3 +437,12 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-organizza { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; margin: 0; }
 .mt-organizza-testa { color: var(--color-hint); }
 .mt-organizza .mt-chip { margin: 0; }
+
+/* IL MARCHIO DI MEETOO e' un logotipo orizzontale: il nome scritto per esteso.
+   La misura del genitore - 4em - e' pensata per un simbolo quadrato accanto al
+   nome, e su un logotipo lungo diventava una fascia che si prendeva un terzo
+   della riga. Qui si dice quanto e' alto; il resto dell'header non cambia. */
+#header {
+  --header-logo-aperto: 1.75rem;
+  --header-logo-stretto: 1.5rem;
+}

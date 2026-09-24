@@ -50,7 +50,9 @@ foreach(array(
  * - `js_webfont` carica WebFont.js da ajax.googleapis.com per prendere Titillium e
  *   Raleway, che Meetoo non usa: un file in più e due famiglie scaricate per
  *   niente. I caratteri che servono li chiede il foglio di stile qui sopra. */
-unset($GLOBALS['ws_scripts']['head']['js_header'], $GLOBALS['ws_scripts']['head']['js_webfont']);
+/* ANTEPRIMA: `js_header` torna. Misura `#header1`, che adesso in Meetoo c'e'
+ * davvero - e' l'header del genitore - quindi non ha piu' niente da rompere. */
+unset($GLOBALS['ws_scripts']['head']['js_webfont']);
 
 /* E il CSS «above the fold» del genitore, che qui pesava 25 KB su ogni pagina.
  *
@@ -62,6 +64,18 @@ unset($GLOBALS['ws_scripts']['head']['js_header'], $GLOBALS['ws_scripts']['head'
  * come bastavano alle pagine che il CMS non serviva ancora.
  *
  * Se un giorno servisse rimetterlo, è questa riga sola: si cancella. */
+/* I fogli «above the fold» del genitore: si tiene QUELLO DELL'HEADER e si
+ * lasciano gli altri.
+ *
+ * Gli altri sono la griglia a tre colonne di isotype, 13 KB su ogni pagina di
+ * cui Meetoo non usa una riga - anzi, ne annullava dei pezzi in
+ * `meetoo-cms.css`. Quello dell'header invece serve tutto: da quando l'header e'
+ * comune, li' dentro stanno `#brand`, `#header1-actions`, `#drawer`, le briciole
+ * e il guscio delle finestre. Prima erano un file solo e si buttava via tutto
+ * insieme; adesso sono due e si sceglie.
+ *
+ * Se un giorno servisse rimettere anche il resto, e' questa riga sola: si
+ * cancella. */
 unset(
 	$GLOBALS['ws_styles']['head']['all'], $GLOBALS['ws_styles']['head']['screen'],
 	$GLOBALS['ws_styles']['head']['vgrid'], $GLOBALS['ws_styles']['head']['hgrid'],
@@ -695,6 +709,13 @@ $GLOBALS['ws_metas']['meetoo_content_base'] = '<meta name="meetoo:content-base" 
 
 // Il comportamento dell'header: lo stesso file delle pagine dell'archivio e
 // dell'editor. Qui trova il markup già scritto e lo adotta invece di crearlo.
+/* header.js RESTA, ma disegna solo dove non c'e' l'header comune.
+ *
+ * Espone `window.meetooSession`, che serve a cards.js per il «mi interessa» e
+ * alla Gestione per sapere chi sei: spegnerlo qui avrebbe portato via anche
+ * quello. La meta' che disegnava - header, cassetto, impostazioni, profilo,
+ * briciole - adesso si accende solo se manca `#header1`, cioe' in ws-admin.
+ * Sul sito quelle cose ci sono gia', e rifarle voleva dire averne due. */
 $GLOBALS['ws_scripts']['bodyend']['meetoo_header'] = '<script defer="defer" src="'.$ws_theme_url.'header.js"></script>';
 // Le azioni della riga contestuale (condividi), che dell'header non fanno parte.
 $GLOBALS['ws_scripts']['bodyend']['meetoo_azioni'] = '<script defer="defer" src="'.$ws_theme_url.'js/azioni.js"></script>';
@@ -708,4 +729,36 @@ $GLOBALS['ws_scripts']['bodyend']['meetoo_liste'] = '<script defer="defer" src="
 // L'header che si restringe al primo scorrimento vive nel tema genitore, ed è
 // acceso lì per tutti i siti: qui non serve più dire niente.
 $GLOBALS['ws_html_attributes']['html']['class'][] = 'meetoo';
-?>
+
+/**
+ * Dove porta una voce del menu di Meetoo.
+ *
+ * Qui una voce dice CHE COSA - `<content>` e' l'@id di un contenuto - e
+ * l'indirizzo lo chiede alla mappa, perche' gli indirizzi sono un albero che si
+ * riscrive. `<elenco>` accanto a un contenuto punta a uno dei tre elenchi di
+ * quella zona. Una voce il cui contenuto una pagina non ce l'ha torna stringa
+ * vuota e non si stampa affatto: meglio una voce in meno di una che porta a un
+ * 404.
+ *
+ * UN FILTRO e non una funzione con lo stesso nome del genitore: i functions.php
+ * si caricano dal genitore al figlio, quindi ridefinire non serve a niente -
+ * quando tocca a questo file la funzione del genitore esiste gia'. Il filtro si
+ * registra adesso e si applica al disegno.
+ */
+add_filter('ws_nav_href', function($href, $item){
+	$contenuto = trim((string)$item->content);
+	if($contenuto !== ''){
+		$indirizzo = meetoo_indirizzo($contenuto);
+		if($indirizzo === ''){
+			return '';
+		}
+		$elenco = trim((string)$item->elenco);
+		return $elenco !== '' ? rtrim($indirizzo, '/').'/'.$elenco : $indirizzo;
+	}
+	/* Un indirizzo scritto a mano si accetta solo se la mappa lo conosce. */
+	$wspath = trim((string)$item->wspath);
+	if($wspath === '' or meetoo_titolo($wspath) === ''){
+		return '';
+	}
+	return $href;
+}, 10, 2);

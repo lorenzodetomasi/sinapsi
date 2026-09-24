@@ -34,6 +34,16 @@ foreach(array('PrivacyPage' => __('Privacy'), 'CookiePage' => __('Cookie')) as $
 				</div>
 			</footer>
 		</div>
+<?php
+/* LE FINESTRE della pagina: le preferenze, «condividi».
+ *
+ * Questo footer e' di Meetoo e non le includeva, perche' le impostazioni se le
+ * disegnava header.js. Da quando l'ingranaggio nell'header apre `#preferences`,
+ * senza queste righe apriva il vuoto: il comando c'era e non faceva niente.
+ * Sono le stesse due del tema genitore - un guscio solo per tutti i siti. */
+include_template('template-parts/modal-share');
+include_template('template-parts/modal-preferences');
+?>
 <?php echo ws_scripts('bodyend'); ?>
 	</body>
 </html>

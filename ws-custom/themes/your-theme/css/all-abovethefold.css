@@ -92,279 +92,6 @@ body {
   grid-template-areas: "header" "main-container";
   width: 100%; }
 
-#header, #main, #footer, aside.meta {
-  box-sizing: border-box;
-  width: 100%; }
-
-#header {
-  grid-area: header;
-  position: sticky;
-  top: 0;
-  --header-logo-aperto: 4em;
-  --header-logo-stretto: 1.5rem; }
-
-#header-top {
-  border-bottom: 1px solid var(--color-line, #e6e6e6); }
-  .stretto:not(.in-cima) #header-top {
-    border-bottom-width: 0; }
-
-#header1 {
-  display: flex;
-  align-items: center;
-  justify-content: space-between; }
-  #header1 > #brand {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    color: inherit;
-    min-width: 0;
-    margin-right: auto; }
-    #header1 > #brand picture > img {
-      height: var(--header-logo, 4em);
-      margin-top: 0;
-      margin-right: 1em;
-      transition: height .22s cubic-bezier(.22, 1, .36, 1), margin-top .22s cubic-bezier(.22, 1, .36, 1); }
-  .stretto #header1 h1, .stretto #header1 h2 {
-    margin-block: 0; }
-
-#header.stretto,
-#header.stretto > div,
-.stretto #header1,
-.stretto #header1 hgroup,
-.stretto #header1 #brand picture {
-  height: auto;
-  min-height: 0; }
-
-.stretto #header1 #brand picture img {
-  height: var(--header-logo, 1.5rem); }
-
-.stretto #header1 {
-  padding-block: .5rem; }
-
-#header-top .content-container,
-#header-top ul,
-#header1,
-#header1 > div,
-#header1 .google-avatar {
-  align-items: center; }
-
-#header-top a,
-#header-top li,
-#header1 .google-avatar li {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem; }
-
-#header-top .material-symbols-outlined,
-#header-top .material-icons,
-#header1 .material-symbols-outlined {
-  line-height: 1;
-  display: block; }
-
-#header1 #brand picture {
-  display: flex;
-  align-items: center; }
-  #header1 #brand picture > img {
-    display: block; }
-#brand hgroup {
-  min-width: 0; }
-  #brand hgroup h1, #brand hgroup h2 {
-    margin: 0; }
-
-/* LE AZIONI, sempre in fondo alla riga e sempre nello stesso ordine. Quello che
-   c'e' dentro cambia - l'accesso c'e' solo se c'e' il plugin - ma l'hamburger e'
-   l'ultimo comunque, perche' e' l'unico che c'e' sempre e un comando che cambia
-   posto si cerca ogni volta. */
-#header1-actions {
-  display: flex;
-  align-items: center;
-  gap: .25rem;
-  flex: none; }
-  #header1-actions > a, #header1-actions > button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0;
-    border: none;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--color-link, inherit);
-    text-decoration: none;
-    cursor: pointer; }
-  #header1-actions > a:hover, #header1-actions > button:hover {
-    background: rgba(128, 128, 128, .14); }
-  #header1-actions .material-symbols-outlined {
-    font-size: 1.375rem;
-    line-height: 1; }
-  #header1 #brand .ws-media-plate > img {
-    border-radius: .25rem; }
-
-/* A drawing that comes in two versions: one made for a light ground, one for a
-   dark one. Wear `ws-only-light` and `ws-only-dark` and the right one is on.
-   Works on a logo, on a cover, on anything.
-
-   The colours of this theme flip by themselves, with `light-dark()` reading the
-   `color-scheme` that impostazioni.js writes on <html>. An image has no such
-   function, so the pair is switched here - and on the same two signals the
-   script itself uses, never on one alone: `data-theme` as soon as somebody has
-   chosen, and the system's preference while nobody has. Hence NOT a
-   `<source media="(prefers-color-scheme: dark)">` inside the picture: that
-   reads the system alone, so a person who asks for light on a machine set to
-   dark would get the negative drawing on white.
-
-   These rules only ever HIDE the version that does not apply; they never say
-   what the other one's `display` should be. That is the whole trick: the
-   element keeps whatever display its own context gave it - `flex` for the logo
-   in the header, `inline` for a picture in the text - and this file does not
-   have to know, nor to undo its own `none` with a `revert` that would take the
-   context's value down with it.
-
-   `!important` because hiding has to win wherever it lands, and where it lands
-   is not knowable from here: `#header1 #brand picture` carries an id, so it beat
-   these rules on specificity and the header showed both marks at once. Same
-   reason `[hidden]` in this theme is important - a thing declared not to be on
-   screen is not a suggestion. */
-:root[data-theme="light"] .ws-only-dark {
-  display: none !important; }
-:root[data-theme="dark"] .ws-only-light {
-  display: none !important; }
-
-/* The fallback, for a drawing that comes in ONE version only. It is dark
-   marks on nothing, and it used to take its white from the page; the page can
-   be dark now, so it carries a white plate of its own size. In the light the
-   plate is transparent and nothing moves - no padding, so the two schemes
-   share every pixel. Whatever declares a dark version never wears this: it has
-   a drawing made for the dark, which is the real answer, and the plate would
-   only put it back on white. */
-.ws-media-plate > img {
-  background-color: light-dark(transparent, #fff); }
-
-/* Nothing chosen - `auto`, or no JavaScript at all: the system answers. */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) .ws-only-dark {
-    display: none !important; } }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .ws-only-light {
-    display: none !important; } }
-
-#header1 {
-  gap: var(--gutter, 1rem); }
-  #header1 > div:first-child {
-    margin-right: auto; }
-  #header1 .google-avatar {
-    display: flex;
-    margin: 0;
-    padding: 0;
-    list-style: none; }
-
-/* Il sito ha chiesto il cassetto e basta: il menu orizzontale non si stampa a
-   nessuna larghezza, e l'hamburger resta l'unica strada. */
-:root[data-menu="drawer"] #header1-nav1 {
-  display: none; }
-
-/* IL CASSETTO del menu, e il velo sotto.
-   Fuori schermo di suo, non `display: none`: da li' puo' scivolare dentro, e
-   una transizione da «non esiste» non si vede. Chiuso non e' raggiungibile col
-   tab perche' il markup lo dichiara `inert`, non perche' il CSS lo nasconda. */
-#drawer-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  background: rgba(0, 0, 0, .45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s; }
-#drawer-overlay.open {
-  opacity: 1;
-  pointer-events: auto; }
-
-#drawer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  z-index: 1201;
-  width: 17.5rem;
-  max-width: 82vw;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-superficie, #fff);
-  box-shadow: 2px 0 24px rgba(0, 0, 0, .3);
-  transform: translateX(-100%);
-  transition: transform .24s cubic-bezier(.22, 1, .36, 1); }
-#drawer.open {
-  transform: none; }
-
-#drawer-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .5rem;
-  padding: .625rem .5rem .625rem 1rem;
-  border-bottom: 1px solid var(--color-line, #e6e6e6); }
-  #drawer-head img {
-    height: 1.375rem;
-    width: auto;
-    display: block; }
-  #drawer-head button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    padding: 0;
-    border: none;
-    border-radius: 999px;
-    background: transparent;
-    color: var(--color-link, inherit);
-    cursor: pointer; }
-  #drawer-head button:hover {
-    background: rgba(128, 128, 128, .14); }
-
-#drawer-nav {
-  display: flex;
-  flex-direction: column;
-  gap: .125rem;
-  margin: 0;
-  padding: .5rem;
-  list-style: none;
-  overflow-y: auto; }
-  #drawer-nav a {
-    display: flex;
-    align-items: center;
-    gap: .75rem;
-    padding: .6875rem .75rem;
-    border-radius: .75rem;
-    text-decoration: none;
-    color: var(--color-text, #444); }
-  #drawer-nav a:hover {
-    background: rgba(128, 128, 128, .12); }
-
-/* Chi e' aperto non scorre sotto: il velo copre la pagina, e una pagina che
-   scorre dietro a un pannello fermo e' il modo piu' rapido di perdere il segno. */
-body:has(#drawer.open) {
-  overflow: hidden; }
-
-#header2 {
-  border-top: 1px solid var(--color-line, #e6e6e6);
-  min-width: 0; }
-
-.crumbs-strip {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  padding: .35rem var(--gutter, 1rem);
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; }
-  .crumbs-strip::-webkit-scrollbar {
-    height: 0; }
-
 .crumb {
   flex: 0 0 auto;
   white-space: nowrap;
@@ -377,7 +104,8 @@ body:has(#drawer.open) {
 .crumb-casa {
   display: inline-flex;
   align-items: center; }
-  .crumb-casa .material-symbols-outlined {
+
+.crumb-casa .material-symbols-outlined {
     font-size: 1.125rem;
     line-height: 1;
     display: block; }
@@ -390,74 +118,32 @@ body:has(#drawer.open) {
   flex: 0 0 auto;
   opacity: .55; }
 
-/* Le due sezioni si vestono uguali: sono la stessa domanda fatta due volte -
-   come vuoi vedere questa pagina - e una fila di pastiglie da scegliere e' la
-   stessa risposta. Una e' fatta di pulsanti (la scelta resta qui) e l'altra di
-   collegamenti (la scelta e' un altro indirizzo), ma quella e' una differenza
-   di meccanica, non di significato, e non si vede. */
-#appearance, #language {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: .5rem;
-  padding-bottom: 1rem; }
-  #appearance h4, #language h4 {
-    display: flex;
-    align-items: center;
-    gap: .35rem;
-    width: 100%;
-    margin: 0 0 .25rem;
-    font-weight: 600; }
-  #language ul {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none; }
-  #language a {
-    text-decoration: none; }
-  #appearance button, #language a {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .5rem .9rem;
-    border: 1px solid var(--color-line, #e0e0e6);
-    border-radius: 999px;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: pointer; }
-    #appearance button:hover, #language a:hover {
-      border-color: var(--color-link, #2e3192); }
-    #appearance button.scelto, #language [aria-current] {
-      border-color: var(--color-link, #2e3192);
-      color: var(--color-link, #2e3192);
-      font-weight: 600; }
-
 .ws-preferenze {
   border-top: 1px solid var(--color-line, #e0e0e6);
   padding-top: 1rem;
   padding-bottom: 1rem; }
-  .ws-preferenze .ws-pref-voce {
+
+.ws-preferenze .ws-pref-voce {
     display: flex;
     align-items: center;
     gap: .35rem;
     margin: 0 0 .5rem; }
-  .ws-preferenze .ws-lingue {
+
+.ws-preferenze .ws-lingue {
     display: flex;
     flex-wrap: wrap;
     gap: .5rem;
     list-style: none;
     margin: 0;
     padding: 0; }
-    .ws-preferenze .ws-lingue a {
+
+.ws-preferenze .ws-lingue a {
       display: inline-block;
       padding: .4rem .8rem;
       border: 1px solid var(--color-line, #e0e0e6);
       border-radius: 999px; }
-    .ws-preferenze .ws-lingue .corrente a {
+
+.ws-preferenze .ws-lingue .corrente a {
       border-color: var(--color-link, #2e3192);
       font-weight: 600; }
 
@@ -465,21 +151,26 @@ body:has(#drawer.open) {
   margin-top: 2rem;
   padding-top: 1rem;
   border-top: 1px solid var(--color-line, #e6e6e6); }
-  .section-siblings .section-siblings-title {
+
+.section-siblings .section-siblings-title {
     margin: 0 0 .5rem;
     font-size: 1rem; }
-    .section-siblings .section-siblings-title a {
+
+.section-siblings .section-siblings-title a {
       text-decoration: none; }
-  .section-siblings ul {
+
+.section-siblings ul {
     list-style: none;
     margin: 0;
     padding: 0;
     display: flex;
     flex-wrap: wrap;
     gap: .5rem 1.25rem; }
-  .section-siblings li {
+
+.section-siblings li {
     margin: 0; }
-  .section-siblings [aria-current] {
+
+.section-siblings [aria-current] {
     font-weight: 600; }
 
 /* The offer catalogue of a service: levels as headings, services as a list.
@@ -490,14 +181,18 @@ body:has(#drawer.open) {
   /* Not a page section: `#main section` pads every level by 2rem, and four
      nested levels make a page of gaps. The headings space the levels. */
   padding-block: 0; }
+
 .offer-catalog .offer-catalog {
   margin-top: 1.5rem; }
+
 .offer-catalog .offer-catalog-alt {
   font-weight: 300;
   font-size: .75em;
   color: var(--color-text, #444); }
-  .offer-catalog .offer-catalog-alt::before {
+
+.offer-catalog .offer-catalog-alt::before {
     content: "\2014\00a0"; }
+
 .offer-catalog .offers {
   list-style: none;
   margin: 0 0 1.5rem;
@@ -505,42 +200,53 @@ body:has(#drawer.open) {
   display: grid;
   gap: .75rem 1.5rem;
   grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
-  .offer-catalog .offer {
+
+.offer-catalog .offer {
     margin: 0;
     padding-left: 1rem;
     border-left: 3px solid var(--color-line, #e6e6e6); }
-  .offer-catalog .offer-name {
+
+.offer-catalog .offer-name {
     display: block;
     color: var(--color-heading, #e30513); }
-    .offer-catalog .offer-name a {
+
+.offer-catalog .offer-name a {
       color: inherit; }
-  .offer-catalog .offer-alt {
+
+.offer-catalog .offer-alt {
     display: block;
     font-size: .875em;
     font-style: italic; }
-  .offer-catalog .offer-description {
+
+.offer-catalog .offer-description {
     display: block;
     font-size: .9375em; }
-  .offer-catalog .offer-price {
+
+.offer-catalog .offer-price {
     display: block;
     margin-top: .25rem;
     font-weight: 600; }
+
 /* A description may carry a table (the payoff / tagline / headline one). */
 .offer-catalog table {
   width: 100%;
   border-collapse: collapse;
   margin: 1rem 0 1.5rem;
   font-size: .9375em; }
-  .offer-catalog th, .offer-catalog td {
+
+.offer-catalog th, .offer-catalog td {
     padding: .5rem .75rem;
     text-align: left;
     vertical-align: top;
     border-bottom: 1px solid var(--color-line, #e6e6e6); }
-  .offer-catalog thead th {
+
+.offer-catalog thead th {
     border-bottom-width: 2px; }
-  .offer-catalog tbody th {
+
+.offer-catalog tbody th {
     font-weight: 600;
     white-space: nowrap; }
+
 .content > .offer-catalog table {
   display: block;
   overflow-x: auto; }
@@ -552,62 +258,13 @@ body:has(#drawer.open) {
   border-radius: .5rem;
   background-color: var(--color-background-section2, #eef0f3);
   text-align: center; }
-  .call-to-action p {
+
+.call-to-action p {
     margin: 0 0 1rem;
     font-size: 1.125em; }
-  .call-to-action p:last-child {
+
+.call-to-action p:last-child {
     margin-bottom: 0; }
-
-/* IL GUSCIO DI OGNI FINESTRA del sito. Una classe e non un id perche' le
-   finestre sono piu' d'una nella stessa pagina - le preferenze, «condividi», la
-   ricerca - e il guscio e' esattamente cio' che hanno in comune.
-
-   Centrata nei due sensi. Era in alto, e su uno schermo alto una finestra di tre
-   righe restava appesa in cima con mezzo schermo di velo sotto. */
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  padding: 1rem;
-  overflow: auto;
-  background: rgba(0, 0, 0, .5); }
-  .modal[hidden] {
-    display: none; }
-  .modal > div {
-    width: min(100%, 40rem);
-    box-sizing: border-box;
-    max-height: calc(100vh - 2rem);
-    overflow: auto;
-    padding: 1rem 1.5rem 1.5rem;
-    background: var(--color-superficie, #fff);
-    color: var(--color-text, #444);
-    border-radius: var(--border-radius, .75rem);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, .35); }
-  .modal > div > header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem; }
-    .modal > div > header h3 {
-      flex: 1;
-      margin: 0;
-      font-size: 1.25rem; }
-    .modal > div > header nav ul {
-      display: flex;
-      margin: 0;
-      padding: 0;
-      list-style: none; }
-    .modal > div > header .close {
-      display: inline-flex;
-      align-items: center;
-      gap: .25rem;
-      text-decoration: none; }
-      .modal > div > header .close .material-symbols-outlined {
-        line-height: 1; }
 
 #main-container {
   grid-area: main-container;
@@ -623,7 +280,8 @@ main {
   background-position-x: center;
   background-position-y: center;
   background-repeat: no-repeat; }
-  .cover h1 {
+
+.cover h1 {
     margin: 0; }
 
 img.primary-image {
@@ -631,20 +289,24 @@ img.primary-image {
 
 a {
   color: var(--color-link); }
-  a:hover {
+
+a:hover {
     color: var(--color-hover); }
 
 h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6 {
   font-family: 'Titillium Web', 'ambroise-std', 'Trebuchet MS', Georgia, serif;
   color: var(--color-heading, #e30513); }
-  h1 a, .h1 a, h2 a, .h2 a, h3 a, .h3 a, h4 a, .h4 a, h5 a, .h5 a, h6 a, .h6 a {
+
+h1 a, .h1 a, h2 a, .h2 a, h3 a, .h3 a, h4 a, .h4 a, h5 a, .h5 a, h6 a, .h6 a {
     color: inherit;
     text-decoration: none; }
-  h1 strong, .h1 strong, h2 strong, .h2 strong, h3 strong, .h3 strong, h4 strong, .h4 strong, h5 strong, .h5 strong, h6 strong, .h6 strong {
+
+h1 strong, .h1 strong, h2 strong, .h2 strong, h3 strong, .h3 strong, h4 strong, .h4 strong, h5 strong, .h5 strong, h6 strong, .h6 strong {
     color: inherit;
     font-size: 1em;
     font-weight: bold; }
-    h1.monochrome strong, .h1.monochrome strong, h2.monochrome strong, .h2.monochrome strong, h3.monochrome strong, .h3.monochrome strong, h4.monochrome strong, .h4.monochrome strong, h5.monochrome strong, .h5.monochrome strong, h6.monochrome strong, .h6.monochrome strong {
+
+h1.monochrome strong, .h1.monochrome strong, h2.monochrome strong, .h2.monochrome strong, h3.monochrome strong, .h3.monochrome strong, h4.monochrome strong, .h4.monochrome strong, h5.monochrome strong, .h5.monochrome strong, h6.monochrome strong, .h6.monochrome strong {
       color: inherit; }
 
 .uppercase {
@@ -655,7 +317,8 @@ ul, ol, dl {
 
 .flex {
   display: flex; }
-  .flex .flex1 {
+
+.flex .flex1 {
     flex: 1; }
 
 .width-full {
@@ -667,60 +330,62 @@ ul, ol, dl {
 .nav .material-symbols-outlined {
   vertical-align: middle; }
 
-#header a, #footer a, .nav a {
-  color: var(--color-heading, #e30513);
-  box-sizing: border-box;
-  text-decoration: none; }
-#header li a, #footer li a, .nav li a {
-  border-bottom: 2px solid transparent; }
-#header li a:hover, #footer li a:hover, .nav li a:hover {
-  color: var(--color-text, #444);
-  border-bottom: 2px solid var(--color-text, #444); }
-#header li.current-menu-item a, #footer li.current-menu-item a, .nav li.current-menu-item a {
-  color: var(--color-heading, #e30513);
-  border-bottom: 2px solid var(--color-heading, #e30513); }
-
 .nav abbr[title] {
   text-decoration: none; }
+
 .nav .material-symbols-outlined ~ .text {
   vertical-align: middle;
   margin-left: 0.5rem; }
+
 .nav > div {
   display: flex; }
-  .nav > div > ul, .nav > div > ol {
+
+.nav > div > ul, .nav > div > ol {
     display: flex;
     margin: 0;
     padding: 0;
     list-style: none; }
-    .nav > div > ul > li, .nav > div > ol > li {
+
+.nav > div > ul > li, .nav > div > ol > li {
       margin: 0; }
-      .nav > div > ul > li a, .nav > div > ol > li a {
+
+.nav > div > ul > li a, .nav > div > ol > li a {
         padding: 0.5rem 0;
         text-decoration: none; }
+
 .nav.padding-h-d2 {
   padding: 0; }
-  .nav.padding-h-d2 > div > ul > li a, .nav.padding-h-d2 > div > ol > li a {
+
+.nav.padding-h-d2 > div > ul > li a, .nav.padding-h-d2 > div > ol > li a {
     padding: 0.5rem; }
+
 .nav.vertical > div {
   align-items: flex-end; }
-  .nav.vertical > div > ul, .nav.vertical > div > ol {
+
+.nav.vertical > div > ul, .nav.vertical > div > ol {
     flex-direction: column;
     align-items: flex-start; }
-    .nav.vertical > div > ul li, .nav.vertical > div > ol li, .nav.vertical > div > ul li a, .nav.vertical > div > ol li a {
+
+.nav.vertical > div > ul li, .nav.vertical > div > ol li, .nav.vertical > div > ul li a, .nav.vertical > div > ol li a {
       display: flex;
       align-items: center; }
-  .nav.vertical > div.fullwidth > div > ul > li, .nav.vertical > div.fullwidth > div > ol > li {
+
+.nav.vertical > div.fullwidth > div > ul > li, .nav.vertical > div.fullwidth > div > ol > li {
     width: 100%; }
-    .nav.vertical > div.fullwidth > div > ul > li a, .nav.vertical > div.fullwidth > div > ol > li a {
+
+.nav.vertical > div.fullwidth > div > ul > li a, .nav.vertical > div.fullwidth > div > ol > li a {
       width: 100%; }
+
 .nav.horizontal > div {
   justify-content: space-between;
   align-items: center; }
-  .nav.horizontal > div > ul, .nav.horizontal > div > ol {
+
+.nav.horizontal > div > ul, .nav.horizontal > div > ol {
     flex-direction: row;
     justify-content: space-between;
     align-items: center; }
-    .nav.horizontal > div > ul > li, .nav.horizontal > div > ol > li {
+
+.nav.horizontal > div > ul > li, .nav.horizontal > div > ol > li {
       display: inline-block; }
 
 .grid-container, .grid-container * {
@@ -781,6 +446,7 @@ ul, ol, dl {
   flex: 1 1 100%;
   min-width: 0;
   min-height: 0; }
+
 .grid-cell .grid-link {
   flex: 1 1 auto;
   min-width: 0;
@@ -799,12 +465,14 @@ ul, ol, dl {
      the text and there is nothing to scroll. Same rule serves both. */
   overflow-y: auto;
   scrollbar-width: thin; }
-  .grid-cell .grid-link h3 {
+
+.grid-cell .grid-link h3 {
     margin: 0;
     font-size: 1.125rem;
     line-height: 1.25;
     color: #e30513; }
-  .grid-cell .grid-link p {
+
+.grid-cell .grid-link p {
     margin: 0;
     font-size: .85rem;
     line-height: 1.4; }
