@@ -17,7 +17,6 @@ $xml_user       = $profilo['utente'];
 $is_google_user     = $profilo['collegato'];
 $is_registered_user = $profilo['registrato'];
 
-$display_locale = $profilo['locale'];
 $display_role   = $profilo['role'];
 
 $anon_handle     = $profilo['anon'];
@@ -136,9 +135,18 @@ $portal_org_logo = $profilo['org_logo'];
                 setTimeout(aspetta, 100);
             })();
 
-            // Il tema cambia in due modi: qualcuno lo sceglie (l'header lo annuncia)
-            // oppure cambia quello di sistema, mentre la pagina e' aperta.
+            /* Il tema cambia in due modi: qualcuno lo sceglie (l'header lo
+             * annuncia) oppure cambia quello di sistema, mentre la pagina e'
+             * aperta.
+             *
+             * DUE NOMI perche' ci sono due header: `meetoo:theme` lo grida
+             * header.js di Meetoo, `ws:tema` impostazioni.js di your-theme. Si
+             * ascoltano tutti e due. Finche' se ne ascoltava uno solo, su
+             * isotype il pulsante non veniva ridisegnato mai: restava
+             * `outline`, cioe' bianco, anche passando allo scuro. Il giorno che
+             * i due header saranno uno, qui ne resta uno. */
             document.addEventListener('meetoo:theme', ridisegna);
+            document.addEventListener('ws:tema', ridisegna);
             if (window.matchMedia) {
                 var q = window.matchMedia('(prefers-color-scheme: dark)');
                 if (q.addEventListener) { q.addEventListener('change', ridisegna); }
@@ -149,51 +157,35 @@ $portal_org_logo = $profilo['org_logo'];
     <?php else: ?>
         <li class="avatar-wrapper">
             <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar-circle logged-in" onclick="toggleGoogleProfileCard(event)">
-            
             <?php
-            /* Il contenuto del profilo, con le classi del tema: lo stesso vestito
-             * di ogni altro riquadro di Meetoo. Prima aveva i suoi — bianchi,
-             * grigi e blu di Google — e dentro una pagina scura si vedeva che era
-             * arrivato da un'altra parte.
-             *
-             * Il riquadro lo mette `header.js` (`Meetoo.openProfilo`), centrato e
-             * con lo scorrimento: questo nodo resta nascosto e serve solo a
-             * portare il contenuto, che è il server a saperlo.
-             *
-             * Gli indirizzi sono RELATIVI alla radice: scritti come
-             * `https://www.isotype.org/…` funzionavano su un sito solo, e questo
-             * file gira anche altrove. */
-            // Con la guardia: questo template sta nell'header di OGNI pagina, e
-            // una funzione che non c'è qui non fa un avviso, spegne il sito.
             $ws_radice = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
             ?>
-            <div id="google-profile-card" class="profile-popup hidden">
-                <div class="mt-prof-testa">
-                    <img src="<?= htmlspecialchars($google_session->picture) ?>" class="mt-prof-foto" alt="" referrerpolicy="no-referrer">
-                    <div class="mt-prof-nome"><?= htmlspecialchars($google_session->name) ?></div>
-                    <div class="mt-prof-email"><?= htmlspecialchars($google_session->email) ?></div>
-                    <div class="mt-prof-pillole">
-                        <span class="mt-pillola"><?= htmlspecialchars($display_role) ?></span>
-                        <span class="mt-pillola" title="Lingua del profilo"><?= htmlspecialchars($display_locale) ?></span>
-                    </div>
-                </div>
-                <div class="mt-prof-azioni">
+            <aside id="google-profile-card" class="profile-popup hidden">
+                <header class="flex align-middle">
+                    <h3><?php _e('Your User Profile'); ?></h3>
+                    <nav>
+                        <ul>
+                            <li><a class="close link h48" href="#" data-close="#google-profile-card"><i class="material-symbols-outlined">close</i><span class="button-text"><?php _e('Close'); ?></span></a></li>
+                        </ul>
+                    </nav>
+                </header>
+                <img src="<?= htmlspecialchars($google_session->picture) ?>" class="mt-prof-foto" alt="" referrerpolicy="no-referrer">
+                <h3 class="profile-name"><?= htmlspecialchars($google_session->name) ?></h3>
+                <p class="profile-email"><?= htmlspecialchars($google_session->email) ?></p>
+                <p class="profile-role"><?= htmlspecialchars($display_role) ?></p>
+                <nav>
                     <?php
-                    /* Il modulo si apre DENTRO il riquadro: `data-mt-profilo-form`
-                     * dice a header.js dove prenderlo (`embed=1` = solo il
-                     * contenuto). L'`href` resta quello vero, così senza
-                     * JavaScript il collegamento funziona lo stesso e porta alla
-                     * pagina intera — che continua a esistere. */
                     $prof = htmlspecialchars($ws_radice) . '/profilo-utente';
                     $reg  = $is_registered_user ? '' : '?init=register';
                     $emb  = $prof . ($reg ? $reg . '&' : '?') . 'embed=1';
                     ?>
-                    <a href="<?= $prof . $reg ?>" data-mt-profilo-form="<?= $emb ?>" class="mt-prof-btn">
-                        <?= $is_registered_user ? 'Modifica il profilo' : 'Completa la registrazione' ?>
-                    </a>
-                    <a href="?logout=1" class="mt-prof-btn mt-prof-esci">Esci</a>
-                </div>
-            </div>
+                    <ul>
+                        <li><a href="<?= $prof . $reg ?>" data-mt-profilo-form="<?= $emb ?>" class="button">
+                        <?= $is_registered_user ? __('Edit User Profile') : 'Complete User Subscription' ?></a></li>
+                        <li><a href="?logout=1" class="button"><?php _e('Logout'); ?></a></li>
+                    </ul>
+                </nav>
+            </aside>
         </li>
     <?php endif; ?>
 </ul>
