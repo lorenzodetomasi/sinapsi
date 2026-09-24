@@ -46,7 +46,38 @@ if (!function_exists('ws_refresh_sitemaps')) {
          * mezzo un file che nessuno possedeva.
          */
         if (preg_match('/\/[a-z]{2}_[A-Z]{2}$/', $root)) {
-            $rep['frame'] = ws_refresh_site_frame(dirname($root), $apply);
+            /*
+             * PRIMA le mappe delle ALTRE lingue, poi il telaio.
+             *
+             * Il telaio mette in strada i file che include, e un file che entra
+             * nell'instradamento deve essere quello che il CMS costruirebbe
+             * oggi — non quello che stava lì.
+             *
+             * Questo è costato un sito. Il telaio di isotype era stato
+             * schiacciato a mappa piatta di una voce, e finché è rimasto così
+             * `en_US/ws_sitemap.wsx` non lo apriva nessuno. Rigenerando il
+             * telaio quel file è tornato in gioco: era una copia di un altro
+             * progetto, scritta a mano nel 2023, con 133 `xi:include` verso
+             * file che in `en_US/` non esistono e tre sotto-mappe mancanti.
+             * Il CMS ha cominciato a tentarli a ogni richiesta, e ogni pagina
+             * del dominio ha risposto 504.
+             *
+             * Rigenerarle prima costa una passata su cartelle già in memoria e
+             * toglie di mezzo tutta la classe: non si può più includere un file
+             * che nessuno ha guardato da anni.
+             */
+            $sito = dirname($root);
+            $rep['siblings'] = [];
+            foreach (glob($sito . '/*', GLOB_ONLYDIR) ?: [] as $altra) {
+                if ($altra === $root) continue;
+                if (!preg_match('/^[a-z]{2}_[A-Z]{2}$/', basename($altra))) continue;
+                if (!is_file($altra . '/ws_sitemap.wsx')) continue;
+                $r = ws_refresh_sitemap($altra, $apply);
+                $rep['siblings'][basename($altra)] = $r['status'];
+                if (in_array($r['status'], ['stale', 'rebuilt', 'created'], true)) $rep['changes']++;
+            }
+
+            $rep['frame'] = ws_refresh_site_frame($sito, $apply);
             if (in_array($rep['frame']['status'], ['stale', 'rebuilt', 'created'], true)) $rep['changes']++;
         }
 
