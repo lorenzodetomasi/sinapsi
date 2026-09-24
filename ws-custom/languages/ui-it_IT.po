@@ -1414,3 +1414,19 @@ msgstr "Non ci sono ancora eventi."
 #: template-parts/locations.php
 msgid "Our locations"
 msgstr "Le nostre sedi"
+
+#: template-parts/modal-share.php
+msgid "Copy link"
+msgstr "Copia il collegamento"
+
+#: js/share.js
+msgid "Copied"
+msgstr "Copiato"
+
+#: template-parts/header.php
+msgid "Main menu"
+msgstr "Menu principale"
+
+#: ../plugins/google-login/template-parts/nav-google-login.php
+msgid "Your User Profile"
+msgstr "Il tuo profilo"
