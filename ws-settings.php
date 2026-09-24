@@ -351,6 +351,54 @@ $GLOBALS['ws_plugins'] = array();
 // Load ws-config
 $ws_content_root = ws_content_root();
 $ws_content_root_abspath = ws_content_root_abspath($ws_query['content']);
+
+/*
+ * UNA PAGINA CHE INDICA UN SITO CHE NON C'E' NON ESISTE.
+ *
+ * Il `content` di una voce della mappa nomina il sito a cui appartiene. Se
+ * quella cartella non c'e' — il sito e' stato cancellato, o la pagina lo
+ * nominava sbagliato dal giorno che e' stata copiata — non c'e' niente da
+ * servire: niente testate, niente lingue, niente contenuto.
+ *
+ * Senza questo controllo si andava avanti lo stesso, e la prima riga del tema
+ * che chiede qualcosa alle testate (`$ws_headings->url[0]`) moriva. Il
+ * risultato era la risposta peggiore che un sito possa dare: HTTP 200, con
+ * dentro un errore fatale di PHP. Per un visitatore e' una pagina rotta; per un
+ * motore di ricerca e' una pagina VALIDA con quel contenuto.
+ *
+ * E' successo davvero: cancellando `contents/your-website` quattro pagine di
+ * isotype che ne servivano il contenuto — /menu, /menu/tavolo, /news, /en —
+ * hanno cominciato a rispondere 200 con l'errore in corpo.
+ *
+ * Un 404 e' la verita', e la dice a tutti e due.
+ */
+if(!is_dir($ws_content_root_abspath)){
+	$ws_logs[] = sprintf('Content root not found: %s', $ws_content_root_abspath);
+	if(!headers_sent()){
+		http_response_code(404);
+	}
+	/* Si cambia `$ws_query`, non `$rewrite_rule_query`: quello query.php l'ha
+	 * gia' fuso qui dentro e riscriverlo adesso non lo leggerebbe piu' nessuno.
+	 * E' il motivo per cui al primo tentativo /en continuava a disegnarsi con
+	 * il template `index`, che su un contenuto che non c'e' va in errore. */
+	$ws_query['template'] = '404';
+
+	/* Il 404 va pur disegnato con qualcosa: si ripiega sul sito che risponde
+	 * alla radice, letto dalla mappa — lo stesso criterio che query.php usa
+	 * quando un indirizzo non esiste. */
+	$ws_fallback = !empty($GLOBALS['ws_sitemap']) ? $GLOBALS['ws_sitemap']->xpath('./url[./wspath = "/"]') : array();
+	$ws_fallback_content = !empty($ws_fallback[0])
+		? (get_query((string)$ws_fallback[0]->query)['content'] ?? '')
+		: '';
+	if($ws_fallback_content !== ''){
+		$ws_fallback_content = ws_normalize_relpath($ws_fallback_content);
+		$ws_content_root = ws_content_root($ws_fallback_content);
+		$ws_content_root_abspath = ws_content_root_abspath($ws_fallback_content);
+		/* Anche il contenuto: la pagina 404 del sito che ospita, non quella del
+		 * sito che non c'e'. */
+		$ws_query['content'] = explode_and_remove_last('/', $ws_fallback_content) . '/404';
+	}
+}
 $ws_content_config_abspath = ws_content_root_abspath().'/ws-config.php';
 if(file_exists($ws_content_config_abspath)){
   include($ws_content_config_abspath);
