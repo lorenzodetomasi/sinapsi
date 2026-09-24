@@ -41,47 +41,34 @@ if($email or $telephone){
 	</ul>
 <?php
 }
-if($ws_headings->follow == 'true' or $ws_headings->share == 'true' or $ws_headings->search == 'true'){
+if($ws_headings->share == 'true'){
 ?>
 	<ul class="social print-no">
-<?php
-	if($ws_headings->follow == 'true'){
-?>
 		<li>
-			<a href="#follow-container" title="<?php _e('Follow us on social media and newsletter'); ?>" data-toggle data-group="subheader" data-toggle-icon="close" data-close-title="<?php _e('Close “Follow us”'); ?>">
-				<i class="material-symbols-outlined">rss_feed</i><span class="text vgrid-no"><?php _e('Follow us'); ?></span>
-			</a>
-		</li>
-<?php
-	}
-	if($ws_headings->share == 'true'){
-?>
-		<li>
-			<a href="#share-container" title="<?php _e('Share on social media or email'); ?>" data-toggle data-group="subheader" data-toggle-icon="close" data-close-title="<?php _e('Close “Share”'); ?>">
+			<a href="#share" title="<?php _e('Share on social media or email'); ?>" aria-expanded="false" aria-controls="share">
 				<i class="material-symbols-outlined">share</i><span class="text vgrid-no"><?php _e('Share'); ?></span>
 			</a>
 		</li>
-<?php
-	}
-?>
 	</ul>
 <?php
 }
-?>
-<?php
-if($ws_headings->search == 'true'){
-?>
-	<ul class="search print-no">
-		<li>
-			<a href="#search" title="<?php _e('Search on this website'); ?>" data-toggle data-group="subheader" data-toggle-icon="close" data-close-title="<?php _e('Close “Search”'); ?>">
-				<i class="material-symbols-outlined">search</i><span class="text vgrid-no"><?php _e('Search'); ?></span>
-			</a>
-		</li>
-	</ul>
-<?php
-}
-?>
-<?php
+/* «SEGUICI» e «CERCA» non ci sono piu'.
+ *
+ * Erano due comandi che non aprivano niente: `modal-follow` e `modal-search`
+ * non sono mai stati scritti, e il footer li includeva lo stesso. Non era solo
+ * un file mancante - non c'e' niente da metterci. «Seguici» vuole i profili
+ * social e la newsletter, e nessun contenuto di questo CMS li dichiara;
+ * «Cerca» vuole una ricerca, e non esiste.
+ *
+ * Tolti e non nascosti: un sito che scrive `<follow>true</follow>` nelle sue
+ * testate si aspetta un pulsante che funziona, non uno che c'e' e basta. Il
+ * giorno che una marca dichiarera' i suoi profili, «Seguici» torna e nasce gia'
+ * pieno; lo stesso per la ricerca.
+ *
+ * «Condividi» invece e' rimasto, perche' e' l'unico dei tre che si accontenta
+ * di quello che il sito ha gia': l'indirizzo e il titolo della pagina. E il suo
+ * comando puntava a `#share-container`, un id che non esiste da nessuna parte. */
+
 /* NÉ LE PREFERENZE NÉ LA LINGUA stanno più qui.
  *
  * La lingua era un mappamondo con la sigla del paese, in fondo a questa riga;

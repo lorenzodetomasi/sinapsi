@@ -430,6 +430,12 @@ $GLOBALS['ws_scripts']['bodyend']['ws_drawer'] =
 $GLOBALS['ws_scripts']['bodyend']['ws_modal'] =
 	'<script defer="defer" src="'.$ws_assets_theme_url.'js/modal.js"></script>';
 
+/* E le due voci di «Condividi» che senza JavaScript non potrebbero esistere:
+ * copiare negli appunti e il foglio di sistema. Tutte le altre sono
+ * collegamenti e stanno nel markup, cosi' funzionano anche senza. */
+$GLOBALS['ws_scripts']['bodyend']['ws_share'] =
+	'<script defer="defer" src="'.$ws_assets_theme_url.'js/share.js"></script>';
+
 /* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
  * un'intestazione grande all'apertura e discreta durante la lettura non è un
  * gusto di quel sito, è come si legge una pagina lunga ovunque. Un tema figlio

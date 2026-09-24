@@ -313,6 +313,46 @@ body:has(#drawer.open) {
    stessa risposta. Una e' fatta di pulsanti (la scelta resta qui) e l'altra di
    collegamenti (la scelta e' un altro indirizzo), ma quella e' una differenza
    di meccanica, non di significato, e non si vede. */
+/* «Condividi»: le voci si vestono come quelle dell'aspetto e della lingua -
+   pastiglie in fila - perche' sono la stessa cosa da fare, scegliere fra
+   alternative pari. Una e' un pulsante e le altre collegamenti, ma quella e'
+   una differenza di meccanica, non di significato. */
+#share-what {
+  margin-bottom: 1rem; }
+  #share-what .share-title {
+    margin: 0;
+    font-weight: 600; }
+  #share-what .share-url {
+    margin: .25rem 0 0;
+    color: var(--color-hint, #5f6368);
+    font-size: .85rem;
+    /* Un indirizzo lungo non allarga la finestra: si spezza dove capita, che
+       per un indirizzo e' esattamente giusto. */
+    overflow-wrap: anywhere; }
+
+#share-where ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none; }
+  #share-where a, #share-where button {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .5rem .9rem;
+    border: 1px solid var(--color-line, #e0e0e6);
+    border-radius: 999px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer; }
+  #share-where a:hover, #share-where button:hover {
+    border-color: var(--color-link, #2e3192); }
+
 #appearance, #language {
   display: flex;
   flex-wrap: wrap;
