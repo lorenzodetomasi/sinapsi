@@ -217,6 +217,13 @@ function site_page_catalog(): array {
     ];
 }
 
+/* Quale capacità della Gestione serve perché una pagina abbia senso. Una
+ * pagina che elenca eventi senza una Gestione che li scriva resta vuota per
+ * sempre; le altre pagine si scrivono da sé, dall'editor delle pagine. */
+function site_page_feature(string $key): string {
+    return $key === 'events' ? 'events' : '';
+}
+
 /* The archives a site has from the start, empty. Having the folder there is
  * what makes the first entity a one-click affair instead of a decision: the
  * place of the business, the people, the organisations it works with, the
@@ -967,6 +974,20 @@ function site_create(array $spec, bool $apply): array {
         site_locale_write($rep, $root, $spec, $locale, $apply);
     }
 
+    /*
+     * Le capacità che le pagine scelte implicano.
+     *
+     * Spuntare «Eventi» vuol dire due cose insieme: una pagina che li elenca, e
+     * una Gestione che permette di scriverli. La prima è contenuto, la seconda
+     * è una dichiarazione — e chi ha spuntato la casella le voleva entrambe.
+     * Chiederle separate sarebbe far rispondere due volte alla stessa domanda.
+     */
+    foreach (site_pages_of($spec) as $key) {
+        $feature = site_page_feature($key);
+        if ($feature !== '' && $apply) site_feature_set($rep, $spec['id'], $feature, true, true);
+        elseif ($feature !== '') site_change($rep, 'capacità', "$root/ws-config.php", "+$feature");
+    }
+
     if ($spec['mount'] !== '') {
         site_mount_write($rep, $spec['mount'], $spec['id'], $apply);
     } else {
@@ -1356,4 +1377,130 @@ function site_page_set_list_about(array &$rep, string $abspath, array $page, arr
     $data['mainEntity']['about'] = $about;
     $data['dateModified'] = date('c');
     site_plan_write($rep, $abspath, site_json($data), 'about of ' . basename(dirname($abspath)), $apply);
+}
+
+/* ---------------------------------------------------------------------------
+ * What a site's administration handles
+ * ------------------------------------------------------------------------- */
+
+/*
+ * Events, and whatever comes after, are a CAPABILITY a site declares.
+ *
+ * The declaration lives in `contents/<site>/ws-config.php`, the file the CMS
+ * already loads for that site, and it governs the BACK OFFICE: whether
+ * ws-admin offers this site the events management at all. Whether the public
+ * page shows is a different question with a different answer - it shows when
+ * `events/` has something in it - and the two are not the same kind of fact.
+ * One is a decision, the other is an observation, and giving each its own home
+ * is why neither can contradict the other.
+ *
+ * Read by TWO parties that never meet: the CMS, which loads the file and gets
+ * the constant, and the administration, which does not boot the CMS. The
+ * administration cannot use the constant - it lists every site in one request,
+ * and a `define` is once per process, so the first site read would answer for
+ * all the others. So it reads the declaration out of the file. One declaration,
+ * two readers, exactly as `ws-core/mounts.php` says of the mounts.
+ */
+
+const SITE_FEATURES_OPEN  = '// --- What this site handles, beside its pages. Written by ws-admin/sites.php.';
+const SITE_FEATURES_CLOSE = '// --- end features';
+
+/* The capabilities on offer. A site that declares nothing handles its pages
+ * and nothing else, which is what every site did until now. */
+function site_features_available(): array {
+    return [
+        'events' => 'Gestione degli eventi',
+    ];
+}
+
+/*
+ * What a site declares, read from its file.
+ *
+ * Parsed and not included: see above. The regex is deliberately forgiving
+ * about spacing and quotes, because this line is also written by hand.
+ */
+function site_features(string $siteId): array {
+    $file = site_contents_abspath() . '/' . $siteId . '/ws-config.php';
+    if (!is_file($file)) return [];
+    $body = (string)@file_get_contents($file);
+    if (!preg_match('/define\s*\(\s*[\'"]WS_SITE_FEATURES[\'"]\s*,\s*(?:array\s*\(|\[)(.*?)(?:\)|\])\s*\)\s*;/s', $body, $m)) {
+        return [];
+    }
+    $out = [];
+    if (preg_match_all('/[\'"]([a-z0-9_-]+)[\'"]/i', $m[1], $f)) {
+        foreach ($f[1] as $name) {
+            if (isset(site_features_available()[$name]) && !in_array($name, $out, true)) $out[] = $name;
+        }
+    }
+    return $out;
+}
+
+/*
+ * Turns a capability on or off, rewriting the whole declaration.
+ *
+ * A block this module owns, between two markers, for the same reason the
+ * mounts have one: `define` is once-only, so a second declaration appended
+ * below would raise a notice and be IGNORED - the file would say the feature
+ * is on and the CMS would never see it.
+ *
+ * A `WS_SITE_FEATURES` written by hand outside the block is left alone and
+ * reported. Rewriting somebody's own line is how a panel loses the trust of
+ * whoever has to fix it later.
+ */
+function site_feature_set(array &$rep, string $siteId, string $feature, bool $on, bool $apply): void {
+    if (!isset(site_features_available()[$feature])) {
+        $rep['errors'][] = "Capacità sconosciuta: $feature";
+        return;
+    }
+    $file = site_contents_abspath() . '/' . $siteId . '/ws-config.php';
+    if (!is_file($file)) { $rep['errors'][] = "Manca $siteId/ws-config.php"; return; }
+
+    $body = (string)@file_get_contents($file);
+    $open = strpos($body, SITE_FEATURES_OPEN);
+    $close = strpos($body, SITE_FEATURES_CLOSE);
+
+    if ($open === false && preg_match('/^\s*define\s*\(\s*[\'"]WS_SITE_FEATURES[\'"]/m', $body)) {
+        $rep['notes'][] = "$siteId/ws-config.php dichiara già WS_SITE_FEATURES a mano: non l'ho toccato.";
+        return;
+    }
+
+    $now = site_features($siteId);
+    $wanted = $on
+        ? array_values(array_unique(array_merge($now, [$feature])))
+        : array_values(array_diff($now, [$feature]));
+    sort($wanted);
+    $before = $now; sort($before);
+    if ($wanted === $before) {
+        $rep['notes'][] = "«{$feature}» era già " . ($on ? 'attiva' : 'spenta') . " su $siteId.";
+        return;
+    }
+
+    $block = site_features_block($wanted);
+    if ($open !== false && $close !== false && $close > $open) {
+        $end = $close + strlen(SITE_FEATURES_CLOSE);
+        $body = substr($body, 0, $open) . rtrim($block) . substr($body, $end);
+    } else {
+        /* Prima del tag di chiusura, se c'è: quello che sta dopo `?>` è testo
+         * che finisce nella pagina, non codice. */
+        $tag = strrpos($body, '?>');
+        $body = $tag === false
+            ? rtrim($body, " \t\n\r") . "\n\n" . $block
+            : rtrim(substr($body, 0, $tag)) . "\n\n" . $block . "\n" . substr($body, $tag);
+    }
+
+    site_change($rep, 'capacità', $file, ($on ? '+' : '−') . $feature);
+    if ($apply && @file_put_contents($file, $body) === false) {
+        $rep['errors'][] = "Non posso scrivere $file";
+    }
+}
+
+function site_features_block(array $features): string {
+    $righe = array_map(fn($f) => "    '" . str_replace("'", "\\'", $f) . "',", $features);
+    return SITE_FEATURES_OPEN . "\n"
+         . "// La Gestione di questo sito offre quello che c'e' qui dentro; la pagina\n"
+         . "// pubblica di una cosa si vede poi solo se quella cosa esiste davvero.\n"
+         . "define('WS_SITE_FEATURES', array(\n"
+         . ($righe ? implode("\n", $righe) . "\n" : '')
+         . "));\n"
+         . SITE_FEATURES_CLOSE . "\n";
 }
