@@ -4,11 +4,15 @@
 // @subpackage Localbiz
 // @since WS 1.0
 ?>
-<aside id="share" class="modal full-page" style="display: none;">
-	<div class="content-container background-white padding-h padding-bottom shadow-bottom">
-		<header class="flex align-middle ">
-			<h1 class="flex1 h5" style="margin-bottom: 0; margin-top: 0;"><strong>Condividi</strong> su</h1>
-			<a class="close link h48" href="#" data-close="#share-container"><i class="material-icons">close</i><span class="button-text">Chiudi</span></a>
+<aside id="share" class="modal" hidden>
+	<div>
+		<header class="flex align-middle">
+			<h3><?php _e('Share'); ?></h3>
+			<nav>
+				<ul>
+					<li><a class="close link h48" href="#" data-close="#share"><i class="material-symbols-outlined">close</i><span class="button-text"><?php _e('Close'); ?></span></a></li>
+				</ul>
+			</nav>
 		</header>
 		<div>
 			<nav>

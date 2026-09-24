@@ -55,43 +55,60 @@ if($ws_headings->header_top){
 }
 ?>
 					<div <?php echo ws_html_attributes('header1'); ?>>
-						<div>
 <?php
-/* The light mark and the dark one are TWO drawings, and both are printed:
-   which one shows is the CSS's business, as it is for every other colour of
-   this theme. Deliberately NOT a `<source media="(prefers-color-scheme: dark)">`
-   inside the picture - that reads the operating system alone and would ignore
-   the page's own light/dark switch, so somebody asking for light on a machine
-   set to dark would get the negative mark on white.
-   A site that declares only `logo` is unchanged: one picture, wearing the
-   white plate it needs to survive the dark header. */
-$logoImage = $ws_headings->xpath("id('logo')");
-$logoImageNeg = $ws_headings->xpath("id('logo-neg')");
-if($logoImageNeg){
-	echo get_media($logoImage, array('pictureAttributes' => array( 'class' => 'site-logo ws-only-light')));
-	echo get_media($logoImageNeg, array('pictureAttributes' => array( 'class' => 'site-logo ws-only-dark')));
-} else {
-	echo get_media($logoImage, array('pictureAttributes' => array( 'class' => 'site-logo ws-media-plate')));
+/* IL MARCHIO, e se accanto ci va scritto il nome.
+ *
+ * Due forme, distinte dall'id che la marca dà al disegno: `logotype` è un
+ * segno che il nome ce l'ha già dentro (il marchio di Meetoo), `logo` è un
+ * segno che gli sta accanto (il simbolo di isotype). Nel primo caso scrivere
+ * anche il nome vorrebbe dire scriverlo due volte. Nel secondo il nome e
+ * l'occhiello escono come testo, che è anche ciò che li rende selezionabili,
+ * traducibili e leggibili ad alta voce. Qui non c'è nessun `if` che sappia il
+ * nome di un sito: la differenza la dichiara il contenuto. */
+$marchio = ws_brand_mark();
+?>
+						<a<?php echo ws_html_attributes('brand', array('id' => 'brand', 'href' => $index_url, 'title' => __('Go to homepage'))); ?>>
+<?php
+echo $marchio['html'];
+if($marchio['name']){
+?>
+							<hgroup>
+								<h1><?php echo $ws_headings->mainEntity->name->innerHTML(); ?></h1>
+<?php
+	/* L'occhiello si stampa se la marca ce l'ha. Un `<h2>` vuoto sotto al nome
+	   è una riga di niente che sposta tutto il resto. */
+	if(!empty($ws_headings->mainEntity->headline) and trim((string)$ws_headings->mainEntity->headline) !== ''){
+?>
+								<h2<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
+<?php
+	}
+?>
+							</hgroup>
+<?php
 }
 ?>
-							<hgroup><a href="<?php echo $index_url; ?>" title="<?php _e('Go to homepage'); ?>">
-								<h1 class="site-name"><?php echo $ws_headings->mainEntity->name->innerHTML(); ?></h1>
-								<h2<?php echo ws_html_attributes('header1-headline'); ?>><?php echo $ws_headings->mainEntity->headline->innerHTML(); ?></h2>
-							</a></hgroup>
-							<a href="#nav1" onclick="toggle('header1-nav1', this);" class="vgrid" title="<?php _e('Show the Main menu'); ?>"><span class="icon material-symbols-outlined">menu</span> <span class="text-label all-no"><?php _e('Main menu'); ?></span></a>
-						</div>
-						<nav <?php echo ws_html_attributes('header1-nav1', array('id' => 'header1-nav1', 'class' => array('header1-nav1', 'nav', 'vgrid-fullwidth', 'padding-h-d2', 'hgrid-horizontal'))); ?>>
-							<h3 class="vgrid all-no"><?php _e('Main menu'); ?></h3>
-							<div>
-								<ul><?php ws_nav_items($nav1); ?></ul>
-							</div>
+						</a>
+						<nav <?php echo ws_html_attributes('header1-nav1', array('id' => 'header1-nav1')); ?>>
+							<ul><?php ws_nav_items($nav1); ?></ul>
 						</nav>
 <?php
-/* L'accesso, in fondo alla riga del nome: dopo l'ultima voce del menu.
- * Prima stava nella barra dei contatti, che si chiude appena si comincia a
- * leggere — e con lei spariva il modo di entrare. */
-include_template('template-parts/nav-google-login');
+/* LE AZIONI, e il loro ordine, che è sempre lo stesso.
+ *
+ * Le preferenze, poi l'accesso, poi l'hamburger — che sta all'ESTREMA destra,
+ * su qualunque schermo. Non è un gusto: è l'unico comando che la pagina ha
+ * sempre, e un comando che cambia posto a seconda di cosa c'è accanto si cerca
+ * ogni volta. L'accesso gli sta subito a sinistra, e c'è solo se c'è il
+ * plugin: il tema non sa (e non deve sapere) come si entra. */
 ?>
+						<div<?php echo ws_html_attributes('header1-actions', array('id' => 'header1-actions')); ?>>
+							<a id="preferences-open" href="#preferences" title="<?php _e('Preferences'); ?>" aria-label="<?php _e('Preferences'); ?>" aria-expanded="false" aria-controls="preferences"><span class="material-symbols-outlined" aria-hidden="true">settings</span></a>
+<?php
+if(locate_file('template-parts/nav-google-login.php')){
+	include_template('template-parts/nav-google-login');
+}
+?>
+							<button type="button" id="menu-open" title="<?php _e('Main menu'); ?>" aria-label="<?php _e('Main menu'); ?>" aria-expanded="false" aria-controls="drawer"><span class="material-symbols-outlined" aria-hidden="true">menu</span></button>
+						</div>
 					</div>
 <?php
 /* La terza riga: dove sei. Sta DENTRO l'header perché è parte
@@ -102,6 +119,25 @@ include_template('template-parts/header2');
 ?>
 				</div>
 			</header>
+<?php
+/* IL CASSETTO del menu.
+ *
+ * Fuori dall'`<header>`, che è appiccicato in cima: un pannello alto quanto lo
+ * schermo dentro un elemento sticky resta alto quanto l'header.
+ *
+ * Niente `hidden`: aperto e chiuso li decide il CSS — il cassetto sta fuori
+ * schermo e il velo è trasparente — e `hidden` spegnerebbe la transizione.
+ * Chiuso però non deve essere raggiungibile col tab, e a quello pensa
+ * `inert`, che si toglie all'apertura. */
+?>
+			<div id="drawer-overlay"></div>
+			<nav id="drawer" aria-label="<?php _e('Main menu'); ?>" inert>
+				<div id="drawer-head">
+					<a href="<?php echo $index_url; ?>" title="<?php _e('Go to homepage'); ?>"><?php echo $marchio['html']; ?></a>
+					<button type="button" id="drawer-close" title="<?php _e('Close'); ?>" aria-label="<?php _e('Close'); ?>"><span class="material-symbols-outlined" aria-hidden="true">close</span></button>
+				</div>
+				<ul id="drawer-nav"><?php ws_nav_items($nav1, array('icons' => true)); ?></ul>
+			</nav>
 			<div<?php echo ws_html_attributes('main-container'); ?>>
 				<main<?php echo ws_html_attributes('main'); ?>>
 <?php

@@ -366,8 +366,12 @@ if(!function_exists('url')){
 }
 // WS Nav
 if(!function_exists('ws_nav_items')){
-	function ws_nav_items($nav){
+	/* `$args['icons']`: le voci escono con la loro icona davanti. Il menu
+	   orizzontale non le vuole — lo spazio è poco e i nomi bastano — il
+	   cassetto sì, perché lì una fila di righe tutte uguali si legge peggio. */
+	function ws_nav_items($nav, $args = array()){
 	  global $ws_query;
+	  $con_icone = !empty($args['icons']);
 	  $nav_id = $nav['id'];
 	  $nav_items = $nav->item;
 	  $nav_item_index = 0;
@@ -380,7 +384,7 @@ if(!function_exists('ws_nav_items')){
 	        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = $item->class;
 	      }
 	  ?>
-	      <li<?php echo ws_html_attributes($nav_id.'-item-'.$nav_item_index); ?>><a href="<?php echo ws_href($item->wspath); ?>"><?php echo $item->name->innerHTML(); ?></a></li>
+	      <li<?php echo ws_html_attributes($nav_id.'-item-'.$nav_item_index); ?>><a href="<?php echo ws_href($item->wspath); ?>"><?php if($con_icone and !empty($item->icon)){ echo $item->icon->innerHTML(); } ?><?php echo $item->name->innerHTML(); ?></a></li>
 	  <?php
 	      $nav_item_index++;
 	    }
@@ -399,8 +403,14 @@ $GLOBALS['ws_styles']['head']['header_compatto'] = ob_get_clean();
  * Nella TESTA e senza `defer`: la scelta va applicata prima che la pagina si
  * disegni, se no chi ha chiesto scuro vede il lampo bianco. È un file piccolo,
  * e quel lampo si nota molto più di qualche millesimo di secondo. */
-$GLOBALS['ws_scripts']['head']['ws_impostazioni'] =
-	'<script src="'.$ws_assets_theme_url.'js/impostazioni.js"></script>';
+$GLOBALS['ws_scripts']['head']['ws_preferences'] =
+	'<script src="'.$ws_assets_theme_url.'js/preferences.js"></script>';
+
+/* Il cassetto del menu, invece, può aspettare: non disegna niente prima che si
+ * tocchi l'hamburger, e il menu orizzontale intanto c'è già. Quindi in fondo al
+ * corpo, dove non trattiene la pagina. */
+$GLOBALS['ws_scripts']['bodyend']['ws_drawer'] =
+	'<script defer="defer" src="'.$ws_assets_theme_url.'js/drawer.js"></script>';
 
 /* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
  * un'intestazione grande all'apertura e discreta durante la lettura non è un
@@ -802,15 +812,87 @@ if(!function_exists('ws_opening_hours')){
 	}
 }
 
+if(!function_exists('ws_media_pair')){
+	/**
+	 * A drawing, and the classes that decide when it is on screen.
+	 *
+	 * Given one image it prints one picture, wearing `ws-media-plate`: that is
+	 * the white plate a drawing made for a light ground needs to survive a dark
+	 * one. Given two it prints both, `ws-only-light` and `ws-only-dark`, and the
+	 * stylesheet shows the one the chosen colour scheme asks for - see
+	 * css/all-abovethefold.css for why the choice is made there and not with a
+	 * `<source media>` inside the picture.
+	 *
+	 * One place, because three callers needed it: the mark in the header, the
+	 * mark in the drawer, and the primary image of a page.
+	 */
+	function ws_media_pair($light, $dark = null, $args = array()){
+		if(empty($light)){
+			return '';
+		}
+		$was = isset($args['pictureAttributes']['class']) ? $args['pictureAttributes']['class'].' ' : '';
+		if(empty($dark)){
+			$args['pictureAttributes']['class'] = $was.'ws-media-plate';
+			return get_media($light, $args);
+		}
+		$html = '';
+		foreach(array('light' => $light, 'dark' => $dark) as $scheme => $image){
+			$one = $args;
+			$one['pictureAttributes']['class'] = $was.'ws-only-'.$scheme;
+			$html .= get_media($image, $one);
+		}
+		return $html;
+	}
+}
+
+if(!function_exists('ws_brand_mark')){
+	/**
+	 * The mark of the site - and whether its name still has to be written out.
+	 *
+	 * TWO SHAPES, told apart by the id the brand gives them. It is the same
+	 * trick as `-neg`: the id carries the meaning, so nothing new is invented
+	 * and no template has to know the name of a site.
+	 *
+	 *   `logotype` - a sign that already CONTAINS the name, the way Meetoo's
+	 *                wordmark does. Writing the name beside it would write it
+	 *                twice, so the header prints the sign alone.
+	 *   `logo`     - a sign that stands BESIDE the name, the way isotype's
+	 *                symbol does. The name, and the headline if the brand has
+	 *                one, are printed as text next to it - which is also what
+	 *                makes them selectable, translatable and readable aloud.
+	 *
+	 * Either may have its `-neg` twin for the dark; the pair is handled above.
+	 * A brand that declares neither gets no mark and keeps its name, which is
+	 * the least wrong thing to show.
+	 *
+	 * @return array{html: string, name: bool}
+	 */
+	function ws_brand_mark($args = array()){
+		global $ws_headings;
+		if(empty($ws_headings)){
+			return array('html' => '', 'name' => true);
+		}
+		foreach(array('logotype', 'logo') as $id){
+			$light = $ws_headings->xpath("id('".$id."')");
+			if(!empty($light)){
+				$dark = $ws_headings->xpath("id('".$id."-neg')");
+				return array(
+					'html' => ws_media_pair($light, !empty($dark) ? $dark : null, $args),
+					'name' => ($id === 'logo'),
+				);
+			}
+		}
+		return array('html' => '', 'name' => true);
+	}
+}
+
 if(!function_exists('ws_figure_media')){
 	/**
 	 * The image of a figure, in the version the current colour scheme asks for.
 	 *
-	 * A figure may carry the same drawing twice: one made for a light ground and
-	 * one made for a dark one, told apart by an id ending in `-neg`. When it
-	 * does, both are printed and the stylesheet shows one - see `ws-only-light`
-	 * and `ws-only-dark` in css/all-abovethefold.css for why the choice is made
-	 * there and not with a `<source media>` inside the picture.
+	 * A figure may carry the same drawing twice - one made for a light ground,
+	 * one for a dark one - told apart by an id ending in `-neg`. It finds the
+	 * pair and hands it to `ws_media_pair()`.
 	 *
 	 * A figure that carries one image comes out exactly as `get_media` would
 	 * have printed it. That is the point: every template can call this one and
@@ -831,18 +913,6 @@ if(!function_exists('ws_figure_media')){
 			}
 		}
 		if($light === null){ $light = $figure->image; }
-		if($dark === null){
-			$was = isset($args['pictureAttributes']['class']) ? $args['pictureAttributes']['class'].' ' : '';
-			$args['pictureAttributes']['class'] = $was.'ws-media-plate';
-			return get_media($light, $args);
-		}
-		$html = '';
-		foreach(array('light' => $light, 'dark' => $dark) as $scheme => $image){
-			$one = $args;
-			$was = isset($args['pictureAttributes']['class']) ? $args['pictureAttributes']['class'].' ' : '';
-			$one['pictureAttributes']['class'] = $was.'ws-only-'.$scheme;
-			$html .= get_media($image, $one);
-		}
-		return $html;
+		return ws_media_pair($light, $dark, $args);
 	}
 }

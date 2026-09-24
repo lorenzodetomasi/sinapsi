@@ -112,9 +112,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between; }
-  #header1 > div {
-    display: flex; }
-    #header1 > div > .site-logo > img {
+  #header1 > #brand {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+    margin-right: auto; }
+    #header1 > #brand picture > img {
       height: var(--header-logo, 4em);
       margin-top: 0;
       margin-right: 1em;
@@ -126,11 +131,11 @@ body {
 #header.stretto > div,
 .stretto #header1,
 .stretto #header1 hgroup,
-.stretto #header1 .site-logo {
+.stretto #header1 #brand picture {
   height: auto;
   min-height: 0; }
 
-.stretto #header1 .site-logo img {
+.stretto #header1 #brand picture img {
   height: var(--header-logo, 1.5rem); }
 
 .stretto #header1 {
@@ -156,12 +161,44 @@ body {
   line-height: 1;
   display: block; }
 
-#header1 .site-logo {
+#header1 #brand picture {
   display: flex;
   align-items: center; }
-  #header1 .site-logo > img {
+  #header1 #brand picture > img {
     display: block; }
-  #header1 .ws-media-plate > img {
+#brand hgroup {
+  min-width: 0; }
+  #brand hgroup h1, #brand hgroup h2 {
+    margin: 0; }
+
+/* LE AZIONI, sempre in fondo alla riga e sempre nello stesso ordine. Quello che
+   c'e' dentro cambia - l'accesso c'e' solo se c'e' il plugin - ma l'hamburger e'
+   l'ultimo comunque, perche' e' l'unico che c'e' sempre e un comando che cambia
+   posto si cerca ogni volta. */
+#header1-actions {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  flex: none; }
+  #header1-actions > a, #header1-actions > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-link, inherit);
+    text-decoration: none;
+    cursor: pointer; }
+  #header1-actions > a:hover, #header1-actions > button:hover {
+    background: rgba(128, 128, 128, .14); }
+  #header1-actions .material-symbols-outlined {
+    font-size: 1.375rem;
+    line-height: 1; }
+  #header1 #brand .ws-media-plate > img {
     border-radius: .25rem; }
 
 /* A drawing that comes in two versions: one made for a light ground, one for a
@@ -185,7 +222,7 @@ body {
    context's value down with it.
 
    `!important` because hiding has to win wherever it lands, and where it lands
-   is not knowable from here: `#header1 .site-logo` carries an id, so it beat
+   is not knowable from here: `#header1 #brand picture` carries an id, so it beat
    these rules on specificity and the header showed both marks at once. Same
    reason `[hidden]` in this theme is important - a thing declared not to be on
    screen is not a suggestion. */
@@ -221,6 +258,90 @@ body {
     margin: 0;
     padding: 0;
     list-style: none; }
+
+/* IL CASSETTO del menu, e il velo sotto.
+   Fuori schermo di suo, non `display: none`: da li' puo' scivolare dentro, e
+   una transizione da «non esiste» non si vede. Chiuso non e' raggiungibile col
+   tab perche' il markup lo dichiara `inert`, non perche' il CSS lo nasconda. */
+#drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, .45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s; }
+#drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto; }
+
+#drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1201;
+  width: 17.5rem;
+  max-width: 82vw;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-superficie, #fff);
+  box-shadow: 2px 0 24px rgba(0, 0, 0, .3);
+  transform: translateX(-100%);
+  transition: transform .24s cubic-bezier(.22, 1, .36, 1); }
+#drawer.open {
+  transform: none; }
+
+#drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .625rem .5rem .625rem 1rem;
+  border-bottom: 1px solid var(--color-line, #e6e6e6); }
+  #drawer-head img {
+    height: 1.375rem;
+    width: auto;
+    display: block; }
+  #drawer-head button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--color-link, inherit);
+    cursor: pointer; }
+  #drawer-head button:hover {
+    background: rgba(128, 128, 128, .14); }
+
+#drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: .125rem;
+  margin: 0;
+  padding: .5rem;
+  list-style: none;
+  overflow-y: auto; }
+  #drawer-nav a {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .6875rem .75rem;
+    border-radius: .75rem;
+    text-decoration: none;
+    color: var(--color-text, #444); }
+  #drawer-nav a:hover {
+    background: rgba(128, 128, 128, .12); }
+
+/* Chi e' aperto non scorre sotto: il velo copre la pagina, e una pagina che
+   scorre dietro a un pannello fermo e' il modo piu' rapido di perdere il segno. */
+body:has(#drawer.open) {
+  overflow: hidden; }
 
 #header2 {
   border-top: 1px solid var(--color-line, #e6e6e6);
@@ -264,17 +385,35 @@ body {
   flex: 0 0 auto;
   opacity: .55; }
 
-.ws-aspetto {
+/* Le due sezioni si vestono uguali: sono la stessa domanda fatta due volte -
+   come vuoi vedere questa pagina - e una fila di pastiglie da scegliere e' la
+   stessa risposta. Una e' fatta di pulsanti (la scelta resta qui) e l'altra di
+   collegamenti (la scelta e' un altro indirizzo), ma quella e' una differenza
+   di meccanica, non di significato, e non si vede. */
+#appearance, #language {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .5rem;
   padding-bottom: 1rem; }
-  .ws-aspetto .ws-aspetto-titolo {
+  #appearance h4, #language h4 {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
     width: 100%;
     margin: 0 0 .25rem;
     font-weight: 600; }
-  .ws-aspetto button {
+  #language ul {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none; }
+  #language a {
+    text-decoration: none; }
+  #appearance button, #language a {
     display: inline-flex;
     align-items: center;
     gap: .35rem;
@@ -285,9 +424,9 @@ body {
     color: inherit;
     font: inherit;
     cursor: pointer; }
-    .ws-aspetto button:hover {
+    #appearance button:hover, #language a:hover {
       border-color: var(--color-link, #2e3192); }
-    .ws-aspetto button.scelto {
+    #appearance button.scelto, #language [aria-current] {
       border-color: var(--color-link, #2e3192);
       color: var(--color-link, #2e3192);
       font-weight: 600; }
@@ -414,18 +553,26 @@ body {
   .call-to-action p:last-child {
     margin-bottom: 0; }
 
-.modal.full-page {
+/* IL GUSCIO DI OGNI FINESTRA del sito. Una classe e non un id perche' le
+   finestre sono piu' d'una nella stessa pagina - le preferenze, «condividi», la
+   ricerca - e il guscio e' esattamente cio' che hanno in comune.
+
+   Centrata nei due sensi. Era in alto, e su uno schermo alto una finestra di tre
+   righe restava appesa in cima con mezzo schermo di velo sotto. */
+.modal {
   position: fixed;
   inset: 0;
   z-index: 99;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  padding: clamp(1rem, 6vh, 4rem) 1rem;
+  padding: 1rem;
   overflow: auto;
   background: rgba(0, 0, 0, .5); }
-  .modal.full-page > .content-container {
+  .modal[hidden] {
+    display: none; }
+  .modal > div {
     width: min(100%, 40rem);
     box-sizing: border-box;
     max-height: calc(100vh - 2rem);
@@ -435,21 +582,26 @@ body {
     color: var(--color-text, #444);
     border-radius: var(--border-radius, .75rem);
     box-shadow: 0 12px 40px rgba(0, 0, 0, .35); }
-  .modal.full-page header {
+  .modal > div > header {
     display: flex;
     align-items: center;
     gap: 1rem;
     margin-bottom: 1rem; }
-    .modal.full-page header h1 {
+    .modal > div > header h3 {
       flex: 1;
       margin: 0;
       font-size: 1.25rem; }
-    .modal.full-page header .close {
+    .modal > div > header nav ul {
+      display: flex;
+      margin: 0;
+      padding: 0;
+      list-style: none; }
+    .modal > div > header .close {
       display: inline-flex;
       align-items: center;
       gap: .25rem;
       text-decoration: none; }
-      .modal.full-page header .close .material-symbols-outlined {
+      .modal > div > header .close .material-symbols-outlined {
         line-height: 1; }
 
 #main-container {

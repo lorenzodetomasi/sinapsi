@@ -58,10 +58,10 @@
 	}
 
 	function segna(modo) {
-		var bottoni = document.querySelectorAll('#ws-aspetto [data-tema]');
+		var bottoni = document.querySelectorAll('#appearance [data-appearance]');
 		for (var i = 0; i < bottoni.length; i++) {
 			var b = bottoni[i];
-			var suo = b.getAttribute('data-tema') === modo;
+			var suo = b.getAttribute('data-appearance') === modo;
 			b.classList.toggle('scelto', suo);
 			b.setAttribute('aria-pressed', suo ? 'true' : 'false');
 		}
@@ -84,20 +84,20 @@
 	 * clic fuori e Esc. Niente di condiviso, perché non c'è ancora niente di
 	 * condiviso che funzioni. */
 	function apriChiudi() {
-		var box = document.getElementById('impostazioni');
+		var box = document.getElementById('preferences');
 		if (!box) return;
-		var comando = document.querySelector('a[href="#impostazioni"]');
+		var comando = document.querySelector('a[href="#preferences"]');
 
 		function apri(e) {
 			if (e) e.preventDefault();
-			box.style.display = '';
+			box.removeAttribute('hidden');
 			if (comando) comando.setAttribute('aria-expanded', 'true');
-			var primo = box.querySelector('[data-tema]');
+			var primo = box.querySelector('[data-appearance]');
 			if (primo) primo.focus();
 		}
 		function chiudi(e) {
 			if (e) e.preventDefault();
-			box.style.display = 'none';
+			box.setAttribute('hidden', '');
 			if (comando) comando.setAttribute('aria-expanded', 'false');
 			if (comando) comando.focus();
 		}
@@ -112,17 +112,17 @@
 		   «fuori» vuol dire sulla finestra stessa e non su ciò che contiene. */
 		box.addEventListener('click', function (e) { if (e.target === box) chiudi(); });
 		document.addEventListener('keydown', function (e) {
-			if (e.key === 'Escape' && box.style.display !== 'none') chiudi();
+			if (e.key === 'Escape' && !box.hasAttribute('hidden')) chiudi();
 		});
 	}
 
 	function avvia() {
 		apriChiudi();
-		var zona = document.getElementById('ws-aspetto');
+		var zona = document.getElementById('appearance');
 		if (!zona) return;
 		zona.addEventListener('click', function (e) {
-			var b = e.target.closest && e.target.closest('[data-tema]');
-			if (b) { applica(b.getAttribute('data-tema'), true); }
+			var b = e.target.closest && e.target.closest('[data-appearance]');
+			if (b) { applica(b.getAttribute('data-appearance'), true); }
 		});
 		segna(scelto());
 	}

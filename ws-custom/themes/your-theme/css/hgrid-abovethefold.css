@@ -34,9 +34,17 @@
 #header1-nav1 {
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin; }
-  #header1-nav1 > div > ul {
-    flex-wrap: nowrap; }
-    #header1-nav1 > div > ul > li > a {
+  scrollbar-width: thin;
+  min-width: 0; }
+  #header1-nav1 > ul {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none; }
+    #header1-nav1 > ul > li > a {
       display: inline-block;
-      white-space: nowrap; }
+      white-space: nowrap;
+      text-decoration: none; }

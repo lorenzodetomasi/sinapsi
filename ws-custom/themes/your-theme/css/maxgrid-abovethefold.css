@@ -316,7 +316,7 @@
 
 #header1 {
   height: 6rem; }
-  #header1 .site-logo {
+  #header1 #brand picture {
     height: 3rem; }
 
 #header-top, #header-top > div {

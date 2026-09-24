@@ -68,13 +68,6 @@ if($ws_headings->follow == 'true' or $ws_headings->share == 'true' or $ws_headin
 <?php
 }
 ?>
-	<ul class="settings print-no">
-		<li>
-			<a href="#impostazioni" title="<?php _e('Settings'); ?>" data-toggle data-group="subheader" data-toggle-icon="close" data-close-title="<?php _e('Close “Settings”'); ?>">
-				<i class="material-symbols-outlined">settings</i><span class="text vgrid-no"><?php _e('Settings'); ?></span>
-			</a>
-		</li>
-	</ul>
 <?php
 if($ws_headings->search == 'true'){
 ?>
@@ -89,21 +82,17 @@ if($ws_headings->search == 'true'){
 }
 ?>
 <?php
-if(!empty($ws_content_languages)){
-	$current_language_item = $ws_content_languages->xpath('/*[1]/item[./locale="'.$ws_locales['content'].'"]')[0];
-	if(count($ws_content_languages->children()) > 1){
-?>
-	<ul class="languages print-no">
-		<li>
-			<a href="#languages" title="<?php echo $current_language_item->title; ?>" data-toggle data-group="subheader" data-toggle-icon="close" data-close-title="<?php _e('Close “Languages”'); ?>">
-				<i class="material-symbols-outlined">language</i><span class="text"><?php echo $current_language_item->name; ?></span>
-			</a>
-		</li>
-	</ul>
-<?php
-	}
-}
-/* L'accesso NON sta più qui.
+/* NÉ LE PREFERENZE NÉ LA LINGUA stanno più qui.
+ *
+ * La lingua era un mappamondo con la sigla del paese, in fondo a questa riga;
+ * le preferenze un ingranaggio, poco prima. Erano due comandi nella riga che si
+ * CHIUDE appena si comincia a leggere — e quella riga è anche la prima cosa che
+ * sparisce su uno schermo stretto. Adesso sono una cosa sola, dentro
+ * «Preferenze», che si apre dalle azioni dell'header: come si vede la pagina e
+ * in che lingua la si legge sono la stessa domanda, e si rispondono nello
+ * stesso posto.
+ *
+ * L'ACCESSO nemmeno.
  *
  * Stava in fondo alla barra dei contatti, che è la riga che si chiude quando si
  * comincia a leggere: chi voleva entrare, mentre leggeva, non aveva più il

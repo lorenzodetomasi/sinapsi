@@ -53,11 +53,16 @@ if(!empty($ws_content->inLanguage) and ws_lang(ws_locale()) != $ws_content->inLa
 }
 ?>
 <?php
-include_template('template-parts/modal-follow');
+/* Le finestre della pagina.
+ *
+ * `modal-follow` e `modal-search` erano inclusi e NON ESISTONO: due file mai
+ * scritti, chiesti a ogni pagina. `modal-languages` esisteva e adesso e' spento
+ * (`-modal-languages.php`): la scelta della lingua sta nelle Preferenze, insieme
+ * al chiaro/scuro, e tenerne due copie vuol dire che un giorno diranno cose
+ * diverse. Il comando che lo apriva non c'e' piu' da quando il mappamondo e'
+ * uscito dall'header, quindi non lo apriva piu' nessuno. */
 include_template('template-parts/modal-share');
-include_template('template-parts/modal-search');
-include_template('template-parts/modal-languages');
-include_template('template-parts/modal-impostazioni');
+include_template('template-parts/modal-preferences');
 ?>
 <?php echo ws_scripts('bodyend'); ?>
 	</body>
