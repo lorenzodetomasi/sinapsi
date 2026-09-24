@@ -67,9 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'id' => $s['id'], 'locales' => $s['locales'], 'mount' => $s['mount'],
                 'theme' => $s['theme'], 'mainEntity' => $s['mainEntity'],
                 'name' => site_name_of($s['path'], $s['locales']),
+                'menu' => site_menu($s['id']),
             ];
         }
-        echo json_encode(['success' => true, 'sites' => $sites, 'catalog' => site_catalog_for_ui()]);
+        echo json_encode([
+            'success' => true, 'sites' => $sites, 'catalog' => site_catalog_for_ui(),
+            'menuStyles' => site_menu_styles(),
+        ]);
         exit;
     }
 
@@ -95,6 +99,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'pages'   => array_filter(array_map('trim', explode(',', (string)($_POST['pages'] ?? '')))),
             'offer_type' => (string)($_POST['offer_type'] ?? ''),
         ], $apply);
+        echo json_encode(['success' => !$rep['errors']] + $rep);
+        exit;
+    }
+
+    /* SI SCRIVE E BASTA, senza anteprima.
+     *
+     * Ogni altra azione di questo pannello mostra prima cosa scriverebbe,
+     * perche' crea cartelle e file e tornare indietro costa. Questa cambia una
+     * parola in un file, si vede subito guardando una pagina e si rimette com'era
+     * scegliendo l'altra voce. Un'anteprima qui sarebbe un passaggio in piu' per
+     * leggere cio' che si e' appena scelto. */
+    if ($action === 'menu') {
+        $rep = ['changes' => [], 'errors' => [], 'notes' => [], 'applied' => true];
+        site_menu_set($rep, (string)($_POST['id'] ?? ''), (string)($_POST['style'] ?? ''), true);
         echo json_encode(['success' => !$rep['errors']] + $rep);
         exit;
     }
@@ -382,6 +400,8 @@ function site_catalog_for_ui(): array {
     const out = $('out');
     let CATALOG = [];
     let SITES = [];
+    let MENU_STYLES = { responsive: 'Orizzontale dove ci sta, a cassetto dove no', drawer: 'Sempre e solo il menu a cassetto' };
+    let IS_SUPER = false;
     let lastCreateSpec = null;   // what the preview described, so "Crea" writes exactly that
     let lastLocaleSpec = null;
 
@@ -422,6 +442,29 @@ function site_catalog_for_ui(): array {
           '<span class="tag">lingue ' + (s.locales.join(', ') || '—') + '</span>' +
           '<span class="grow"></span>' +
           '<span class="tag">mainEntity ' + entity + '</span>';
+        /* La scelta del menu la offre solo a chi puo' scriverla. Il server
+         * rifiuta comunque: questo evita di mostrare un comando che poi dice
+         * di no. */
+        if (IS_SUPER) {
+          const lab = document.createElement('label');
+          lab.className = 'tag';
+          lab.textContent = 'menu ';
+          const sel = document.createElement('select');
+          Object.keys(MENU_STYLES).forEach((k) => {
+            const o = document.createElement('option');
+            o.value = k; o.textContent = MENU_STYLES[k];
+            sel.appendChild(o);
+          });
+          sel.value = s.menu || 'responsive';
+          sel.addEventListener('change', () => {
+            api('menu', { id: s.id, style: sel.value }).then(({ body }) => {
+              report(body, 'Scritto.');
+              load();
+            });
+          });
+          lab.appendChild(sel);
+          row.appendChild(lab);
+        }
         box.appendChild(row);
       });
       if (!SITES.length) box.innerHTML = '<p class="intro">Nessun sito.</p>';
@@ -605,6 +648,7 @@ function site_catalog_for_ui(): array {
         }
         SITES = body.sites || [];
         CATALOG = body.catalog || [];
+        MENU_STYLES = body.menuStyles || MENU_STYLES;
         renderSites();
         if (!$('f-pages').children.length) renderCatalog();
       });
@@ -637,7 +681,8 @@ function site_catalog_for_ui(): array {
           /* An admin sees the sites; only a super-admin gets the forms. The
            * server refuses either way — this just does not offer what it
            * would then refuse. */
-          if (body.isSuper) {
+          IS_SUPER = !!body.isSuper;
+          if (IS_SUPER) {
             $('sec-new').hidden = false; $('sec-locale').hidden = false; $('sec-entity').hidden = false;
           }
           fillLocaleSelects();

@@ -38,7 +38,10 @@ $ws_content_root_url = ws_content_root_url();
  * was wiping this list before it reached the head, so nobody had seen these
  * four lines work, and nobody had seen them fail either. */
 if(!empty($GLOBALS['ws_headings']->favicons->relpath)){
-	$ws_favicons_url = ws_href(WS_CONTENTS_RELPATH.'/'.trim((string)$GLOBALS['ws_headings']->favicons->relpath));
+	/* `mount => false`: le icone sono un file, non un indirizzo del sito. Su un
+	   sito innestato il prefisso le manderebbe a /meetoo/ws-custom/..., che non
+	   esiste - lo stesso inciampo di `get_media`. */
+	$ws_favicons_url = ws_href(WS_CONTENTS_RELPATH.'/'.trim((string)$GLOBALS['ws_headings']->favicons->relpath), array('mount' => false));
 	ws_globals_set(array('ws_links'), array(
 		'<link rel="apple-touch-icon" sizes="180x180" href="'.$ws_favicons_url.'/apple-touch-icon.png" />',
 		'<link rel="icon" type="image/png" sizes="32x32" href="'.$ws_favicons_url.'/favicon-32x32.png" />',
@@ -372,19 +375,25 @@ if(!function_exists('ws_nav_items')){
 	function ws_nav_items($nav, $args = array()){
 	  global $ws_query;
 	  $con_icone = !empty($args['icons']);
+	  /* DOVE porta una voce e CON CHE COSA si annuncia sono due domande a parte,
+	     perche' un sito figlio puo' rispondere diversamente: Meetoo scrive nelle
+	     voci l'@id di un contenuto e l'indirizzo lo chiede alla sua mappa. Sono
+	     due funzioni sostituibili, non due `if` qui dentro: questo file non deve
+	     sapere che Meetoo esiste. */
 	  $nav_id = $nav['id'];
 	  $nav_items = $nav->item;
 	  $nav_item_index = 0;
 	  foreach($nav_items as $key => $item){
-	    if(!empty($item->name) and !empty($item->wspath)){
-	      if(ws_normalize_relpath($item->wspath) == $ws_query['wspath']){
+	    $href = ws_nav_href($item);
+	    if(!empty($item->name) and $href !== ''){
+	      if(trim(parse_url($href, PHP_URL_PATH) ?: '', '/') === trim(ws_mount().'/'.trim((string)($ws_query['wspath'] ?? ''), '/'), '/')){
 	        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = 'current-menu-item';
 	      }
 	      if(!empty($item->class)){
 	        $GLOBALS['ws_html_attributes'][$nav_id.'-item-'.$nav_item_index]['class'] = $item->class;
 	      }
 	  ?>
-	      <li<?php echo ws_html_attributes($nav_id.'-item-'.$nav_item_index); ?>><a href="<?php echo ws_href($item->wspath); ?>"><?php if($con_icone and !empty($item->icon)){ echo $item->icon->innerHTML(); } ?><?php echo $item->name->innerHTML(); ?></a></li>
+	      <li<?php echo ws_html_attributes($nav_id.'-item-'.$nav_item_index); ?>><a href="<?php echo $href; ?>"><?php if($con_icone){ echo ws_nav_icon($item); } ?><?php echo $item->name->innerHTML(); ?></a></li>
 	  <?php
 	      $nav_item_index++;
 	    }
@@ -420,6 +429,21 @@ $GLOBALS['ws_scripts']['bodyend']['ws_drawer'] =
  *       $GLOBALS['ws_html_attributes']['header']['class'], array('header-compatto'));
  */
 $GLOBALS['ws_html_attributes']['header']['class'][] = 'header-compatto';
+
+/* COME SI ARRIVA AL MENU, dichiarato dal sito in `contents/<sito>/ws-config.php`
+ * e scritto da ws-admin/sites.php.
+ *
+ *   'responsive' (il predefinito) - il menu orizzontale dove ci sta, il cassetto
+ *                 dove non ci sta. Mai tutti e due: due porte per la stessa
+ *                 stanza si contano come due stanze.
+ *   'drawer'    - solo l'hamburger, a qualunque larghezza.
+ *
+ * Arriva come attributo su <html> e non come classe su un pezzo dell'header,
+ * perche' la scelta riguarda due elementi lontani - il menu e l'hamburger - e
+ * un attributo sulla radice li raggiunge tutti e due senza che nessuno dei due
+ * debba sapere dell'altro. Il foglio di stile fa il resto. */
+$GLOBALS['ws_html_attributes']['html']['data-menu'] =
+	(defined('WS_SITE_MENU') && WS_SITE_MENU === 'drawer') ? 'drawer' : 'responsive';
 
 /* La barra dei contatti in cima — dov'è, la mail, il telefono, le lingue — è la
  * prima cosa che deve cedere il posto: serve quando si arriva, non mentre si
@@ -809,6 +833,53 @@ if(!function_exists('ws_opening_hours')){
 			$html .= '<dd class="opening-hours-when">'.implode(', ', $byDay[$day]).'</dd>';
 		}
 		return $html.'</dl>';
+	}
+}
+
+if(!function_exists('ws_nav_href')){
+	/**
+	 * Dove porta una voce di menu. Qui: l'indirizzo che la voce si scrive.
+	 *
+	 * PASSA DA UN FILTRO, e non e' una cerimonia: un tema figlio NON puo'
+	 * vincere ridefinendo questa funzione. Il caricamento a cascata
+	 * (`locate_file`, ramo `cascading`) scorre `array_reverse($ws_query['themes'])`,
+	 * cioe' il GENITORE per primo: quando tocca al figlio la funzione esiste gia'
+	 * e il suo `function_exists` la salta. E' anche il motivo per cui Meetoo, nel
+	 * suo functions.php, DISFA i globali del genitore invece di prevenirli.
+	 *
+	 * Il filtro si registra al caricamento e si applica al disegno, quindi
+	 * l'ordine non conta: e' la sola strada per cui un figlio decide davvero.
+	 */
+	function ws_nav_href($item){
+		$href = !empty($item->wspath) ? ws_href($item->wspath) : '';
+		return apply_filters('ws_nav_href', $href, $item);
+	}
+}
+
+if(!function_exists('ws_nav_icon')){
+	/**
+	 * Con che cosa si annuncia una voce di menu.
+	 *
+	 * Due forme in giro, e si accettano tutte e due perche' esistono tutte e due:
+	 * isotype scrive nel contenuto lo `<span>` gia' fatto, Meetoo scrive il nome
+	 * del simbolo e basta (`home`). La seconda e' quella giusta - un contenuto
+	 * dice che cosa, non come si veste - e la prima si convertira'; intanto
+	 * riconoscerle si paga con una riga.
+	 */
+	function ws_nav_icon($item){
+		if(empty($item->icon)){
+			return '';
+		}
+		/* Anche questa passa dal filtro, per la ragione scritta qui sopra. */
+		$dentro = trim($item->icon->innerHTML());
+		if($dentro === ''){
+			return '';
+		}
+		$html = (strpos($dentro, '<') !== false)
+			? $dentro
+			: '<span class="material-symbols-outlined" aria-hidden="true">'
+				. htmlspecialchars($dentro, ENT_QUOTES, 'UTF-8') . '</span>';
+		return apply_filters('ws_nav_icon', $html, $item);
 	}
 }
 

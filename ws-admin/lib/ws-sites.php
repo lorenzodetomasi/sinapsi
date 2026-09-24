@@ -143,3 +143,40 @@ function ws_admin_request_site(?string $asked, string $feature = ''): array {
     }
     return ['id' => $con[0], 'path' => $sites[$con[0]]['path'], 'error' => ''];
 }
+
+/*
+ * COME SI ARRIVA AL MENU di un sito.
+ *
+ * 'responsive' - il menu orizzontale dove ci sta, il cassetto dove non ci sta.
+ *                Due strade per lo stesso posto, ma mai insieme.
+ * 'drawer'     - solo l'hamburger, su qualunque schermo. Un sito con venti voci
+ *                in un menu orizzontale non ce le mette comunque, e chi lo sa
+ *                gia' preferisce una strada sola.
+ *
+ * Il valore predefinito e' 'responsive' perche' e' cio' che fa un sito che non
+ * dichiara niente, ed e' anche cio' che ci si aspetta da una pagina larga.
+ */
+function site_menu_styles(): array {
+    return [
+        'responsive' => 'Orizzontale dove ci sta, a cassetto dove no',
+        'drawer'     => 'Sempre e solo il menu a cassetto',
+    ];
+}
+
+/*
+ * Quale ha scelto un sito, letto dal suo file.
+ *
+ * Letto e non incluso, per la stessa ragione delle capacita' qui sopra: la
+ * Gestione elenca tutti i siti in una richiesta sola, e un `define` vale una
+ * volta per processo - il primo sito risponderebbe per tutti gli altri. Il CMS
+ * invece carica il file e la costante ce l'ha. Una dichiarazione, due lettori.
+ */
+function site_menu(string $siteId): string {
+    $file = ws_admin_contents_abspath() . '/' . $siteId . '/ws-config.php';
+    if (!is_file($file)) return 'responsive';
+    $body = (string)@file_get_contents($file);
+    if (!preg_match('/define\s*\(\s*[\'"]WS_SITE_MENU[\'"]\s*,\s*[\'"]([a-z-]+)[\'"]\s*\)\s*;/', $body, $m)) {
+        return 'responsive';
+    }
+    return isset(site_menu_styles()[$m[1]]) ? $m[1] : 'responsive';
+}

@@ -259,6 +259,11 @@ body {
     padding: 0;
     list-style: none; }
 
+/* Il sito ha chiesto il cassetto e basta: il menu orizzontale non si stampa a
+   nessuna larghezza, e l'hamburger resta l'unica strada. */
+:root[data-menu="drawer"] #header1-nav1 {
+  display: none; }
+
 /* IL CASSETTO del menu, e il velo sotto.
    Fuori schermo di suo, non `display: none`: da li' puo' scivolare dentro, e
    una transizione da «non esiste» non si vede. Chiuso non e' raggiungibile col

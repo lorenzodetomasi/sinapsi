@@ -1477,3 +1477,67 @@ function site_features_block(array $features): string {
          . "));\n"
          . SITE_FEATURES_CLOSE . "\n";
 }
+
+const SITE_MENU_OPEN  = '// --- How the menu is reached. Written by ws-admin/sites.php.';
+const SITE_MENU_CLOSE = '// --- end menu';
+
+/*
+ * Sceglie come si arriva al menu, riscrivendo tutta la dichiarazione.
+ *
+ * Un blocco fra due marcatori, come per le capacita' e per i mounts, e per la
+ * stessa ragione: `define` vale una volta sola, quindi una seconda
+ * dichiarazione aggiunta sotto verrebbe IGNORATA - il file direbbe una cosa e
+ * il CMS ne farebbe un'altra, che e' il modo peggiore di sbagliare.
+ *
+ * Un `WS_SITE_MENU` scritto a mano fuori dal blocco si lascia stare e si
+ * segnala: riscrivere la riga di qualcun altro e' come un pannello perde la
+ * fiducia di chi dovra' rimetterci le mani.
+ */
+function site_menu_set(array &$rep, string $siteId, string $style, bool $apply): void {
+    if (!isset(site_menu_styles()[$style])) {
+        $rep['errors'][] = "Stile di menu sconosciuto: $style";
+        return;
+    }
+    $file = site_contents_abspath() . '/' . $siteId . '/ws-config.php';
+    if (!is_file($file)) { $rep['errors'][] = "Manca $siteId/ws-config.php"; return; }
+
+    $body = (string)@file_get_contents($file);
+    $open = strpos($body, SITE_MENU_OPEN);
+    $close = strpos($body, SITE_MENU_CLOSE);
+
+    if ($open === false && preg_match('/^\s*define\s*\(\s*[\'"]WS_SITE_MENU[\'"]/m', $body)) {
+        $rep['notes'][] = "$siteId/ws-config.php dichiara già WS_SITE_MENU a mano: non l'ho toccato.";
+        return;
+    }
+
+    if (site_menu($siteId) === $style) {
+        $rep['notes'][] = "«{$siteId}» usava già " . site_menu_styles()[$style] . '.';
+        return;
+    }
+
+    $block = site_menu_block($style);
+    if ($open !== false && $close !== false && $close > $open) {
+        $end = $close + strlen(SITE_MENU_CLOSE);
+        $body = substr($body, 0, $open) . rtrim($block) . substr($body, $end);
+    } else {
+        /* Prima del tag di chiusura, se c'è: quello che sta dopo `?>` è testo
+         * che finisce nella pagina, non codice. */
+        $tag = strrpos($body, '?>');
+        $body = $tag === false
+            ? rtrim($body, " \t\n\r") . "\n\n" . $block
+            : rtrim(substr($body, 0, $tag)) . "\n\n" . $block . "\n" . substr($body, $tag);
+    }
+
+    site_change($rep, 'menu', $file, $style);
+    if ($apply && @file_put_contents($file, $body) === false) {
+        $rep['errors'][] = "Non posso scrivere $file";
+    }
+}
+
+function site_menu_block(string $style): string {
+    return SITE_MENU_OPEN . "\n"
+         . "// 'responsive': orizzontale dove ci sta, a cassetto dove no.\n"
+         . "// 'drawer': sempre e solo il menu a cassetto.\n"
+         . "define('WS_SITE_MENU', '" . $style . "');\n"
+         . SITE_MENU_CLOSE . "\n";
+}
