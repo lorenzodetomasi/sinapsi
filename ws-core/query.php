@@ -108,9 +108,21 @@ if(empty($rewrite_rule) and defined('WS_MOUNTS') and is_array(WS_MOUNTS)){
 			 * dichiarata — cioè /meetoo/ aprirebbe la home di isotype. A quale sito
 			 * appartiene una voce lo dice il `content=` della sua query. */
 			$trovata = $ws_sitemap->xpath('./url[./wspath = "/'.$dentro.'" and contains(./query, "content='.$sito.'/")]');
-			if(empty($trovata[0])){
-				$trovata = $ws_sitemap->xpath('./url[./wspath = "/'.$dentro.'"]');
-			}
+			/* E se qui dentro non c'è, NON si cerca altrove.
+			 *
+			 * C'era un ripiego, tre righe che rifacevano la stessa ricerca senza il
+			 * filtro del sito, e disfaceva esattamente quello che le righe sopra
+			 * spiegano: un indirizzo sotto un prefisso finiva per rispondere con la
+			 * pagina di un altro sito che avesse lo stesso wspath. `/meetoo/servizi`
+			 * apriva i servizi di isotype; e quando la pagina Eventi di un sito
+			 * usciva dalla mappa perché vuota, il suo `/eventi` apriva quello di
+			 * isotype invece di dire che non c'era.
+			 *
+			 * Un indirizzo entrato da un prefisso appartiene a quel sito: se il sito
+			 * non ce l'ha, l'indirizzo non esiste. Il 404 qui sotto lo sa già dire
+			 * con il tema e la home giusti — è il ripiego che non lo lasciava
+			 * arrivare. Tutte e 92 le voci di Meetoo dichiarano il loro
+			 * `content=meetoo/`, quindi non copriva nessun caso vero. */
 			if(!empty($trovata[0])){
 				$rewrite_rule = $trovata[0];
 				$ws_mount = $nudo;
