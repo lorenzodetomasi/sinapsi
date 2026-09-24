@@ -6,7 +6,7 @@
 ?>
 <aside id="share" class="modal" hidden>
 	<div>
-		<header class="flex align-middle">
+		<header>
 			<h3><?php _e('Share'); ?></h3>
 			<nav>
 				<ul>

@@ -40,7 +40,7 @@ $lingua_corrente = isset($ws_locales['content']) ? explode('-', $ws_locales['con
 ?>
 <aside id="preferences" class="modal" hidden>
 	<div>
-		<header class="flex align-middle">
+		<header>
 			<h3><?php _e('Preferences'); ?></h3>
 			<nav>
 				<ul>

@@ -164,53 +164,32 @@ $GLOBALS['ws_scripts']['bodyend']['google-login'] = "
         .catch(err => alert('Impossibile contattare il server.'));
     }
 
-    /* Il profilo si apre AL CENTRO, nel riquadro di Meetoo — lo stesso delle
-     * Impostazioni, con lo stesso scorrimento. Prima era una tendina appesa
-     * all'avatar, larga 280px e vestita coi colori di Google: andava bene per
-     * tre righe, non per un profilo che crescera'.
-     *
-     * Il contenuto lo sa il SERVER (se sei registrato, che ruolo hai, dove si va
-     * per modificare) e lo passa cosi' com'e'; il guscio lo mette header.js, che
-     * e' l'unico file caricato sia qui sia in Gestione. */
-    function toggleGoogleProfileCard(event) {
-        event.stopPropagation();
-        var card = document.getElementById('google-profile-card');
-        if (!card) return;
-        if (window.Meetoo && window.Meetoo.openProfilo) {
-            window.Meetoo.openProfilo(card.innerHTML);
-            return;
-        }
-        // Senza header.js (pagina che non lo carica): la tendina di prima.
-        card.classList.toggle('hidden');
-    }
 </script>";
 $GLOBALS['ws_styles']['head']['google-login'] = '<style>
     #google-user-registered { background: #f0fdf4; border: 1px solid #bbf7d0; }
-    
-    .google-avatar { position: relative; display: inline-block; font-family: "Google Sans", Roboto, Arial, sans-serif; user-select: none; }
-    .avatar-circle { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; box-sizing: border-box; border: 2px solid transparent; transition: box-shadow 0.15s; }
-    .avatar-circle.logged-in:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15); }
-    .google-login-trigger { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
-    .google-login-trigger:hover { transform: scale(1.05); }
 
-    .profile-popup { position: absolute; top: 52px; right: 0; width: 280px; background: #ffffff; border-radius: 24px; box-shadow: 0 4px 12px 0 rgba(60,64,67,0.15), 0 8px 24px 0 rgba(60,64,67,0.15); padding: 20px; border: 1px solid #dadce0; z-index: 99999; text-align: center; }
-    .profile-popup.hidden { display: none; }
-    .popup-big-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin-bottom: 12px; }
-    .popup-name { font-size: 16px; font-weight: 500; color: #202124; line-height: 1.2; }
-    .popup-email { font-size: 14px; color: #5f6368; margin-top: 4px; }
-    
-    .popup-meta { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
-    .meta-pill { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; border: 1px solid #dadce0; text-transform: uppercase; }
-    .meta-pill.role-pill { background: #e8f0fe; color: #1967d2; border-color: #d2e3fc; }
-    .meta-pill.lang-pill { background: #e6f4ea; color: #137333; border-color: #ceead6; }
+    .google-avatar { display: flex; margin: 0; padding: 0; list-style: none; }
+    .avatar-circle { width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover; cursor: pointer; box-sizing: border-box; border: 2px solid transparent; transition: box-shadow .15s; display: block; }
+    .avatar-circle.logged-in:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); }
+    .google-login-trigger { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; }
 
-    .popup-actions { margin-top: 20px; border-top: 1px solid #e8eaed; padding-top: 16px; }
-    .google-action-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:500; text-decoration:none; margin-bottom:8px; } 
-    .register-btn { background:#1a73e8; color:#fff; } 
-    .edit-btn { background:#f1f3f4; color:#3c4043; }
-    .google-logout-btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px; border-radius: 100px; background: #f8f9fa; color: #3c4043; font-size: 14px; text-decoration: none; border: 1px solid #dadce0; }
-    
-    .portal-id-card { background: #fff; padding: 1.5rem; border-radius: 8px; border: 1px dashed #bbf7d0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 20px; }
+    /* La scheda del profilo NON si veste da sé: il guscio, il velo, il modo di
+       aprirsi e di chiudersi sono quelli di ogni altra finestra del tema
+       (.modal). Qui resta solo ciò che è suo, cioè chi sei. Prima era una
+       tendina appesa all\'avatar, larga 280px e coi colori di Google: andava
+       bene per tre righe, non per un profilo che crescerà — e su uno schermo
+       stretto usciva dal bordo. */
+    #profile-who { text-align: center; }
+    #profile-who .profile-photo { width: 4.5rem; height: 4.5rem; border-radius: 50%; object-fit: cover; margin: 0 auto .75rem; display: block; }
+    #profile-who .profile-name { margin: 0; font-weight: 600; }
+    #profile-who .profile-email { margin: .25rem 0 0; color: var(--color-hint, #5f6368); font-size: .9rem; }
+    #profile-who .profile-role { margin: .5rem 0 0; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+    #profile-actions ul { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 1.25rem 0 0; padding: 1rem 0 0; list-style: none; border-top: 1px solid var(--color-line, #e8eaed); }
+    #profile-actions a { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem .9rem; border: 1px solid var(--color-line, #dadce0); border-radius: 999px; text-decoration: none; color: inherit; }
+    #profile-actions a:hover { border-color: var(--color-link, #2e3192); }
+
+    .portal-id-card { background: var(--color-superficie, #fff); padding: 1.5rem; border-radius: 8px; border: 1px dashed #bbf7d0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 20px; }
     .portal-avatar-placeholder { width: 56px; height: 56px; border-radius: 50%; background: #f1f3f4; display: flex; align-items: center; justify-content: center; color: #9aa0a6; flex-shrink: 0; }
     .portal-avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #e8f0fe; }
 </style>';

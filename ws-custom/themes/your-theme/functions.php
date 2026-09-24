@@ -421,6 +421,12 @@ $GLOBALS['ws_scripts']['head']['ws_preferences'] =
 $GLOBALS['ws_scripts']['bodyend']['ws_drawer'] =
 	'<script defer="defer" src="'.$ws_assets_theme_url.'js/drawer.js"></script>';
 
+/* E le finestre: una convenzione sola per aprirle e chiuderle tutte - le
+ * preferenze, il profilo, «condividi». Anche questa puo' aspettare: una
+ * finestra chiusa e' chiusa comunque. */
+$GLOBALS['ws_scripts']['bodyend']['ws_modal'] =
+	'<script defer="defer" src="'.$ws_assets_theme_url.'js/modal.js"></script>';
+
 /* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
  * un'intestazione grande all'apertura e discreta durante la lettura non è un
  * gusto di quel sito, è come si legge una pagina lunga ovunque. Un tema figlio

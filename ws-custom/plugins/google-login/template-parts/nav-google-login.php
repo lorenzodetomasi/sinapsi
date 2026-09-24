@@ -156,35 +156,45 @@ $portal_org_logo = $profilo['org_logo'];
         </script>
     <?php else: ?>
         <li class="avatar-wrapper">
-            <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar-circle logged-in" onclick="toggleGoogleProfileCard(event)">
             <?php
+            /* L'avatar APRE UNA FINESTRA, come l'ingranaggio accanto apre le
+             * preferenze: stesso guscio, stesso modo di aprirsi e di chiudersi.
+             * Prima era una tendina appesa sotto l'avatar (`position: absolute`)
+             * che su uno schermo stretto usciva dal bordo, e che per aprirsi
+             * chiamava `Meetoo.openProfilo` - cioe' header.js, un file di un
+             * altro sito. Adesso non chiama nessuno: il comando e' un
+             * collegamento a `#profile` e ci pensa `modal.js`. */
             $ws_radice = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
+            $prof = htmlspecialchars($ws_radice) . '/profilo-utente';
+            $reg  = $is_registered_user ? '' : '?init=register';
+            $emb  = $prof . ($reg ? $reg . '&' : '?') . 'embed=1';
             ?>
-            <aside id="google-profile-card" class="profile-popup hidden">
-                <header class="flex align-middle">
-                    <h3><?php _e('Your User Profile'); ?></h3>
-                    <nav>
+            <a href="#profile" title="<?php _e('Your User Profile'); ?>" aria-label="<?php _e('Your User Profile'); ?>" aria-expanded="false" aria-controls="profile">
+                <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar-circle logged-in" alt="" referrerpolicy="no-referrer">
+            </a>
+            <aside id="profile" class="modal" hidden>
+                <div>
+                    <header>
+                        <h3><?php _e('Your User Profile'); ?></h3>
+                        <nav>
+                            <ul>
+                                <li><a class="close link h48" href="#" data-close="#profile"><i class="material-symbols-outlined">close</i><span class="button-text"><?php _e('Close'); ?></span></a></li>
+                            </ul>
+                        </nav>
+                    </header>
+                    <section id="profile-who">
+                        <img src="<?= htmlspecialchars($google_session->picture) ?>" class="profile-photo" alt="" referrerpolicy="no-referrer">
+                        <p class="profile-name"><?= htmlspecialchars($google_session->name) ?></p>
+                        <p class="profile-email"><?= htmlspecialchars($google_session->email) ?></p>
+                        <p class="profile-role"><?= htmlspecialchars($display_role) ?></p>
+                    </section>
+                    <nav id="profile-actions">
                         <ul>
-                            <li><a class="close link h48" href="#" data-close="#google-profile-card"><i class="material-symbols-outlined">close</i><span class="button-text"><?php _e('Close'); ?></span></a></li>
+                            <li><a href="<?= $prof . $reg ?>" data-mt-profilo-form="<?= $emb ?>"><?= $is_registered_user ? __('Edit User Profile') : __('Complete User Subscription') ?></a></li>
+                            <li><a href="?logout=1"><?php _e('Logout'); ?></a></li>
                         </ul>
                     </nav>
-                </header>
-                <img src="<?= htmlspecialchars($google_session->picture) ?>" class="mt-prof-foto" alt="" referrerpolicy="no-referrer">
-                <h3 class="profile-name"><?= htmlspecialchars($google_session->name) ?></h3>
-                <p class="profile-email"><?= htmlspecialchars($google_session->email) ?></p>
-                <p class="profile-role"><?= htmlspecialchars($display_role) ?></p>
-                <nav>
-                    <?php
-                    $prof = htmlspecialchars($ws_radice) . '/profilo-utente';
-                    $reg  = $is_registered_user ? '' : '?init=register';
-                    $emb  = $prof . ($reg ? $reg . '&' : '?') . 'embed=1';
-                    ?>
-                    <ul>
-                        <li><a href="<?= $prof . $reg ?>" data-mt-profilo-form="<?= $emb ?>" class="button">
-                        <?= $is_registered_user ? __('Edit User Profile') : 'Complete User Subscription' ?></a></li>
-                        <li><a href="?logout=1" class="button"><?php _e('Logout'); ?></a></li>
-                    </ul>
-                </nav>
+                </div>
             </aside>
         </li>
     <?php endif; ?>
