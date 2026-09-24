@@ -23,6 +23,29 @@
   --header-logo-aperto: 4em;
   --header-logo-stretto: 1.5rem; }
 
+/* IL CONTENITORE delle righe dell'header: quanto sono larghe e dove si fermano.
+   Le stesse due regole stanno in all-abovethefold.css e in
+   vgrid-abovethefold.css per tutta la pagina, e questo foglio non le aveva
+   perche' fino a ieri stava insieme a loro. Un sito puo' prendere QUESTO e non
+   quelli - e' il motivo per cui e' un foglio a parte - e su Meetoo e' successo:
+   l'header toccava il bordo dello schermo e non si fermava mai, perche'
+   `.content-container` li' non e' definita da nessuna parte.
+   Stessi valori e stesso punto di rottura, cosi' dove ci sono tutti e due non
+   cambia niente; ristrette all'header, per non mettere becco nella griglia
+   della pagina, che e' affare dell'altro foglio. */
+#header .content-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1000px;
+  margin-inline: auto; }
+
+@media (max-width: 999px) {
+  /* Non alle briciole, che una spaziatura se la danno gia' (`.crumbs-strip`) e
+     piu' stretta: questa regola, che ha un id e quindi vince, gliela portava
+     via e faceva della riga un secondo header alto quanto il primo. */
+  #header .content-container:not(.crumbs-strip) {
+    padding: 0.5rem; } }
+
 #header-top {
   border-bottom: 1px solid var(--color-line, #e6e6e6); }
 
