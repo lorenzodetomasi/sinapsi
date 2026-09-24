@@ -42,6 +42,60 @@ if (!function_exists('ws_refresh_sitemap')) {
         return ['wspath', 'query', 'inLanguage', 'type', 'title', 'description', 'keywords', 'name', 'parent', 'dateModified', 'changefreq', 'priority', 'robots'];
     }
 
+    /*
+     * Una pagina che elenca cose di cui non ce n'è nessuna non sta sulla mappa.
+     *
+     * L'archivio degli eventi è il caso per cui è nata: un sito che ha acceso
+     * la Gestione degli eventi ha la pagina, ma finché non ne scrive uno quella
+     * pagina non ha niente da dire. Fuori dalla mappa vuol dire fuori dai menu
+     * — che la mappa la interrogano — e l'indirizzo non risponde: meglio che
+     * non esista, piuttosto che esista per dire «ancora niente».
+     *
+     * Torna da sé con il primo evento, perché la mappa è derivata: non c'è
+     * niente da riaccendere.
+     *
+     * Che cosa elenca lo dice la pagina, in schema.org, con `mainEntity.about`
+     * — lo stesso modello con cui sceglie quali eventi mostrare. Qui se ne
+     * legge solo il tipo, per sapere in quale archivio guardare.
+     */
+    function ws_sitemap_empty_list(array $d, string $root): bool {
+        $archivio = ws_sitemap_list_archive($d);
+        if ($archivio === '') return false;
+        return !ws_sitemap_archive_has_anything(rtrim($root, '/') . '/' . $archivio);
+    }
+
+    /* Il tipo elencato → la cartella dove stanno quelle cose. Solo gli eventi,
+     * per ora: sono le uniche che vivono in un archivio proprio e non come
+     * pagine sotto la pagina che le raccoglie. */
+    function ws_sitemap_list_archive(array $d): string {
+        $about = $d['mainEntity']['about'] ?? null;
+        if (!is_array($about)) return '';
+        $tipi = (array)($about['@type'] ?? []);
+        return in_array('Event', $tipi, true) ? 'events' : '';
+    }
+
+    /*
+     * C'è qualcosa in questo archivio?
+     *
+     * Basta una cartella con dentro un `index.json`: sotto `events/` è un
+     * evento o una serie, e in entrambi i casi c'è qualcosa da elencare. Non si
+     * legge nessuno dei file - la domanda è «ce n'è almeno uno», e aprirli
+     * tutti per rispondere a una domanda che si ferma al primo sarebbe lavoro
+     * pagato per niente.
+     *
+     * Futuri o passati non fa differenza: un archivio di soli eventi passati è
+     * il motivo per cui un archivio esiste.
+     */
+    function ws_sitemap_archive_has_anything(string $dir): bool {
+        if (!is_dir($dir)) return false;
+        foreach (@scandir($dir) ?: [] as $e) {
+            if ($e === '.' || $e === '..') continue;
+            if ($e[0] === '_' || $e[0] === '-' || $e[0] === '.') continue;
+            if (is_dir("$dir/$e") && is_file("$dir/$e/index.json")) return true;
+        }
+        return false;
+    }
+
     /**
      * The pages of a root, as ['abspath' => source file, 'kind' => json|wsx,
      * 'dir' => the page's directory], plus the sub-maps found on the way.
@@ -58,7 +112,8 @@ if (!function_exists('ws_refresh_sitemap')) {
                 if (is_dir($p)) { if (!ws_derived_skip_dir($e)) $walk($p, false); continue; }
                 if ($e === 'index.json') {
                     $d = json_decode((string)@file_get_contents($p), true);
-                    if (is_array($d) && !empty($d['@context']) && trim((string)($d['wspath'] ?? '')) !== '') {
+                    if (is_array($d) && !empty($d['@context']) && trim((string)($d['wspath'] ?? '')) !== ''
+                        && !ws_sitemap_empty_list($d, $root)) {
                         $pages[$dir] = ['abspath' => $p, 'kind' => 'json', 'dir' => $dir]; $hasPage = true;
                     }
                 } elseif ($e === 'index.wsx' && !isset($pages[$dir]) && !is_file("$dir/index.json")) {
