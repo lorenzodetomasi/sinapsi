@@ -1,3 +1,18 @@
+/* SPENTO - non lo carica nessuno, ed e' la seconda di due sessioni.
+ *
+ * Nasce per le pagine statiche di Meetoo (organizer/collection/event.html), che
+ * oggi stanno solo in `archive/`: nel sito vivo non c'e' piu' un file che lo
+ * includa. La sessione che funziona davvero e' dentro `header.js`, che espone
+ * `window.meetooSession` con la stessa forma - ed e' quella che usano cards.js
+ * e la Gestione.
+ *
+ * Due implementazioni della stessa cosa, di cui una irraggiungibile, non sono
+ * una ridondanza: sono un posto dove correggere un difetto e non vederlo
+ * cambiare niente. Resta il file, col trattino davanti, perche' un giorno la
+ * sessione tornera' a stare per conto suo e questo e' il punto da cui
+ * ripartire - piu' piccolo e piu' leggibile di quello dentro header.js.
+ */
+
 /* Sessione utente condivisa per le pagine tema (login Google + header).
  * Incluso in organizer/collection/event.html:  <div id="session-header"></div><script src="session.js"></script>
  * Espone window.meetooSession: { user, token, getUser(), getToken(), subscribe(cb), requireLogin(), logout(), RSVP_URL, api(action, fields) }.
