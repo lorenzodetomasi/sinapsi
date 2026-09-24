@@ -243,6 +243,40 @@ if (!function_exists('ws_maint_ops')) {
                     $locale = basename(rtrim($base, '/'));
                     $radiceSito = dirname(rtrim($base, '/'));
                     $sito = basename($radiceSito);
+
+                    /*
+                     * UN SITO CON PIU' LINGUE QUI NON SI TOCCA.
+                     *
+                     * Questa operazione è nata per Meetoo, che ha una lingua sola:
+                     * lì `<sito>/ws_sitemap.wsx` E' la mappa, piatta, e riscriverla
+                     * è giusto. In un sito con due lingue quello stesso file non è
+                     * una mappa: è il TELAIO che include `it_IT/ws_sitemap.wsx` e
+                     * `en_US/ws_sitemap.wsx`. Riscriverlo piatto lo distrugge.
+                     *
+                     * E' successo su isotype, in produzione: il telaio è diventato
+                     * una mappa con dentro il solo `/`, e da quel momento ogni
+                     * pagina che non fosse la home non si trovava più. Il CMS
+                     * scorre le mappe dei siti in ordine e prende la prima che
+                     * risponde, così `/servizi`, `/chi-siamo` e `/contatti` —
+                     * indirizzi che your-website ha uguali — finivano lì: pagine
+                     * di un altro sito, con un'altra marca, a un indirizzo di
+                     * isotype. Per giorni, senza un errore da nessuna parte.
+                     *
+                     * Per quei siti la mappa della lingua la fa `sitemaps`, e il
+                     * telaio non lo tocca nessuno perché non è derivato.
+                     */
+                    $lingue = array_filter(glob($radiceSito . '/*', GLOB_ONLYDIR) ?: [],
+                        fn($d) => preg_match('/^[a-z]{2}_[A-Z]{2}$/', basename($d)));
+                    if (count($lingue) > 1) {
+                        $nomi = implode(', ', array_map('basename', $lingue));
+                        return [
+                            'changes' => 0,
+                            'summary' => "Non eseguita: «{$sito}» ha piu' lingue ($nomi), e li' "
+                                . "$sito/ws_sitemap.wsx e' il telaio che le include, non una mappa. "
+                                . "Usa «Rigenera le mappe» (sitemaps), che riscrive la mappa della lingua.",
+                            'lines' => [],
+                        ];
+                    }
                     $r = ws_mappa_costruisci($radiceSito, $sito, $locale, $apply);
                     $inn = ws_mappa_innesta(dirname($radiceSito), $sito, $apply);
                     // Le due metà dello stesso lavoro: la mappa serve al CMS per
