@@ -23,12 +23,29 @@ $ws_theme_url = ws_theme_url();
 $ws_assets_theme_url = ws_parent_theme_id() ? ws_parent_theme_url() : ws_theme_url();
 $ws_content_root_url = ws_content_root_url();
 
-ws_globals_set(array('ws_links'), array(
-	'<link rel="apple-touch-icon" sizes="180x180" href="'.$ws_content_root_url.'/favicons/apple-touch-icon.png" />',
-	'<link rel="icon" type="image/png" sizes="32x32" href="'.$ws_content_root_url.'/favicons/favicon-32x32.png" />',
-	'<link rel="icon" type="image/png" sizes="16x16" href="'.$ws_content_root_url.'/favicons/favicon-16x16.png" />',
-	'<link rel="manifest" href="'.$ws_content_root_url.'/favicons/site.webmanifest" />'
-));
+/* The icons of this site, if it has any.
+ *
+ * WHERE they are is the brand's business - `brand/index.xml`, element
+ * `favicons` - and the headings carry it here. It used to be computed from the
+ * content root instead, and that was wrong twice over: the English root of
+ * isotype has no icons of its own, it uses the Italian ones, and no site
+ * anywhere keeps a `favicons/` folder at its content root. So the path pointed
+ * at nothing, for everybody.
+ *
+ * DECLARED OR SILENT: a site that says nothing gets no icon links at all,
+ * because four links to files that are not there are worse than no links. That
+ * is also what every page looked like until today - a later `ws_globals_set`
+ * was wiping this list before it reached the head, so nobody had seen these
+ * four lines work, and nobody had seen them fail either. */
+if(!empty($GLOBALS['ws_headings']->favicons->relpath)){
+	$ws_favicons_url = ws_href(WS_CONTENTS_RELPATH.'/'.trim((string)$GLOBALS['ws_headings']->favicons->relpath));
+	ws_globals_set(array('ws_links'), array(
+		'<link rel="apple-touch-icon" sizes="180x180" href="'.$ws_favicons_url.'/apple-touch-icon.png" />',
+		'<link rel="icon" type="image/png" sizes="32x32" href="'.$ws_favicons_url.'/favicon-32x32.png" />',
+		'<link rel="icon" type="image/png" sizes="16x16" href="'.$ws_favicons_url.'/favicon-16x16.png" />',
+		'<link rel="manifest" href="'.$ws_favicons_url.'/site.webmanifest" />'
+	));
+}
 
 // Web fonts
 // 1. Families
@@ -86,12 +103,14 @@ ws_stile_se_esiste('vgrid', 'screen and (max-width: 999px)', 'css/vgrid-abovethe
 ws_stile_se_esiste('hgrid', 'screen and (min-width: 1000px)', 'css/hgrid-abovethefold.css');
 ws_stile_se_esiste('maxgrid', 'screen and (min-width: 1280px)', 'css/maxgrid-abovethefold.css');
 // 2. Linked
-ws_globals_set(array('ws_links'), array(
-	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_assets_theme_url.'css/all.css" />',
-	'<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_assets_theme_url.'css/vgrid.css" />',
-	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_assets_theme_url.'css/hgrid.css" />',
-	'<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.$ws_assets_theme_url.'css/maxgrid.css" />'
-));
+/* APPENDED, not set: `ws_globals_set` replaces at the leaf - it says so itself
+   in ws-core/templates.php - so this call used to wipe the icons declared
+   above, and no site on this theme has ever served a favicon. A list is added
+   to one item at a time. */
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.$ws_assets_theme_url.'css/all.css" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_assets_theme_url.'css/vgrid.css" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_assets_theme_url.'css/hgrid.css" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.$ws_assets_theme_url.'css/maxgrid.css" />';
 // If page has a section[class="form"]
 
 // Translations
