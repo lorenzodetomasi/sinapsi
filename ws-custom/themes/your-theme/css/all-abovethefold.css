@@ -160,13 +160,57 @@ body {
   display: flex;
   align-items: center; }
   #header1 .site-logo > img {
-    display: block;
-    /* The site logo is red and near-black, drawn for white. On the dark
-       header the black half would vanish, so in the dark it keeps a white
-       plate of its own size; in the light the plate is transparent and
-       nothing moves - no padding, so the two themes share every pixel. */
-    background-color: light-dark(transparent, #fff);
+    display: block; }
+  #header1 .ws-media-plate > img {
     border-radius: .25rem; }
+
+/* A drawing that comes in two versions: one made for a light ground, one for a
+   dark one. Wear `ws-only-light` and `ws-only-dark` and the right one is on.
+   Works on a logo, on a cover, on anything.
+
+   The colours of this theme flip by themselves, with `light-dark()` reading the
+   `color-scheme` that impostazioni.js writes on <html>. An image has no such
+   function, so the pair is switched here - and on the same two signals the
+   script itself uses, never on one alone: `data-theme` as soon as somebody has
+   chosen, and the system's preference while nobody has. Hence NOT a
+   `<source media="(prefers-color-scheme: dark)">` inside the picture: that
+   reads the system alone, so a person who asks for light on a machine set to
+   dark would get the negative drawing on white.
+
+   These rules only ever HIDE the version that does not apply; they never say
+   what the other one's `display` should be. That is the whole trick: the
+   element keeps whatever display its own context gave it - `flex` for the logo
+   in the header, `inline` for a picture in the text - and this file does not
+   have to know, nor to undo its own `none` with a `revert` that would take the
+   context's value down with it.
+
+   `!important` because hiding has to win wherever it lands, and where it lands
+   is not knowable from here: `#header1 .site-logo` carries an id, so it beat
+   these rules on specificity and the header showed both marks at once. Same
+   reason `[hidden]` in this theme is important - a thing declared not to be on
+   screen is not a suggestion. */
+:root[data-theme="light"] .ws-only-dark {
+  display: none !important; }
+:root[data-theme="dark"] .ws-only-light {
+  display: none !important; }
+
+/* The fallback, for a drawing that comes in ONE version only. It is dark
+   marks on nothing, and it used to take its white from the page; the page can
+   be dark now, so it carries a white plate of its own size. In the light the
+   plate is transparent and nothing moves - no padding, so the two schemes
+   share every pixel. Whatever declares a dark version never wears this: it has
+   a drawing made for the dark, which is the real answer, and the plate would
+   only put it back on white. */
+.ws-media-plate > img {
+  background-color: light-dark(transparent, #fff); }
+
+/* Nothing chosen - `auto`, or no JavaScript at all: the system answers. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) .ws-only-dark {
+    display: none !important; } }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .ws-only-light {
+    display: none !important; } }
 
 #header1 {
   gap: var(--gutter, 1rem); }
@@ -426,11 +470,7 @@ main {
     margin: 0; }
 
 img.primary-image {
-  width: 100%;
-  /* Same reason as the logo grid: the cover is an SVG of dark figures on
-     nothing, and took its white from the page. The page can now be dark;
-     the cover keeps its own. */
-  background-color: #fff; }
+  width: 100%; }
 
 a {
   color: var(--color-link); }

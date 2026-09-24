@@ -24,7 +24,7 @@ include_template('template-parts/header');
 			<div<?php echo ws_html_attributes('main-content'); ?>>
 <?php
 if(!empty($ws_content->primaryImageOfPage)){
-	echo get_media($ws_content->primaryImageOfPage->figure->image, array('imgAttributes' => array('class' => 'primary-image')));
+	echo ws_figure_media($ws_content->primaryImageOfPage->figure, array('imgAttributes' => array('class' => 'primary-image')));
 }
 if(!empty($ws_content->name)){
 ?>

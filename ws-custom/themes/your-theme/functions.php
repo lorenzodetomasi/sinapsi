@@ -801,3 +801,48 @@ if(!function_exists('ws_opening_hours')){
 		return $html.'</dl>';
 	}
 }
+
+if(!function_exists('ws_figure_media')){
+	/**
+	 * The image of a figure, in the version the current colour scheme asks for.
+	 *
+	 * A figure may carry the same drawing twice: one made for a light ground and
+	 * one made for a dark one, told apart by an id ending in `-neg`. When it
+	 * does, both are printed and the stylesheet shows one - see `ws-only-light`
+	 * and `ws-only-dark` in css/all-abovethefold.css for why the choice is made
+	 * there and not with a `<source media>` inside the picture.
+	 *
+	 * A figure that carries one image comes out exactly as `get_media` would
+	 * have printed it. That is the point: every template can call this one and
+	 * no template has to ask whether a dark twin exists.
+	 */
+	function ws_figure_media($figure, $args = array()){
+		if(empty($figure) or empty($figure->image)){
+			return '';
+		}
+		$light = null;
+		$dark = null;
+		foreach($figure->image as $image){
+			$id = (string)$image->attributes('xml', true)->id;
+			if(substr($id, -4) === '-neg'){
+				if($dark === null){ $dark = $image; }
+			} else if($light === null){
+				$light = $image;
+			}
+		}
+		if($light === null){ $light = $figure->image; }
+		if($dark === null){
+			$was = isset($args['pictureAttributes']['class']) ? $args['pictureAttributes']['class'].' ' : '';
+			$args['pictureAttributes']['class'] = $was.'ws-media-plate';
+			return get_media($light, $args);
+		}
+		$html = '';
+		foreach(array('light' => $light, 'dark' => $dark) as $scheme => $image){
+			$one = $args;
+			$was = isset($args['pictureAttributes']['class']) ? $args['pictureAttributes']['class'].' ' : '';
+			$one['pictureAttributes']['class'] = $was.'ws-only-'.$scheme;
+			$html .= get_media($image, $one);
+		}
+		return $html;
+	}
+}

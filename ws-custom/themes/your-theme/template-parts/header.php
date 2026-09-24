@@ -57,8 +57,22 @@ if($ws_headings->header_top){
 					<div <?php echo ws_html_attributes('header1'); ?>>
 						<div>
 <?php
+/* The light mark and the dark one are TWO drawings, and both are printed:
+   which one shows is the CSS's business, as it is for every other colour of
+   this theme. Deliberately NOT a `<source media="(prefers-color-scheme: dark)">`
+   inside the picture - that reads the operating system alone and would ignore
+   the page's own light/dark switch, so somebody asking for light on a machine
+   set to dark would get the negative mark on white.
+   A site that declares only `logo` is unchanged: one picture, wearing the
+   white plate it needs to survive the dark header. */
 $logoImage = $ws_headings->xpath("id('logo')");
-echo get_media($logoImage, array('pictureAttributes' => array( 'class' => 'site-logo')));
+$logoImageNeg = $ws_headings->xpath("id('logo-neg')");
+if($logoImageNeg){
+	echo get_media($logoImage, array('pictureAttributes' => array( 'class' => 'site-logo ws-only-light')));
+	echo get_media($logoImageNeg, array('pictureAttributes' => array( 'class' => 'site-logo ws-only-dark')));
+} else {
+	echo get_media($logoImage, array('pictureAttributes' => array( 'class' => 'site-logo ws-media-plate')));
+}
 ?>
 							<hgroup><a href="<?php echo $index_url; ?>" title="<?php _e('Go to homepage'); ?>">
 								<h1 class="site-name"><?php echo $ws_headings->mainEntity->name->innerHTML(); ?></h1>
