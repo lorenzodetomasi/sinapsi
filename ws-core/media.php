@@ -2,6 +2,20 @@
 // WS API for media display.
 // @package WS
 // @subpackage Media
+
+/**
+ * L'indirizzo di un file dentro `ws-custom/contents`.
+ *
+ * SENZA il prefisso del mount. `ws_href()` lo antepone, ed e' giusto per un
+ * indirizzo del sito - una pagina di Meetoo sta sotto `/meetoo` - ma un file di
+ * contenuto e' un file: sta dove sta, e il prefisso lo manda a
+ * `/meetoo/ws-custom/contents/...`, che non esiste. Non si vedeva perche'
+ * l'unico sito che usa `get_media` risponde alla radice; si vede il giorno che
+ * un sito innestato mostra un'immagine, e allora sono 404 tutte.
+ */
+function ws_media_url($relpath){
+	return ws_href(WS_CONTENTS_RELPATH.'/'.ltrim((string)$relpath, '/'), array('mount' => false));
+}
 function get_media($SimpleXMLElement, $args = array()){
 	global $ws_query;
 	// $args["type"]: svg | png | jpg | gif | pdf | zip | youtube | mov | iframe
@@ -39,12 +53,12 @@ function get_media($SimpleXMLElement, $args = array()){
 		$destinations = $image->destination;
 		if(is_array($destinations) and count($destinations) == 1){
 			$mime = explode("/", $image->destination->mime)[1];
-			$src = ws_href(WS_CONTENTS_RELPATH.'/'.$image->destination->relpath.'.'.$mime);
+			$src = ws_media_url($image->destination->relpath.'.'.$mime);
 		} else if(is_array($destinations) and count($destinations) > 1){
 			$mime = explode("/", $image->destination[$args['destinationIndex']]->mime)[1];
-			$src = ws_href(WS_CONTENTS_RELPATH.'/'.$image->destination[$args['destinationIndex']]->relpath.'.'.$mime);
+			$src = ws_media_url($image->destination[$args['destinationIndex']]->relpath.'.'.$mime);
 		} else {
-			$src = ws_href(WS_CONTENTS_RELPATH.'/'.$image->source->relpath);
+			$src = ws_media_url($image->source->relpath);
 		}
 		if($args['output'] == 'src'){
 			return $src;
@@ -62,12 +76,12 @@ function get_media($SimpleXMLElement, $args = array()){
 				}
 			}
 			if(!empty($image->destination->relpath)){
-				$webp_source = '<source type="image/webp" srcset="'.ws_href(WS_CONTENTS_RELPATH.$image->destination->relpath.'.webp" />');
-				$jp2_source = '<source type="image/jp2" srcset="'.ws_href(WS_CONTENTS_RELPATH.$image->destination->relpath.'.jp2" />');
-				$jxr_source = '<source type="image/jxr" srcset="'.ws_href(WS_CONTENTS_RELPATH.$image->destination->relpath.'.jxr" />');
+				$webp_source = '<source type="image/webp" srcset="'.ws_media_url($image->destination->relpath.'.webp').'" />';
+				$jp2_source = '<source type="image/jp2" srcset="'.ws_media_url($image->destination->relpath.'.jp2').'" />';
+				$jxr_source = '<source type="image/jxr" srcset="'.ws_media_url($image->destination->relpath.'.jxr').'" />';
 			}
 			if(explode(".", $image->source->relpath)[1] == 'svg'){
-				$svg_source = '<source type="image/svg+xml" srcset="'.ws_href(WS_CONTENTS_RELPATH.'/'.$image->source->relpath.'" />');
+				$svg_source = '<source type="image/svg+xml" srcset="'.ws_media_url($image->source->relpath).'" />';
 				$html = '<picture'.$pictureAttributes.'>'.$svg_source.'<img src="'.$src.'"'.$imgAttributes.' /></picture>';
 	//			$html = '<object height="100%" width="100%" data="'.$src.'" type="image/svg+xml"'.$pictureAttributes.'><img src="'.$fallback.'"'.$imgAttributes.' /></object>';
 			} else {
