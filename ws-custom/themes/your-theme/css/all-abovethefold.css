@@ -13,8 +13,8 @@
  $space: 'space-between' | 'space-around' | 'space-evenly';
  $method: 'flex';
  */
-@import url("https://www.isotype.org/ws-custom/themes/your-theme/css/_tokens.css");
-@import url("https://www.isotype.org/ws-custom/themes/your-theme/css/_forms.css");
+@import url("/ws-custom/themes/your-theme/css/_tokens.css");
+@import url("/ws-custom/themes/your-theme/css/_forms.css");
 
 /* I colori di questo sito, nelle due luci. In chiaro sono quelli di sempre;
    la seconda misura è per lo scuro. Sovrascrivono i token generali, che qui

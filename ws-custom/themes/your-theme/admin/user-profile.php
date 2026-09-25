@@ -265,7 +265,7 @@ include_template('template-parts/header');
 <?php endif; ?>
     <h1><?= $is_registered ? __('Edit profile') : __('Register') ?></h1>
     <form method="POST" enctype="multipart/form-data">
-        <script defer="defer" src="https://isotype.org/ws-custom/plugins/forms/js/fields.js"></script>
+        <script defer="defer" src="<?= htmlspecialchars($site_root) ?>/ws-custom/plugins/forms/js/fields.js"></script>
         <input type="hidden" name="save_privacy_settings" value="1">
 
         <!-- Edit Name -->
@@ -430,7 +430,7 @@ include_template('template-parts/header');
             </label>
         </p>
         <p>
-            <a class="link" href="https://www.isotype.org/eventi" class="btn btn-outline"><?php _e('Cancel'); ?></a>
+            <a class="link" href="<?= htmlspecialchars(function_exists('ws_href') ? ws_href('') : $site_root.'/') ?>" class="btn btn-outline"><?php _e('Cancel'); ?></a>
             <button class="button" type="submit" style="margin-left:12px;"><?php _e('Save and continue'); ?></button>
         </p>
     </form>
