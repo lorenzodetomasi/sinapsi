@@ -297,7 +297,7 @@ img.profile-image {
 .button {
   display: inline-flex;
   align-items: center;
-  border: 0 none;
+  border: var(--button-border-width) solid var(--button-color);
   border-radius: 0.5em;
   padding: 0.5em 1em;
   background: var(--button-background);
@@ -310,9 +310,17 @@ img.profile-image {
     margin-left: 0.25em; }
   .button .material-symbols-outlined.left {
     margin-right: 0.25em; }
+.button.strong {
+  background: var(--button-strong-background);
+  color: var(--button-strong-color);
+}
 
 a.button {
   text-decoration: none; }
+
+.button+.button {
+  margin-left: var(--gutter);
+}
 
 /*@import "../reset/normalize/forms";
 form {

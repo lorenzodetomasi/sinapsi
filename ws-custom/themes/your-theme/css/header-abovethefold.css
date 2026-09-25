@@ -317,6 +317,38 @@ body:has(#drawer.open) {
   border-top: 1px solid var(--color-line, #e6e6e6);
   min-width: 0; }
 
+/* LE VOCI delle briciole: la casetta, i nomi, la freccia fra l'uno e l'altro.
+   Erano rimaste in all-abovethefold.css quando l'header e' diventato un foglio
+   suo, perche' il criterio con cui ho diviso i due file cercava `.crumbs` - con
+   la esse - e queste si chiamano `.crumb`. Su Meetoo, che quell'altro foglio non
+   lo carica, la riga usciva nuda: le `›` grandi come il testo, nere, senza
+   respiro. Il contenitore era passato, il contenuto no. */
+.crumb {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  font-size: .9rem; }
+
+.crumb-casa {
+  display: inline-flex;
+  align-items: center; }
+
+.crumb-casa .material-symbols-outlined {
+    font-size: 1.125rem;
+    line-height: 1;
+    display: block; }
+
+.crumb-qui {
+  font-weight: 600;
+  color: var(--color-heading, #e30513); }
+
+.crumb-sep {
+  flex: 0 0 auto;
+  opacity: .55; }
+
 .crumbs-strip {
   display: flex;
   align-items: center;
@@ -485,7 +517,8 @@ body:has(#drawer.open) {
 .modal > div > header .close .material-symbols-outlined {
         line-height: 1; }
 
-#header a, #footer a, .nav a {
+#header a, #footer a, .nav a,
+#header button, #footer button, .nav button {
   color: var(--color-heading, #e30513);
   box-sizing: border-box;
   text-decoration: none; }

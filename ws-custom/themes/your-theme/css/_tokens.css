@@ -75,15 +75,21 @@
   --border-radius: var(--gutter-d2);
   --icon-size: calc(var(--font-size)*1.5);
 
-  --button-background: var(--color-link);
-  --button-color: var(--color-text-neg);
-  --button-background-hover: var(--color-hover);
-  --button-color-hover: var(--color-text-neg);
+  --button-border-width: var(--border-width);
+  --button-border-radius: var(--border-radius);
+  --button-color: var(--color-link);
+  --button-background: trasparent;
+  --button-background-hover: transparent;
+  --button-color-hover: var(--color-hover);
   --button-font-size: var(--font-size);
   --button-icon-size: var(--icon-size);
   --button-padding: var(--gutter-d4) var(--gutter-d2);
   --button-large-padding: var(--gutter-d2) var(--gutter);
-  --button-border-radius: var(--border-radius);
+
+  --button-strong-color: var(--color-text-neg);
+  --button-strong-background: var(--color-link);
+  --button-strong-background-hover: var(--color-hover);
+  --button-strong-color-hover: var(--color-text-neg);
 
   --field-border-width: var(--border-width);
   --field-border-radius: var(--border-radius);
