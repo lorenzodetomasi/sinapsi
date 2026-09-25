@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { CodeArea } from './CodeArea.jsx';
 
 // Replica dell'interfaccia di json-xml per il SOLO codice JSON: gutter con
 // numeri di riga, righe d'errore in rosso, icona di stato, checklist degli
@@ -135,14 +136,16 @@ export default function JsonValidationPane({
           </pre>
         </div>
       ) : (
-        // In scrittura il gutter sparisce: tenere i numeri di riga allineati a un
-        // testo che cambia (e scorre) costa più di quanto valga.
-        <textarea
-          className="code-area code-edit code-font"
+        /* In scrittura il gutter RESTA. Era sparito perché tenere i numeri
+           allineati a un testo che cambia e scorre costava più di quanto
+           valesse: adesso quel costo lo paga `CodeArea` una volta per tutti i
+           campi di codice della Gestione, e qui si guadagna anche il pulsante
+           che rimette il JSON in colonna. */
+        <CodeArea
           value={bozza}
-          spellCheck={false}
-          autoComplete="off"
-          onChange={(e) => setBozza(e.target.value)}
+          onChange={setBozza}
+          lingua="json"
+          label="JSON-LD"
           onKeyDown={(e) => {
             if (e.key === 'Escape') { setBozza(null); setEsito(null); }
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) applica();

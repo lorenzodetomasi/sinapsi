@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { applicaCaso } from './testoCaso.js';
+import { CodeArea } from './CodeArea.jsx';
 
 // Editor rich-text XHTML riutilizzabile (presentazionale): value + onChange.
 const VOID_ELEMENTS = 'area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr';
@@ -490,13 +491,19 @@ export default function XhtmlEditor({ value, onChange, enabled = true, compact =
       />
       {vista === 'codice' && (
         /* Il codice si scrive com'è e si salva com'è: normalizzarlo mentre si
-           digita significherebbe togliere sotto le dita il tag ancora a metà. */
-        <textarea
-          className={'xhtml-codice code-font' + (compact ? ' compact' : '')}
+           digita significherebbe togliere sotto le dita il tag ancora a metà.
+           Rimetterlo in ordine si CHIEDE, col pulsante, quando si è finito.
+
+           Righe numerate e regole vere: `CodeArea` chiede a `linguaggi.js`, che
+           per l'XHTML fa leggere il frammento al parser XML del browser. Così
+           un tag che non chiude si vede mentre lo si scrive, alla sua riga, e
+           non alla fine sotto forma di «XHTML non valido» su tutto il campo. */
+        <CodeArea
           value={value ?? ''}
-          spellCheck={false}
+          onChange={onChange}
+          lingua="xhtml"
           disabled={!enabled}
-          onChange={(e) => onChange(e.target.value)}
+          compact={compact}
         />
       )}
     </div>
