@@ -179,14 +179,15 @@ function meetoo_indice($nome){
 	$sito = $pezzi[0];
 	$locale = $pezzi[1] ?? ws_locale();
 	$radice = ws_root_abspath().'/'.WS_CONTENTS_RELPATH."/$sito/$locale";
-	$abspath = '';
-	foreach(array("$radice/_index/$nome", "$radice/events/_index/$nome") as $forse){
-		if(file_exists($forse)){
-			$abspath = $forse;
-			break;
-		}
-	}
-	$dati = $abspath === '' ? null : json_decode((string)file_get_contents($abspath), true);
+	/* Ogni nome nella SUA cartella, senza cercare nell'altra. Il giro «prima
+	 * `_index/`, poi `events/_index/`» funzionava finche' i nomi non si
+	 * sovrapponevano; poi la manutenzione ha cominciato a scrivere l'indice
+	 * generico di WS in `_index/events.json` - stesso nome, forma schema.org,
+	 * niente `path` - e ogni elenco di eventi di Meetoo e' rimasto vuoto, sul
+	 * server dove la manutenzione era passata e non in locale dove no. */
+	$di_eventi = (preg_match('#^events[.]#', $nome) or preg_match('#^by-[a-z]+/#', $nome));
+	$abspath = $radice.($di_eventi ? '/events/_index/' : '/_index/').$nome;
+	$dati = file_exists($abspath) ? json_decode((string)file_get_contents($abspath), true) : null;
 	if(!is_array($dati)){
 		return $letti[$nome] = array();
 	}
