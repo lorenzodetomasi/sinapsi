@@ -101,7 +101,16 @@ foreach(ws_plugins('content') as $ws_plugin){
 
 $js_theme_functions_abspath = locate_file('js/functions.js');
 if(file_exists($js_theme_functions_abspath)){
-	$GLOBALS['ws_scripts']['head']['js_theme_functions'] = '<script defer="defer" src="'.abspath2url($js_theme_functions_abspath).'"></script>';
+	/* Con la data del file attaccata: quando cambia, cambia l'indirizzo, e chi
+	   ha in cache la versione vecchia se ne accorge. Senza, un telefono si tiene
+	   quella di prima per giorni - ed e' gia' costato un doppio header su
+	   Meetoo, da un file che sul server era gia' corretto. */
+	$js_theme_functions_url = abspath2url($js_theme_functions_abspath);
+	$js_theme_functions_quando = @filemtime($js_theme_functions_abspath);
+	if($js_theme_functions_quando){
+		$js_theme_functions_url .= '?v='.$js_theme_functions_quando;
+	}
+	$GLOBALS['ws_scripts']['head']['js_theme_functions'] = '<script defer="defer" src="'.$js_theme_functions_url.'"></script>';
 }
 
 // Load template

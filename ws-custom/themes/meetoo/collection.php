@@ -52,8 +52,8 @@ if($percorso){
 	 * cinquecento righe di stile e mille di programma, e su una raccolta qualunque
 	 * sarebbero peso scaricato per niente. */
 	$ws_theme_url = ws_theme_url();
-	$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'lungomare.css" />';
-	$GLOBALS['ws_scripts']['bodyend']['meetoo_lungomare'] = '<script defer="defer" src="'.$ws_theme_url.'js/lungomare.js"></script>';
+	$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('lungomare.css').'" />';
+	$GLOBALS['ws_scripts']['bodyend']['meetoo_lungomare'] = '<script defer="defer" src="'.ws_asset('js/lungomare.js').'"></script>';
 	/* Quale raccolta disegnare: l'@id, che è anche la cartella dei suoi dati.
 	 * Va nei GLOBALS, non in una variabile qui: i template si includono dentro una
 	 * funzione del CMS, e da lì le variabili di questo file non si vedono. */

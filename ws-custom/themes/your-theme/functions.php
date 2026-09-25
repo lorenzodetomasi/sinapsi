@@ -23,6 +23,36 @@ $ws_theme_url = ws_theme_url();
 $ws_assets_theme_url = ws_parent_theme_id() ? ws_parent_theme_url() : ws_theme_url();
 $ws_content_root_url = ws_content_root_url();
 
+if(!function_exists('ws_asset')){
+	/**
+	 * L'indirizzo di un file del tema, con la sua data attaccata.
+	 *
+	 * `js/drawer.js?v=1758…`. Serve a una cosa sola: quando un file cambia,
+	 * cambia anche il suo indirizzo, e per il browser di chi torna sul sito e'
+	 * come se non l'avesse mai visto.
+	 *
+	 * Senza, un telefono si tiene la versione vecchia per giorni - e non e' un
+	 * fastidio teorico: `header.js` di Meetoo, nella versione di prima, se
+	 * l'header non era il suo se ne costruiva un altro. Chi aveva in cache quel
+	 * file si e' trovato DUE header uno sopra l'altro mentre il server ne
+	 * serviva uno solo. Un difetto gia' corretto che continua a vedersi e' il
+	 * peggiore da capire: non e' nel codice che stai leggendo.
+	 *
+	 * Il file lo cerca `locate_file`, che parte dal tema figlio: cosi' un tema
+	 * che sostituisce uno script prende la data del SUO file, non di quella del
+	 * genitore.
+	 */
+	function ws_asset($relpath){
+		$abspath = locate_file($relpath);
+		if(!$abspath or !file_exists($abspath)){
+			return '';
+		}
+		$url = abspath2url($abspath);
+		$quando = @filemtime($abspath);
+		return $quando ? $url.'?v='.$quando : $url;
+	}
+}
+
 /* The icons of this site, if it has any.
  *
  * WHERE they are is the brand's business - `brand/index.xml`, element
@@ -113,10 +143,10 @@ ws_stile_se_esiste('maxgrid', 'screen and (min-width: 1280px)', 'css/maxgrid-abo
    in ws-core/templates.php - so this call used to wipe the icons declared
    above, and no site on this theme has ever served a favicon. A list is added
    to one item at a time. */
-$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.$ws_assets_theme_url.'css/all.css" />';
-$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.$ws_assets_theme_url.'css/vgrid.css" />';
-$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.$ws_assets_theme_url.'css/hgrid.css" />';
-$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.$ws_assets_theme_url.'css/maxgrid.css" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/all.css').'" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.ws_asset('css/vgrid.css').'" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.ws_asset('css/hgrid.css').'" />';
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.ws_asset('css/maxgrid.css').'" />';
 // If page has a section[class="form"]
 
 // Translations
@@ -416,25 +446,25 @@ $GLOBALS['ws_styles']['head']['header_compatto'] = ob_get_clean();
  * disegni, se no chi ha chiesto scuro vede il lampo bianco. È un file piccolo,
  * e quel lampo si nota molto più di qualche millesimo di secondo. */
 $GLOBALS['ws_scripts']['head']['ws_preferences'] =
-	'<script src="'.$ws_assets_theme_url.'js/preferences.js"></script>';
+	'<script src="'.ws_asset('js/preferences.js').'"></script>';
 
 /* Il cassetto del menu, invece, può aspettare: non disegna niente prima che si
  * tocchi l'hamburger, e il menu orizzontale intanto c'è già. Quindi in fondo al
  * corpo, dove non trattiene la pagina. */
 $GLOBALS['ws_scripts']['bodyend']['ws_drawer'] =
-	'<script defer="defer" src="'.$ws_assets_theme_url.'js/drawer.js"></script>';
+	'<script defer="defer" src="'.ws_asset('js/drawer.js').'"></script>';
 
 /* E le finestre: una convenzione sola per aprirle e chiuderle tutte - le
  * preferenze, il profilo, «condividi». Anche questa puo' aspettare: una
  * finestra chiusa e' chiusa comunque. */
 $GLOBALS['ws_scripts']['bodyend']['ws_modal'] =
-	'<script defer="defer" src="'.$ws_assets_theme_url.'js/modal.js"></script>';
+	'<script defer="defer" src="'.ws_asset('js/modal.js').'"></script>';
 
 /* E le due voci di «Condividi» che senza JavaScript non potrebbero esistere:
  * copiare negli appunti e il foglio di sistema. Tutte le altre sono
  * collegamenti e stanno nel markup, cosi' funzionano anche senza. */
 $GLOBALS['ws_scripts']['bodyend']['ws_share'] =
-	'<script defer="defer" src="'.$ws_assets_theme_url.'js/share.js"></script>';
+	'<script defer="defer" src="'.ws_asset('js/share.js').'"></script>';
 
 /* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
  * un'intestazione grande all'apertura e discreta durante la lettura non è un

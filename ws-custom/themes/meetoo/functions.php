@@ -14,18 +14,29 @@ global $ws_query, $ws_content, $ws_content_root_url, $rewrite_rule;
 
 $ws_theme_url = ws_theme_url();
 
+/* `ws_asset()` attacca la data del file al suo indirizzo, cosi' un browser che
+ * ha in cache la versione vecchia se ne accorge. La definisce il tema genitore,
+ * che si carica PRIMA di questo; il ripiego serve solo al giorno in cui questo
+ * tema girasse senza di lui. */
+if(!function_exists('ws_asset')){
+	function ws_asset($relpath){
+		$abspath = locate_file($relpath);
+		return ($abspath and file_exists($abspath)) ? abspath2url($abspath) : '';
+	}
+}
+
 // I fogli di stile di Meetoo: i token prima (definiscono le variabili), poi il
 // resto. `places.css` serve solo dove ci sono schede di luoghi, ma pesa poco e
 // tenerlo in un elenco solo evita che una pagina si presenti a metà vestita.
 // Si aggiungono in coda una per una: `ws_globals_set` alla foglia sostituisce, e
 // due chiamate sullo stesso percorso si cancellerebbero a vicenda.
 foreach(array(
-	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'meetoo-tokens.css" />',
-	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'meetoo.css" />',
-	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'places.css" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('meetoo-tokens.css').'" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('meetoo.css').'" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('places.css').'" />',
 	// Le classi delle pagine costruite dal server, separate da quelle delle pagine
 	// costruite in JavaScript: finché convivono, si possono togliere una per volta.
-	'<link rel="stylesheet" type="text/css" media="all" href="'.$ws_theme_url.'meetoo-cms.css" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('meetoo-cms.css').'" />',
 	// Le icone: la stessa famiglia dell'editor, così l'amministrazione e il sito
 	// parlano con gli stessi simboli.
 	'<link rel="preconnect" href="https://fonts.googleapis.com" />',
@@ -716,15 +727,15 @@ $GLOBALS['ws_metas']['meetoo_content_base'] = '<meta name="meetoo:content-base" 
  * quello. La meta' che disegnava - header, cassetto, impostazioni, profilo,
  * briciole - adesso si accende solo se manca `#header1`, cioe' in ws-admin.
  * Sul sito quelle cose ci sono gia', e rifarle voleva dire averne due. */
-$GLOBALS['ws_scripts']['bodyend']['meetoo_header'] = '<script defer="defer" src="'.$ws_theme_url.'header.js"></script>';
+$GLOBALS['ws_scripts']['bodyend']['meetoo_header'] = '<script defer="defer" src="'.ws_asset('header.js').'"></script>';
 // Le azioni della riga contestuale (condividi), che dell'header non fanno parte.
-$GLOBALS['ws_scripts']['bodyend']['meetoo_azioni'] = '<script defer="defer" src="'.$ws_theme_url.'js/azioni.js"></script>';
+$GLOBALS['ws_scripts']['bodyend']['meetoo_azioni'] = '<script defer="defer" src="'.ws_asset('js/azioni.js').'"></script>';
 // I gesti delle card — condividi, «mi interessa» — sono già scritti una volta
 // sola in `cards.js`, che li intercetta sul documento: valgono anche per le card
 // che arrivano dal server, senza doverle costruire in JavaScript.
-$GLOBALS['ws_scripts']['bodyend']['meetoo_carte'] = '<script defer="defer" src="'.$ws_theme_url.'cards.js"></script>';
+$GLOBALS['ws_scripts']['bodyend']['meetoo_carte'] = '<script defer="defer" src="'.ws_asset('cards.js').'"></script>';
 // Le liste lunghe che si allungano mentre si scorre.
-$GLOBALS['ws_scripts']['bodyend']['meetoo_liste'] = '<script defer="defer" src="'.$ws_theme_url.'js/lista.js"></script>';
+$GLOBALS['ws_scripts']['bodyend']['meetoo_liste'] = '<script defer="defer" src="'.ws_asset('js/lista.js').'"></script>';
 
 // L'header che si restringe al primo scorrimento vive nel tema genitore, ed è
 // acceso lì per tutti i siti: qui non serve più dire niente.
