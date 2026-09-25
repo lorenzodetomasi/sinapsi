@@ -31,28 +31,4 @@
    past the box, and a vertical scrollbar for a padding nobody could see.
    With the links as inline-blocks the padding is real height, nothing
    sticks out, and the only overflow left is the one that is wanted. */
-/* L'hamburger non c'e', qui: il menu orizzontale ci sta e risponde da se'.
-   Salvo che il sito abbia chiesto il cassetto e basta - `data-menu="drawer"` in
-   `contents/<sito>/ws-config.php` - e allora e' il menu orizzontale a togliersi
-   di mezzo (la regola sta in all-abovethefold.css, perche' vale a ogni
-   larghezza). Una porta sola, comunque. */
-:root:not([data-menu="drawer"]) #menu-open {
-  display: none; }
 
-#header1-nav1 {
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
-  min-width: 0; }
-  #header1-nav1 > ul {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 1rem;
-    margin: 0;
-    padding: 0;
-    list-style: none; }
-    #header1-nav1 > ul > li > a {
-      display: inline-block;
-      white-space: nowrap;
-      text-decoration: none; }

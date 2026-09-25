@@ -106,7 +106,11 @@ $ultimo = count($scia) - 1;
 			<i class="material-symbols-outlined">home</i>
 		</a>
 <?php foreach ($scia as $i => $t): ?>
-		<span class="crumb-sep" aria-hidden="true">›</span>
+		<?php /* Un SIMBOLO e non il carattere `›`: un carattere lo disegna il font,
+		   e ogni font lo mette a un'altezza sua. In quello di Meetoo cadeva sulla
+		   linea di base e sembrava una virgola, fuori asse rispetto ai nomi. Il
+		   simbolo e' lo stesso disegno ovunque, come la casetta qui accanto. */ ?>
+		<span class="crumb-sep material-symbols-outlined" aria-hidden="true">chevron_right</span>
 <?php if ($i === $ultimo): ?>
 		<span class="crumb crumb-qui" aria-current="page"><?php echo htmlspecialchars($t['nome'] !== '' ? $t['nome'] : $t['pezzo']); ?></span>
 <?php elseif ($t['nome'] !== ''): ?>

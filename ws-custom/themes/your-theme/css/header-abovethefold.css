@@ -365,9 +365,22 @@ body:has(#drawer.open) {
   font-weight: 600;
   color: var(--color-heading, #e30513); }
 
+/* Le voci stanno a filo della striscia, tutte alla stessa altezza.
+   Meetoo ha una `.crumb` sua - delle briciole vecchie, che vivono ancora in
+   Gestione e nelle finestre del lungomare - con 10px di margine sotto. Arrivava
+   anche qui, per nome, e sollevava ogni voce di cinque pixel: erano i nomi a
+   stare storti, non le frecce, anche se a vedersi sembrava il contrario.
+   Si neutralizza DENTRO la striscia e non la si toglie: fuori serve ancora. */
+.crumbs-strip > .crumb {
+  margin: 0; }
+
 .crumb-sep {
   flex: 0 0 auto;
-  opacity: .55; }
+  opacity: .55;
+  /* Il simbolo alla misura del testo, e non a quella di un'icona: e' un
+     separatore, deve stare in riga, non farsi notare. */
+  font-size: 1.125em;
+  line-height: 1; }
 
 .crumbs-strip {
   display: flex;
@@ -562,3 +575,74 @@ body:has(#drawer.open) {
 #header li.current-menu-item a, #footer li.current-menu-item a, .nav li.current-menu-item a {
   color: var(--color-heading, #e30513);
   border-bottom: 2px solid var(--color-heading, #e30513); }
+
+
+/* ------------------------------------------------------------------------
+   REGOLE CHE STAVANO NEI FOGLI DELLA GRIGLIA, e che un sito che quei fogli
+   non li carica - Meetoo - non riceveva. Sono tornate qui con la loro
+   condizione di larghezza, identica a quella del foglio da cui vengono.
+
+   Lo avevo fatto a pezzi e male: prima le voci delle briciole, poi il
+   contenitore, poi il fondo dell'header - tre difetti su Meetoo, uno per volta,
+   dalla stessa causa. Stavolta le ho cercate TUTTE nei cinque fogli che Meetoo
+   scarta, per selettore.
+
+   Restano invece dove sono le altezze fisse di maxgrid-abovethefold.css -
+   8,25rem, 6rem, 3rem - e il `.cta` del menu: sono le proporzioni di isotype,
+   calcolate sulla sua barra dei contatti. Qui dentro allungherebbero l'header
+   di un sito che quella barra non ce l'ha.
+   ------------------------------------------------------------------------ */
+
+/* IL FONDO. Senza, l'header resta appiccicato in cima ma trasparente, e il
+   contenuto che scorre ci passa sotto e si legge attraverso: su Meetoo, che
+   screen-abovethefold.css non lo carica, era esattamente cosi'. */
+#header {
+  background-color: var(--color-background-header, light-dark(#fff, #1e1f20));
+  -webkit-box-shadow: -0.0625rem 0.0625rem 0.1875rem rgba(0, 0, 0, 0.14);
+  -moz-box-shadow: -0.0625rem 0.0625rem 0.1875rem rgba(0, 0, 0, 0.14);
+  box-shadow: -0.0625rem 0.0625rem 0.1875rem rgba(0, 0, 0, 0.14); }
+
+@media screen and (max-width: 999px) {
+  /* Una riga sola: marchio, poi le azioni. Il menu qui non ci sta - sette voci su
+     360 pixel sono sette voci illeggibili - e non serve: le stesse voci sono nel
+     cassetto, che l'hamburger apre. Prima il menu si apriva in mezzo all'header,
+     spingendo giu' la pagina. */
+  #header1 {
+    flex-wrap: nowrap; }
+    #header1 > #brand > picture > img {
+      margin-top: 0;
+      margin-right: .5rem; }
+    #header1 h1 {
+      margin-bottom: 0.2em; }
+    #header1 h2 {
+      margin-top: 0; }
+
+  #header1-nav1 {
+    display: none; } }
+
+@media screen and (min-width: 1000px) {
+  /* L'hamburger non c'e', qui: il menu orizzontale ci sta e risponde da se'.
+     Salvo che il sito abbia chiesto il cassetto e basta - `data-menu="drawer"` in
+     `contents/<sito>/ws-config.php` - e allora e' il menu orizzontale a togliersi
+     di mezzo (la regola sta in all-abovethefold.css, perche' vale a ogni
+     larghezza). Una porta sola, comunque. */
+  :root:not([data-menu="drawer"]) #menu-open {
+    display: none; }
+
+  #header1-nav1 {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    min-width: 0; }
+    #header1-nav1 > ul {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 1rem;
+      margin: 0;
+      padding: 0;
+      list-style: none; }
+      #header1-nav1 > ul > li > a {
+        display: inline-block;
+        white-space: nowrap;
+        text-decoration: none; } }

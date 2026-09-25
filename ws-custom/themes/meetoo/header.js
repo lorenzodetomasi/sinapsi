@@ -229,6 +229,26 @@
    *
    * In ws-admin non c'e' nessun #header1, quindi li' disegna tutto come prima.
    * ==========================================================================*/
+  /* I DATI escono sempre, prima del cancello qui sotto.
+   *
+   * `window.Meetoo` mescola due cose: comandi dell'header (il menu, il tema, il
+   * profilo), che servono solo dove l'header e' questo, e SERVIZI - dove stanno
+   * i contenuti, l'indirizzo di una pagina, la sessione - che servono a tutte
+   * le pagine. Quando ho spento la meta' che disegna, l'esportazione era dentro
+   * di lei e se ne sono andati anche i servizi: `lungomare.js` chiedeva
+   * `Meetoo.contentBase()`, non la trovava, ripiegava su un percorso relativo e
+   * il suo JSON diventava un 404. La linea del lungomare e' sparita cosi'.
+   *
+   * Controllato stavolta chi li legge: `contentBase` il lungomare; gli altri
+   * nomi che le pagine usano - `toast`, `placeCard`, `eventCard` - li esporta
+   * cards.js, che questo cancello non tocca. */
+  window.Meetoo = Object.assign(window.Meetoo || {}, {
+    session: S,
+    siteRoot: function () { return SITE_ROOT; },
+    contentBase: contentBase,
+    urlPagina: urlPagina,
+  });
+
   var DISEGNA = !document.getElementById('header1');
 
   if (DISEGNA) {
@@ -540,19 +560,15 @@
   // MERGE, non assegnazione: altri moduli (es. cards.js) possono aver già messo
   // le loro funzioni su window.Meetoo, e l'ordine degli script non deve contare.
   window.Meetoo = Object.assign(window.Meetoo || {}, {
-    session: S,
     setBreadcrumb: function (items, adminItems) {
       var c = document.getElementById('mt-crumbs'); if (c) c.innerHTML = crumbHtml(items);
       var a = document.getElementById('mt-admin'); if (a) a.innerHTML = adminItems ? crumbHtml(adminItems) : '';
       var has = !!((c && c.textContent.trim()) || (a && a.textContent.trim()));
       var r = document.querySelector('.mt-header .mt-row-2'); if (r) r.style.display = has ? '' : 'none';
     },
-    // Slot opzionale per bottoni info/legenda a sinistra delle azioni.
-    siteRoot: function () { return SITE_ROOT; },
     openProfilo: openProfilo,
     closeProfilo: chiudiProfilo,
-    contentBase: contentBase,
-    urlPagina: urlPagina,
+    // Slot opzionale per bottoni info/legenda a sinistra delle azioni.
     setActions: function (html) { var s = document.getElementById('mt-slot'); if (s) s.innerHTML = html || ''; },
     // Voci del menu hamburger (default in NAV): [{label, icon, href, target?}].
     setNav: function (items) { if (Array.isArray(items) && items.length) NAV = items; },

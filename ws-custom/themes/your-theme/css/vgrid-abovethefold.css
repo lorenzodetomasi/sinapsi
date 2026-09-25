@@ -23,23 +23,6 @@
 #header-top .email.link .text, #header-top .telephone.link .text {
   display: none; }
 
-/* Una riga sola: marchio, poi le azioni. Il menu qui non ci sta - sette voci su
-   360 pixel sono sette voci illeggibili - e non serve: le stesse voci sono nel
-   cassetto, che l'hamburger apre. Prima il menu si apriva in mezzo all'header,
-   spingendo giu' la pagina. */
-#header1 {
-  flex-wrap: nowrap; }
-  #header1 > #brand > picture > img {
-    margin-top: 0;
-    margin-right: .5rem; }
-  #header1 h1 {
-    margin-bottom: 0.2em; }
-  #header1 h2 {
-    margin-top: 0; }
-
-#header1-nav1 {
-  display: none; }
-
 .nav.vgrid-fullwidth > div > ul > li, .nav.vgrid-fullwidth > div > ol > li {
   width: 100%; }
   .nav.vgrid-fullwidth > div > ul > li a, .nav.vgrid-fullwidth > div > ol > li a {
