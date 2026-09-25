@@ -40,8 +40,13 @@
    finivano addosso a Meetoo, che il contenuto lo tiene a 56rem con 1rem ai
    lati: header piu' largo della pagina e briciole fuori squadra di otto pixel.
    Un tema le ridichiara e basta. */
+/* Dichiarata sulla RADICE e non sull'header, perche' e' la stessa colonna: il
+   contenuto la legge da qui, e i due non possono piu' scostarsi. Il respiro ai
+   lati invece resta dell'header, perche' il contenuto il suo se lo da' da se'. */
+:root {
+  --content-width: 60rem; }
+
 #header {
-  --content-width: 1000px;
   --content-gutter: 0; }
 
 @media (max-width: 999px) {

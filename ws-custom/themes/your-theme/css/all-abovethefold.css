@@ -81,8 +81,20 @@ body {
   margin-right: auto;
   width: 100%; }
 
+/* LA COLONNA DEL SITO: una misura sola, per l'header e per il contenuto.
+   60rem, cioe' 960 pixel finche' il testo e' quello predefinito.
+
+   960 e non 1000 per due ragioni che si contano. Si divide per tre - 320, e per
+   quattro, sei, otto, dodici - mentre 1000 in tre fa 333,33, e una griglia a
+   tre colonne non e' un caso raro. E il punto di rottura di questo tema e' a
+   1000px: un contenitore largo 1000 in una finestra di 1000 non ha un pixel
+   d'aria ai lati, mentre 960 ne lascia quaranta.
+
+   In rem e non in pixel perche' cresca con il testo di chi legge: a caratteri
+   piu' grandi corrisponde una colonna piu' larga, e la riga continua a contenere
+   lo stesso numero di parole - che e' la misura che conta davvero. */
 .content-container {
-  max-width: 1000px; }
+  max-width: var(--content-width, 60rem); }
 
 #page {
   display: grid;

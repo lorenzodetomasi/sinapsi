@@ -17,7 +17,8 @@
 #header.mt-header, #footer { background: var(--color-background-main); border-color: var(--mt-line, var(--color-line)); }
 #footer { border-top: 1px solid var(--color-line); }
 
-.mt-pagina { max-width: 56rem; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+/* La colonna del sito, la stessa dell'header: `--content-width` su `:root`. */
+.mt-pagina { max-width: var(--content-width, 60rem); margin: 0 auto; padding: 1.25rem 1rem 3rem; }
 .mt-h1 {
   font-family: var(--font-family1); font-weight: 700; font-size: 2rem;
   color: var(--color-heading); margin: .5rem 0 .75rem; line-height: 1.15;
@@ -434,10 +435,9 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 #header {
   --header-logo-aperto: 1.75rem;
   --header-logo-stretto: 1.5rem;
-  /* LA COLONNA DI MEETOO, la stessa di `.mt-pagina` qui sopra: 56rem con 1rem
-     ai lati. Senza, l'header prendeva le misure del tema genitore - 1000px e
-     mezzo rem - ed era piu' largo della pagina che sta sotto, con le briciole
-     disallineate rispetto al testo. */
-  --content-width: 56rem;
+  /* Il RESPIRO ai lati e' di Meetoo: un rem, come `.mt-pagina`. La LARGHEZZA
+     no - quella e' una sola per tutti, `--content-width` su `:root`, e
+     ridichiararla qui vorrebbe dire tornare a un header che non sta in colonna
+     con la pagina. */
   --content-gutter: 1rem;
 }

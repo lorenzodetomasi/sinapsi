@@ -108,5 +108,8 @@
   --mt-hint: var(--color-hint); --mt-text: var(--color-text); --mt-card: var(--color-background-section1);
   --mt-line: light-dark(rgba(0,0,0,.08), rgba(255,255,255,.10)); --mt-h: 44px;
   /* Larghezza della colonna dell'header: allineata a .wrap */
-  --mt-w: 960px;
+  /* La colonna del sito. Era 960px scritti qui; adesso e' `--content-width`,
+     dichiarata dal foglio dell'header e uguale per l'header e per il contenuto
+     di ogni tema. Il nome vecchio resta per chi lo usa ancora. */
+  --mt-w: var(--content-width, 60rem);
 }
