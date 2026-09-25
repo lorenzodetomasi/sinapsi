@@ -64,9 +64,10 @@ function google_login_profilo(){
 	if($utente !== null and isset($utente->person)){
 		$persona = $utente->person;
 		$p['name']  = get_consented_data($persona->name, $anon);
-		// L'email sta fuori da `person`, nel documento dell'utente.
-		$p['email'] = get_consented_data($utente->email, null);
-		$p['image'] = get_consented_data($utente->image, null);
+		// Email and image are in `person`, as Meetoo writes them; a user
+		// document that still keeps them on `user` is read there.
+		$p['email'] = get_consented_data($persona->email, get_consented_data($utente->email, null));
+		$p['image'] = get_consented_data($persona->image, get_consented_data($utente->image, null));
 		$p['org_name'] = get_consented_data($persona->worksFor->organization->name, null);
 		$p['org_logo'] = get_consented_data($persona->worksFor->organization->logo, null);
 	}
