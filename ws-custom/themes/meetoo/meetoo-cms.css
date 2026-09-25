@@ -434,4 +434,10 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 #header {
   --header-logo-aperto: 1.75rem;
   --header-logo-stretto: 1.5rem;
+  /* LA COLONNA DI MEETOO, la stessa di `.mt-pagina` qui sopra: 56rem con 1rem
+     ai lati. Senza, l'header prendeva le misure del tema genitore - 1000px e
+     mezzo rem - ed era piu' largo della pagina che sta sotto, con le briciole
+     disallineate rispetto al testo. */
+  --content-width: 56rem;
+  --content-gutter: 1rem;
 }

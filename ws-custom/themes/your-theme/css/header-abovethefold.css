@@ -33,18 +33,27 @@
    Stessi valori e stesso punto di rottura, cosi' dove ci sono tutti e due non
    cambia niente; ristrette all'header, per non mettere becco nella griglia
    della pagina, che e' affare dell'altro foglio. */
+/* LA COLONNA: quanto e' larga e quanto respira ai lati.
+   L'header deve stare IN COLONNA CON IL CONTENUTO, e la colonna e' del sito,
+   non di questo foglio: qui ci sono solo le misure di chi non ne dichiara
+   nessuna, cioe' quelle di your-theme. Scritte a mano - 1000px, come isotype -
+   finivano addosso a Meetoo, che il contenuto lo tiene a 56rem con 1rem ai
+   lati: header piu' largo della pagina e briciole fuori squadra di otto pixel.
+   Un tema le ridichiara e basta. */
+#header {
+  --content-width: 1000px;
+  --content-gutter: 0; }
+
+@media (max-width: 999px) {
+  #header {
+    --content-gutter: .5rem; } }
+
 #header .content-container {
   box-sizing: border-box;
   width: 100%;
-  max-width: 1000px;
-  margin-inline: auto; }
-
-@media (max-width: 999px) {
-  /* Non alle briciole, che una spaziatura se la danno gia' (`.crumbs-strip`) e
-     piu' stretta: questa regola, che ha un id e quindi vince, gliela portava
-     via e faceva della riga un secondo header alto quanto il primo. */
-  #header .content-container:not(.crumbs-strip) {
-    padding: 0.5rem; } }
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: var(--content-gutter); }
 
 #header-top {
   border-bottom: 1px solid var(--color-line, #e6e6e6); }
@@ -359,7 +368,12 @@ body:has(#drawer.open) {
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .35rem var(--gutter, 1rem);
+  /* Ai lati la STESSA misura delle altre righe dell'header: le briciole stanno
+     sotto al marchio e devono cominciare dove comincia lui. Prima leggevano
+     `--gutter`, che e' un'altra cosa, e su Meetoo valeva 1rem contro i .5 del
+     resto - la riga partiva mezzo centimetro piu' in la'. In verticale invece
+     restano basse: e' una riga di orientamento, non una seconda testata. */
+  padding: .35rem var(--content-gutter);
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
