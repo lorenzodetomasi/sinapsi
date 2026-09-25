@@ -14,6 +14,87 @@ global $ws_query, $ws_content, $ws_content_root_url, $rewrite_rule;
 
 $ws_theme_url = ws_theme_url();
 
+/**
+ * GLI INDICI SI RIFANNO DA SOLI, quando un evento e' piu' nuovo di loro.
+ *
+ * Meetoo ha due cose calcolate dai suoi contenuti: la MAPPA (quale indirizzo ha
+ * ogni evento, e quindi quale pagina gli risponde) e l'INDICE DEGLI EVENTI
+ * (quello che gli elenchi leggono). Nessuna delle due si accorgeva di un evento
+ * arrivato copiando la cartella sul server - e quello e' il modo in cui gli
+ * eventi arrivano. Risultato: a settembre, con dodici eventi nuovi in cartella,
+ * la pagina di Lido di Ostia ne mostrava uno, perche' l'indice era del 31 agosto.
+ *
+ * Qui si confronta l'eta': la data dell'indice e della mappa contro quella
+ * dell'`index.json` di evento piu' recente. Trentuno `filemtime`, niente di
+ * piu', a ogni richiesta. Se un evento e' piu' nuovo, si rifanno tutti e due -
+ * PRIMA la mappa, perche' l'indice degli eventi prende da lei gli indirizzi.
+ *
+ * Poi si RICARICA LA PAGINA. L'instradamento e' gia' avvenuto con la mappa
+ * vecchia: la pagina di un evento nuovo, in questa richiesta, e' gia' stata
+ * giudicata un 404. Rimandare allo stesso indirizzo costa un giro, una volta
+ * sola dopo che i file sono arrivati, e il giro dopo trova tutto al suo posto.
+ *
+ * Tre guardie. Un LUCCHETTO non bloccante: due richieste insieme non rifanno
+ * gli indici due volte, e quella che non lo prende serve la pagina com'e'. Si
+ * rimanda SOLO se dopo il rifacimento gli indici risultano davvero freschi:
+ * se qualcosa va storto non si gira in tondo. E solo per le richieste che si
+ * possono ripetere senza danno, cioe' GET.
+ */
+if(!function_exists('meetoo_derivati_freschi')){
+	function meetoo_derivati_freschi(){
+		$radice = ws_contents_abspath().'/meetoo';
+		$base = $radice.'/it_IT';
+		$indice = $base.'/events/_index/events.json';
+		$mappa = $radice.'/ws_sitemap.wsx';
+
+		$quando = function($f){ return file_exists($f) ? (int)@filemtime($f) : 0; };
+		$piu_nuovo = $quando($base.'/events');
+		foreach(glob($base.'/events/*/index.json') ?: array() as $f){
+			$piu_nuovo = max($piu_nuovo, $quando($f));
+		}
+		/* Copiare una cartella di evento cambia la data di `events/`; riscrivere
+		   un index.json che c'era gia' no, e per questo si guardano anche loro.
+		   Non le cartelle dei singoli eventi: ci nascono i gemelli .xml mentre la
+		   pagina si disegna, e ognuno sembrerebbe un evento nuovo.
+		   E nessun file e' piu' nuovo di ADESSO: uno che arriva con una data nel
+		   futuro - un orologio avanti, `rsync -t` che conserva le date - farebbe
+		   sembrare vecchio per sempre anche un indice appena rifatto, e si
+		   rifarebbe a ogni richiesta. */
+		$piu_nuovo = min($piu_nuovo, time());
+		$eta = min($quando($indice), $quando($mappa));
+		if($piu_nuovo <= $eta){
+			return false;
+		}
+
+		$chiave = @fopen($base.'/_index/derived.lock', 'c');
+		if(!$chiave or !flock($chiave, LOCK_EX | LOCK_NB)){
+			return false;   // un'altra richiesta li sta gia' rifacendo
+		}
+		try {
+			require_once ws_admin_abspath().'/lib/ws-mappa.php';
+			require_once ws_admin_abspath().'/lib/events-index.php';
+			ws_mappa_costruisci($radice, 'meetoo', 'it_IT', true);
+			@unlink($radice.'/ws_sitemap.xml');   // il gemello si rifa' da se'
+			event_index_rebuild($base);
+			/* Con la data di ADESSO: e' quella con cui si confronta la volta dopo. */
+			@touch($indice);
+			@touch($mappa);
+			clearstatcache();
+		} catch(Throwable $e){
+			return false;
+		} finally {
+			flock($chiave, LOCK_UN);
+			fclose($chiave);
+		}
+		return min($quando($indice), $quando($mappa)) >= $piu_nuovo;
+	}
+}
+
+if(($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' and !headers_sent() and meetoo_derivati_freschi()){
+	header('Location: '.($_SERVER['REQUEST_URI'] ?? '/'), true, 302);
+	exit;
+}
+
 /* `ws_asset()` attacca la data del file al suo indirizzo, cosi' un browser che
  * ha in cache la versione vecchia se ne accorge. La definisce il tema genitore,
  * che si carica PRIMA di questo; il ripiego serve solo al giorno in cui questo
