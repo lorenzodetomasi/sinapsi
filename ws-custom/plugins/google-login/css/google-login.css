@@ -85,13 +85,16 @@
 	list-style: none;
 }
 
+/* Il posto del pulsante di Google si adatta a QUELLO CHE GOOGLE CI METTE.
+   Era un cerchio di 2,5rem, su misura del pulsante a icona; da quando è quello
+   standard - l'unico a cui il tema scuro arrivi davvero - il disegno è largo un
+   centinaio di pixel e da un cerchio traboccava, andando a coprire
+   l'hamburger. L'altezza invece resta quella della riga, così sta in linea con
+   l'ingranaggio e con il menu. */
 .google-login-trigger {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	width: 2.5rem;
-	height: 2.5rem;
-	border-radius: 50%;
+	min-height: 2.5rem;
 }
 
 /* La tessera del profilo dentro la pagina /profilo-utente. */

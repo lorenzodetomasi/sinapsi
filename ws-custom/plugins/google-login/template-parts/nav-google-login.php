@@ -33,17 +33,25 @@ $portal_org_logo = $profilo['org_logo'];
 <ul class="google-avatar">
     <?php if (!$is_google_user): ?>
         <li class="google-login-trigger" title="Clicca per accedere">
-            <div id="g_id_signin_btn" class="g_id_signin" data-type="icon" data-shape="circle" data-theme="outline" data-size="large"></div>
+            <div id="g_id_signin_btn" class="g_id_signin" data-size="large"></div>
         </li>
         <script>
         /* Il pulsante di Google segue il tema della pagina.
          *
-         * Il disegno lo fa Google, non noi, e l'unico modo per dirgli com'è
-         * vestita la pagina è `theme`: `outline` sul chiaro, `filled_black` sullo
-         * scuro — un pulsante bianco su fondo nero e' l'unica cosa che si vede,
-         * e si vede male. L'attributo si mette PRIMA che la libreria arrivi, cosi'
+         * Il disegno lo fa Google, non noi, e l'unico modo per dirgli com'e'
+         * vestita la pagina e' `theme`: `outline` sul chiaro, `filled_black`
+         * sullo scuro. L'attributo si mette PRIMA che la libreria arrivi, cosi'
          * il primo disegno e' gia' quello giusto; dopo, se il tema cambia, si
          * ridisegna.
+         *
+         * STANDARD E NON ICONA, ed e' il punto. Il pulsante `icon` di Google -
+         * la G nel cerchio - esiste in una versione sola, bianca: `theme` li'
+         * viene IGNORATO. Si vede provando: due nodi, stesse opzioni tranne il
+         * tema, e il disegno che torna e' identico, con le classi della variante
+         * chiara in tutti e due. Quindi per mesi questo file ha chiesto
+         * `filled_black` e ha ottenuto un cerchio bianco, che sull'header scuro
+         * e' un buco. Con `standard` il tema arriva davvero - stessa prova, e le
+         * classi cambiano - e in cambio si prende un po' piu' di larghezza.
          *
          * Come si sa se la pagina e' chiara o scura: SI GUARDA LA PAGINA.
          *
@@ -59,6 +67,32 @@ $portal_org_logo = $profilo['org_logo'];
          * colore solo, senza che nessuno dei due debba dichiarare niente. */
         (function () {
             var bottone = function () { return document.getElementById('g_id_signin_btn'); };
+
+            /* CHE FORMA HA IL PULSANTE, e dipende da quanto spazio c'e'.
+             *
+             * Largo: quello STANDARD, l'unico a cui il tema scuro arrivi
+             * davvero - una pastiglia con scritto «Accedi», un centinaio di
+             * pixel.
+             * Stretto: l'ICONA. Costa un cerchio bianco anche sullo scuro,
+             * perche' Google quel pulsante lo fa in una versione sola, ma su un
+             * telefono la pastiglia occupa un terzo della riga e spinge
+             * l'hamburger fuori dallo schermo - misurato: 427 pixel di
+             * contenuto in 375 di finestra. Fra un cerchio bianco e un menu
+             * irraggiungibile non c'e' partita, e la G nel cerchio e' comunque
+             * il segno che tutti riconoscono. */
+            var largo = window.matchMedia ? window.matchMedia('(min-width: 600px)') : { matches: true };
+            var forma = function () {
+                return largo.matches
+                    ? { type: 'standard', shape: 'pill', text: 'signin' }
+                    : { type: 'icon', shape: 'circle' };
+            };
+            var vestiAttributi = function (el) {
+                var f = forma();
+                el.setAttribute('data-type', f.type);
+                el.setAttribute('data-shape', f.shape);
+                if (f.text) { el.setAttribute('data-text', f.text); }
+                else { el.removeAttribute('data-text'); }
+            };
             var fondoDietro = function (el) {
                 for (var n = el; n && n !== document.documentElement; n = n.parentElement) {
                     var c = window.getComputedStyle(n).backgroundColor;
@@ -75,7 +109,7 @@ $portal_org_logo = $profilo['org_logo'];
             };
             var tema = function () { return scuro() ? 'filled_black' : 'outline'; };
             var el = bottone();
-            if (el) { el.setAttribute('data-theme', tema()); }
+            if (el) { vestiAttributi(el); el.setAttribute('data-theme', tema()); }
 
             /* Ridisegnare vuol dire RIFARE IL POSTO, non svuotarlo.
              *
@@ -97,7 +131,7 @@ $portal_org_logo = $profilo['org_logo'];
                  * basta: al disegno ci pensera' lei, e lo leggera' di li'. Con
                  * `forza` si disegna comunque — serve al caso in cui lei non
                  * disegni affatto. */
-                if (!gis || (!forza && !vecchio.firstChild)) { vecchio.setAttribute('data-theme', tema()); return; }
+                if (!gis || (!forza && !vecchio.firstChild)) { vestiAttributi(vecchio); vecchio.setAttribute('data-theme', tema()); return; }
                 var nuovo = document.createElement('div');
                 nuovo.id = vecchio.id;
                 nuovo.className = vecchio.className;
@@ -105,9 +139,13 @@ $portal_org_logo = $profilo['org_logo'];
                     var a = vecchio.attributes[i];
                     if (a.name.indexOf('data-') === 0) { nuovo.setAttribute(a.name, a.value); }
                 }
+                vestiAttributi(nuovo);
                 nuovo.setAttribute('data-theme', tema());
                 vecchio.parentNode.replaceChild(nuovo, vecchio);
-                gis.renderButton(nuovo, { type: 'icon', shape: 'circle', size: 'large', theme: tema() });
+                var opzioni = forma();
+                opzioni.size = 'large';
+                opzioni.theme = tema();
+                gis.renderButton(nuovo, opzioni);
             }
 
             /* IL PRIMO DISEGNO LO RIFACCIAMO NOI, sempre — non solo quando il tema
@@ -147,6 +185,10 @@ $portal_org_logo = $profilo['org_logo'];
              * i due header saranno uno, qui ne resta uno. */
             document.addEventListener('meetoo:theme', ridisegna);
             document.addEventListener('ws:tema', ridisegna);
+            /* E quando la finestra passa da stretta a larga: li' cambia la
+               FORMA, non il colore, ma si ridisegna con la stessa chiamata. */
+            if (largo.addEventListener) { largo.addEventListener('change', ridisegna); }
+            else if (largo.addListener) { largo.addListener(ridisegna); }
             if (window.matchMedia) {
                 var q = window.matchMedia('(prefers-color-scheme: dark)');
                 if (q.addEventListener) { q.addEventListener('change', ridisegna); }
