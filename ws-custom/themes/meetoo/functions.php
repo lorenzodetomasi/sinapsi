@@ -15,7 +15,7 @@ global $ws_query, $ws_content, $ws_content_root_url, $rewrite_rule;
 $ws_theme_url = ws_theme_url();
 
 /**
- * GLI INDICI SI RIFANNO DA SOLI, quando un evento e' piu' nuovo di loro.
+ * GLI INDICI SI RIFANNO DA SOLI, quando un contenuto e' piu' nuovo di loro.
  *
  * Meetoo ha due cose calcolate dai suoi contenuti: la MAPPA (quale indirizzo ha
  * ogni evento, e quindi quale pagina gli risponde) e l'INDICE DEGLI EVENTI
@@ -25,8 +25,9 @@ $ws_theme_url = ws_theme_url();
  * la pagina di Lido di Ostia ne mostrava uno, perche' l'indice era del 31 agosto.
  *
  * Qui si confronta l'eta': la data dell'indice e della mappa contro quella
- * dell'`index.json` di evento piu' recente. Trentuno `filemtime`, niente di
- * piu', a ogni richiesta. Se un evento e' piu' nuovo, si rifanno tutti e due -
+ * dell'`index.json` piu' recente fra quelli che la mappa legge - eventi, luoghi,
+ * gruppi, la home. Qualche centinaio di `filemtime`, niente di piu', a ogni
+ * richiesta. Se uno e' piu' nuovo, si rifanno tutti e due -
  * PRIMA la mappa, perche' l'indice degli eventi prende da lei gli indirizzi.
  *
  * Poi si RICARICA LA PAGINA. L'instradamento e' gia' avvenuto con la mappa
@@ -48,15 +49,29 @@ if(!function_exists('meetoo_derivati_freschi')){
 		$mappa = $radice.'/ws_sitemap.wsx';
 
 		$quando = function($f){ return file_exists($f) ? (int)@filemtime($f) : 0; };
-		$piu_nuovo = $quando($base.'/events');
-		foreach(glob($base.'/events/*/index.json') ?: array() as $f){
-			$piu_nuovo = max($piu_nuovo, $quando($f));
+		/* Si guarda tutto quello che la mappa legge (`ws_mappa_costruisci`), non
+		   solo gli eventi: un luogo o una raccolta che cambia - il lungomare che
+		   diventa un percorso - cambia l'instradamento quanto un evento nuovo.
+		   Copiare una cartella cambia la data di chi la contiene; riscrivere un
+		   index.json che c'era gia' no, e per questo si guardano anche loro.
+		   Non le cartelle che hanno un index.json loro, `index/` compresa: ci
+		   nasce il gemello .xml mentre la pagina si disegna, e sembrerebbe una
+		   voce nuova a ogni prima visita. Si' quelle dei CAP (`places/IT00121`),
+		   che contengono solo cartelle: un luogo nuovo si copia li' dentro. */
+		$cartelle = array($base.'/events', $base.'/places', $base.'/organizations');
+		foreach(glob($base.'/places/*', GLOB_ONLYDIR) ?: array() as $d){
+			if(!file_exists($d.'/index.json')){ $cartelle[] = $d; }
 		}
-		/* Copiare una cartella di evento cambia la data di `events/`; riscrivere
-		   un index.json che c'era gia' no, e per questo si guardano anche loro.
-		   Non le cartelle dei singoli eventi: ci nascono i gemelli .xml mentre la
-		   pagina si disegna, e ognuno sembrerebbe un evento nuovo.
-		   E nessun file e' piu' nuovo di ADESSO: uno che arriva con una data nel
+		$piu_nuovo = 0;
+		foreach($cartelle as $d){
+			$piu_nuovo = max($piu_nuovo, $quando($d));
+		}
+		foreach(array('index', 'events/*', 'places/*', 'places/*/*', 'organizations/*') as $dove){
+			foreach(glob($base.'/'.$dove.'/index.json') ?: array() as $f){
+				$piu_nuovo = max($piu_nuovo, $quando($f));
+			}
+		}
+		/* Nessun file e' piu' nuovo di ADESSO: uno che arriva con una data nel
 		   futuro - un orologio avanti, `rsync -t` che conserva le date - farebbe
 		   sembrare vecchio per sempre anche un indice appena rifatto, e si
 		   rifarebbe a ogni richiesta. */
@@ -66,6 +81,7 @@ if(!function_exists('meetoo_derivati_freschi')){
 			return false;
 		}
 
+		@mkdir($base.'/_index', 0775, true);
 		$chiave = @fopen($base.'/_index/derived.lock', 'c');
 		if(!$chiave or !flock($chiave, LOCK_EX | LOCK_NB)){
 			return false;   // un'altra richiesta li sta gia' rifacendo
