@@ -1,0 +1,133 @@
+/*
+ Gli stili dell'accesso con Google.
+
+ UN FILE, e non una stringa dentro ws-index.php: così un tema che lo vuole
+ diverso ne mette uno suo con lo stesso nome e vince, perché `locate_file`
+ guarda prima i temi e solo dopo i plugin. Prima erano scritti a mano in mezzo
+ al PHP, e ce n'era anche una seconda copia in `css/screen-abovethefold.css`
+ che non caricava nessuno: due posti dove correggere la stessa cosa, e uno dei
+ due senza effetto.
+
+ Qui dentro c'è SOLO quello che è di questo plugin. La forma dei comandi -
+ `.pill`, `.pills` - la mette il tema, perché è la stessa dell'aspetto, della
+ lingua e di «condividi»: un pulsante del profilo non ha ragione di vestirsi
+ diversamente da una scelta qualunque.
+*/
+
+/* L'AVATAR: una faccia rotonda.
+   Vale per il pulsante nell'header e per la foto grande nella scheda, e la
+   misura la decide chi lo usa con `--avatar-size` - non una classe nuova per
+   ogni taglia. */
+.avatar {
+	display: block;
+	box-sizing: border-box;
+	width: var(--avatar-size, 2.5rem);
+	height: var(--avatar-size, 2.5rem);
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid transparent;
+}
+
+.avatar-button {
+	cursor: pointer;
+	transition: box-shadow .15s;
+}
+
+.avatar-button:hover {
+	box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .3), 0 1px 3px 1px rgba(60, 64, 67, .15);
+}
+
+/* CHI SEI: la faccia, il nome, il recapito, il ruolo.
+   Serve alla scheda del profilo, e servirà ovunque si debba presentare una
+   persona - per questo è una classe e non l'id di quella finestra. */
+.identity {
+	text-align: center;
+}
+
+.identity .avatar {
+	--avatar-size: 4.5rem;
+	margin: 0 auto .75rem;
+}
+
+.identity-name {
+	margin: 0;
+	font-weight: 600;
+}
+
+.identity-email {
+	margin: .25rem 0 0;
+	color: var(--color-hint, #5f6368);
+	font-size: .9rem;
+}
+
+.identity-role {
+	margin: .5rem 0 0;
+	font-size: .7rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+}
+
+/* La riga dei comandi sotto: una linea che la stacca da chi sei. Il resto -
+   la forma delle pastiglie - è del tema. */
+.identity-actions {
+	margin-top: 1.25rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--color-line, #e8eaed);
+	justify-content: center;
+}
+
+/* Il posto del pulsante di Google, che il disegno se lo fa da sé. */
+.google-avatar {
+	display: flex;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.google-login-trigger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+}
+
+/* La tessera del profilo dentro la pagina /profilo-utente. */
+#google-user-registered {
+	background: light-dark(#f0fdf4, #16281c);
+	border: 1px solid light-dark(#bbf7d0, #2c4a36);
+}
+
+.portal-id-card {
+	display: flex;
+	align-items: center;
+	gap: 1.25rem;
+	margin-bottom: 1.5rem;
+	padding: 1.5rem;
+	border: 1px dashed light-dark(#bbf7d0, #2c4a36);
+	border-radius: var(--border-radius, .5rem);
+	background: var(--color-superficie, light-dark(#fff, #1e1f20));
+}
+
+.portal-avatar-placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 50%;
+	background: var(--color-background-section2, light-dark(#f1f3f4, #2a282f));
+	color: var(--color-hint, #9aa0a6);
+}
+
+.portal-avatar-img {
+	flex-shrink: 0;
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid var(--color-line, #e8f0fe);
+}

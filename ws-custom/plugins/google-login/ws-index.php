@@ -165,32 +165,20 @@ $GLOBALS['ws_scripts']['bodyend']['google-login'] = "
     }
 
 </script>";
-$GLOBALS['ws_styles']['head']['google-login'] = '<style>
-    #google-user-registered { background: #f0fdf4; border: 1px solid #bbf7d0; }
-
-    .google-avatar { display: flex; margin: 0; padding: 0; list-style: none; }
-    .avatar-circle { width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover; cursor: pointer; box-sizing: border-box; border: 2px solid transparent; transition: box-shadow .15s; display: block; }
-    .avatar-circle.logged-in:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); }
-    .google-login-trigger { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 50%; }
-
-    /* La scheda del profilo NON si veste da sé: il guscio, il velo, il modo di
-       aprirsi e di chiudersi sono quelli di ogni altra finestra del tema
-       (.modal). Qui resta solo ciò che è suo, cioè chi sei. Prima era una
-       tendina appesa all\'avatar, larga 280px e coi colori di Google: andava
-       bene per tre righe, non per un profilo che crescerà — e su uno schermo
-       stretto usciva dal bordo. */
-    #profile-who { text-align: center; }
-    #profile-who .profile-photo { width: 4.5rem; height: 4.5rem; border-radius: 50%; object-fit: cover; margin: 0 auto .75rem; display: block; }
-    #profile-who .profile-name { margin: 0; font-weight: 600; }
-    #profile-who .profile-email { margin: .25rem 0 0; color: var(--color-hint, #5f6368); font-size: .9rem; }
-    #profile-who .profile-role { margin: .5rem 0 0; font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-
-    #profile-actions ul { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin: 1.25rem 0 0; padding: 1rem 0 0; list-style: none; border-top: 1px solid var(--color-line, #e8eaed); }
-    #profile-actions a { display: inline-flex; align-items: center; gap: .35rem; padding: .5rem .9rem; border: 1px solid var(--color-line, #dadce0); border-radius: 999px; text-decoration: none; color: inherit; }
-    #profile-actions a:hover { border-color: var(--color-link, #2e3192); }
-
-    .portal-id-card { background: var(--color-superficie, #fff); padding: 1.5rem; border-radius: 8px; border: 1px dashed #bbf7d0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 20px; }
-    .portal-avatar-placeholder { width: 56px; height: 56px; border-radius: 50%; background: #f1f3f4; display: flex; align-items: center; justify-content: center; color: #9aa0a6; flex-shrink: 0; }
-    .portal-avatar-img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 2px solid #e8f0fe; }
-</style>';
+/* Gli stili di questo plugin stanno in un FILE, non qui.
+ *
+ * `locate_file` lo cerca prima nei temi e poi nei plugin: un tema che li vuole
+ * diversi mette un `css/google-login.css` suo e vince, senza toccare il plugin
+ * e senza perdere la modifica al primo aggiornamento. Prima erano una stringa
+ * in mezzo al PHP, con una seconda copia in `css/screen-abovethefold.css` che
+ * non caricava nessuno: due posti per la stessa cosa, e uno dei due inerte.
+ *
+ * Si stampa dentro la testa e non come collegamento perche' veste l'header, che
+ * e' la prima cosa che si vede: un foglio esterno lo farebbe apparire nudo per
+ * un istante. */
+$google_login_css_abspath = locate_file('css/google-login.css');
+if($google_login_css_abspath and file_exists($google_login_css_abspath)){
+    $GLOBALS['ws_styles']['head']['google-login'] =
+        '<style>'.file_get_contents($google_login_css_abspath).'</style>';
+}
 ?>

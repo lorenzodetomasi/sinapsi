@@ -62,12 +62,12 @@ $t = rawurlencode($titolo);
 			<p class="share-url"><?php echo $e($url); ?></p>
 		</section>
 		<nav id="share-where" data-url="<?php echo $e($url); ?>" data-title="<?php echo $e($titolo); ?>">
-			<ul>
-				<li hidden id="share-native"><button type="button"><span class="material-symbols-outlined" aria-hidden="true">ios_share</span><span class="share-label"><?php _e('Share'); ?></span></button></li>
-				<li><button type="button" id="share-copy" data-done="<?php _e('Copied'); ?>"><span class="material-symbols-outlined" aria-hidden="true">link</span><span class="share-label"><?php _e('Copy link'); ?></span></button></li>
-				<li><a href="mailto:?subject=<?php echo $t; ?>&amp;body=<?php echo $u; ?>"><span class="material-symbols-outlined" aria-hidden="true">mail</span><?php _e('Email'); ?></a></li>
-				<li><a href="https://wa.me/?text=<?php echo $t; ?>%20<?php echo $u; ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</a></li>
-				<li><a href="https://t.me/share/url?url=<?php echo $u; ?>&amp;text=<?php echo $t; ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">send</span>Telegram</a></li>
+			<ul class="pills">
+				<li hidden id="share-native"><button type="button" class="pill"><span class="material-symbols-outlined" aria-hidden="true">ios_share</span><span class="share-label"><?php _e('Share'); ?></span></button></li>
+				<li><button type="button" class="pill" id="share-copy" data-done="<?php _e('Copied'); ?>"><span class="material-symbols-outlined" aria-hidden="true">link</span><span class="share-label"><?php _e('Copy link'); ?></span></button></li>
+				<li><a class="pill" href="mailto:?subject=<?php echo $t; ?>&amp;body=<?php echo $u; ?>"><span class="material-symbols-outlined" aria-hidden="true">mail</span><?php _e('Email'); ?></a></li>
+				<li><a class="pill" href="https://wa.me/?text=<?php echo $t; ?>%20<?php echo $u; ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">chat</span>WhatsApp</a></li>
+				<li><a class="pill" href="https://t.me/share/url?url=<?php echo $u; ?>&amp;text=<?php echo $t; ?>" target="_blank" rel="noopener noreferrer"><span class="material-symbols-outlined" aria-hidden="true">send</span>Telegram</a></li>
 			</ul>
 		</nav>
 	</div>

@@ -121,6 +121,12 @@
 #brand hgroup h1, #brand hgroup h2 {
     margin: 0; }
 
+/* Un filo d'aria fra il nome e l'occhiello: attaccati si leggono come una riga
+   sola e il nome perde il suo peso. Riguarda solo chi l'occhiello ce l'ha - un
+   marchio che il nome se lo porta dentro non stampa nessuno dei due. */
+#brand hgroup h1 {
+    margin-bottom: .15em; }
+
 /* LE AZIONI, sempre in fondo alla riga e sempre nello stesso ordine. Quello che
    c'e' dentro cambia - l'accesso c'e' solo se c'e' il plugin - ma l'hamburger e'
    l'ultimo comunque, perche' e' l'unico che c'e' sempre e un comando che cambia
@@ -393,20 +399,6 @@ body:has(#drawer.open) {
   margin: 0;
   padding: 0;
   list-style: none; }
-  #share-where a, #share-where button {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .5rem .9rem;
-    border: 1px solid var(--color-line, #e0e0e6);
-    border-radius: 999px;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-decoration: none;
-    cursor: pointer; }
-  #share-where a:hover, #share-where button:hover {
-    border-color: var(--color-link, #2e3192); }
 
 #appearance, #language {
   display: flex;
@@ -423,37 +415,55 @@ body:has(#drawer.open) {
     margin: 0 0 .25rem;
     font-weight: 600; }
 
-#language ul {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: .5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none; }
+/* LA PASTIGLIA: una scelta fra alternative pari, in fila.
+   UNA CLASSE e non tre copie scritte con un id diverso ciascuna - l'aspetto, la
+   lingua, «condividi» - perche' la forma e' la stessa e perche' con un id non
+   la puo' riusare chi sta fuori dal tema: i comandi del profilo li disegna il
+   plugin dell'accesso, e un plugin non puo' scrivere dentro `#appearance`.
+   Che dentro ci sia un <button> - la scelta resta qui - o un <a> - la scelta e'
+   un altro indirizzo - e' meccanica, non significato, e non si vede. */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none; }
 
-#language a {
-    text-decoration: none; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .5rem .9rem;
+  border: 1px solid var(--color-line, #e0e0e6);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer; }
 
-#appearance button, #language a {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .5rem .9rem;
-    border: 1px solid var(--color-line, #e0e0e6);
-    border-radius: 999px;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: pointer; }
+.pill:hover {
+  border-color: var(--color-link, #2e3192); }
 
-#appearance button:hover, #language a:hover {
-      border-color: var(--color-link, #2e3192); }
+/* Quella scelta. `.scelto` la mette il JavaScript dell'aspetto; `aria-current`
+   e' il modo in cui l'HTML dice «sei qui», ed e' quello che usa la lingua. */
+.pill.scelto, .pill[aria-current] {
+  border-color: var(--color-link, #2e3192);
+  color: var(--color-link, #2e3192);
+  font-weight: 600; }
 
-#appearance button.scelto, #language [aria-current] {
-      border-color: var(--color-link, #2e3192);
-      color: var(--color-link, #2e3192);
-      font-weight: 600; }
+/* La pastiglia PIENA, per quando fra le scelte ce n'e' una principale: «modifica
+   il profilo» accanto a «esci». Una in fila, non due: se risaltano tutte non
+   risalta nessuna. */
+.pill-strong {
+  border-color: var(--color-link, #2e3192);
+  background: var(--color-link, #2e3192);
+  color: var(--color-superficie, light-dark(#fff, #1e1f20)); }
+
+.pill-strong:hover {
+  filter: brightness(1.1); }
 
 /* IL GUSCIO DI OGNI FINESTRA del sito. Una classe e non un id perche' le
    finestre sono piu' d'una nella stessa pagina - le preferenze, «condividi», la

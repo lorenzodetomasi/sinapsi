@@ -157,45 +157,20 @@ $portal_org_logo = $profilo['org_logo'];
     <?php else: ?>
         <li class="avatar-wrapper">
             <?php
-            /* L'avatar APRE UNA FINESTRA, come l'ingranaggio accanto apre le
-             * preferenze: stesso guscio, stesso modo di aprirsi e di chiudersi.
-             * Prima era una tendina appesa sotto l'avatar (`position: absolute`)
-             * che su uno schermo stretto usciva dal bordo, e che per aprirsi
-             * chiamava `Meetoo.openProfilo` - cioe' header.js, un file di un
-             * altro sito. Adesso non chiama nessuno: il comando e' un
-             * collegamento a `#profile` e ci pensa `modal.js`. */
-            $ws_radice = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
-            $prof = htmlspecialchars($ws_radice) . '/profilo-utente';
-            $reg  = $is_registered_user ? '' : '?init=register';
-            $emb  = $prof . ($reg ? $reg . '&' : '?') . 'embed=1';
+            /* QUI C'E' SOLO IL COMANDO. La finestra la stampa il footer, da
+             * `template-parts/modal-profile.php`, come ogni altra finestra del
+             * sito.
+             *
+             * Non e' pignoleria: questo pezzo viene incluso DENTRO l'header, e
+             * una finestra scritta li' si porta dietro il vestito dell'header -
+             * `#header a` ha un id e vince su qualunque classe, cosi' i comandi
+             * del profilo uscivano rossi su fondo blu. Sullo schermo quella
+             * finestra sta al centro e sopra tutto: e' giusto che stia anche
+             * alla fine del documento. */
             ?>
             <a href="#profile" title="<?php _e('Your User Profile'); ?>" aria-label="<?php _e('Your User Profile'); ?>" aria-expanded="false" aria-controls="profile">
-                <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar-circle logged-in" alt="" referrerpolicy="no-referrer">
+                <img src="<?= htmlspecialchars($google_session->picture) ?>" class="avatar avatar-button" alt="" referrerpolicy="no-referrer">
             </a>
-            <aside id="profile" class="modal" hidden>
-                <div>
-                    <header>
-                        <h3><?php _e('Your User Profile'); ?></h3>
-                        <nav>
-                            <ul>
-                                <li><a class="close link h48" href="#" data-close="#profile"><i class="material-symbols-outlined">close</i><span class="button-text"><?php _e('Close'); ?></span></a></li>
-                            </ul>
-                        </nav>
-                    </header>
-                    <section id="profile-who">
-                        <img src="<?= htmlspecialchars($google_session->picture) ?>" class="profile-photo" alt="" referrerpolicy="no-referrer">
-                        <p class="profile-name"><?= htmlspecialchars($google_session->name) ?></p>
-                        <p class="profile-email"><?= htmlspecialchars($google_session->email) ?></p>
-                        <p class="profile-role"><?= htmlspecialchars($display_role) ?></p>
-                    </section>
-                    <nav id="profile-actions">
-                        <ul>
-                            <li><a href="<?= $prof . $reg ?>" data-mt-profilo-form="<?= $emb ?>"><?= $is_registered_user ? __('Edit User Profile') : __('Complete User Subscription') ?></a></li>
-                            <li><a href="?logout=1"><?php _e('Logout'); ?></a></li>
-                        </ul>
-                    </nav>
-                </div>
-            </aside>
         </li>
     <?php endif; ?>
 </ul>

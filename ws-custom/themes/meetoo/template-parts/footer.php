@@ -43,6 +43,12 @@ foreach(array('PrivacyPage' => __('Privacy'), 'CookiePage' => __('Cookie')) as $
  * Sono le stesse due del tema genitore - un guscio solo per tutti i siti. */
 include_template('template-parts/modal-share');
 include_template('template-parts/modal-preferences');
+/* E quella del profilo, se c'e' un plugin che sa chi sei. La stampa qui e non
+   nell'header, dove sta il comando che la apre: una finestra scritta dentro
+   l'header si veste da header. */
+if(locate_file('template-parts/modal-profile.php')){
+	include_template('template-parts/modal-profile');
+}
 ?>
 <?php echo ws_scripts('bodyend'); ?>
 	</body>

@@ -199,25 +199,14 @@
  * su due, perché a un `<svg>` scritto nella pagina se ne lasci una in `auto`
  * quella viene zero. */
 #mt-account .g_id_signin svg { width: 100%; height: 100%; }
-.mt-actions .google-avatar,
-.mt-actions .google-avatar > li { list-style: none; margin: 0; padding: 0; }
-.mt-actions .google-avatar { display: flex; align-items: center; }
-/* L'avatar non è il logo: l'header compatto rimpicciolisce le immagini che ha
-   dentro fino all'altezza del marchio, e all'avatar toccava 24 pixel. */
-.mt-actions img.avatar-circle { width: 2.25rem; height: 2.25rem; max-width: none; object-fit: cover; }
-.mt-actions .profile-popup {
-  background: var(--color-background-section1); color: var(--color-text);
-  border: 1px solid var(--color-line); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.35);
-}
-.mt-actions .popup-name { color: var(--color-heading); }
-.mt-actions .popup-email { color: var(--color-hint); }
-.mt-actions .popup-actions { border-top-color: var(--color-line); }
-.mt-actions .meta-pill { border-color: var(--color-line); color: var(--color-hint); background: transparent; }
-.mt-actions .google-logout-btn,
-.mt-actions .google-action-btn.edit-btn {
-  background: var(--color-background-section2); color: var(--color-text); border-color: var(--color-line);
-}
-.mt-actions .popup-big-avatar { width: 4.5rem; height: 4.5rem; max-width: none; }
+/* Le vestizioni di `.mt-actions` per l'accesso non ci sono piu'.
+   Erano un adattamento della vecchia tendina del profilo - `.profile-popup`,
+   `.popup-name`, `.meta-pill`, `.google-logout-btn` - dentro il contenitore
+   dell'header di Meetoo. Da quando l'header e' quello comune non esiste ne'
+   `.mt-actions` ne' nessuna di quelle classi: la scheda del profilo e' una
+   finestra come le altre e si veste da se', con `.avatar`, `.identity` e le
+   pastiglie del tema. Nemmeno l'avatar va piu' ripescato a mano: non e'
+   dentro l'header compatto che rimpicciolisce le immagini. */
 
 /* ---------- La pagina di un evento ----------
    Le informazioni prima, le azioni subito dopo: chi apre un evento vuole sapere

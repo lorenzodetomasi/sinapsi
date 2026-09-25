@@ -51,17 +51,17 @@ $lingua_corrente = isset($ws_locales['content']) ? explode('-', $ws_locales['con
 
 		<section id="appearance" role="group" aria-label="<?php _e('Appearance'); ?>">
 			<h4><?php _e('Appearance'); ?></h4>
-			<button type="button" data-appearance="auto" aria-pressed="false"><span class="material-symbols-outlined">brightness_auto</span><?php _e('Automatic'); ?></button>
-			<button type="button" data-appearance="light" aria-pressed="false"><span class="material-symbols-outlined">light_mode</span><?php _e('Light'); ?></button>
-			<button type="button" data-appearance="dark" aria-pressed="false"><span class="material-symbols-outlined">dark_mode</span><?php _e('Dark'); ?></button>
+			<button type="button" class="pill" data-appearance="auto" aria-pressed="false"><span class="material-symbols-outlined">brightness_auto</span><?php _e('Automatic'); ?></button>
+			<button type="button" class="pill" data-appearance="light" aria-pressed="false"><span class="material-symbols-outlined">light_mode</span><?php _e('Light'); ?></button>
+			<button type="button" class="pill" data-appearance="dark" aria-pressed="false"><span class="material-symbols-outlined">dark_mode</span><?php _e('Dark'); ?></button>
 		</section>
 
 <?php if ($piu_lingue): ?>
 		<section id="language" role="group" aria-label="<?php _e('Language'); ?>">
 			<h4><span class="material-symbols-outlined" aria-hidden="true">language</span><?php _e('Language'); ?></h4>
-			<ul>
+			<ul class="pills">
 <?php foreach ($lingue as $item): ?>
-				<li><a href="<?php echo ws_href($item->wspath); ?>"<?php echo ((string)$item->locale === $lingua_corrente) ? ' aria-current="true"' : ''; ?>><?php echo $item->name->innerHTML(); ?></a></li>
+				<li><a class="pill" href="<?php echo ws_href($item->wspath); ?>"<?php echo ((string)$item->locale === $lingua_corrente) ? ' aria-current="true"' : ''; ?>><?php echo $item->name->innerHTML(); ?></a></li>
 <?php endforeach; ?>
 			</ul>
 		</section>
