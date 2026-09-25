@@ -1438,3 +1438,28 @@ msgstr "Accedi"
 #: ../plugins/google-login/template-parts/modal-signin.php
 msgid "Sign in with Google to comment, to say you are interested, and to edit what is yours."
 msgstr "Accedi con Google per commentare, dire che ti interessa e modificare quello che è tuo."
+
+#: ../../ws-core/private-site-gate.php
+msgid "Private site"
+msgstr "Sito riservato"
+
+#: ../../ws-core/private-site-gate.php
+msgid "This copy of the site is open only to the people who work on it."
+msgstr "Questa copia del sito è aperta solo a chi ci lavora."
+
+#: ../../ws-core/private-site-gate.php
+msgid "Sign in with Google to continue."
+msgstr "Accedi con Google per continuare."
+
+#: ../../ws-core/private-site-gate.php
+#, php-format
+msgid "You are signed in as %s, but this copy is not open to you."
+msgstr "Hai fatto l'accesso come %s, ma questa copia non è aperta a te."
+
+#: ../../ws-core/private-site-gate.php
+msgid "Ask a super-admin to add your address."
+msgstr "Chiedi a un super-admin di aggiungere il tuo indirizzo."
+
+#: ../../ws-core/private-site-gate.php
+msgid "Sign out"
+msgstr "Esci"

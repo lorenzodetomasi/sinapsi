@@ -99,6 +99,19 @@ foreach(ws_plugins('content') as $ws_plugin){
 	}
 }
 
+/* A private site closes here: after the plugins, because the sign-in plugin
+ * must answer its own POST even to who is not yet admitted; before the
+ * template, because who is not admitted must not get a byte of the page.
+ * See ws-core/private-sites.php. */
+if(function_exists('ws_private_site_gate')){
+	/* The roles are in <site>/<locale>/users/users.xml. Not ws_content_root_abspath():
+	 * that stops at the site folder, and there is no users.xml there. */
+	$ws_site_asked = array_pad(explode('/', trim((string)($ws_query['content'] ?? ''), '/')), 2, '');
+	ws_private_site_gate($ws_site_asked[0], $ws_site_asked[1] !== ''
+		? ws_contents_abspath().'/'.$ws_site_asked[0].'/'.$ws_site_asked[1].'/users/users.xml'
+		: '');
+}
+
 $js_theme_functions_abspath = locate_file('js/functions.js');
 if(file_exists($js_theme_functions_abspath)){
 	/* Con la data del file attaccata: quando cambia, cambia l'indirizzo, e chi

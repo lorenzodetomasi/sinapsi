@@ -78,6 +78,9 @@ function ws_initial_constants() {
 	// Siti innestati: la definizione sta in un file suo, perché la deve vedere
 	// anche l'amministrazione, che il CMS non lo avvia (vedi ws-core/mounts.php).
 	require_once( ws_core_abspath() . '/mounts.php' );
+	// Private sites: which site, on this server, answers only to some people.
+	// Same reason as mounts.php: the admin reads it too (ws-core/private-sites.php).
+	require_once( ws_core_abspath() . '/private-sites.php' );
 	// Add define('SCRIPT_DEBUG', true); to wp-config.php to enable loading of non-minified,
 	// non-concatenated scripts and stylesheets.
 	if ( ! defined( 'SCRIPT_DEBUG' ) ) {

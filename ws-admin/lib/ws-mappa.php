@@ -603,6 +603,7 @@ if (!function_exists('ws_mappa_sitemap_pubblico')) {
      * `noindex` esce dall'elenco: è l'unica cosa che il file dichiara e va rispettata.
      */
     function ws_mappa_sitemap_pubblico(string $contentsDir, array $mounts, bool $apply): array {
+        require_once dirname(__DIR__, 2) . '/ws-core/private-sites.php';
         $mappa = rtrim($contentsDir, '/') . '/ws_sitemap.wsx';
         if (!is_file($mappa)) return ['ok' => false, 'why' => 'ws_sitemap.wsx generale non trovato', 'urls' => 0];
 
@@ -635,6 +636,9 @@ if (!function_exists('ws_mappa_sitemap_pubblico')) {
             if (preg_match('/content=([^&\s]+)/', $query, $m)) {
                 $sito = explode('/', $m[1])[0];
                 $prefisso = $prefissoDi[$sito] ?? '';
+                /* A site that is private on this server (ws-core/private-sites.php)
+                 * is not offered to search engines: its pages would answer 403. */
+                if (function_exists('ws_site_is_private') && ws_site_is_private($sito)) continue;
             }
             $nudo = ltrim($wspath, '/');
             $loc = $radice . rtrim($prefisso, '/') . '/' . $nudo;
