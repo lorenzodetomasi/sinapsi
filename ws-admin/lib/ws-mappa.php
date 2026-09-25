@@ -193,6 +193,15 @@ if (!function_exists('ws_mappa_wspath')) {
             // Le collezioni curate di una zona (il lungomare, il bookcrossing)
             // stanno dentro la zona, perché è lì che si nominano e si condividono.
             if ($lista && count($pezzi) === 3 && isset($zone[$pezzi[1]])) {
+                /* UN PERCORSO ha una pagina sua: le fermate si guardano come una
+                 * linea, nell'ordine in cui si incontrano, non come un elenco. Lo
+                 * DICHIARA il contenuto, con `additionalType: "TouristTrip"` - il
+                 * tipo schema.org per un itinerario fra luoghi d'interesse - e
+                 * non lo si indovina più dai dati delle fermate. */
+                $altri = array_map('strval', (array)($e['additionalType'] ?? []));
+                if (in_array('TouristTrip', $altri, true)) {
+                    return ['/' . $dove($pezzi[1]) . "/$slug", 'trip', 'TouristTrip'];
+                }
                 return ['/' . $dove($pezzi[1]) . "/$slug", 'collection', 'ItemList'];
             }
             // Un luogo sta nella zona che rivendica il suo CAP.
