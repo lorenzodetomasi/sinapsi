@@ -69,7 +69,7 @@
   --metro: light-dark(#2e3192, #2a2f66);   /* binario centrale (metro-line) = blu scuro */
   --rail: light-dark(#8ba5c2, #3f4d5e);    /* binari esterni (waterfront/street) = blu-grigio */
   --rail-text: light-dark(#2e3192, #dfe4ff);
-  --wave-url: url('media-sources/meetoo-wave-band.svg');   /* onda (variante scura via override) */
+  --wave-url: url('../media-sources/meetoo-wave-band.svg');   /* onda (variante scura via override) */
 
   --md-sys-color-surface: #FEF7FF;
   --md-sys-color-on-surface: #1D1B20;

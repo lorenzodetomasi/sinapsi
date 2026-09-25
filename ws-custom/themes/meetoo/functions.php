@@ -31,12 +31,12 @@ if(!function_exists('ws_asset')){
 // Si aggiungono in coda una per una: `ws_globals_set` alla foglia sostituisce, e
 // due chiamate sullo stesso percorso si cancellerebbero a vicenda.
 foreach(array(
-	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('meetoo-tokens.css').'" />',
-	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('meetoo.css').'" />',
-	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('places.css').'" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/meetoo-tokens.css').'" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/meetoo.css').'" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/places.css').'" />',
 	// Le classi delle pagine costruite dal server, separate da quelle delle pagine
 	// costruite in JavaScript: finché convivono, si possono togliere una per volta.
-	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('meetoo-cms.css').'" />',
+	'<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/meetoo-cms.css').'" />',
 	// Le icone: la stessa famiglia dell'editor, così l'amministrazione e il sito
 	// parlano con gli stessi simboli.
 	'<link rel="preconnect" href="https://fonts.googleapis.com" />',

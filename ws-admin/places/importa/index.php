@@ -14,7 +14,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
     <!-- Stili condivisi Meetoo: token, base e header (unica fonte di verità). -->
-    <link rel="stylesheet" href="../../../ws-custom/themes/meetoo/meetoo.css">
+    <link rel="stylesheet" href="../../../ws-custom/themes/meetoo/css/meetoo.css">
     <style>
         /* Solo ciò che è proprio di questa pagina: i token stanno in meetoo.css. */
         :root { --red: var(--color1); }

@@ -201,7 +201,7 @@
   // da tutte le pagine. Se la pagina non l'ha già incluso, lo aggiungiamo qui: così
   // basta l'header per avere l'aspetto Meetoo, anche sulle pagine admin.
   (function loadCss() {
-    var href = THEME_DIR + 'meetoo.css';
+    var href = THEME_DIR + 'css/meetoo.css';
     var has = Array.prototype.some.call(document.styleSheets, function (s) { return s.href && s.href.indexOf('meetoo.css') !== -1; })
       || document.querySelector('link[href*="meetoo.css"]');
     if (has) return;

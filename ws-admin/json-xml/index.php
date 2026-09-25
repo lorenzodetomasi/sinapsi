@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <meta charset="UTF-8">
     <title>WS CMS - Convertitore strutturale e Validatore Server-Side</title>
     <!-- Stili condivisi Meetoo: token, base e header (unica fonte di verità). -->
-    <link rel="stylesheet" href="../../ws-custom/themes/meetoo/meetoo.css">
+    <link rel="stylesheet" href="../../ws-custom/themes/meetoo/css/meetoo.css">
     <style>
         /* Solo i token propri di questa pagina: gli altri (bg/surface/text/accent…)
            arrivano da meetoo.css, così l'admin usa la stessa palette del sito. */

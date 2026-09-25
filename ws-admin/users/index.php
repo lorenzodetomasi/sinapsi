@@ -398,7 +398,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
-  <link rel="stylesheet" href="../../ws-custom/themes/meetoo/meetoo.css">
+  <link rel="stylesheet" href="../../ws-custom/themes/meetoo/css/meetoo.css">
   <style>
     /* Solo ciò che è proprio di questa pagina: il resto è in meetoo.css. */
     .u-tab { width: 100%; border-collapse: collapse; }

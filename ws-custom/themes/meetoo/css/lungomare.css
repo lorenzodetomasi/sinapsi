@@ -383,10 +383,10 @@ body.mt-percorso .mt-raccolta-pagina { display: none; }
 }
 /* Onda scura: auto se sistema dark (salvo forzatura light), o forzata via data-theme */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --wave-url: url('media-sources/meetoo-wave-band-dark.svg'); }
+  :root:not([data-theme="light"]) { --wave-url: url('../media-sources/meetoo-wave-band-dark.svg'); }
 }
-:root[data-theme="dark"] { --wave-url: url('media-sources/meetoo-wave-band-dark.svg'); }
-:root[data-theme="light"] { --wave-url: url('media-sources/meetoo-wave-band.svg'); }
+:root[data-theme="dark"] { --wave-url: url('../media-sources/meetoo-wave-band-dark.svg'); }
+:root[data-theme="light"] { --wave-url: url('../media-sources/meetoo-wave-band.svg'); }
 /* Toggle tema manuale: forza color-scheme (i token light-dark() seguono) */
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
