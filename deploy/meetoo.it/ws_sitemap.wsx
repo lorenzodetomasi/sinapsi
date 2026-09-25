@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!-- The main map of meetoo.it: goes to ws-custom/contents/ws_sitemap.wsx on
+     that server only (deploy/setup.sh meetoo). isotype.org has its own, which
+     also includes isotype. -->
+<urlset xmlns:xi="http://www.w3.org/2001/XInclude">
+  <ws_root_url>https://meetoo.it</ws_root_url>
+  <xi:include href="../../ws-admin/ws_sitemap.wsx" xpointer="xpointer(/*[1]/*)"/>
+  <xi:include href="meetoo/ws_sitemap.wsx" xpointer="xpointer(/*[1]/*)"/>
+</urlset>

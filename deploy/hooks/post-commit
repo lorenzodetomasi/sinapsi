@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# After every commit, the new code goes to isotype.org - in the background,
+# so the commit does not wait for the network. Nothing happens until
+# deploy/servers.local.conf exists and lftp is installed.
+# Installed with: git config core.hooksPath deploy/hooks
+repo=$(git rev-parse --show-toplevel)
+[ -f "$repo/deploy/servers.local.conf" ] || exit 0
+command -v lftp >/dev/null 2>&1 || exit 0
+[ -f "$repo/deploy/.state/isotype.last" ] || exit 0   # first time: by hand, --all
+log="$repo/deploy/.state/isotype.log"
+(
+    echo "== $(date '+%Y-%m-%d %H:%M:%S') $(git -C "$repo" log -1 --format='%h %s')"
+    if ! "$repo/deploy/deploy.sh" isotype >>"$log" 2>&1; then
+        osascript -e 'display notification "Upload failed: see deploy/.state/isotype.log" with title "isotype.org"' 2>/dev/null
+    fi
+) >>"$log" 2>&1 &
+exit 0

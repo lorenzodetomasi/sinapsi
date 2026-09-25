@@ -14,6 +14,9 @@ ws-custom/client_secret_*.json
 ws-admin/places/config.php
 # Dati personali (nome, email): mai versionati, mai pubblicati.
 ws-admin/_private/
+# The FTP credentials of the two servers, and what each one last received.
+deploy/servers.local.conf
+deploy/.state/
 
 # ---------------------------------------------------------------------------
 # CONTENUTI — dati reali, spesso personali, e 1,5 GB di media.
