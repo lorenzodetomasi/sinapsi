@@ -71,6 +71,12 @@ if(!function_exists('meetoo_derivati_freschi')){
 				$piu_nuovo = max($piu_nuovo, $quando($f));
 			}
 		}
+		/* E il codice che li scrive: una mappa fatta da un costruttore vecchio e'
+		   vecchia anche se nessun contenuto e' cambiato. Senza, una correzione
+		   alla mappa arriva sul server e aspetta il prossimo evento per vedersi. */
+		foreach(array('ws-mappa.php', 'events-index.php') as $codice){
+			$piu_nuovo = max($piu_nuovo, $quando(ws_admin_abspath().'/lib/'.$codice));
+		}
 		/* Nessun file e' piu' nuovo di ADESSO: uno che arriva con una data nel
 		   futuro - un orologio avanti, `rsync -t` che conserva le date - farebbe
 		   sembrare vecchio per sempre anche un indice appena rifatto, e si

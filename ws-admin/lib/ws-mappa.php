@@ -420,6 +420,11 @@ if (!function_exists('ws_mappa_wspath')) {
                     'rel' => "places/$slug",
                     'template' => 'elenco',
                     'tipo' => 'CollectionPage',
+                    /* Due nomi. Il TITOLO si legge da solo - nella scheda del
+                     * browser, fra i risultati di una ricerca - e deve dire di
+                     * quale zona si parla. Il NOME si legge nelle briciole, dopo
+                     * «Lido di Ostia», e ripeterlo sarebbe dirlo due volte. */
+                    'name' => $testi[0],
                     'title' => $testi[0] . ' — ' . $z['nome'],
                     'description' => $testi[1] . ' a ' . $z['nome'] . '.',
                     'dateModified' => (string)($doc['dateModified'] ?? date('c')),
@@ -545,6 +550,7 @@ if (!function_exists('ws_mappa_wspath')) {
             $out .= "\t\t<query>$q</query>\n";
             $out .= "\t\t<inLanguage>$lang</inLanguage>\n";
             $out .= "\t\t<type>{$v['tipo']}</type>\n";
+            if (!empty($v['name'])) $out .= "\t\t<name>" . ws_mappa_esc($v['name']) . "</name>\n";
             $out .= "\t\t<title>" . ws_mappa_esc($v['title']) . "</title>\n";
             $out .= "\t\t<description>" . ws_mappa_esc($v['description']) . "</description>\n";
             $out .= "\t\t<changefreq>weekly</changefreq>\n";
