@@ -96,6 +96,21 @@ function ws_content_root_abspath($content_path = null){
 	return ws_root_abspath() . '/' . ws_content_root_relpath($content_path);
 }
 
+/* The users of a site: <site>/<locale>/users/users.xml, the first two segments
+ * of the content path. Not under ws_content_root_abspath(), which stops at the
+ * site folder, where there is no users.xml. Empty when the path names no
+ * locale: there is no file to guess. */
+function ws_content_users_abspath($content_path = null){
+	if(empty($content_path)){
+		$content_path = ws_content_id();
+	}
+	$parts = array_pad(explode('/', trim((string)$content_path, '/')), 2, '');
+	if($parts[0] === '' or $parts[1] === ''){
+		return '';
+	}
+	return ws_contents_abspath().'/'.$parts[0].'/'.$parts[1].'/users/users.xml';
+}
+
 function ws_content_root_url($content_path = null) {
 	if(empty($content_path)){
 		$content_path = ws_content_id();
