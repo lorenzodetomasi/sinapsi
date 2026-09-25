@@ -178,6 +178,82 @@ function formattaMarkup(src) {
 	return righe.join('\n');
 }
 
+/**
+ * Rimette il markup in regola con XML, senza cambiare quello che dice.
+ *
+ * Tre cose, e sono le tre per cui un frammento scritto come HTML non passa da
+ * un parser XML:
+ *
+ *   `multiple` → `multiple="multiple"`. In HTML un attributo booleano si scrive
+ *     nudo; in XML ogni attributo ha un valore, e il parser si ferma li'
+ *     («Specification mandates value for attribute multiple»).
+ *   `<br>` → `<br />`. Un elemento vuoto in XML si chiude.
+ *   `&` da solo → `&amp;`. Una e commerciale che non apre un'entita' e' un
+ *     errore, e capita in ogni indirizzo con un parametro.
+ *
+ * Gli attributi si leggono UNO A UNO rispettando le virgolette, non con
+ * un'espressione regolare sul pezzo intero: in `title="Trascina per riordinare"`
+ * le parole `per` e `riordinare` sembrano attributi nudi a chiunque guardi solo
+ * gli spazi, e diventerebbero `per="per" riordinare="riordinare"` dentro il
+ * titolo. Il testo fra un tag e l'altro non si tocca, tranne le e commerciali.
+ */
+function correggiMarkup(src) {
+	/* UN TAG COMINCIA CON UNA LETTERA, una barra o un punto esclamativo: senza
+	   quel vincolo, in `a < b e c > d` il pezzo `< b e c >` sembrava un tag e ne
+	   usciva `<b e="e" c="c">`. E l'ultima alternativa - un `<` da solo - c'e'
+	   perche' altrimenti quel carattere non lo raccoglieva nessuno e SPARIVA dal
+	   risultato. In XML un minore si scrive `&lt;`: stessa correzione delle e
+	   commerciali, e come quella non si applica due volte. */
+	const pezzi = src.match(/<[a-zA-Z!\/?][^>]*>|[^<]+|</g) || [];
+	return pezzi
+		.map((pezzo) => {
+			if (pezzo === '<') return '&lt;';
+			if (pezzo[0] !== '<') return conEAmp(pezzo);
+			if (/^<[!?]/.test(pezzo)) return pezzo;
+			const m = /^<(\/?)\s*([a-zA-Z][\w:-]*)([\s\S]*?)(\/?)>$/.exec(pezzo);
+			if (!m) return pezzo;
+			const [, chiusura, nome, attributi, autochiuso] = m;
+			if (chiusura) return '</' + nome + '>';
+			const a = correggiAttributi(attributi).replace(/\s+$/, '');
+			const vuoto = VUOTI.has(nome.toLowerCase());
+			return '<' + nome + a + (vuoto || autochiuso ? ' />' : '>');
+		})
+		.join('');
+}
+
+/* Una e commerciale che non apre gia' un'entita'. Il `?!` evita di riscrivere
+   `&amp;` in `&amp;amp;` a ogni passata. */
+function conEAmp(testo) {
+	return testo.replace(/&(?![#a-zA-Z0-9]+;)/g, '&amp;');
+}
+
+function correggiAttributi(attributi) {
+	let out = '';
+	let i = 0;
+	while (i < attributi.length) {
+		const resto = attributi.slice(i);
+
+		const spazio = /^\s+/.exec(resto);
+		if (spazio) { out += spazio[0]; i += spazio[0].length; continue; }
+
+		const nome = /^[a-zA-Z_:][-\w:.]*/.exec(resto);
+		if (!nome) { out += attributi[i]; i += 1; continue; }
+		i += nome[0].length;
+
+		const uguale = /^\s*=\s*/.exec(attributi.slice(i));
+		if (!uguale) { out += nome[0] + '="' + nome[0] + '"'; continue; }
+		i += uguale[0].length;
+
+		const valore = /^"[^"]*"|^'[^']*'|^[^\s>]*/.exec(attributi.slice(i));
+		const grezzo = valore ? valore[0] : '';
+		i += grezzo.length;
+		const quotato = /^["']/.test(grezzo);
+		const dentro = quotato ? grezzo.slice(1, -1) : grezzo;
+		out += nome[0] + '="' + conEAmp(dentro).replace(/"/g, '&quot;') + '"';
+	}
+	return out;
+}
+
 /* ------------------------------------------------------------------- CSS */
 
 /* Il browser un parser CSS ce l'ha, ma perdona: una regola che non capisce la
@@ -265,8 +341,8 @@ function validaJs(src) {
 /* ------------------------------------------------------------------------- */
 
 export const LINGUAGGI = {
-	xhtml: { nome: 'XHTML', formatta: formattaMarkup, valida: (s) => validaMarkup(s) },
-	xml:   { nome: 'XML',   formatta: formattaMarkup, valida: validaXml },
+	xhtml: { nome: 'XHTML', formatta: formattaMarkup, valida: (s) => validaMarkup(s), correggi: correggiMarkup },
+	xml:   { nome: 'XML',   formatta: formattaMarkup, valida: validaXml,        correggi: correggiMarkup },
 	json:  { nome: 'JSON',  formatta: formattaJson,   valida: validaJson },
 	css:   { nome: 'CSS',   formatta: formattaCss,    valida: validaCss },
 	/* JavaScript si sa validare ma non formattare: rimetterlo in colonna senza

@@ -25,6 +25,19 @@ export function CodeArea({
 	disabled = false,
 	compact = false,
 	label,
+	/* Sola lettura: stesso gutter, stesse regole, ma il testo si guarda e basta.
+	   Lo usa il pannello JSON, che mostra il documento come verrebbe scritto sul
+	   file. Li' il testo e' un <pre> e non un <textarea>, cosi' la riga rotta si
+	   puo' evidenziare anche nel corpo e non solo nel numero. */
+	readOnly = false,
+	/* Errori che vengono da FUORI: il pannello JSON ne ha di suoi - lo schema,
+	   un campo che non va bene - e non sono errori di sintassi, quindi il
+	   validatore del linguaggio non li troverebbe mai. Si sommano ai propri:
+	   sono due domande diverse sullo stesso testo, e chi guarda le vuole tutte e
+	   due sullo stesso gutter. */
+	errori: errioriEsterni,
+	/* Chi ha gia' una testata sua non ne vuole una seconda. */
+	hideHead = false,
 	/* Tasti di chi ci mette il campo: il pannello JSON chiude con Esc e applica
 	   con Cmd+Invio, e quelle sono decisioni sue, non di un campo di codice.
 	   Parlano per primi; se non consumano l'evento, resta il Tab di qui. */
@@ -47,9 +60,13 @@ export function CodeArea({
 		}
 	}, [L, testo]);
 
+	const tutti = useMemo(
+		() => (esito.errori || []).concat(errioriEsterni || []),
+		[esito, errioriEsterni]
+	);
 	const righeRotte = useMemo(
-		() => new Set((esito.errori || []).map((e) => e.line).filter(Boolean)),
-		[esito]
+		() => new Set(tutti.map((e) => e.line).filter(Boolean)),
+		[tutti]
 	);
 
 	/* Il gutter segue la textarea e non viceversa: è lei che ha il cursore. */
@@ -57,6 +74,16 @@ export function CodeArea({
 		if (gutter.current && area.current) gutter.current.scrollTop = area.current.scrollTop;
 	};
 	useEffect(segui, [testo]);
+
+	/* «Correggi» compare SOLO quando c'e' qualcosa di rotto, e solo se il
+	   linguaggio sa come rimetterlo a posto. Un pulsante che c'e' sempre invita
+	   a premerlo anche quando non serve; e uno che c'e' e non fa niente e' la
+	   cosa che si stava correggendo. */
+	const correggi = () => {
+		if (!L.correggi) return;
+		const rimesso = L.correggi(testo);
+		if (rimesso !== testo) onChange(rimesso);
+	};
 
 	const formatta = () => {
 		if (!L.formatta) return;
@@ -73,9 +100,23 @@ export function CodeArea({
 	};
 
 	return (
-		<div className={'code-area' + (compact ? ' compact' : '')}>
+		<div className={'code-area' + (compact ? ' compact' : '') + (readOnly ? ' letta' : '')}>
+			{hideHead ? null : (
 			<div className="code-area-head">
 				<span className="code-area-lingua">{label || L.nome}</span>
+				{L.correggi && !esito.ok ? (
+					<button
+						type="button"
+						className="icon-btn"
+						title={'Rimetti in regola il ' + L.nome}
+						disabled={disabled}
+						tabIndex={-1}
+						onMouseDown={(e) => e.preventDefault()}
+						onClick={correggi}
+					>
+						<span className="material-symbols-outlined">healing</span>
+					</button>
+				) : null}
 				{L.formatta ? (
 					<button
 						type="button"
@@ -89,10 +130,11 @@ export function CodeArea({
 						<span className="material-symbols-outlined">{scritto ? 'check' : 'format_align_left'}</span>
 					</button>
 				) : null}
-				<span className={'code-area-stato ' + (esito.ok ? 'ok' : 'rotto')}>
-					<span className="material-symbols-outlined">{esito.ok ? 'check_circle' : 'error'}</span>
+				<span className={'code-area-stato ' + (tutti.length ? 'rotto' : 'ok')}>
+					<span className="material-symbols-outlined">{tutti.length ? 'error' : 'check_circle'}</span>
 				</span>
 			</div>
+			)}
 
 			<div className="code-area-corpo">
 				<div className="line-numbers" ref={gutter} aria-hidden="true">
@@ -102,9 +144,18 @@ export function CodeArea({
 						</span>
 					))}
 				</div>
+				{readOnly ? (
+					<pre ref={area} className="code-area-testo" onScroll={segui}>
+						{righe.map((r, i) => (
+							<span key={i} className={righeRotte.has(i + 1) ? 'line-error' : undefined}>
+								{r + '\n'}
+							</span>
+						))}
+					</pre>
+				) : (
 				<textarea
 					ref={area}
-					className="code-area-testo code-font"
+					className="code-area-testo"
 					value={testo}
 					spellCheck={false}
 					disabled={disabled}
@@ -127,11 +178,12 @@ export function CodeArea({
 						requestAnimationFrame(() => { t.selectionStart = t.selectionEnd = punto; });
 					}}
 				/>
+				)}
 			</div>
 
-			{!esito.ok && esito.errori.length ? (
+			{tutti.length ? (
 				<ul className="code-area-errori">
-					{esito.errori.map((e, i) => (
+					{tutti.map((e, i) => (
 						<li key={i}>
 							{e.line ? <b>riga {e.line}</b> : <b>{L.nome}</b>} — {e.message}
 						</li>

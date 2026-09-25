@@ -44,12 +44,10 @@ export default function JsonValidationPane({
     }
   };
 
-  const lines = useMemo(() => payload.split('\n'), [payload]);
-  const errorLines = useMemo(
-    () => new Set((validation.errors || []).map((e) => e.line).filter(Boolean)),
-    [validation.errors]
-  );
-  const hasFixable = (validation.errors || []).some((e) => e.fixable);
+  /* «Correggi XHTML» solo se c'e' davvero qualcuno che corregge. Senza
+     `onFix` il pulsante usciva lo stesso e non faceva niente - succedeva
+     nell'editor delle pagine, che quella funzione non l'ha mai avuta. */
+  const hasFixable = !!onFix && (validation.errors || []).some((e) => e.fixable);
 
   const status =
     validation.status === 'valid' ? 'ok' : validation.status === 'invalid' ? 'bad' : 'idle';
@@ -119,22 +117,12 @@ export default function JsonValidationPane({
       )}
 
       {bozza === null ? (
-        <div className="code-area code-font">
-          <div className="line-numbers">
-            {lines.map((_, i) => (
-              <span key={i} className={errorLines.has(i + 1) ? 'line-error' : undefined}>
-                {i + 1}
-              </span>
-            ))}
-          </div>
-          <pre className="code-content">
-            {lines.map((line, i) => (
-              <span key={i} className={errorLines.has(i + 1) ? 'line-error' : undefined}>
-                {line + '\n'}
-              </span>
-            ))}
-          </pre>
-        </div>
+        /* Lo stesso componente della scrittura, in sola lettura: gutter, righe
+           rotte in rosso e metriche identiche. Erano due copie, e una delle due
+           si chiamava `code-area` come l'altra - che, il giorno che quel nome ha
+           preso degli stili suoi, ha messo i numeri di riga sotto al codice
+           invece che accanto. */
+        <CodeArea value={payload} lingua="json" readOnly hideHead errori={validation.errors || []} />
       ) : (
         /* In scrittura il gutter RESTA. Era sparito perché tenere i numeri
            allineati a un testo che cambia e scorre costava più di quanto

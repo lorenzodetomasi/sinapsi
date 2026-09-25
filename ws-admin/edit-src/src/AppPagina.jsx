@@ -13,6 +13,7 @@ import FieldRowRenderer, { fieldRowTester } from './FieldRowRenderer.jsx';
 import IconTextRenderer, { iconTextTester } from './IconTextRenderer.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
 import JsonValidationPane from './JsonValidationPane.jsx';
+import { linguaggio } from './linguaggi.js';
 import { API_BASE } from './config.js';
 
 /*
@@ -138,6 +139,33 @@ export default function AppPagina() {
    * scartano: senza il contatore, una validazione lenta partita prima
    * sovrascriverebbe il risultato di una più recente. */
   const payload = useMemo(() => JSON.stringify(jsonld, null, 2), [jsonld]);
+
+  /* «Correggi XHTML»: si rimettono in regola TUTTI i campi che contengono
+   * markup, non solo quello segnalato - se uno ha un attributo nudo, gli altri
+   * scritti nello stesso momento ce l'hanno probabilmente anche loro.
+   *
+   * Si fa qui e non chiedendolo a un servizio: e' una trasformazione di testo,
+   * la conosce `linguaggi.js`, e l'editor degli eventi la chiedeva invece a un
+   * PHP su `localhost:8080` - che in produzione non c'e'. Un pulsante che
+   * funziona solo sul portatile di chi l'ha scritto non e' un pulsante.
+   *
+   * Si tocca solo ciò che SEMBRA markup: una stringa con un `<` seguito da una
+   * lettera. «a < b» resta «a < b». */
+  function correggiXhtml() {
+    const xhtml = linguaggio('xhtml');
+    const pareMarkup = (t) => /<[a-zA-Z!\/?]/.test(t);
+    const passa = (v) => {
+      if (typeof v === 'string') return pareMarkup(v) ? xhtml.correggi(v) : v;
+      if (Array.isArray(v)) return v.map(passa);
+      if (v && typeof v === 'object') {
+        const out = {};
+        for (const k of Object.keys(v)) out[k] = passa(v[k]);
+        return out;
+      }
+      return v;
+    };
+    setData(passa(data));
+  }
 
   const rivalida = useCallback(async (corrente) => {
     const n = ++seq.current;
@@ -304,6 +332,7 @@ export default function AppPagina() {
               payload={payload}
               validation={validazione}
               onRevalidate={() => rivalida(payload)}
+              onFix={correggiXhtml}
               etichetta="La pagina (JSON-LD)"
             />
           </section>
