@@ -49,6 +49,11 @@ include_template('template-parts/modal-preferences');
 if(locate_file('template-parts/modal-profile.php')){
 	include_template('template-parts/modal-profile');
 }
+/* E quella per entrare, per chi non e' ancora entrato. Sono due e non una
+   perche' sono due momenti diversi: una dice chi sei, l'altra te lo chiede. */
+if(locate_file('template-parts/modal-signin.php')){
+	include_template('template-parts/modal-signin');
+}
 ?>
 <?php echo ws_scripts('bodyend'); ?>
 	</body>

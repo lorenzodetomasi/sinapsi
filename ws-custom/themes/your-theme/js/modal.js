@@ -44,6 +44,14 @@
 			if (chiamante) { chiamante.setAttribute('aria-expanded', 'true'); }
 			var primo = box.querySelector('button, [href], input, select, textarea');
 			if (primo) { primo.focus(); }
+			/* Una finestra che si apre lo dice. Serve a chi dentro ci deve
+			   disegnare qualcosa che, a finestra chiusa, verrebbe alto zero: il
+			   pulsante di Google e' il caso per cui e' nato. */
+			try {
+				document.dispatchEvent(new CustomEvent('ws:modale', {
+					detail: { id: box.id, aperta: true }
+				}));
+			} catch (e) {}
 		}
 
 		document.addEventListener('click', function (e) {

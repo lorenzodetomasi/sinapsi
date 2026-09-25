@@ -26,176 +26,33 @@ $portal_image    = $profilo['image'];
 $portal_org_name = $profilo['org_name'];
 $portal_org_logo = $profilo['org_logo'];
 ?>
-<?php if (!$is_google_user): ?>
-    <div id="g_id_onload" data-client_id="<?= GoogleAuth::getClientId() ?>" data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
-<?php endif; ?>
-
 <ul class="google-avatar">
     <?php if (!$is_google_user): ?>
-        <li class="google-login-trigger" title="Clicca per accedere">
-            <div id="g_id_signin_btn" class="g_id_signin" data-size="large"></div>
+        <li>
+            <?php
+            /* NON IL PULSANTE DI GOOGLE, QUI DENTRO. Un'icona nostra, che segue
+             * il tema come l'ingranaggio accanto, e apre una finestra dove il
+             * pulsante vero c'è per intero.
+             *
+             * È la fine di una rincorsa. Il disegno di quel pulsante lo fa
+             * Google dentro un iframe di accounts.google.com, e il tema glielo
+             * si passa davvero - si legge nei parametri dell'iframe,
+             * `theme=filled_black` - ma lui lo onora solo per una delle sue
+             * forme. Quella a icona è bianca e basta. Quella standard il tema lo
+             * prende, finché resta anonima: appena chi guarda ha una sessione
+             * Google attiva diventa «Accedi come Nome», con la foto, e torna
+             * bianca - una lastra chiara nell'header scuro, larga il triplo
+             * dello spazio che ha, che copriva l'ultima voce del menu.
+             *
+             * Non si vince: quel riquadro è di Google e cambia forma quando
+             * decide lui. Quindi non sta più in una riga che deve restare
+             * pulita. Nella finestra ha spazio, e ci sta su una piastra chiara
+             * dichiarata - bianco su bianco, che è una scelta, non un buco. */
+            ?>
+            <a href="#signin" id="signin-open" title="<?php _e('Sign in'); ?>" aria-label="<?php _e('Sign in'); ?>" aria-expanded="false" aria-controls="signin">
+                <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+            </a>
         </li>
-        <script>
-        /* Il pulsante di Google segue il tema della pagina.
-         *
-         * Il disegno lo fa Google, non noi, e l'unico modo per dirgli com'e'
-         * vestita la pagina e' `theme`: `outline` sul chiaro, `filled_black`
-         * sullo scuro. L'attributo si mette PRIMA che la libreria arrivi, cosi'
-         * il primo disegno e' gia' quello giusto; dopo, se il tema cambia, si
-         * ridisegna.
-         *
-         * STANDARD E NON ICONA, ed e' il punto. Il pulsante `icon` di Google -
-         * la G nel cerchio - esiste in una versione sola, bianca: `theme` li'
-         * viene IGNORATO. Si vede provando: due nodi, stesse opzioni tranne il
-         * tema, e il disegno che torna e' identico, con le classi della variante
-         * chiara in tutti e due. Quindi per mesi questo file ha chiesto
-         * `filled_black` e ha ottenuto un cerchio bianco, che sull'header scuro
-         * e' un buco. Con `standard` il tema arriva davvero - stessa prova, e le
-         * classi cambiano - e in cambio si prende un po' piu' di larghezza.
-         *
-         * Come si sa se la pagina e' chiara o scura: SI GUARDA LA PAGINA.
-         *
-         * Prima si guardava la preferenza di SISTEMA, e su isotype.org — che e' un
-         * sito solo chiaro — bastava avere il computer in scuro per ritrovarsi un
-         * pulsante nero in mezzo al bianco. Il sistema dice come vorrebbe vedere le
-         * cose chi guarda; qui serve sapere di che colore e' davvero il posto dove
-         * il pulsante va a finire, e quello lo sa solo la pagina.
-         *
-         * Si risale finche' si trova qualcuno che un fondo ce l'ha davvero (i
-         * contenitori in mezzo sono spesso trasparenti) e se ne misura la
-         * luminosita'. Vale per un sito che il tema lo cambia e per uno che ha un
-         * colore solo, senza che nessuno dei due debba dichiarare niente. */
-        (function () {
-            var bottone = function () { return document.getElementById('g_id_signin_btn'); };
-
-            /* CHE FORMA HA IL PULSANTE, e dipende da quanto spazio c'e'.
-             *
-             * Largo: quello STANDARD, l'unico a cui il tema scuro arrivi
-             * davvero - una pastiglia con scritto «Accedi», un centinaio di
-             * pixel.
-             * Stretto: l'ICONA. Costa un cerchio bianco anche sullo scuro,
-             * perche' Google quel pulsante lo fa in una versione sola, ma su un
-             * telefono la pastiglia occupa un terzo della riga e spinge
-             * l'hamburger fuori dallo schermo - misurato: 427 pixel di
-             * contenuto in 375 di finestra. Fra un cerchio bianco e un menu
-             * irraggiungibile non c'e' partita, e la G nel cerchio e' comunque
-             * il segno che tutti riconoscono. */
-            var largo = window.matchMedia ? window.matchMedia('(min-width: 600px)') : { matches: true };
-            var forma = function () {
-                return largo.matches
-                    ? { type: 'standard', shape: 'pill', text: 'signin' }
-                    : { type: 'icon', shape: 'circle' };
-            };
-            var vestiAttributi = function (el) {
-                var f = forma();
-                el.setAttribute('data-type', f.type);
-                el.setAttribute('data-shape', f.shape);
-                if (f.text) { el.setAttribute('data-text', f.text); }
-                else { el.removeAttribute('data-text'); }
-            };
-            var fondoDietro = function (el) {
-                for (var n = el; n && n !== document.documentElement; n = n.parentElement) {
-                    var c = window.getComputedStyle(n).backgroundColor;
-                    // Trasparente non e' un colore: e' «guarda dietro di me».
-                    if (c && c !== 'transparent' && !/^rgba\(\s*0,\s*0,\s*0,\s*0\s*\)$/.test(c)) { return c; }
-                }
-                return window.getComputedStyle(document.documentElement).backgroundColor || 'rgb(255,255,255)';
-            };
-            var scuro = function () {
-                var n = fondoDietro(bottone() || document.body).match(/[\d.]+/g);
-                if (!n || n.length < 3) { return false; }
-                // Luminosita' percepita: il verde pesa piu' del rosso, il blu quasi niente.
-                return (0.2126 * n[0] + 0.7152 * n[1] + 0.0722 * n[2]) / 255 < 0.5;
-            };
-            var tema = function () { return scuro() ? 'filled_black' : 'outline'; };
-            var el = bottone();
-            if (el) { vestiAttributi(el); el.setAttribute('data-theme', tema()); }
-
-            /* Ridisegnare vuol dire RIFARE IL POSTO, non svuotarlo.
-             *
-             * Chiedendo a Google di disegnare una seconda volta dentro l'elemento
-             * dove ha gia' disegnato, cambia modo: invece del pulsante nella
-             * pagina mette un iframe di accounts.google.com, che e' un'altra
-             * origine — la nostra riga di CSS sul fondo non lo raggiunge piu', e
-             * quello che si vede resta vestito come dice Google. Su un elemento
-             * NUOVO ricomincia da capo e il pulsante torna nella pagina. Verificato
-             * dal vivo: stesso nodo → iframe, nodo nuovo → pulsante.
-             *
-             * Gli attributi si copiano da quello vecchio, cosi' com'e' scritto qui
-             * sopra resta l'unico posto dove il pulsante e' descritto. */
-            function ridisegna(forza) {
-                var vecchio = bottone();
-                var gis = window.google && google.accounts && google.accounts.id;
-                if (!vecchio) { return; }
-                /* Senza la libreria, o prima del suo primo disegno, l'attributo
-                 * basta: al disegno ci pensera' lei, e lo leggera' di li'. Con
-                 * `forza` si disegna comunque — serve al caso in cui lei non
-                 * disegni affatto. */
-                if (!gis || (!forza && !vecchio.firstChild)) { vestiAttributi(vecchio); vecchio.setAttribute('data-theme', tema()); return; }
-                var nuovo = document.createElement('div');
-                nuovo.id = vecchio.id;
-                nuovo.className = vecchio.className;
-                for (var i = 0; i < vecchio.attributes.length; i++) {
-                    var a = vecchio.attributes[i];
-                    if (a.name.indexOf('data-') === 0) { nuovo.setAttribute(a.name, a.value); }
-                }
-                vestiAttributi(nuovo);
-                nuovo.setAttribute('data-theme', tema());
-                vecchio.parentNode.replaceChild(nuovo, vecchio);
-                var opzioni = forma();
-                opzioni.size = 'large';
-                opzioni.theme = tema();
-                gis.renderButton(nuovo, opzioni);
-            }
-
-            /* IL PRIMO DISEGNO LO RIFACCIAMO NOI, sempre — non solo quando il tema
-             * cambia.
-             *
-             * Lasciata fare da sola, la libreria sceglie da sé come disegnare, e
-             * sul sito vero sceglie l'iframe: un riquadro bianco con dentro il
-             * pulsante nero di Google, che nell'header scuro si vede come un
-             * cerchio nero dentro una scheda bianca. In locale sceglieva il
-             * pulsante nella pagina, ed è per questo che la differenza non si era
-             * vista prima. Chiamandola noi su un elemento nuovo disegna nella
-             * pagina — verificato in produzione — e da lì il fondo glielo diamo
-             * noi, con il colore dell'header.
-             *
-             * Si aspetta che abbia finito il SUO disegno: rifarlo prima vorrebbe
-             * dire che poi lo rifà lei sopra il nostro, e si torna all'iframe. Se
-             * dopo dieci secondi non ha disegnato niente si lascia stare: meglio il
-             * pulsante che c'è di nessun pulsante. */
-            var attese = 0;
-            (function aspetta() {
-                var el = bottone();
-                var gis = window.google && google.accounts && google.accounts.id;
-                if (el && gis && (el.firstChild || attese > 40)) { ridisegna(true); return; }
-                if (++attese > 100) { return; }
-                setTimeout(aspetta, 100);
-            })();
-
-            /* Il tema cambia in due modi: qualcuno lo sceglie (l'header lo
-             * annuncia) oppure cambia quello di sistema, mentre la pagina e'
-             * aperta.
-             *
-             * DUE NOMI perche' ci sono due header: `meetoo:theme` lo grida
-             * header.js di Meetoo, `ws:tema` impostazioni.js di your-theme. Si
-             * ascoltano tutti e due. Finche' se ne ascoltava uno solo, su
-             * isotype il pulsante non veniva ridisegnato mai: restava
-             * `outline`, cioe' bianco, anche passando allo scuro. Il giorno che
-             * i due header saranno uno, qui ne resta uno. */
-            document.addEventListener('meetoo:theme', ridisegna);
-            document.addEventListener('ws:tema', ridisegna);
-            /* E quando la finestra passa da stretta a larga: li' cambia la
-               FORMA, non il colore, ma si ridisegna con la stessa chiamata. */
-            if (largo.addEventListener) { largo.addEventListener('change', ridisegna); }
-            else if (largo.addListener) { largo.addListener(ridisegna); }
-            if (window.matchMedia) {
-                var q = window.matchMedia('(prefers-color-scheme: dark)');
-                if (q.addEventListener) { q.addEventListener('change', ridisegna); }
-                else if (q.addListener) { q.addListener(ridisegna); }
-            }
-        })();
-        </script>
     <?php else: ?>
         <li class="avatar-wrapper">
             <?php

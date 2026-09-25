@@ -1430,3 +1430,11 @@ msgstr "Menu principale"
 #: ../plugins/google-login/template-parts/nav-google-login.php
 msgid "Your User Profile"
 msgstr "Il tuo profilo"
+
+#: ../plugins/google-login/template-parts/nav-google-login.php
+msgid "Sign in"
+msgstr "Accedi"
+
+#: ../plugins/google-login/template-parts/modal-signin.php
+msgid "Sign in with Google to comment, to say you are interested, and to edit what is yours."
+msgstr "Accedi con Google per commentare, dire che ti interessa e modificare quello che è tuo."
