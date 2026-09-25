@@ -30,6 +30,14 @@ $ws_theme_url = ws_theme_url();
  * richiesta. Se uno e' piu' nuovo, si rifanno tutti e due -
  * PRIMA la mappa, perche' l'indice degli eventi prende da lei gli indirizzi.
  *
+ * E prima ancora LE LISTE CON UNA REGOLA (`meetoo:listRule`): «Libri e letture»
+ * dice quali eventi raccoglie, e un evento nuovo che la soddisfa ci entra. E' lo
+ * stesso passaggio che fa il salvataggio di un evento dall'editor
+ * (`save-event.php`) e la manutenzione: qui lo fa anche per chi arriva copiando
+ * una cartella, che prima restava fuori finche' qualcuno non lanciava la
+ * manutenzione a mano. Le voci scritte a mano restano; quelle che la regola non
+ * trova piu' non si tolgono - le regole di `ws_listrule_merge`, non altre.
+ *
  * Poi si RICARICA LA PAGINA. L'instradamento e' gia' avvenuto con la mappa
  * vecchia: la pagina di un evento nuovo, in questa richiesta, e' gia' stata
  * giudicata un 404. Rimandare allo stesso indirizzo costa un giro, una volta
@@ -74,7 +82,7 @@ if(!function_exists('meetoo_derivati_freschi')){
 		/* E il codice che li scrive: una mappa fatta da un costruttore vecchio e'
 		   vecchia anche se nessun contenuto e' cambiato. Senza, una correzione
 		   alla mappa arriva sul server e aspetta il prossimo evento per vedersi. */
-		foreach(array('ws-mappa.php', 'events-index.php') as $codice){
+		foreach(array('ws-listrule.php', 'ws-mappa.php', 'events-index.php') as $codice){
 			$piu_nuovo = max($piu_nuovo, $quando(ws_admin_abspath().'/lib/'.$codice));
 		}
 		/* Nessun file e' piu' nuovo di ADESSO: uno che arriva con una data nel
@@ -93,8 +101,10 @@ if(!function_exists('meetoo_derivati_freschi')){
 			return false;   // un'altra richiesta li sta gia' rifacendo
 		}
 		try {
+			require_once ws_admin_abspath().'/lib/ws-listrule.php';
 			require_once ws_admin_abspath().'/lib/ws-mappa.php';
 			require_once ws_admin_abspath().'/lib/events-index.php';
+			ws_listrule_sync($base, true);
 			ws_mappa_costruisci($radice, 'meetoo', 'it_IT', true);
 			@unlink($radice.'/ws_sitemap.xml');   // il gemello si rifa' da se'
 			event_index_rebuild($base);
