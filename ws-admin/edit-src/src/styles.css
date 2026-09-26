@@ -286,6 +286,9 @@ body {
   .field-row-grid { grid-template-columns: 1fr; }
   .field-row-sep { flex-direction: column; }
   .field-row-sep > .pair-sep-control { display: none; }
+  /* In a column, `flex: 1 1 19rem` (form.css) - meant as a WIDTH - becomes a
+     height: every date field stood in 304px of empty space. */
+  .field-row-sep > .control:not(.pair-sep-control) { flex: 0 0 auto; width: 100%; }
   .grid-spacer { display: none; }
   /* (La data non ha più bisogno di una regola per lo schermo stretto: la sua riga
      va a capo da sola quando lo spazio non basta — vedi `form.css`. Legarla alla
