@@ -21,6 +21,9 @@
 
 // I prefissi dei siti innestati: stessa definizione che usa il CMS per instradare.
 require_once __DIR__ . '/../../ws-core/mounts.php';
+// An occurrence says only what is its own: where it is, what it is called and
+// who organizes it can come from its series (event-inherit.php).
+require_once __DIR__ . '/event-inherit.php';
 
 if (!function_exists('ws_mappa_wspath')) {
 
@@ -302,7 +305,7 @@ if (!function_exists('ws_mappa_wspath')) {
         $doc = [];
         foreach (glob("$localeDir/events/*/index.json") as $f) {
             $j = json_decode((string)@file_get_contents($f), true);
-            if (is_array($j)) $doc[basename(dirname($f))] = $j['mainEntity'] ?? $j;
+            if (is_array($j)) $doc[basename(dirname($f))] = event_with_series($localeDir, $j['mainEntity'] ?? $j);
         }
         $zonaDi = function ($e) use ($cap, $zone): string {
             $id = trim(ws_ref_id_semplice($e['location'] ?? null), '/');
@@ -344,7 +347,7 @@ if (!function_exists('ws_mappa_wspath')) {
         foreach (glob("$localeDir/events/*/index.json") as $f) {
             $doc = json_decode((string)@file_get_contents($f), true);
             if (!is_array($doc)) continue;
-            $e = $doc['mainEntity'] ?? $doc;
+            $e = event_with_series($localeDir, $doc['mainEntity'] ?? $doc);
             $zona = $eventi[basename(dirname($f))] ?? '';
             if ($zona === '') continue;
             foreach ((array)($e['organizer'] ?? []) as $org) {
@@ -487,6 +490,7 @@ if (!function_exists('ws_mappa_wspath')) {
             $doc = json_decode($raw, true);
             if (!is_array($doc)) { $problemi[] = "$rel: index.json illeggibile"; continue; }
             $e = (isset($doc['mainEntity']) && is_array($doc['mainEntity'])) ? $doc['mainEntity'] : $doc;
+            if (strpos($rel, 'events/') === 0) $e = event_with_series($localeDir, $e);
             $tipi = array_map('strval', (array)($e['@type'] ?? []));
 
             $regola = ws_mappa_wspath($rel, $tipi, $ctx, $e);

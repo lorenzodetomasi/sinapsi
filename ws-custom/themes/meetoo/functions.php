@@ -105,6 +105,9 @@ if(!function_exists('meetoo_derivati_freschi')){
 			require_once ws_admin_abspath().'/lib/ws-mappa.php';
 			require_once ws_admin_abspath().'/lib/events-index.php';
 			ws_listrule_sync($base, true);
+			/* The past before anything reads a series: the map too writes titles
+			   and descriptions of occurrences, and it comes before the index. */
+			event_series_freeze($base);
 			ws_mappa_costruisci($radice, 'meetoo', 'it_IT', true);
 			@unlink($radice.'/ws_sitemap.xml');   // il gemello si rifa' da se'
 			event_index_rebuild($base);
@@ -740,6 +743,51 @@ function meetoo_testo_visibile($e){
  * Si legge il file invece di ricostruirlo dall'albero XML: qualunque conversione
  * andata e ritorno è un'occasione per perdere qualcosa, e qui la fedeltà è il punto.
  */
+/**
+ * An occurrence as the site shows it: what it says, and what its series says
+ * where it is silent (ws-admin/lib/event-inherit.php). Null when there is
+ * nothing to add - not an occurrence, or one that says everything itself.
+ *
+ * The page reads SimpleXML, and the XML twin on disk is the occurrence alone:
+ * the completed one is converted here, with the same conversion that makes the
+ * twins, so the page cannot tell the difference.
+ */
+function meetoo_evento_con_serie($rel){
+	$rel = trim((string)$rel, '/');
+	if(strpos($rel, 'events/') !== 0){
+		return null;
+	}
+	require_once ws_admin_abspath().'/lib/event-inherit.php';
+	$base = meetoo_radice_contenuti();
+	$own = event_load_doc($base, $rel);
+	if(!$own or event_series_ref($own) === ''){
+		return null;
+	}
+	$full = event_with_series($base, $own);
+	return $full == $own ? null : $full;
+}
+
+/** The same, as the SimpleXML the templates read. */
+function meetoo_evento_con_serie_xml($rel){
+	$full = meetoo_evento_con_serie($rel);
+	if($full === null){
+		return null;
+	}
+	require_once ws_core_abspath().'/json-to-xml.php';
+	$dir = meetoo_radice_contenuti().'/'.trim((string)$rel, '/');
+	$dom = new DOMDocument();
+	$prima = libxml_use_internal_errors(true);
+	$ok = $dom->loadXML(jsonToWsx(json_encode($full, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)));
+	if($ok){
+		$dom->documentURI = $dir.'/index.json';
+		$dom->xinclude();
+		ws_xinclude_da_json($dom, $dir);
+	}
+	libxml_clear_errors();
+	libxml_use_internal_errors($prima);
+	return $ok ? ws_simplexml_import_dom($dom) : null;
+}
+
 function meetoo_jsonld(){
 	global $ws_query;
 	if(empty($ws_query['content'])){
@@ -752,6 +800,15 @@ function meetoo_jsonld(){
 	$raw = trim((string)file_get_contents($abspath));
 	if($raw === '' or json_decode($raw) === null){
 		return '';
+	}
+	/* An occurrence tells search engines what its series says where it is
+	 * silent: without it, the third Spritzalibro would have no description. */
+	$pezzi = explode('/', trim((string)$ws_query['content'], '/'), 3);
+	$full = isset($pezzi[2]) ? meetoo_evento_con_serie($pezzi[2]) : null;
+	if($full !== null){
+		$doc = json_decode($raw, true);
+		if(isset($doc['mainEntity']) and is_array($doc['mainEntity'])){ $doc['mainEntity'] = $full; } else { $doc = $full; }
+		$raw = (string)json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 	}
 	// `</script>` dentro una descrizione chiuderebbe il blocco: si spezza la
 	// sequenza senza toccare il significato del JSON.

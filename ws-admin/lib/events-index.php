@@ -125,12 +125,16 @@ if (!function_exists('event_index_org_type')) {
 // che affidarsi a chi ci include.
 require_once __DIR__ . '/ws-auth.php';
 require_once __DIR__ . '/event-dates.php';
+require_once __DIR__ . '/event-inherit.php';
 
 // Voce compatta dell'indice a partire dal documento evento e dal percorso (schema c).
 // $base (.../contents/meetoo/it_IT) serve a risolvere il luogo: se omesso, la voce
 // place riporta solo ciò che è scritto nell'evento.
 if (!function_exists('event_index_item')) {
     function event_index_item(array $doc, string $relPath, string $base = ''): array {
+        // An occurrence as the site shows it: completed by its series
+        // (ws-admin/lib/event-inherit.php). Every path to the index passes here.
+        if ($base !== '') $doc = event_with_series($base, $doc);
         // cap dal nome cartella: <AAAAMMGGThhmm>-<cap>[-slug]
         $cap = '';
         if (preg_match('/^\d{8}T\d{4}-([A-Za-z0-9]+)/', basename($relPath), $m)) $cap = $m[1];
@@ -294,6 +298,8 @@ if (!function_exists('event_index_rebuild')) {
         $eventsDir = rtrim($base, '/') . '/events';
         $idxDir = "$eventsDir/_index";
         if (!is_dir($eventsDir)) return ['indexed' => 0, 'skipped' => 0, 'organizers' => 0, 'series' => 0, 'error' => 'events dir mancante'];
+        // Before anything reads a series: the past occurrences keep what they had.
+        event_series_freeze($base);
 
         // Azzera per una ricostruzione pulita (rimuove voci obsolete). glob *.json prende
         // sia i file "prossimi" sia gli ".archive.json".
@@ -403,6 +409,8 @@ if (!function_exists('event_index_sync')) {
     function event_index_sync(string $base, string $relPath, array $doc): array {
         $idxDir = rtrim($base, '/') . '/events/_index';
         $rel = trim($relPath, '/');
+        // A series just saved: its past occurrences keep the values they had.
+        event_series_freeze($base);
 
         $isSeries = function (array $d): bool {
             $t = isset($d['@type']) ? (is_array($d['@type']) ? $d['@type'] : [$d['@type']]) : [];

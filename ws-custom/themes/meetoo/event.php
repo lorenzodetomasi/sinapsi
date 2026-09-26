@@ -19,6 +19,8 @@ include_template('template-parts/carte');
 include_template('template-parts/elenchi');
 
 $e = !empty($ws_content->mainEntity) ? $ws_content->mainEntity : $ws_content;
+/* An occurrence writes only what is its own; the rest comes from its series. */
+$e = meetoo_evento_con_serie_xml(preg_replace('#^[^/]+/[^/]+/#', '', trim((string)($ws_query['content'] ?? ''), '/'))) ?: $e;
 $titolo = !empty($e->name) ? (string)$e->name : (string)($rewrite_rule->title ?? '');
 
 /** Il valore di un campo, '' se non c'è: SimpleXML non ha `??` che tenga. */
