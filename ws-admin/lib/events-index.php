@@ -124,6 +124,7 @@ if (!function_exists('event_index_org_type')) {
 // organizzatore prese dal nome invece che dallo slug). Meglio dipenderci apertamente
 // che affidarsi a chi ci include.
 require_once __DIR__ . '/ws-auth.php';
+require_once __DIR__ . '/event-dates.php';
 
 // Voce compatta dell'indice a partire dal documento evento e dal percorso (schema c).
 // $base (.../contents/meetoo/it_IT) serve a risolvere il luogo: se omesso, la voce
@@ -163,6 +164,11 @@ if (!function_exists('event_index_item')) {
             }
         }
 
+        /* All its dates, not only the first: replicas, a weekly rule, a period.
+         * The site picks the next one when it draws a list (see
+         * ws-admin/lib/event-dates.php); here they are only written down. */
+        $quando = event_dates_expand($doc);
+
         return [
             'path'         => $relPath,
             'kind'         => $kind,
@@ -190,6 +196,10 @@ if (!function_exists('event_index_item')) {
             // Cover risolta (dalla radice), con ripiego sulla serie: vedi event_index_cover.
             'cover'        => event_index_cover($doc, $relPath, $base),
             'dateModified' => (string)($doc['dateModified'] ?? ''),
+            'pattern'      => $quando['pattern'],
+            'dates'        => $quando['dates'],
+            'until'        => $quando['until'],
+            'rule'         => $quando['rule'],
         ];
     }
 }
@@ -233,6 +243,17 @@ if (!function_exists('event_index_upsert_file')) {
 if (!function_exists('event_is_archived')) {
     function event_is_archived(array $item): bool {
         if (($item['kind'] ?? '') === 'series') return false;
+        // Past when its LAST date is: a show with a replica tomorrow is not.
+        $dates = $item['dates'] ?? [];
+        if ($dates) {
+            $last = end($dates);
+            $d = ($last['end'] ?? '') !== '' ? $last['end'] : ($last['start'] ?? '');
+            if (strlen($d) === 10) $d .= 'T23:59:59';   // a whole day lasts until its end
+            $t = $d !== '' ? strtotime($d) : false;
+            return $t !== false && $t < time();
+        }
+        // A rule without an end never becomes past.
+        if (($item['pattern'] ?? '') === 'rule' && ($item['until'] ?? '') === '') return false;
         $d = ($item['endDate'] ?? '') !== '' ? $item['endDate'] : ($item['startDate'] ?? '');
         $t = $d !== '' ? strtotime($d) : false;
         return $t !== false && $t < time();

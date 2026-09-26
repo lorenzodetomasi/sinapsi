@@ -1463,3 +1463,64 @@ msgstr "Chiedi a un super-admin di aggiungere il tuo indirizzo."
 #: ../../ws-core/private-site-gate.php
 msgid "Sign out"
 msgstr "Esci"
+
+#: ../themes/meetoo/template-parts/carte.php
+#, php-format
+msgid "until %s"
+msgstr "fino al %s"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Mon"
+msgstr "lun"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Tue"
+msgstr "mar"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Wed"
+msgstr "mer"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Thu"
+msgstr "gio"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Fri"
+msgstr "ven"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Sat"
+msgstr "sab"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "Sun"
+msgstr "dom"
+
+#: ../themes/meetoo/template-parts/carte.php
+#, php-format
+msgid "every %s"
+msgstr "ogni %s"
+
+#: ../themes/meetoo/template-parts/carte.php
+#, php-format
+msgid "every other %s"
+msgstr "%s alterni"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "every day"
+msgstr "tutti i giorni"
+
+#: ../themes/meetoo/template-parts/carte.php
+msgid "every month"
+msgstr "ogni mese"
+
+#: ../themes/meetoo/template-parts/carte.php
+#, php-format
+msgid "and %s"
+msgstr "e %s"
+
+#: ../themes/meetoo/template-parts/carte.php
+#, php-format
+msgid "and %d more dates"
+msgstr "e altre %d date"

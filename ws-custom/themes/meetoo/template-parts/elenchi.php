@@ -273,6 +273,14 @@ function meetoo_lista_di_eventi($ent){
  * passato. Le date non stanno nella lista — la lista dice solo `{"@id": …}` — ma
  * nell'indice, che è già in memoria.
  */
+/** Sort by the NEXT date, not the first: a weekly lab begun in September comes
+ *  after tomorrow's show if its next Monday is later. */
+function meetoo_per_prossima_data($a, $b){
+	$x = meetoo_prossima_data($a);
+	$y = meetoo_prossima_data($b);
+	return strcmp((string)($x['start'] ?? ($a['startDate'] ?? '')), (string)($y['start'] ?? ($b['startDate'] ?? '')));
+}
+
 function meetoo_eventi_lista($ent, $quale){
 	$ora = time();
 	$scelti = array();
@@ -286,10 +294,8 @@ function meetoo_eventi_lista($ent, $quale){
 			continue;
 		}
 		$serie = (($ev['kind'] ?? '') === 'series');
-		// Un evento è «prossimo» finché non è finito: quello di stasera resta in
-		// elenco anche se è cominciato un'ora fa.
-		$fine = strtotime((string)(!empty($ev['endDate']) ? $ev['endDate'] : ($ev['startDate'] ?? '')));
-		$passato = ($fine and $fine < $ora);
+		// Past when none of its dates is still to come (see meetoo_prossima_data).
+		$passato = (meetoo_prossima_data($ev, $ora) === null);
 		$suo = $serie ? 'collezioni' : ($passato ? 'archivio' : 'eventi');
 		if($suo === $quale){
 			$scelti[] = $ev;
@@ -304,9 +310,7 @@ function meetoo_eventi_lista($ent, $quale){
 			return strcasecmp((string)($a['name'] ?? ''), (string)($b['name'] ?? ''));
 		});
 	} else {
-		usort($scelti, function($a, $b){
-			return strcmp((string)($a['startDate'] ?? ''), (string)($b['startDate'] ?? ''));
-		});
+		usort($scelti, 'meetoo_per_prossima_data');
 	}
 	$out = array();
 	foreach($scelti as $ev){
@@ -626,18 +630,14 @@ function meetoo_voci($quale){
 			if($serie){
 				continue;
 			}
-			// Un evento è «prossimo» finché non è finito: quello di stasera resta in
-			// elenco anche se è cominciato un'ora fa.
-			$fine = strtotime((string)(!empty($ev['endDate']) ? $ev['endDate'] : ($ev['startDate'] ?? '')));
-			if($fine and $fine < $ora){
+			// Upcoming while one of its dates is still to come, tonight's included.
+			if(meetoo_prossima_data($ev, $ora) === null){
 				continue;
 			}
 			$scelti[] = $ev;
 		}
 		if($quale === 'eventi'){
-			usort($scelti, function($a, $b){
-				return strcmp((string)($a['startDate'] ?? ''), (string)($b['startDate'] ?? ''));
-			});
+			usort($scelti, 'meetoo_per_prossima_data');
 			foreach($scelti as $ev){
 				$href = meetoo_indirizzo($ev['path'] ?? '');
 				if($href === '' or !meetoo_di_qui($href)){ continue; }

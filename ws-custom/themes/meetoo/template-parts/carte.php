@@ -167,6 +167,93 @@ function mt_mese_num($n){
 }
 
 /**
+ * The next date of an event, or null when all of them are past.
+ *
+ * The index writes down every date (replicas, a weekly rule, a period: see
+ * ws-admin/lib/event-dates.php); which one is "next" depends on today, so it
+ * is chosen here, when the list is drawn. An entry written before the index
+ * had `dates` has one: its startDate. A date is next until it is OVER - the
+ * show of tonight stays in the list after it has begun.
+ */
+function meetoo_prossima_data($ev, $ora = null){
+	$ora = $ora === null ? time() : $ora;
+	$date = !empty($ev['dates']) ? $ev['dates']
+		: array(array('start' => (string)($ev['startDate'] ?? ''), 'end' => (string)($ev['endDate'] ?? '')));
+	foreach($date as $d){
+		$fine = (string)(($d['end'] ?? '') !== '' ? $d['end'] : ($d['start'] ?? ''));
+		if($fine === ''){
+			continue;
+		}
+		if(strlen($fine) === 10){
+			$fine .= 'T23:59:59';   // a whole day lasts until its end
+		}
+		$t = strtotime($fine);
+		if($t !== false and $t >= $ora){
+			return $d;
+		}
+	}
+	return null;
+}
+
+/**
+ * What an event with more than one date says under its title, in a few words:
+ * "every Monday · until 28 Jun", "until 15 Nov", "and 30 Oct", "and 2 more
+ * dates". '' for a single date, which the date block already says.
+ */
+function meetoo_quando_breve($ev, $prossima){
+	$giorno = function($iso){
+		$d = meetoo_istante((string)$iso);
+		return $d ? $d->format('j').' '.mt_mese_num((int)$d->format('n')) : '';
+	};
+	$schema = (string)($ev['pattern'] ?? '');
+	$fino = !empty($ev['until']) ? sprintf(__('until %s'), $giorno($ev['until'])) : '';
+	if($schema === 'rule' and !empty($ev['rule'])){
+		$r = $ev['rule'];
+		$lunghi = array(1 => __('Monday'), __('Tuesday'), __('Wednesday'), __('Thursday'), __('Friday'), __('Saturday'), __('Sunday'));
+		$corti = array(1 => __('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat'), __('Sun'));
+		$giorni = array_values(array_filter(array_map('intval', (array)($r['days'] ?? array()))));
+		$ogni = '';
+		if(($r['freq'] ?? '') === 'W' and $giorni){
+			// Lowercase: the day sits in the middle of a phrase ("ogni lunedì").
+			$nomi = count($giorni) === 1 ? mb_strtolower((string)($lunghi[$giorni[0]] ?? '')) : implode(', ', array_map(function($n) use ($corti){ return $corti[$n] ?? ''; }, $giorni));
+			$ogni = (int)($r['interval'] ?? 1) > 1 ? sprintf(__('every other %s'), $nomi) : sprintf(__('every %s'), $nomi);
+		} else if(($r['freq'] ?? '') === 'D'){
+			$ogni = __('every day');
+		} else if(($r['freq'] ?? '') === 'M'){
+			$ogni = __('every month');
+		}
+		return implode(' · ', array_filter(array($ogni, $fino)));
+	}
+	if($schema === 'period'){
+		return $fino;
+	}
+	if($schema === 'dates' and $prossima){
+		$dopo = array();
+		$visto = false;
+		foreach((array)($ev['dates'] ?? array()) as $d){
+			if($visto){
+				$dopo[] = $d;
+			}
+			if(($d['start'] ?? '') === ($prossima['start'] ?? null)){
+				$visto = true;
+			}
+		}
+		if(count($dopo) === 1){
+			$uno = (string)$dopo[0]['start'];
+			// The same day at another hour: "and 19:30"; another day: "and 30 Oct".
+			if(substr($uno, 0, 10) === substr((string)$prossima['start'], 0, 10) and preg_match('/T(\d{2}:\d{2})/', $uno, $m)){
+				return sprintf(__('and %s'), $m[1]);
+			}
+			return sprintf(__('and %s'), $giorno($uno));
+		}
+		if(count($dopo) > 1){
+			return sprintf(__('and %d more dates'), count($dopo));
+		}
+	}
+	return '';
+}
+
+/**
  * La card di un evento, da una voce dell'indice.
  *
  * `$o['organizer'] = false` toglie l'organizzatore (nelle pagine che sono già
@@ -174,7 +261,10 @@ function mt_mese_num($n){
  */
 function mt_card_evento($ev, $o = array()){
 	$path = (string)(isset($ev['path']) ? $ev['path'] : (isset($ev['@id']) ? $ev['@id'] : ''));
-	$inizio = trim((string)(isset($ev['startDate']) ? $ev['startDate'] : ''));
+	/* The date block shows the NEXT date: for replicas, a rule or a period the
+	 * first one may be long gone. In the archive, where none is next, the first. */
+	$prossima = meetoo_prossima_data($ev);
+	$inizio = trim((string)($prossima ? $prossima['start'] : (isset($ev['startDate']) ? $ev['startDate'] : '')));
 	/* Il giorno e l'ora si leggono NEL FUSO SCRITTO NELLA DATA, non in quello del
 	 * server: le sei di sera a Ostia sono le quattro a Greenwich, e il server sta
 	 * a Greenwich. Vale anche per il giorno — un evento delle 00:30 cambia data. */
@@ -191,6 +281,10 @@ function mt_card_evento($ev, $o = array()){
 	// giorno è dirgli addosso una cosa falsa.
 	if($d and preg_match('/T\d/', $inizio)){
 		$meta[] = mt_meta('schedule', $d->format('H:i'));
+	}
+	$altre = $prossima ? meetoo_quando_breve($ev, $prossima) : '';
+	if($altre !== ''){
+		$meta[] = mt_meta(($ev['pattern'] ?? '') === 'rule' ? 'event_repeat' : 'date_range', $altre);
 	}
 	if((!isset($o['organizer']) or $o['organizer'] !== false) and !empty($ev['organizer'])){
 		$meta[] = mt_meta(mt_org_icona(isset($ev['organizerType']) ? $ev['organizerType'] : '', $ev['organizer']), $ev['organizer']);
