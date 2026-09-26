@@ -213,12 +213,14 @@ export function avvisiQuando(d, occorrenze = null) {
   }
 
   if (!serie) {
-    if (d?.startDate && d?.endDate && giorno(d.startDate) !== giorno(d.endDate)) {
+    // Only in «Una data»: the other modes are made for several days.
+    const modo = d?.quando?.modo || 'una';
+    if (modo === 'una' && d?.startDate && d?.endDate && giorno(d.startDate) !== giorno(d.endDate)) {
       out.push({
         tipo: 'avviso',
         testo:
-          'L’evento comincia un giorno e finisce un altro. Se sono più giornate distinte, ' +
-          'di solito conviene una Collezione con un’occorrenza per giorno.',
+          'L’evento comincia un giorno e finisce un altro. Se è una mostra o un festival usa «Da… a…»; ' +
+          'se sono repliche in giorni diversi, «Più date».',
       });
     }
     // Programma: gli orari stanno dentro la giornata dell'evento?

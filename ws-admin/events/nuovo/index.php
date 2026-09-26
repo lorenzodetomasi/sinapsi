@@ -164,8 +164,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="variante">
               <input type="radio" name="v-singolo" value="singolo" checked>
               <span>
-                <span class="v-nome">Dall'inizio alla fine, di seguito</span>
+                <span class="v-nome">Una data</span>
                 <p class="v-esempio">Comincia, dura, finisce.</p>
+              </span>
+            </label>
+            <label class="variante">
+              <input type="radio" name="v-singolo" value="repliche">
+              <span>
+                <span class="v-nome">Più date, stesso evento</span>
+                <p class="v-esempio">Le repliche di uno spettacolo: il 29 e il 30 ottobre, alle
+                  17.30 e alle 19.30. Una pagina sola, con tutte le date.</p>
+              </span>
+            </label>
+            <label class="variante">
+              <input type="radio" name="v-singolo" value="regola">
+              <span>
+                <span class="v-nome">Si ripete con regolarità</span>
+                <p class="v-esempio">Un laboratorio ogni lunedì da settembre a giugno. Le date
+                  le calcola il sito; scrivi solo le eccezioni.</p>
+              </span>
+            </label>
+            <label class="variante">
+              <input type="radio" name="v-singolo" value="periodo">
+              <span>
+                <span class="v-nome">Da un giorno a un altro</span>
+                <p class="v-esempio">Una mostra, un festival, un laboratorio di una settimana —
+                  con gli orari di apertura, se ci sono.</p>
               </span>
             </label>
             <label class="variante">
@@ -184,25 +208,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <span class="material-symbols-outlined">collections_bookmark</span>
             <div>
               <div class="tipo-nome">Una collezione di eventi</div>
-              <p class="tipo-desc">Più appuntamenti che stanno insieme, ognuno con la sua data.</p>
-              <p class="tipo-esempio">Il club del libro di ogni mese, una rassegna, un festival.</p>
+              <p class="tipo-desc">Più appuntamenti che stanno insieme, ognuno con la sua pagina.</p>
+              <p class="tipo-esempio">Il club del libro di ogni mese, dove ogni incontro ha il suo libro.
+                (Se sono solo repliche della stessa cosa, basta un evento con più date.)</p>
             </div>
           </div>
           <div class="varianti">
             <label class="variante">
               <input type="radio" name="v-serie" value="serie-regolare" checked>
               <span>
-                <span class="v-nome">Si ripete con regolarità</span>
-                <p class="v-esempio">Ogni martedì, il primo sabato del mese. Le date le
-                  calcola il sito dalla ricorrenza.</p>
+                <span class="v-nome">Con una ricorrenza</span>
+                <p class="v-esempio">Ogni giovedì, il primo sabato del mese: la ricorrenza
+                  propone le date, e ogni occorrenza diventa una pagina che eredita dalla collezione.</p>
               </span>
             </label>
             <label class="variante">
               <input type="radio" name="v-serie" value="serie-variabile">
               <span>
-                <span class="v-nome">Più giornate, senza un ritmo fisso</span>
-                <p class="v-esempio">Un festival su tre weekend, una rassegna con date
-                  decise volta per volta. Le aggiungi tu, una a una.</p>
+                <span class="v-nome">Con date decise volta per volta</span>
+                <p class="v-esempio">Tre giovedì fra ottobre e dicembre, senza un ritmo fisso.
+                  Le aggiungi tu; per ognuna «Crea bozza» fa la sua cartella.</p>
               </span>
             </label>
           </div>

@@ -653,3 +653,61 @@ pre.code-area-testo .line-error {
 }
 
 .code-area-errori li + li { margin-top: var(--sp-xs); }
+
+/* ---- Quando, collezioni, occorrenze (QuandoRenderer, SerieRenderer, OccorrenzeRenderer) ---- */
+.quando { display: grid; gap: var(--sp-sm); margin: var(--sp-xs) 0 var(--sp-sm); }
+.quando-modi { display: flex; flex-wrap: wrap; gap: var(--sp-xs); }
+.quando-modi button {
+  display: inline-flex; align-items: center; gap: var(--sp-xs); cursor: pointer;
+  background: transparent; color: var(--text); font-size: var(--fs-label); font-weight: 600;
+  border: 1px solid var(--border); border-radius: var(--r-pill); padding: var(--sp-xs) var(--sp-md);
+}
+.quando-modi button .material-symbols-outlined { font-size: 1.125rem; color: var(--text-dim); }
+.quando-modi button.on { border-color: var(--accent); color: var(--accent); background: var(--surface-2); }
+.quando-modi button.on .material-symbols-outlined { color: var(--accent); }
+.quando-aiuto, .quando-nota { margin: 0; color: var(--text-dim); font-size: var(--fs-label); }
+.quando-linea, .quando-riga, .occ-riga { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-xs) var(--sp-sm); }
+.quando-righe, .occ-righe, .quando-regola, .quando-periodo { display: grid; gap: var(--sp-sm); }
+.quando input[type="date"], .quando input[type="time"], .occorrenze input[type="date"], .occorrenze input[type="time"] { width: auto; }
+.quando-num { width: 4.5em !important; }
+.quando-giorno { min-width: 6.5em; color: var(--text-dim); font-size: var(--fs-label); }
+.quando-orari { display: inline-flex; align-items: center; gap: var(--sp-xs); }
+.quando-giorni { display: inline-flex; gap: 2px; }
+.quando-giorni button {
+  width: 2em; height: 2em; border-radius: 50%; cursor: pointer; font-weight: 600;
+  border: 1px solid var(--border); background: transparent; color: var(--text);
+}
+.quando-giorni button.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.quando-chip {
+  display: inline-flex; align-items: center; gap: 2px; padding: 0 var(--sp-xs) 0 var(--sp-sm);
+  border: 1px solid var(--border); border-radius: var(--r-pill); font-size: var(--fs-label);
+}
+.quando-chip button { border: 0; background: transparent; color: var(--text-dim); cursor: pointer; font-size: 1.1em; }
+.quando-anteprima ul { columns: 3 10em; margin: var(--sp-xs) 0 0; padding-left: 1.2em; font-size: var(--fs-label); color: var(--text-dim); }
+.btn-link {
+  display: inline-flex; align-items: center; gap: var(--sp-xs); padding: 0; cursor: pointer;
+  border: 0; background: transparent; color: var(--accent); font-size: var(--fs-label); font-weight: 600;
+}
+.btn-icona {
+  display: inline-flex; align-items: center; justify-content: center; width: 2em; height: 2em; cursor: pointer;
+  border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--text-dim);
+}
+.btn-icona:hover { border-color: var(--border); color: var(--danger); }
+.btn-icona .material-symbols-outlined { font-size: 1.125rem; }
+.occ-luogo { flex: 1 1 14em; min-width: 12em; }
+.occ-stato { display: inline-flex; align-items: center; gap: var(--sp-xs); margin-left: auto; }
+.occ-errore { flex-basis: 100%; }
+.occ-vuoto { display: grid; gap: var(--sp-sm); justify-items: start; }
+.occ-vuoto p { margin: 0; color: var(--text-dim); }
+.occ-azioni { display: flex; flex-wrap: wrap; gap: var(--sp-sm); }
+.serie-scelta select { max-width: 100%; }
+.banner-ereditata {
+  display: flex; gap: var(--sp-sm); align-items: flex-start; margin: 0 0 var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md); border: 1px solid var(--accent); border-radius: var(--r-sm);
+  background: var(--surface-2); font-size: var(--fs-label);
+}
+.banner-ereditata .material-symbols-outlined { color: var(--accent); }
+
+.occ-testa { display: flex; align-items: center; gap: var(--sp-sm); margin: var(--sp-md) 0 var(--sp-sm); }
+.occ-testa .material-symbols-outlined { color: var(--text-dim); }
+.occ-testa .field-label { margin: 0; font-weight: 700; }

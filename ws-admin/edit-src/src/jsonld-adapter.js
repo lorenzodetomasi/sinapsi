@@ -1,4 +1,5 @@
 import { conOffset, senzaOffset, fusoPer } from './quando.js';
+import { quandoDa, quandoPer, QUANDO_VUOTO, giornoDi, oraDi as oraIso } from './quandoModello.js';
 
 // Adapter tra il modello "piatto" del form e la forma JSON-LD reale (index.json).
 // Tutte le chiavi @-prefissate, i @type (anche array) e i namespace (meetoo:…)
@@ -172,7 +173,22 @@ export function fromJsonLd(doc) {
           startDate: senzaOffset(s.startDate ?? ''),
           endDate: senzaOffset(s.endDate ?? ''),
         })),
-    occurrences: isSeries ? subEventArr.map((s) => ({ id: s['@id'] ?? '', name: s.name ?? '' })) : [],
+    /* The occurrences of a series: the reference, and what is needed to create
+     * its folder - day, times, and a place only when it is not the series'. The
+     * occurrence's own file is the truth; these are written in the series too,
+     * so that the series knows its dates before the folders exist. */
+    occurrences: isSeries
+      ? subEventArr.map((s) => ({
+          id: s['@id'] ?? '',
+          name: s.name ?? '',
+          giorno: giornoDi(s.startDate),
+          dalle: oraIso(s.startDate),
+          alle: oraIso(s.endDate),
+          luogo: { id: s.location?.['@id'] ?? '', name: s.location?.name ?? '' },
+        }))
+      : [],
+    // «Quando» of a single event: one date, several, a rule, a period (quandoModello.js).
+    quando: isSeries ? JSON.parse(JSON.stringify(QUANDO_VUOTO)) : quandoDa(doc),
     // Riferimento alla serie contenitrice (occorrenza → serie). Non ha un campo UI dedicato,
     // ma va preservato nel round-trip per non perdere l'appartenenza alla collection al salvataggio.
     superEvent: typeof doc.superEvent === 'string' ? doc.superEvent : (doc.superEvent?.['@id'] ?? ''),
@@ -262,10 +278,27 @@ export function toJsonLd(d) {
       ...(s.endDate ? { endDate: conOffset(s.endDate, fuso) } : {}),
     }));
   const occurrences = (d.occurrences ?? [])
-    .filter((o) => o.id || o.name)
-    .map((o) => ({ ...(o.id ? { '@id': toEventRef(o.id) } : {}), '@type': 'Event', ...(o.name ? { name: o.name } : {}) }));
+    .filter((o) => o.id || o.name || o.giorno)
+    .map((o) => {
+      const inizio = o.giorno ? (o.dalle ? `${o.giorno}T${o.dalle}` : o.giorno) : '';
+      const fine = o.giorno && o.alle ? `${o.giorno}T${o.alle}` : '';
+      return {
+        ...(o.id ? { '@id': toEventRef(o.id) } : {}),
+        '@type': 'Event',
+        ...(o.name ? { name: o.name } : {}),
+        ...(inizio ? { startDate: conOffset(inizio, fuso) } : {}),
+        ...(fine ? { endDate: conOffset(fine, fuso) } : {}),
+        ...(o.luogo?.id ? { location: { '@id': o.luogo.id, '@type': 'Place', ...(o.luogo.name ? { name: o.luogo.name } : {}) } } : {}),
+      };
+    });
   const subEvent = isSeries ? occurrences : program;
-  const schedule = isSeries ? toSchedule(d.eventSchedule, fuso) : undefined;
+  /* The dates of a single event come from «Quando» when it is not a plain
+   * single date: replicas, a rule or a period become an eventSchedule, and
+   * startDate/endDate the first and last day (quandoModello.js). */
+  const q = isSeries ? null : quandoPer(d.quando, fuso);
+  const inizio = q ? q.startDate : d.startDate;
+  const fine = q ? q.endDate : d.endDate;
+  const schedule = isSeries ? toSchedule(d.eventSchedule, fuso) : q?.eventSchedule;
 
   // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
   const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
@@ -336,9 +369,9 @@ export function toJsonLd(d) {
      * a Ostia e «17:30» a Berlino sono due istanti diversi, e chi legge il JSON da
      * fuori non ha modo di saperlo. Il NOME del fuso viaggia a parte, perché dallo
      * scarto non si ricava (+02:00 d'estate ce l'ha mezza Europa). */
-    ...(d.startDate ? { startDate: conOffset(d.startDate, fuso) } : {}),
-    ...(d.endDate ? { endDate: conOffset(d.endDate, fuso) } : {}),
-    ...(d.startDate || d.endDate ? { 'meetoo:timezone': fuso } : {}),
+    ...(inizio ? { startDate: conOffset(inizio, fuso) } : {}),
+    ...(fine ? { endDate: conOffset(fine, fuso) } : {}),
+    ...(inizio || fine ? { 'meetoo:timezone': fuso } : {}),
     ...(d.typicalAgeRange ? { typicalAgeRange: d.typicalAgeRange } : {}),
     ...(d.eventAttendanceMode ? { eventAttendanceMode: d.eventAttendanceMode } : {}),
     ...(physical ? { maximumPhysicalAttendeeCapacity: physical } : {}),

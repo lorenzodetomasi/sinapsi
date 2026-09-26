@@ -23,6 +23,9 @@ import { urlPagina } from './pagina.js';
 import EventIdRenderer, { eventIdTester } from './EventIdRenderer.jsx';
 import TimezoneRenderer, { timezoneTester } from './TimezoneRenderer.jsx';
 import CoerenzaRenderer, { coerenzaTester } from './CoerenzaRenderer.jsx';
+import SerieRenderer, { serieTester } from './SerieRenderer.jsx';
+import QuandoRenderer, { quandoTester } from './QuandoRenderer.jsx';
+import OccorrenzeRenderer, { occorrenzeTester } from './OccorrenzeRenderer.jsx';
 import { loadEntities, findEntityById } from './entities.js';
 import JsonValidationPane from './JsonValidationPane.jsx';
 import GroupRenderer, { groupTester } from './GroupRenderer.jsx';
@@ -33,6 +36,8 @@ import RinominaModal from './RinominaModal.jsx';
 import { diffForm, mergeChoices, pathToClass } from './diff.js';
 import { difettoId, percorsoDa } from './eventId.js';
 import { API_BASE, CONTENT_BASE, SAVE_EVENT_URL, SITE } from './config.js';
+import { serieDi, eSerie, completa, soloDifferenze } from './ereditarieta.js';
+import { EditorContext } from './editorContext.js';
 import { supportsFs, ensurePermission, writeInto, downloadFile, idbGet, idbSet, idbDel } from './fsSave.js';
 
 const renderers = [
@@ -56,6 +61,9 @@ const renderers = [
   { tester: eventIdTester, renderer: EventIdRenderer },
   { tester: timezoneTester, renderer: TimezoneRenderer },
   { tester: coerenzaTester, renderer: CoerenzaRenderer },
+  { tester: serieTester, renderer: SerieRenderer },
+  { tester: quandoTester, renderer: QuandoRenderer },
+  { tester: occorrenzeTester, renderer: OccorrenzeRenderer },
 ];
 
 // Campi derivati/gestiti da escludere dal confronto (calcolati o iniettati dal server).
@@ -91,6 +99,9 @@ const ADMIN_ROOT = /\/ws-admin\//.test(window.location.pathname)
 
 export default function App() {
   const [data, setData] = useState(() => deriveCapacities(fromJsonLd(blankJsonLd)));
+  /* The series this event is an occurrence of: { rel, doc } or null. The form
+   * shows the occurrence complete; the file keeps only what differs from it. */
+  const [serieMadre, setSerieMadre] = useState(null);
   const [tab, setTab] = useState('form');
 
   // File operations (Fase 1: carica · Fase 2: apri web · Fase 3: salva su PC). Flash = messaggio transitorio.
@@ -181,7 +192,13 @@ export default function App() {
     const tipo = q.get('tipo');            // ?tipo=… → arriva dalla scelta fatta prima
     if (from) loadFromWeb(from, true);
     else if (id) loadFromWeb(id);
-    else if (tipo) setData(deriveCapacities(fromJsonLd(docNuovo(tipo))));
+    else if (tipo) {
+      // The shape chosen before the form starts «Quando» in the right mode.
+      const d = fromJsonLd(docNuovo(tipo));
+      const modo = { repliche: 'piu', regola: 'regola', periodo: 'periodo' }[tipo];
+      if (modo) d.quando = { ...d.quando, modo };
+      setData(deriveCapacities(d));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -190,7 +207,13 @@ export default function App() {
   const [xmlError, setXmlError] = useState('');
   const seq = useRef(0);
 
-  const jsonld = useMemo(() => toJsonLd(data), [data]);
+  /* What goes into the file. For an occurrence, whatever is still equal to its
+   * series stays out: it remains inherited (see ereditarieta.js). */
+  const perIlFile = useCallback((d) => {
+    const j = toJsonLd(d);
+    return serieMadre && serieDi(j) === serieMadre.rel ? soloDifferenze(j, serieMadre.doc, serieMadre.rel) : j;
+  }, [serieMadre]);
+  const jsonld = useMemo(() => perIlFile(data), [data, perIlFile]);
   const payload = useMemo(() => JSON.stringify(jsonld, null, 2), [jsonld]);
 
   // Validazione del JSON-LD generato, riusando validate_json del backend PHP.
@@ -426,7 +449,10 @@ export default function App() {
     } catch { /* offline o non esistente → trattato come nuovo */ }
 
     if (stored) {
-      const storedData = deriveCapacities(fromJsonLd(stored));
+      // An occurrence is compared complete, as the form shows it: otherwise every
+      // inherited field would look like a change.
+      const completo = serieMadre && serieDi(stored) === serieMadre.rel ? completa(stored, serieMadre.doc, serieMadre.rel) : stored;
+      const storedData = deriveCapacities(fromJsonLd(completo));
       const changes = diffForm(storedData, data, DIFF_EXCLUDE);
       setChangedPaths(new Set(changes.map((c) => c.path)));
       if (changes.length) { setDiff({ changes, rel }); return; } // apre il pannello; salva dopo la scelta
@@ -457,7 +483,7 @@ export default function App() {
   // Conferma dal pannello diff: costruisce i dati uniti e salva.
   function confirmDiff(keepTheirs) {
     const merged = mergeChoices(data, diff.changes, keepTheirs);
-    const mergedPayload = JSON.stringify(toJsonLd(deriveCapacities(merged)), null, 2);
+    const mergedPayload = JSON.stringify(perIlFile(deriveCapacities(merged)), null, 2);
     const rel = diff.rel;
     doSaveWeb(rel, mergedPayload, () => { setData(deriveCapacities(merged)); setDiff(null); });
   }
@@ -524,6 +550,7 @@ export default function App() {
   // Nuovo evento: svuota il form riportandolo alla configurazione base e ripulisce
   // l'URL (?id=…) e i marcatori del confronto.
   function newEvent() {
+    setSerieMadre(null);
     setData(deriveCapacities(fromJsonLd(blankJsonLd)));
     setChangedPaths(new Set());
     setDiff(null);
@@ -561,6 +588,54 @@ export default function App() {
   // asCopy: apre l'evento come BASE per uno nuovo (duplica). Toglie ciò che
   // identifica l'originale — @id (lo si rigenera salvando), date di sistema e
   // l'appartenenza alle occorrenze — così un salvataggio non sovrascrive la fonte.
+  /** The entity at a content path, or null. */
+  async function leggiEvento(rel) {
+    try {
+      const res = await fetch(resolveEventUrl(rel), { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      if (!res.ok || !(res.headers.get('content-type') || '').includes('json')) return null;
+      const j = await res.json();
+      return j && typeof j === 'object' && j.mainEntity && typeof j.mainEntity === 'object' ? j.mainEntity : j;
+    } catch { return null; }
+  }
+
+  /** An occurrence, completed by its series (which is remembered for the save). */
+  async function conSerie(doc) {
+    const rel = eSerie(doc) ? '' : serieDi(doc);
+    if (!rel) { setSerieMadre(null); return doc; }
+    const s = await leggiEvento(rel);
+    if (!s || !eSerie(s)) { setSerieMadre(null); return doc; }
+    setSerieMadre({ rel, doc: s });
+    return completa(doc, s, rel);
+  }
+
+  /* The series chosen in the form (or removed): remembered, so that the save
+   * leaves out what it hands down. The form is not refilled - who picks a
+   * series for an event already written keeps what they wrote. */
+  useEffect(() => {
+    const rel = data?.primaryType === 'EventSeries' ? '' : serieDi({ superEvent: data?.superEvent });
+    if (!rel) { if (serieMadre) setSerieMadre(null); return; }
+    if (serieMadre?.rel === rel) return;
+    let vivo = true;
+    leggiEvento(rel).then((s) => { if (vivo) setSerieMadre(s && eSerie(s) ? { rel, doc: s } : null); });
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.superEvent, data?.primaryType]);
+
+  /* A draft written straight to the web: the occurrences of a series create
+   * their folders with this, through the same authenticated save. */
+  async function creaBozza(rel, doc) {
+    if (!authToken) return { ok: false, error: 'Accedi con Google per creare le bozze.' };
+    try {
+      const body = new URLSearchParams({ payload: JSON.stringify(doc, null, 2), path: rel, credential: authToken, site: SITE });
+      const res = await fetch(SAVE_EVENT_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() });
+      const out = await res.json();
+      if (res.status === 401) { onLogout(); return { ok: false, error: 'Sessione scaduta: accedi di nuovo.' }; }
+      return out.success ? { ok: true, path: out.path } : { ok: false, error: out.error || 'salvataggio fallito' };
+    } catch (e) {
+      return { ok: false, error: 'Endpoint non raggiungibile: ' + (e?.message || e) };
+    }
+  }
+
   async function loadFromWeb(input, asCopy = false) {
     const url = resolveEventUrl(input);
     if (!url) return;
@@ -594,6 +669,7 @@ export default function App() {
           if (origin) doc[k] = (origin.includes('/') ? origin : 'events/' + origin) + '/' + v.replace(/^\/+/, '');
         });
       }
+      doc = await conSerie(doc);
       setData(deriveCapacities(fromJsonLd(doc)));
       setOpenWeb(false);
       if (asCopy) {
@@ -758,14 +834,25 @@ export default function App() {
 
       <div className="layout" ref={layoutRef} style={{ '--split': split + '%' }}>
         <section className="pane pane-form" onBlur={syncKeywords} onClick={openDatePicker}>
-          <JsonForms
-            schema={schema}
-            uischema={uischema}
-            data={data}
-            renderers={renderers}
-            cells={vanillaCells}
-            onChange={({ data }) => setData(deriveCapacities(data))}
-          />
+          {serieMadre ? (
+            <p className="banner-ereditata">
+              <span className="material-symbols-outlined">account_tree</span>
+              <span>
+                Occorrenza di <strong>{serieMadre.doc?.name || serieMadre.rel}</strong>: quello che resta uguale alla
+                collezione si eredita (e segue le sue correzioni); quello che cambi qui diventa suo.
+              </span>
+            </p>
+          ) : null}
+          <EditorContext.Provider value={{ creaBozza, site: SITE, loggato: !!authToken }}>
+            <JsonForms
+              schema={schema}
+              uischema={uischema}
+              data={data}
+              renderers={renderers}
+              cells={vanillaCells}
+              onChange={({ data }) => setData(deriveCapacities(data))}
+            />
+          </EditorContext.Provider>
         </section>
 
         <div

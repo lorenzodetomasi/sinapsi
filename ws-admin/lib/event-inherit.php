@@ -24,11 +24,12 @@ require_once __DIR__ . '/event-dates.php';
 
 if (!function_exists('event_inherit')) {
 
-    /** The fields an occurrence takes from its series when it does not say them. */
+    /** The fields an occurrence takes from its series when it does not say them.
+     *  Not `contributor`: who may edit a file is said by that file, never inherited. */
     function event_inherit_keys(): array {
         return ['name', 'alternateName', 'description', 'abstract', 'disambiguatingDescription',
                 'image', 'logo', 'url', 'sameAs', 'keywords', 'inLanguage', 'about', 'genre',
-                'location', 'organizer', 'performer', 'contributor', 'funder', 'sponsor',
+                'location', 'organizer', 'performer', 'funder', 'sponsor',
                 'offers', 'isAccessibleForFree', 'eventAttendanceMode', 'typicalAgeRange', 'audience',
                 'maximumAttendeeCapacity', 'maximumPhysicalAttendeeCapacity', 'maximumVirtualAttendeeCapacity',
                 'meetoo:timezone', 'meetoo:isChildrensEvent', 'meetoo:forSeparatedParents',

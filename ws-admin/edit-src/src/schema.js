@@ -217,8 +217,12 @@ export const schema = {
         },
       },
     },
-    // Serie contenitrice di quest'occorrenza (riferimento events/{slug} alla EventSeries).
-    superEvent: { type: 'string', title: 'Appartiene a una Collezione (facoltativo)' },
+    // Serie contenitrice di quest'occorrenza (riferimento events/{slug} alla EventSeries):
+    // si sceglie dall'elenco delle collezioni (SerieRenderer).
+    superEvent: { type: 'string', title: 'Fa parte della collezione' },
+    // «Quando» di un evento singolo: una data, più date, una regola, un periodo
+    // (quandoModello.js). Una serie non lo usa: le sue date sono le occorrenze.
+    quando: { type: 'object', title: 'Quando', additionalProperties: true },
     // Occorrenze di una serie: riferimenti @id (+ nome) agli eventi figli.
     occurrences: {
       type: 'array',
@@ -228,6 +232,10 @@ export const schema = {
         properties: {
           name: { type: 'string', title: 'Nome' },
           id: { type: 'string', title: '@id' },
+          giorno: { type: 'string' },
+          dalle: { type: 'string' },
+          alle: { type: 'string' },
+          luogo: { type: 'object', additionalProperties: true },
         },
       },
     },
@@ -332,7 +340,7 @@ export const uischema = {
           elements: [
             ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
             // Serie contenitrice accanto al tipo, solo per gli eventi non-serie (Evento singolo)
-            ctrl('#/properties/superEvent', { options: { icon: 'account_tree' }, rule: showIfNotSeries }),
+            ctrl('#/properties/superEvent', { options: { icon: 'account_tree', serie: true }, rule: showIfNotSeries }),
           ],
         },
         // L'@id sta su una riga sua: si compone da solo e si porta dietro una nota
@@ -395,10 +403,15 @@ export const uischema = {
       elements: [
         // Il fuso viene prima delle date: senza, un'ora non dice quale istante è.
         ctrl('#/properties/timezone', { options: { icon: 'public' } }),
+        // Com'è fatto nel tempo: una data, più date, una regola, un periodo.
+        ctrl('#/properties/quando', { options: { quando: true }, rule: showIfNotSeries }),
+        // Inizio e fine a mano solo per «Una data» (e per le collezioni, che
+        // hanno sempre questa forma): negli altri casi li calcola «Quando».
         {
           type: 'HorizontalLayout',
           options: { separator: '–' },
           elements: [ctrl('#/properties/startDate'), ctrl('#/properties/endDate')],
+          rule: { effect: 'SHOW', condition: { scope: '#/properties/quando/properties/modo', schema: { enum: ['una', null] } } },
         },
         // Ricorrenza: solo per le serie
         ctrl('#/properties/eventSchedule', { rule: showIfSeries }),
@@ -479,7 +492,7 @@ export const uischema = {
     }),
     ctrl('#/properties/occurrences', {
       label: 'Occorrenze',
-      options: { icon: 'event_repeat', variant: 'row' },
+      options: { icon: 'event_repeat', occorrenze: true },
       rule: showIfSeries,
     }),
     {
