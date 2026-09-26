@@ -220,6 +220,11 @@ export const schema = {
     // Serie contenitrice di quest'occorrenza (riferimento events/{slug} alla EventSeries):
     // si sceglie dall'elenco delle collezioni (SerieRenderer).
     superEvent: { type: 'string', title: 'Fa parte della collezione' },
+    // Le rassegne che lo raccolgono (quante si vuole): non ereditano niente.
+    rassegne: { type: 'array', title: 'Nelle rassegne', items: { type: 'string' } },
+    // Una collezione che è una RASSEGNA: raccoglie eventi che stanno in piedi da soli.
+    rassegna: { type: 'boolean', title: 'È una rassegna (raccoglie eventi a sé, non ha occorrenze)' },
+    nascosta: { type: 'boolean', title: 'Nascondi negli elenchi (la pagina resta)' },
     // «Quando» di un evento singolo: una data, più date, una regola, un periodo
     // (quandoModello.js). Una serie non lo usa: le sue date sono le occorrenze.
     quando: { type: 'object', title: 'Quando', additionalProperties: true },
@@ -341,6 +346,16 @@ export const uischema = {
             ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
             // Serie contenitrice accanto al tipo, solo per gli eventi non-serie (Evento singolo)
             ctrl('#/properties/superEvent', { options: { icon: 'account_tree', serie: true }, rule: showIfNotSeries }),
+          ],
+        },
+        // Le rassegne che lo raccolgono: una riga sua, perché possono essere più d'una.
+        ctrl('#/properties/rassegne', { options: { icon: 'theater_comedy', rassegne: true } }),
+        {
+          type: 'HorizontalLayout',
+          options: { inline: true },
+          elements: [
+            ctrl('#/properties/rassegna', { rule: showIfSeries, options: { inline: true } }),
+            ctrl('#/properties/nascosta', { options: { inline: true } }),
           ],
         },
         // L'@id sta su una riga sua: si compone da solo e si porta dietro una nota

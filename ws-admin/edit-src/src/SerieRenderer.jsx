@@ -14,7 +14,8 @@ import { EVENTS_INDEX_URL } from './config.js';
 
 const ARCHIVIO_URL = EVENTS_INDEX_URL.replace(/\.json$/, '.archive.json');
 let pending = null;
-function caricaSerie() {
+/** Every series and strand of the index, by name. Shared with RassegneRenderer. */
+export function caricaSerie() {
   if (!pending) {
     const leggi = (u) => fetch(u, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
     pending = Promise.all([leggi(EVENTS_INDEX_URL), leggi(ARCHIVIO_URL)]).then(([a, b]) => {
@@ -36,7 +37,9 @@ function SerieRenderer({ data, handleChange, path, label, schema, visible }) {
   const [serie, setSerie] = useState(null);
   useEffect(() => { caricaSerie().then(setSerie); }, []);
   const valore = norm(data);
-  const scelta = useMemo(() => (serie || []).find((s) => s.path === valore) || null, [serie, valore]);
+  // Only series here: a strand (rassegna) hands down nothing, it has its own field.
+  const serieVere = useMemo(() => (serie || []).filter((s) => !s.strand), [serie]);
+  const scelta = useMemo(() => serieVere.find((s) => s.path === valore) || null, [serieVere, valore]);
   if (visible === false) return null;
 
   const descrivi = (s) => [s.name || s.path, s.organizer].filter(Boolean).join(' — ');
@@ -53,7 +56,7 @@ function SerieRenderer({ data, handleChange, path, label, schema, visible }) {
       >
         <option value="">— nessuna: è un evento a sé —</option>
         {valore && !scelta ? <option value="__altro">{valore} (non trovata)</option> : null}
-        {(serie || []).map((s) => (
+        {serieVere.map((s) => (
           <option key={s.path} value={s.path}>{descrivi(s)}</option>
         ))}
       </select>

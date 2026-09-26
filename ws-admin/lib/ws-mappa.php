@@ -321,12 +321,18 @@ if (!function_exists('ws_mappa_wspath')) {
             $z = $zonaDi($e);
             if ($z !== '') $out[$slug] = $z;
         }
+        // Chi dichiara di appartenere a chi (superEvent): è così che una RASSEGNA
+        // conosce i suoi eventi, che non stanno nel suo subEvent.
+        $membri = [];
+        foreach ($doc as $slug => $e) {
+            foreach (event_superevent_refs($e) as $r) $membri[ws_mappa_slug($r['id'])][] = $slug;
+        }
         // Le collezioni: la zona più frequente fra le loro occorrenze.
         foreach ($doc as $slug => $e) {
             if (isset($out[$slug])) continue;
             $conta = [];
-            foreach ((array)($e['subEvent'] ?? []) as $sub) {
-                $occ = ws_mappa_slug(ws_ref_id_semplice($sub));
+            $occs = array_map(fn($sub) => ws_mappa_slug(ws_ref_id_semplice($sub)), (array)($e['subEvent'] ?? []));
+            foreach (array_merge($occs, $membri[$slug] ?? []) as $occ) {
                 if ($occ !== '' && isset($out[$occ])) $conta[$out[$occ]] = ($conta[$out[$occ]] ?? 0) + 1;
             }
             if ($conta) { arsort($conta); $out[$slug] = (string)array_key_first($conta); }

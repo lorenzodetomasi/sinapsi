@@ -19,6 +19,12 @@ const asBool = (v) =>
 
 // Riferimento a un evento in forma canonica `events/{slug}` (lo slug nudo è la forma
 // self-@id, NON un riferimento). Se già qualificato (contiene "/") resta invariato.
+/** superEvent as a list of { id, strand }, whatever its spelling in the file. */
+const contenitori = (doc) =>
+  asArray(doc?.superEvent)
+    .map((x) => (typeof x === 'string' ? { id: x, strand: false } : { id: x?.['@id'] ?? '', strand: !!x?.['meetoo:strand'] }))
+    .filter((r) => r.id);
+
 const toEventRef = (id) => {
   const s = String(id ?? '').trim();
   return !s || s.includes('/') ? s : 'events/' + s;
@@ -191,7 +197,15 @@ export function fromJsonLd(doc) {
     quando: isSeries ? JSON.parse(JSON.stringify(QUANDO_VUOTO)) : quandoDa(doc),
     // Riferimento alla serie contenitrice (occorrenza → serie). Non ha un campo UI dedicato,
     // ma va preservato nel round-trip per non perdere l'appartenenza alla collection al salvataggio.
-    superEvent: typeof doc.superEvent === 'string' ? doc.superEvent : (doc.superEvent?.['@id'] ?? ''),
+    // What it belongs to: the SERIES it inherits from (one), and the STRANDS -
+    // the rassegne - that gather it (any number). The reference says which is
+    // which ("meetoo:strand"); a bare string, as in the older files, is a series.
+    superEvent: contenitori(doc).find((r) => !r.strand)?.id ?? '',
+    rassegne: contenitori(doc).filter((r) => r.strand).map((r) => r.id),
+    // A series that is a strand: it gathers, and hands down nothing.
+    rassegna: asBool(doc['meetoo:strand']),
+    // Kept out of the lists (its events are there already).
+    nascosta: asBool(doc['meetoo:hideFromLists']),
     eventSchedule: fromSchedule(doc.eventSchedule),
     aggregateRating: {
       ratingValue: rating.ratingValue ?? '',
@@ -300,6 +314,12 @@ export function toJsonLd(d) {
   const fine = q ? q.endDate : d.endDate;
   const schedule = isSeries ? toSchedule(d.eventSchedule, fuso) : q?.eventSchedule;
 
+  // Its series (not for a series: it inherits from nobody) and its strands.
+  const superEvent = [
+    ...(!isSeries && d.superEvent ? [{ '@id': toEventRef(d.superEvent), '@type': 'EventSeries' }] : []),
+    ...(d.rassegne ?? []).filter(Boolean).map((id) => ({ '@id': toEventRef(id), '@type': 'EventSeries', 'meetoo:strand': true })),
+  ];
+
   // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
   const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
 
@@ -384,7 +404,9 @@ export function toJsonLd(d) {
     ...(organizer.length ? { organizer } : {}),
     ...(schedule ? { eventSchedule: schedule } : {}),
     ...(subEvent.length ? { subEvent } : {}),
-    ...(d.superEvent ? { superEvent: toEventRef(d.superEvent) } : {}),
+    ...(superEvent.length ? { superEvent: superEvent.length === 1 ? superEvent[0] : superEvent } : {}),
+    ...(isSeries && d.rassegna ? { 'meetoo:strand': true } : {}),
+    ...(d.nascosta ? { 'meetoo:hideFromLists': true } : {}),
     ...(d.eventStatus ? { eventStatus: d.eventStatus } : {}),
     ...(aggregateRating ? { aggregateRating } : {}),
     /* Flag pubblico: emessi solo se attivi. `meetoo:isChildrensEvent` non si scrive

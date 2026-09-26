@@ -611,6 +611,7 @@ function meetoo_voci($quale){
 			return strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''));
 		});
 		foreach($passati as $ev){
+			if(!empty($ev['hidden'])){ continue; }
 			$href = meetoo_indirizzo($ev['path'] ?? '');
 			if($href === '' or !meetoo_di_qui($href)){ continue; }
 			$out[] = mt_card_evento($ev, array('href' => $href));
@@ -623,6 +624,11 @@ function meetoo_voci($quale){
 		$scelti = array();
 		foreach(meetoo_indice_eventi() as $ev){
 			$serie = (($ev['kind'] ?? '') === 'series');
+			// Kept out of the lists on purpose (meetoo:hideFromLists): a strand
+			// that would crowd them, its events being there already.
+			if(!empty($ev['hidden'])){
+				continue;
+			}
 			if($quale === 'collezioni'){
 				if($serie){ $scelti[] = $ev; }
 				continue;

@@ -51,6 +51,14 @@ function OccorrenzeRenderer({ data, handleChange, path, visible, label }) {
   const [lavoro, setLavoro] = useState({});   // index -> 'creo' | 'ok' | error text
   useEffect(() => { percorsiEsistenti().then(setEsistono); }, []);
   if (visible === false || serie.primaryType !== 'EventSeries') return null;
+  if (serie.rassegna) {
+    return (
+      <p className="quando-aiuto">
+        Una rassegna non ha occorrenze: sono gli eventi a dire di farne parte (campo «Nelle rassegne»),
+        e la sua pagina li elenca da sé.
+      </p>
+    );
+  }
 
   const righe = (Array.isArray(data) ? data : []).map(riga);
   const scrivi = (r) => handleChange(path, r);

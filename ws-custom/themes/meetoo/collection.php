@@ -59,6 +59,12 @@ if($cover !== ''){ ?>
 <?php
 if($serie){
 	meetoo_sezione('eventi', $SEZIONI['eventi'] ?? null, $tutto);
+	/* A STRAND (a rassegna) gathers series too - Spritzalibro is in the Scuola
+	 * d'Arte Poetica - and they are listed as the recurring ones. */
+	$doc_serie = meetoo_contenuto(meetoo_rel_corrente()) ?: array();
+	if(!empty($doc_serie['meetoo:strand']) and count(meetoo_voci('collezioni'))){
+		meetoo_sezione('collezioni', $SEZIONI['collezioni'] ?? null, $tutto);
+	}
 	meetoo_sezione('archivio', $SEZIONI['archivio'] ?? null, $tutto);
 } else {
 	/* `?? null`: se il file delle sezioni sul server fosse più vecchio di questo

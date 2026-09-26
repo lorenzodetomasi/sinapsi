@@ -142,8 +142,10 @@ if (!function_exists('event_index_item')) {
         // Natura: 'series' = collection (EventSeries), altrimenti 'single'.
         $typeArr = isset($doc['@type']) ? (is_array($doc['@type']) ? $doc['@type'] : [$doc['@type']]) : [];
         $kind = in_array('EventSeries', $typeArr, true) ? 'series' : 'single';
-        // Collection di appartenenza: riferimento @id/path della serie contenitrice (superEvent).
-        $collection = function_exists('ws_ref_id') ? ws_ref_id($doc['superEvent'] ?? null) : '';
+        // The series it inherits from (not a strand), and everything it belongs to:
+        // its page lists it in each of them (see event-inherit.php).
+        $collection = event_series_ref($doc);
+        $collections = array_map(fn($r) => $r['id'], event_superevent_refs($doc));
 
         // organizer: name del primo se presente (inline), altrimenti l'@id di riferimento
         $orgName = '';
@@ -177,6 +179,10 @@ if (!function_exists('event_index_item')) {
             'path'         => $relPath,
             'kind'         => $kind,
             'collection'   => $collection,
+            'collections'  => $collections,
+            // A series that is a strand (a rassegna), and one kept out of the lists.
+            'strand'       => $kind === 'series' && !empty($doc['meetoo:strand']),
+            'hidden'       => !empty($doc['meetoo:hideFromLists']),
             'name'         => (string)($doc['name'] ?? ''),
             'startDate'    => (string)($doc['startDate'] ?? ''),
             'endDate'      => (string)($doc['endDate'] ?? ''),
@@ -382,9 +388,11 @@ if (!function_exists('event_index_update')) {
             $res['organizers'][$key] = event_index_place("$idxDir/by-organizer/$key.json", $item);
         }
 
-        // Indice per-collection: solo le occorrenze (singoli con superEvent).
-        if ($item['kind'] !== 'series' && $item['collection'] !== '') {
-            $ck = event_index_key($item['collection']);
+        // Indice per-collection: a series lists its occurrences; a strand lists
+        // everything that says it belongs to it, series included.
+        foreach (event_superevent_refs($doc) as $r) {
+            if ($item['kind'] === 'series' && !$r['strand']) continue;
+            $ck = event_index_key($r['id']);
             $res['collection'] = event_index_place("$idxDir/by-collection/$ck.json", $item);
         }
 
@@ -448,7 +456,10 @@ if (!function_exists('event_index_sync')) {
             $orgIds = $ovr !== null ? $ovr : ws_ref_ids($d['organizer'] ?? null);
             if (!$orgIds && $item['organizer'] !== '') $orgIds = [$item['organizer']];
             foreach (array_unique($orgIds) as $oid) $keep['by-organizer'][] = event_index_key($oid) . '.json';
-            if ($item['kind'] !== 'series' && $item['collection'] !== '') $keep['by-collection'][] = event_index_key($item['collection']) . '.json';
+            foreach (event_superevent_refs($d) as $sr) {
+                if ($item['kind'] === 'series' && !$sr['strand']) continue;
+                $keep['by-collection'][] = event_index_key($sr['id']) . '.json';
+            }
             if (!empty($item['cap'])) $keep['by-cap'][] = event_index_key($item['cap']) . '.json';
 
             foreach ($keep as $sub => $keepFiles) {

@@ -21,16 +21,17 @@ export const CHIAVI_EREDITATE = [
 const vuoto = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);
 const asArray = (v) => (Array.isArray(v) ? v : v === undefined || v === null || v === '' ? [] : [v]);
 
-/** The series of an event, as a content path (events/slug), '' if none. */
+/** The series an event inherits from - the first container that is not a
+ *  strand (a rassegna hands down nothing) - as a content path, '' if none. */
 export function serieDi(doc) {
-  let s = doc?.superEvent;
-  if (Array.isArray(s)) s = s[0];
+  const lista = Array.isArray(doc?.superEvent) ? doc.superEvent : [doc?.superEvent];
+  const s = lista.find((x) => x && !(typeof x === 'object' && x['meetoo:strand']));
   const id = String((s && typeof s === 'object' ? s['@id'] : s) || '').replace(/^\/+|\/+$/g, '');
   if (!id) return '';
   return id.includes('/') ? id : `events/${id}`;
 }
 
-export const eSerie = (doc) => asArray(doc?.['@type']).includes('EventSeries');
+export const eSerie = (doc) => asArray(doc?.['@type']).includes('EventSeries') && !doc?.['meetoo:strand'];
 
 /** A media path of the series, re-rooted: `media/cover.jpg` -> `events/serie/media/cover.jpg`. */
 function riradica(v, serieRel) {

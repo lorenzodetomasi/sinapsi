@@ -24,6 +24,7 @@ import EventIdRenderer, { eventIdTester } from './EventIdRenderer.jsx';
 import TimezoneRenderer, { timezoneTester } from './TimezoneRenderer.jsx';
 import CoerenzaRenderer, { coerenzaTester } from './CoerenzaRenderer.jsx';
 import SerieRenderer, { serieTester } from './SerieRenderer.jsx';
+import RassegneRenderer, { rassegneTester } from './RassegneRenderer.jsx';
 import QuandoRenderer, { quandoTester } from './QuandoRenderer.jsx';
 import OccorrenzeRenderer, { occorrenzeTester } from './OccorrenzeRenderer.jsx';
 import { loadEntities, findEntityById } from './entities.js';
@@ -62,6 +63,7 @@ const renderers = [
   { tester: timezoneTester, renderer: TimezoneRenderer },
   { tester: coerenzaTester, renderer: CoerenzaRenderer },
   { tester: serieTester, renderer: SerieRenderer },
+  { tester: rassegneTester, renderer: RassegneRenderer },
   { tester: quandoTester, renderer: QuandoRenderer },
   { tester: occorrenzeTester, renderer: OccorrenzeRenderer },
 ];

@@ -711,3 +711,4 @@ pre.code-area-testo .line-error {
 .occ-testa { display: flex; align-items: center; gap: var(--sp-sm); margin: var(--sp-md) 0 var(--sp-sm); }
 .occ-testa .material-symbols-outlined { color: var(--text-dim); }
 .occ-testa .field-label { margin: 0; font-weight: 700; }
+.quando-chip.chip-warn { border-color: var(--danger); color: var(--danger); }

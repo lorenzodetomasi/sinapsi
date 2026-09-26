@@ -41,14 +41,40 @@ if (!function_exists('event_inherit')) {
         return $v === null || $v === '' || $v === [];
     }
 
-    /** The series an event belongs to, as a content path (events/slug), '' if none. */
-    function event_series_ref(array $e): string {
+    /**
+     * Everything an event belongs to: [['id' => events/slug, 'strand' => bool], ...].
+     *
+     * Two kinds of container, both schema.org superEvent. A SERIES hands its
+     * values down to its occurrences. A STRAND (a rassegna: Sonodramma,
+     * SomministrArte) only gathers events that stand on their own - it hands
+     * down nothing, and an event can be in several. The reference says which
+     * it is ("meetoo:strand": true), so nobody has to open the container to
+     * know whether to inherit from it.
+     */
+    function event_superevent_refs(array $e): array {
         $s = $e['superEvent'] ?? null;
-        if (is_array($s) && array_key_exists(0, $s)) $s = $s[0];
-        $id = is_array($s) ? (string)($s['@id'] ?? '') : (is_string($s) ? $s : '');
-        $id = trim($id, '/');
-        if ($id === '') return '';
-        return strpos($id, '/') === false ? "events/$id" : $id;
+        if ($s === null || $s === '' || $s === []) return [];
+        $list = (is_array($s) && array_key_exists(0, $s)) ? $s : [$s];
+        $out = [];
+        foreach ($list as $x) {
+            $id = trim(is_array($x) ? (string)($x['@id'] ?? '') : (is_string($x) ? $x : ''), '/');
+            if ($id === '') continue;
+            $out[] = ['id' => strpos($id, '/') === false ? "events/$id" : $id, 'strand' => is_array($x) && !empty($x['meetoo:strand'])];
+        }
+        return $out;
+    }
+
+    /** The series an event inherits from (the first container that is not a strand), '' if none. */
+    function event_series_ref(array $e): string {
+        foreach (event_superevent_refs($e) as $r) {
+            if (!$r['strand']) return $r['id'];
+        }
+        return '';
+    }
+
+    /** Is this series a strand (a rassegna that gathers, and hands down nothing)? */
+    function event_is_strand(array $e): bool {
+        return !empty($e['meetoo:strand']);
     }
 
     /** The entity of the document at $rel under $base (mainEntity unwrapped), null if none. */
@@ -110,7 +136,7 @@ if (!function_exists('event_inherit')) {
         $ref = event_series_ref($e);
         if ($ref === '') return $e;
         $series = event_load_doc($base, $ref);
-        return ($series && event_is_series($series)) ? event_inherit($e, $series, $ref) : $e;
+        return ($series && event_is_series($series) && !event_is_strand($series)) ? event_inherit($e, $series, $ref) : $e;
     }
 
     /** The inherited fields of a series, the ones its occurrences may be using. */
@@ -140,7 +166,7 @@ if (!function_exists('event_inherit')) {
             $rel = 'events/' . basename(dirname($f));
             $e = event_load_doc($base, $rel);
             if (!$e) continue;
-            if (event_is_series($e)) { $series[$rel] = $e; continue; }
+            if (event_is_series($e)) { if (!event_is_strand($e)) $series[$rel] = $e; continue; }
             $ref = event_series_ref($e);
             if ($ref !== '') $members[$ref][] = [$rel, $f];
         }

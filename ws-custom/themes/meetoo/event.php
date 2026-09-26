@@ -252,9 +252,16 @@ $modalita = mt_modalita(mt_ev($e, 'eventAttendanceMode'));
 /* La serie di cui l'evento fa parte. Nel file è scritta come una stringa nuda
  * (`"superEvent": "events/…"`), non come un oggetto con l'@id: il riferimento si
  * chiede prima nel modo consueto e poi si legge il testo, che è quello che c'è. */
-$serieId = isset($e->superEvent) ? (meetoo_riferimento_nodo($e->superEvent) ?: trim((string)$e->superEvent)) : '';
-$serieNome = $serieId !== '' ? meetoo_titolo_contenuto($serieId) : '';
-$serieHref = $serieId !== '' ? meetoo_indirizzo($serieId) : '';
+/* Everything it belongs to: its series and its strands (the rassegne), read
+ * from the JSON, where each reference says which of the two it is. */
+require_once ws_admin_abspath().'/lib/event-inherit.php';
+$contenitori = array();
+foreach(event_superevent_refs(meetoo_contenuto($rel) ?: array()) as $r){
+	$h = meetoo_indirizzo($r['id']);
+	if($h !== ''){
+		$contenitori[] = array('href' => $h, 'nome' => meetoo_titolo_contenuto($r['id']) ?: basename($r['id']), 'rassegna' => $r['strand']);
+	}
+}
 
 /* Il programma: i sotto-eventi scritti dentro l'evento (quelli senza un @id
  * proprio). Quelli CON un @id sono eventi a sé e hanno una pagina loro. */
@@ -443,9 +450,9 @@ include_template('template-parts/header');
 } ?>
 							</div>
 <?php } ?>
-<?php if($serieHref !== ''){ ?>
-							<p class="mt-nota"><?php echo mt_icona('collections_bookmark'); ?>
-								<?php _e('Fa parte di'); ?> <a href="<?php echo mt_esc($serieHref); ?>"><?php echo mt_esc($serieNome !== '' ? $serieNome : basename($serieId)); ?></a>
+<?php foreach($contenitori as $c){ ?>
+							<p class="mt-nota"><?php echo mt_icona($c['rassegna'] ? 'theater_comedy' : 'collections_bookmark'); ?>
+								<?php echo $c['rassegna'] ? __('Nella rassegna') : __('Fa parte di'); ?> <a href="<?php echo mt_esc($c['href']); ?>"><?php echo mt_esc($c['nome']); ?></a>
 							</p>
 <?php } ?>
 						</div>
