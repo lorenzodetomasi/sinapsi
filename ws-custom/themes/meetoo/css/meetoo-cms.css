@@ -371,6 +371,13 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-quando, .mt-dove { display: flex; align-items: center; gap: .5rem; margin: 0 0 .35rem; font-size: 1.1rem; }
 .mt-quando { font-weight: 600; color: var(--color-heading); }
 .mt-quando .material-symbols-outlined, .mt-dove .material-symbols-outlined { color: var(--color-hint); font-size: 1.25rem; }
+/* Every date of an event that has more than one: the replicas under the next
+   one, the rule ("ogni lunedì · fino al 28 giu") for the others. */
+.mt-quando-altre { display: flex; align-items: center; gap: .5rem; margin: -.15rem 0 .5rem; color: var(--color-hint); }
+.mt-quando-altre .material-symbols-outlined { font-size: 1.25rem; }
+.mt-date-elenco { list-style: none; margin: -.15rem 0 .5rem 1.75rem; padding: 0; color: var(--color-hint); }
+.mt-date-elenco li { margin: 0 0 .15rem; }
+.mt-date-elenco li.passata { text-decoration: line-through; opacity: .7; }
 .mt-dove a { color: var(--color-link); }
 .mt-voto { display: flex; align-items: center; gap: .4rem; margin: 0; color: var(--color-hint); }
 .mt-voto .material-symbols-outlined { color: var(--color1); font-variation-settings: 'FILL' 1; }

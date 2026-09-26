@@ -47,10 +47,13 @@ function mt_quando($dal, $al, $fuso = ''){
 	$giorno = function($d) use ($g, $m){
 		return $g[(int)$d->format('w')].' '.(int)$d->format('j').' '.$m[(int)$d->format('n') - 1].' '.$d->format('Y');
 	};
+	/* A whole day has no hour: "venerdì 2 ottobre 2026", not "…, 00:00". */
+	$ora_i = preg_match('/T\d/', (string)$dal) ? ', '.$i->format('H:i') : '';
+	$ora_f = ($f and preg_match('/T\d/', (string)$al)) ? $f->format('H:i') : '';
 	if($f and $f->format('Y-m-d') !== $i->format('Y-m-d')){
-		return $giorno($i).', '.$i->format('H:i').' — '.$giorno($f).', '.$f->format('H:i');
+		return $giorno($i).$ora_i.' — '.$giorno($f).($ora_f !== '' ? ', '.$ora_f : '');
 	}
-	return $giorno($i).', '.$i->format('H:i').($f ? '–'.$f->format('H:i') : '');
+	return $giorno($i).$ora_i.($ora_f !== '' ? '–'.$ora_f : '');
 }
 
 /** In presenza, online, o tutte e due: lo dice `eventAttendanceMode`. */
@@ -120,6 +123,24 @@ $dal = mt_ev($e, 'startDate');
 $al = mt_ev($e, 'endDate');
 // Il fuso lo dichiara l'evento: serve alle date che lo scarto non ce l'hanno.
 $fuso = trim((string)meetoo_campo_meetoo($e, 'timezone'));
+/* ALL ITS DATES (ws-admin/lib/event-dates.php): replicas, a rule, a period.
+ * The header says the NEXT one - and so does the .ics, which is for putting
+ * in a calendar what is still to come; the line under it says the rest. */
+require_once ws_admin_abspath().'/lib/event-dates.php';
+$date_evento = event_dates_expand(meetoo_contenuto($rel) ?: array());
+$prossima = null;
+$altre_date = '';
+if($date_evento['pattern'] !== 'single'){
+	$voce = array('dates' => $date_evento['dates']) + $date_evento;
+	$prossima = meetoo_prossima_data($voce);
+	$scelta = $prossima ?: end($date_evento['dates']);
+	if($scelta){
+		$dal = (string)$scelta['start'];
+		$al = (string)$scelta['end'];
+	}
+	// A period already says its end in the header ("… — domenica 4 ottobre").
+	$altre_date = ($prossima and $date_evento['pattern'] !== 'period') ? meetoo_quando_breve($voce, $prossima) : '';
+}
 $quando = mt_quando($dal, $al, $fuso);
 
 /**
@@ -370,6 +391,20 @@ include_template('template-parts/header');
 						<div class="mt-testa-sx">
 <?php if($quando !== ''){ ?>
 							<p class="mt-quando"><?php echo mt_icona('event'); ?><span><?php echo mt_esc($quando); ?></span></p>
+<?php } ?>
+<?php if($date_evento['pattern'] === 'dates' and count($date_evento['dates']) > 1){
+	/* The replicas, every one: the past ones stay, struck through - a show that
+	 * has had two dates of four is still the same show. */ ?>
+							<ul class="mt-date-elenco">
+<?php foreach($date_evento['dates'] as $d){
+	$passata = (meetoo_prossima_data(array('dates' => array($d))) === null);
+	// The next one is already the header's date: here only the others.
+	if($prossima and $d['start'] === $prossima['start']){ continue; } ?>
+								<li<?php echo $passata ? ' class="passata"' : ''; ?>><?php echo mt_esc(mt_quando((string)$d['start'], (string)$d['end'], $fuso)); ?></li>
+<?php } ?>
+							</ul>
+<?php } else if($altre_date !== ''){ ?>
+							<p class="mt-quando-altre"><?php echo mt_icona($date_evento['pattern'] === 'rule' ? 'event_repeat' : 'date_range'); ?><span><?php echo mt_esc($altre_date); ?></span></p>
 <?php } ?>
 <?php if($luogoNome !== ''){ ?>
 							<p class="mt-dove"><?php echo mt_icona('location_on'); ?><span><?php

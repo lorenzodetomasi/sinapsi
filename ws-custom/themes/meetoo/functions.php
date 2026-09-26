@@ -755,8 +755,57 @@ function meetoo_jsonld(){
 	}
 	// `</script>` dentro una descrizione chiuderebbe il blocco: si spezza la
 	// sequenza senza toccare il significato del JSON.
-	$raw = str_replace('</', '<\/', $raw);
-	return '<script type="application/ld+json">'."\n".$raw."\n".'</script>';
+	$out = '<script type="application/ld+json">'."\n".str_replace('</', '<\/', $raw)."\n".'</script>';
+	return $out.meetoo_jsonld_date(json_decode($raw, true));
+}
+
+/**
+ * One Event per upcoming date, for an event that has more than one.
+ *
+ * The file says "every Monday" or "on the 29th and the 30th" once, in an
+ * eventSchedule - true, but a search engine lists events by date, and wants
+ * one Event for each. They are derived here, from the same expansion the
+ * lists use, and never written to disk: the file stays the one source. Twelve
+ * at most: a weekly lab would otherwise publish a year of Mondays.
+ */
+function meetoo_jsonld_date($doc){
+	if(!is_array($doc)){
+		return '';
+	}
+	$e = (isset($doc['mainEntity']) and is_array($doc['mainEntity'])) ? $doc['mainEntity'] : $doc;
+	if(empty($e['eventSchedule'])){
+		return '';
+	}
+	require_once ws_admin_abspath().'/lib/event-dates.php';
+	$quando = event_dates_expand($e);
+	if($quando['pattern'] === 'single'){
+		return '';
+	}
+	$tipo = array_values(array_diff((array)($e['@type'] ?? 'Event'), array('EventSeries')));
+	$copia = array_intersect_key($e, array_flip(array('name', 'description', 'image', 'location', 'organizer',
+		'offers', 'eventStatus', 'eventAttendanceMode', 'typicalAgeRange', 'isAccessibleForFree', 'inLanguage')));
+	$url = ws_href(trim((string)($GLOBALS['ws_query']['wspath'] ?? ''), '/'));
+	$grafo = array();
+	$ora = time();
+	foreach($quando['dates'] as $d){
+		$fine = ($d['end'] ?? '') !== '' ? $d['end'] : $d['start'];
+		if(strtotime(strlen($fine) === 10 ? $fine.'T23:59:59' : $fine) < $ora){
+			continue;
+		}
+		$uno = array('@type' => $tipo ?: 'Event') + $copia + array('startDate' => $d['start'], 'url' => $url);
+		if(($d['end'] ?? '') !== ''){
+			$uno['endDate'] = $d['end'];
+		}
+		$grafo[] = $uno;
+		if(count($grafo) >= 12){
+			break;
+		}
+	}
+	if(!$grafo){
+		return '';
+	}
+	$json = json_encode(array('@context' => 'https://schema.org', '@graph' => $grafo), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+	return "\n".'<script type="application/ld+json">'."\n".str_replace('</', '<\/', (string)$json)."\n".'</script>';
 }
 $GLOBALS['ws_scripts']['head']['meetoo_jsonld'] = meetoo_jsonld();
 
