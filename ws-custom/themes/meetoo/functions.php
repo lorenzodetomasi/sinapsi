@@ -91,9 +91,15 @@ if(!function_exists('meetoo_derivati_freschi')){
 		   rifarebbe a ogni richiesta. */
 		$piu_nuovo = min($piu_nuovo, time());
 		$eta = min($quando($indice), $quando($mappa));
-		if($piu_nuovo <= $eta){
+		/* THE SAME SECOND. File dates have one-second resolution: a file
+		   written in the second of the last rebuild may have come after it -
+		   an FTP upload still arriving while someone visits. A tie is rebuilt
+		   too, but without the reload: the reload is for what is certainly
+		   newer, and a tie reloaded would go round until the second is over. */
+		if($piu_nuovo < $eta){
 			return false;
 		}
+		$pari = ($piu_nuovo === $eta);
 
 		@mkdir($base.'/_index', 0775, true);
 		$chiave = @fopen($base.'/_index/derived.lock', 'c');
@@ -121,7 +127,7 @@ if(!function_exists('meetoo_derivati_freschi')){
 			flock($chiave, LOCK_UN);
 			fclose($chiave);
 		}
-		return min($quando($indice), $quando($mappa)) >= $piu_nuovo;
+		return !$pari and min($quando($indice), $quando($mappa)) >= $piu_nuovo;
 	}
 }
 
