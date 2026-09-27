@@ -1,0 +1,46 @@
+/* ===========================================================================
+ * isotype skin - the glossary dressed as a page of isotype.org: Roboto Slab
+ * for titles, Roboto for text, red headings, blue for what can be pressed,
+ * the site's neutral surfaces and its rounder corners. Values mirror
+ * themes/your-theme/css/_tokens.css; they are copied, not imported, so the
+ * standalone file carries them with it.
+ * =========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Roboto+Slab:wght@400;500;600;700&display=swap');
+
+:where(.glossary, .glossary-page) {
+  --g-bg: light-dark(#f6f7f9, #141218);
+  --g-bg-2: light-dark(#eef0f3, #2a282f);
+  --g-panel: light-dark(#ffffff, #1e1f20);
+  --g-ink: light-dark(#1d1b20, #e6e0e9);
+  --g-ink-2: light-dark(#3b3940, #cfc8d8);
+  --g-ink-3: light-dark(#5f5c66, #b9b3c4);
+  --g-line: light-dark(#e0e0e6, #48454e);
+  --g-line-2: light-dark(#ebebef, #333139);
+  --g-accent: light-dark(#2e3192, #adc6ff);
+  --g-accent-strong: light-dark(#c1272d, #ff8a80);
+  --g-term: var(--g-ink);
+  --g-accent-wash: light-dark(rgb(46 49 146 / .08), rgb(173 198 255 / .12));
+  --g-on-accent: light-dark(#ffffff, #141218);
+  --g-highlight: light-dark(#fff4e5, #3a2f1c);
+  --g-font-body: 'Roboto', system-ui, sans-serif;
+  --g-font-display: 'Roboto Slab', Georgia, serif;
+  --g-font-ui: 'Roboto', system-ui, sans-serif;
+  --g-display-weight: 600;
+  --g-body-size: 17px;
+  --g-radius: 9.6px;
+}
+
+.glossary { line-height: 1.58; }
+.glossary-hero { border-bottom: 2px solid var(--g-accent-strong); }
+.glossary-title { font-weight: 700; letter-spacing: -.01em; }
+.glossary-eyebrow { color: var(--g-accent-strong); letter-spacing: .2em; }
+.glossary-intro details, .glossary-path, .glossary-table__scroll, .glossary-license { border-width: 2px; }
+.glossary-path:hover, .glossary-path[aria-pressed="true"] { border-color: var(--g-accent); }
+.glossary-search__input { border-width: 2px; border-color: var(--g-accent); }
+.glossary-search__input:focus { border-color: var(--g-accent-strong); box-shadow: none; }
+.glossary-letter__char { font-weight: 700; color: var(--g-accent-strong); }
+.glossary-letter__rule { height: 2px; background: var(--g-accent-strong); opacity: .25; }
+.glossary-term { font-weight: 600; font-size: 1.45rem; }
+.glossary-spine a:hover { color: var(--g-accent-strong); }
+.glossary-xref { border-bottom-width: 2px; }
+.glossary-closing__part h2 { font-weight: 600; }

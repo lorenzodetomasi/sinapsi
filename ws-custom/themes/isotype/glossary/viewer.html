@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Glossary viewer</title>
+<link rel="stylesheet" href="glossary.css">
+<link rel="stylesheet" href="skins/isotype.css" id="skin">
+<style>
+  /* The viewer's own bar: a tool, not part of any glossary, so it keeps to
+   * system fonts and neutral colours whatever skin is chosen below it. */
+  body { margin: 0; background: var(--g-bg); }
+  .viewer-bar { position: sticky; top: 0; z-index: 60; font: 14px/1.4 system-ui, sans-serif; color: #1d1b20; background: #fff; border-bottom: 1px solid #d6d6dc; box-shadow: 0 2px 10px -8px rgb(0 0 0 / .4); }
+  .viewer-bar form { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; padding: 10px 16px; margin: 0; }
+  .viewer-bar input[type="url"] { flex: 1 1 320px; min-width: 0; font: inherit; padding: 7px 10px; border: 1.5px solid #2e3192; border-radius: 6px; }
+  .viewer-bar button, .viewer-bar select, .viewer-bar .viewer-file { font: inherit; padding: 7px 12px; border: 1.5px solid #2e3192; border-radius: 6px; background: #fff; color: #2e3192; cursor: pointer; }
+  .viewer-bar button[type="submit"], .viewer-bar #export { background: #2e3192; color: #fff; }
+  .viewer-bar button:disabled { opacity: .45; cursor: default; }
+  .viewer-file input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .viewer-bar label.viewer-skin { display: inline-flex; gap: 6px; align-items: center; }
+  .viewer-status { padding: 0 16px 10px; margin: 0; color: #5f5c66; }
+  .viewer-status:empty { display: none; }
+  .viewer-status details { display: inline; }
+  .viewer-status summary { display: inline; cursor: pointer; color: #b3261e; }
+  .viewer-status ul { margin: 6px 0 0; padding-left: 20px; max-height: 30vh; overflow: auto; }
+  @media (prefers-color-scheme: dark) {
+    .viewer-bar { color: #e6e0e9; background: #1e1f20; border-color: #48454e; }
+    .viewer-bar input[type="url"], .viewer-bar button, .viewer-bar select, .viewer-bar .viewer-file { background: #141218; color: #adc6ff; border-color: #adc6ff; }
+    .viewer-bar button[type="submit"], .viewer-bar #export { background: #adc6ff; color: #141218; }
+    .viewer-status { color: #b9b3c4; }
+  }
+</style>
+</head>
+<body class="glossary-page">
+<div class="viewer-bar" id="bar">
+  <form id="open">
+    <input type="url" name="src" id="src" required data-l10n-placeholder="Address of a JSON-LD glossary">
+    <button type="submit" data-l10n="Open">Open</button>
+    <label class="viewer-file"><span data-l10n="Open a file">Open a file</span><input type="file" id="file" accept=".json,.jsonld,application/json,application/ld+json"></label>
+    <label class="viewer-skin"><span data-l10n="Style">Style</span>
+      <select id="skin-choice">
+        <option value="isotype">isotype</option>
+        <option value="sahaja">sahaja</option>
+        <option value="" data-l10n="None">None</option>
+      </select>
+    </label>
+    <button type="button" id="export" disabled data-l10n="Download standalone HTML">Download standalone HTML</button>
+  </form>
+  <p class="viewer-status" id="status" aria-live="polite"></p>
+</div>
+<div id="glossary"></div>
+
+<script>window.WSGlossaryManual = true;</script>
+<script src="glossary.js"></script>
+<script>
+(function () {
+  'use strict';
+  var G = window.WSGlossary, t = G.t, tn = G.tn;
+  var LANGUAGES = '../../../languages/';
+  var root = document.getElementById('glossary');
+  var bar = document.getElementById('bar'), status = document.getElementById('status');
+  var srcInput = document.getElementById('src'), skinChoice = document.getElementById('skin-choice');
+  var exportButton = document.getElementById('export');
+  var current = null; // { data, base, model, locale }
+  var catalogues = {};
+
+  function locale(lang) {
+    var m = String(lang || '').match(/^([a-z]{2,3})(?:[-_]([A-Za-z]{2}))?/);
+    return m ? m[1] + '_' + (m[2] || m[1]).toUpperCase() : '';
+  }
+  /* The catalogue of a locale, from its .po; none (English msgids) when there is no file. */
+  function useLocale(loc) {
+    if (catalogues[loc]) { window.WSGlossaryL10n = catalogues[loc]; return Promise.resolve(); }
+    return fetch(LANGUAGES + 'glossary-' + loc + '.po')
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .catch(function () { return ''; })
+      .then(function (po) { window.WSGlossaryL10n = catalogues[loc] = po ? G.parsePo(po) : {}; relabel(); });
+  }
+  function relabel() {
+    document.querySelectorAll('[data-l10n]').forEach(function (el) { el.textContent = t(el.getAttribute('data-l10n')); });
+    document.querySelectorAll('[data-l10n-placeholder]').forEach(function (el) { el.placeholder = t(el.getAttribute('data-l10n-placeholder')); });
+    document.title = current && current.model ? current.model.name + ' — ' + t('Glossary viewer') : t('Glossary viewer');
+  }
+  function say(text) { status.textContent = text || ''; }
+  function report(m) {
+    status.replaceChildren();
+    if (!m.issues.length) { say(t('%1$s entries, no problems found.', m.terms.length)); return; }
+    var details = document.createElement('details');
+    var summary = document.createElement('summary');
+    summary.textContent = tn('%d problem in the data', '%d problems in the data', m.issues.length);
+    var ul = document.createElement('ul');
+    m.issues.forEach(function (i) { var li = document.createElement('li'); li.textContent = i.message; ul.appendChild(li); });
+    details.append(summary, ul);
+    status.append(document.createTextNode(t('%1$s entries.', m.terms.length) + ' '), details);
+  }
+  function show(data, base) {
+    var loc = locale(data && (data.inLanguage || data['schema:inLanguage'])) || locale(navigator.language);
+    return useLocale(loc).then(function () {
+      try {
+        var r = G.mount(root, data, base);
+        current = { data: data, base: base, model: r.model, locale: loc };
+        exportButton.disabled = false;
+        relabel(); report(r.model);
+      } catch (e) { current = null; exportButton.disabled = true; G.fail(root, e); say(''); }
+    });
+  }
+  function openUrl(url) {
+    say(t('Loading…'));
+    var abs;
+    try { abs = new URL(url, document.baseURI).href; } catch (e) { say(t('Only http and https addresses can be opened.')); return; }
+    if (!/^https?:/.test(abs)) { say(t('Only http and https addresses can be opened.')); return; }
+    G.fetchJson(abs).then(function (data) {
+      var q = new URLSearchParams(location.search); q.set('src', url);
+      history.replaceState(null, '', '?' + q + location.hash);
+      return show(data, abs);
+    }).catch(function (e) { current = null; exportButton.disabled = true; G.fail(root, e); say(''); });
+  }
+  function setSkin(name) {
+    var link = document.getElementById('skin');
+    if (name) { link.href = 'skins/' + name + '.css'; link.disabled = false; } else { link.disabled = true; }
+    skinChoice.value = name;
+  }
+
+  /* ---- The standalone file ----------------------------------------------------
+   * One HTML file carrying everything: the skin and the base CSS, the data as
+   * JSON-LD, the catalogue, the script - and a first drawing of the glossary,
+   * so that it can be read (and indexed) before, or without, the script. */
+  function text(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(url); return r.text(); }); }
+  function inScript(s) { return String(s).replace(/<\/(script|style)/gi, '<\\/$1'); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function standalone() {
+    var skin = skinChoice.value;
+    return Promise.all([text('glossary.css'), skin ? text('skins/' + skin + '.css') : '', text('glossary.js')]).then(function (files) {
+      var m = current.model;
+      var snapshot = document.createElement('div');
+      G.render(snapshot, G.model(current.data, { base: current.base }));
+      var json = JSON.stringify(current.data).replace(/</g, '\\u003c');
+      var description = snapshot.querySelector('.glossary-subtitle');
+      return '<!DOCTYPE html>\n<html lang="' + esc(m.lang) + '">\n<head>\n<meta charset="utf-8">\n'
+        + '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        + '<title>' + esc(m.name) + '</title>\n'
+        + (description ? '<meta name="description" content="' + esc(description.textContent) + '">\n' : '')
+        + '<meta name="generator" content="WS Glossary">\n'
+        + '<style>\n' + inScript(files[0]) + '\n<\/style>\n'
+        + (files[1] ? '<style>\n' + inScript(files[1]) + '\n<\/style>\n' : '')
+        + '<script type="application/ld+json" id="glossary-data">' + json + '<\/script>\n'
+        + '</head>\n<body class="glossary-page">\n'
+        + '<div data-glossary data-source="#glossary-data" data-base="' + esc(current.base) + '" class="glossary" lang="' + esc(m.lang) + '">'
+        + snapshot.innerHTML + '</div>\n'
+        + '<script>window.WSGlossaryL10n = ' + inScript(JSON.stringify(window.WSGlossaryL10n || {})) + ';<\/script>\n'
+        + '<script>\n' + inScript(files[2]) + '\n<\/script>\n</body>\n</html>\n';
+    });
+  }
+  exportButton.addEventListener('click', function () {
+    if (!current) return;
+    exportButton.disabled = true;
+    standalone().then(function (html) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+      a.download = G.slug(current.model.name) + (skinChoice.value ? '-' + skinChoice.value : '') + '.html';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }).catch(function (e) { say(t('Could not build the file: %s', e.message)); })
+      .then(function () { exportButton.disabled = false; });
+  });
+
+  document.getElementById('open').addEventListener('submit', function (ev) { ev.preventDefault(); openUrl(srcInput.value.trim()); });
+  document.getElementById('file').addEventListener('change', function (ev) {
+    var f = ev.target.files[0];
+    if (!f) return;
+    f.text().then(function (s) { return show(JSON.parse(s), document.baseURI); })
+      .catch(function (e) { say(t('Could not read %1$s: %2$s', f.name, e.message)); });
+  });
+  skinChoice.addEventListener('change', function () {
+    setSkin(skinChoice.value);
+    var q = new URLSearchParams(location.search); q.set('skin', skinChoice.value);
+    history.replaceState(null, '', '?' + q + location.hash);
+  });
+  if (window.ResizeObserver) new ResizeObserver(function () { root.style.setProperty('--g-sticky-top', bar.offsetHeight + 'px'); }).observe(bar);
+
+  var params = new URLSearchParams(location.search);
+  if (params.has('skin')) setSkin(params.get('skin'));
+  useLocale(locale(navigator.language)).then(function () {
+    if (params.get('src')) { srcInput.value = params.get('src'); openUrl(params.get('src')); }
+    else say(t('Open a glossary: the address of a JSON-LD file, or a file from this computer.'));
+  });
+})();
+</script>
+</body>
+</html>

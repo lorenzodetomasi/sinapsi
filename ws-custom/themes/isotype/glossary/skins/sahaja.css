@@ -1,0 +1,47 @@
+/* ===========================================================================
+ * Sahaja skin - the look of the first Sahaja Yoga glossary: warm paper,
+ * indigo ink, a gold accent; Cormorant Garamond for the display, Spectral for
+ * the text; three thin "channels" behind the title (the left, central and
+ * right channels of the subtle system). At night the paper turns to indigo.
+ * =========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:where(.glossary, .glossary-page) {
+  --g-bg: light-dark(#f3f1ea, #16141f);
+  --g-bg-2: light-dark(#edeae0, #1b1826);
+  --g-panel: light-dark(#fbfaf6, #1f1c2b);
+  --g-ink: light-dark(#232028, #ece8f4);
+  --g-ink-2: light-dark(#57525f, #c3bdd0);
+  --g-ink-3: light-dark(#847e8c, #8f88a0);
+  --g-line: light-dark(#dbd6c9, #35304a);
+  --g-line-2: light-dark(#e7e3d8, #2a2639);
+  --g-accent: light-dark(#463c79, #b3a8ec);
+  --g-accent-strong: light-dark(#332a5b, #d9d2ff);
+  --g-accent-wash: light-dark(rgb(70 60 121 / .09), rgb(179 168 236 / .12));
+  --g-on-accent: light-dark(#f4f1ea, #16141f);
+  --g-highlight: light-dark(#f2e7c6, #4a3f22);
+  --g-gold: light-dark(#a17c36, #d8b36a);
+  --g-font-body: 'Spectral', Georgia, serif;
+  --g-font-display: 'Cormorant Garamond', 'Spectral', Georgia, serif;
+  --g-font-ui: var(--g-font-body);
+  --g-display-weight: 600;
+  --g-body-size: 18px;
+  --g-radius: 3px;
+  --g-hero-bg: radial-gradient(120% 90% at 50% -20%, var(--g-accent-wash), transparent 60%),
+    linear-gradient(180deg, light-dark(#f6f4ee, #1b1826), var(--g-bg));
+}
+
+.glossary-hero__ornament { display: block; position: absolute; inset: 0; pointer-events: none; opacity: .5; }
+.glossary-hero__ornament i { position: absolute; top: 0; bottom: 0; width: 1px; background: linear-gradient(180deg, transparent, var(--g-line), transparent); }
+.glossary-hero__ornament i:nth-child(1) { left: calc(50% - 84px); }
+.glossary-hero__ornament i:nth-child(2) { left: 50%; width: 1.5px; background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--g-accent) 30%, transparent), transparent); }
+.glossary-hero__ornament i:nth-child(3) { left: calc(50% + 84px); }
+.glossary-eyebrow { font-weight: 500; letter-spacing: .34em; }
+.glossary-title { letter-spacing: .005em; line-height: 1.02; }
+.glossary-subtitle { font-weight: 300; }
+.glossary-letter__char, .glossary-spine a { font-weight: 500; }
+.glossary-closing__part h2 { font-weight: 500; }
+.glossary-license__terms li::before { content: "\00b7"; color: var(--g-gold); font-weight: 700; margin-right: 6px; }
+/* The salutation that closes a Sahaja text, when the matter ends with one. */
+.glossary-closing__part p:has(+ p > small:only-child) { font-family: var(--g-font-display); font-weight: 600; font-size: 1.5rem; letter-spacing: .16em; color: var(--g-gold); text-align: center; margin: 36px 0 8px; }
+.glossary-closing__part p > small:only-child { display: block; text-align: center; }
