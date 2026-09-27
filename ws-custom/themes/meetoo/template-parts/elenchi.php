@@ -710,6 +710,10 @@ function meetoo_voci($quale){
 			if(in_array('ItemList', (array)($l['@type'] ?? array()), true)){
 				continue;
 			}
+			// A site closed for good keeps its page but leaves the list.
+			if(!empty($l['closed'])){
+				continue;
+			}
 			$id = (string)($l['@id'] ?? '');
 			$href = meetoo_indirizzo($id);
 			if($href === '' or !meetoo_di_qui($href)){ continue; }

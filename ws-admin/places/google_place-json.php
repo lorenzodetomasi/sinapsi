@@ -710,6 +710,41 @@ if ($action === 'save') {
     // salvataggio ripetuto/merge), il riferimento si conserva; altrimenti si
     // toglie per non lasciare immagini rotte. $extraKeys = chiavi da togliere
     // insieme (es. il credit della satellite).
+    /* A MOVE (ws-admin/lib/place-history.php). A new address sends the old one
+     * into the history; a new POSTCODE also renames the @id, which carries it
+     * and must say the truth: the folder moves, the old id is kept in
+     * meetoo:formerIds (its public address will redirect), and after writing
+     * every file that names it is updated. Here, before the media: they are
+     * written into the folder, and the folder may be about to move. */
+    require_once __DIR__ . '/../lib/place-history.php';
+    $rinomina = null;
+    if ($existed && $storedEntity) {
+        place_record_address_change($storedEntity, $entity);
+        $capId = place_cap_from_id($id);
+        $capNuovo = place_cap_from_address($entity['address'] ?? null);
+        if ($capId !== '' && $capNuovo !== '' && $capNuovo !== $capId) {
+            $newId = "places/$capNuovo/" . basename($id);
+            $newDir = ws_id_to_path($newId);
+            if ($newDir === null || file_exists($newDir)) {
+                echo json_encode(["error" => "Il CAP è cambiato e la scheda andrebbe in $newId, dove ce n'è già un'altra. Cambia il nome (lo slug) e risalva."]);
+                exit;
+            }
+            @mkdir(dirname($newDir), 0775, true);
+            if (!@rename($dir, $newDir)) {
+                echo json_encode(["error" => "Il CAP è cambiato ma la cartella non si sposta in $newId (permessi?)."]);
+                exit;
+            }
+            foreach (glob("$newDir/*.xml") ?: [] as $gemello) @unlink($gemello);   // nomina il vecchio @id: si rifà
+            $former = (array)($entity['meetoo:formerIds'] ?? $storedEntity['meetoo:formerIds'] ?? []);
+            $former[] = $id;
+            $entity['meetoo:formerIds'] = array_values(array_unique($former));
+            $entity['@id'] = $newId;
+            if (($decoded['@id'] ?? '') === $id) $decoded['@id'] = $newId;
+            $rinomina = ['da' => $id, 'a' => $newId];
+            $id = $newId; $dir = $newDir; $file = "$dir/index.json";
+        }
+    }
+
     $media = is_array($data['media'] ?? null) ? $data['media'] : [];
     $saved = []; $failed = []; $mediaDebug = [];
     $okPath = function ($p) { return $p !== '' && preg_match('#^media/[A-Za-z0-9._-]+$#', $p); };
@@ -746,6 +781,12 @@ if ($action === 'save') {
     }
 
     // Aggiorna l'indice di deduplica (se l'entità ha un google_place_id).
+    // Everyone who named the old id now names the new one (never this file: its
+    // formerIds must keep the old).
+    if ($rinomina) {
+        $rinomina['files'] = place_rename_refs(WS_MEETOO_ROOT, $rinomina['da'], $rinomina['a'], $file);
+    }
+
     $savedPlaceId = ws_index_place_id($entity);
     $indexUpdated = $savedPlaceId !== ''
         && ws_index_upsert($savedPlaceId, $id, $entity['name'] ?? '', $entity['@type'] ?? '');
@@ -773,6 +814,7 @@ if ($action === 'save') {
         "success" => true, "path" => "$id/index.json", "overwritten" => $existed, "mode" => ($mode ?: 'new'),
         "media_saved" => $saved, "media_failed" => $failed, "media_debug" => $mediaDebug,
         "index_updated" => $indexUpdated, "lists_updated" => $listeAggiornate,
+        "renamed" => $rinomina,
     ]);
     exit;
 }
@@ -980,7 +1022,9 @@ if ($action === 'search') {
         $wsCmsJsonLd['mainEntity']['meetoo:satelliteView'] = "media/satellite.jpg";
         $wsCmsJsonLd['mainEntity']['meetoo:satelliteCredit'] = WS_SATELLITE_CREDIT;
     }
-    if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:legalStatus'] = $place['business_status'];
+    // Google's business status, under its own name (place-history.php reads it;
+    // meetoo:legalStatus was the name used before, and is still read).
+    if (!empty($place['business_status'])) $wsCmsJsonLd['mainEntity']['meetoo:business_status'] = $place['business_status'];
     if (!empty($accessibility)) $wsCmsJsonLd['mainEntity']['meetoo:accessibilityFeature'] = $accessibility;
     if (!empty($amenities)) $wsCmsJsonLd['mainEntity']['amenityFeature'] = $amenities;
 

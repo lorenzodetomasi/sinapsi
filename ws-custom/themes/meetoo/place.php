@@ -60,6 +60,14 @@ if($cover !== ''){ ?>
 				</figure>
 <?php } ?>
 				<h1 class="mt-h1"><?php echo mt_esc($titolo); ?></h1>
+<?php
+/* A closed site keeps its page - past events point here - and says so first. */
+require_once ws_admin_abspath().'/lib/place-history.php';
+$stato_luogo = place_status(meetoo_contenuto(meetoo_rel_corrente()) ?: array());
+if($stato_luogo === 'CLOSED_PERMANENTLY' or $stato_luogo === 'CLOSED_TEMPORARILY'){ ?>
+				<p class="mt-chiuso"><?php echo mt_icona($stato_luogo === 'CLOSED_PERMANENTLY' ? 'block' : 'schedule'); ?><span><?php
+					echo mt_esc($stato_luogo === 'CLOSED_PERMANENTLY' ? __('Chiuso definitivamente') : __('Temporaneamente chiuso')); ?></span></p>
+<?php } ?>
 <?php if(count($indirizzo)){ ?>
 				<p class="mt-sommario"><?php echo mt_icona('location_on'); ?> <?php echo mt_esc(implode(', ', $indirizzo)); ?></p>
 <?php } ?>

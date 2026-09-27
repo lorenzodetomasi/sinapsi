@@ -45,7 +45,8 @@ function filtra(lista, testo, ambito) {
   const ammesso = AMBITI[ambito] || AMBITI.organizer;
   // Le liste (ItemList: Lungomare, BookCrossing) stanno sotto places/ ma non sono
   // né un posto dove si va né qualcuno che organizza.
-  const base = lista.filter((e) => ammesso(e) && e['@type'] !== 'ItemList');
+  // A site closed for good is not offered for new events (its page stays).
+  const base = lista.filter((e) => ammesso(e) && e['@type'] !== 'ItemList' && !e.closed);
   const q = (testo ?? '').trim().toLowerCase();
   if (!q) return base.slice(0, 8);
   // Chi comincia per… prima di chi contiene: cercando "bau" si vuole BauBeach in

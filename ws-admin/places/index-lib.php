@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../lib/place-history.php';
 // Indice di deduplica google_place_id → @id per tutti i JSON di Meetoo che hanno
 // un google_place_id (places + organizations). Un solo indice GLOBALE: il place_id
 // è unico a prescindere dal tipo, e la ricerca è per place_id (che non contiene il
@@ -176,6 +177,8 @@ function ws_entities_rebuild() {
                 '@type'    => is_array($type) ? ($type[0] ?? 'Organization') : $type,
                 'kind'     => $isOrgDir ? 'org' : 'business',
                 'isGroup'  => !empty($e['meetoo:isGroup']),
+                // Closed for good: kept (past events point to it), not offered for new ones.
+                'closed'   => (function_exists('place_is_closed') ? place_is_closed($e) : false),
                 'locality' => is_array($addr) && is_string($addr['addressLocality'] ?? null) ? $addr['addressLocality'] : '',
                 'region'   => ws_entities_region($addr),
             ];

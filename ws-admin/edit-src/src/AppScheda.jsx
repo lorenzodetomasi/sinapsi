@@ -296,6 +296,15 @@ export default function AppScheda() {
         avvisa('Esiste già una scheda a questo indirizzo. Aprila e modificala, oppure cambia l’@id.', 'ko');
         return;
       }
+      /* The postcode changed and the server renamed the record: reopen it under
+       * its new @id, or the next save would bring the old folder back. */
+      if (r.renamed?.a) {
+        avvisa(`Il CAP è cambiato: la scheda ora è ${r.renamed.a} (${(r.renamed.files || []).length} file aggiornati).`);
+        const q = new URLSearchParams(window.location.search);
+        q.set('id', r.renamed.a);
+        window.location.search = q.toString();
+        return;
+      }
       setEsiste(true);
       setDifferenze([]);
       avvisa(Array.isArray(soloQuesti) && soloQuesti.length ? `Integrati ${soloQuesti.length} campi.` : 'Salvata sul server.');

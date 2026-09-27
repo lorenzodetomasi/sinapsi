@@ -173,6 +173,18 @@ function mt_piano($html){
 $luogoId = isset($e->location) ? meetoo_riferimento_nodo($e->location) : '';
 $luogoNome = isset($e->location) ? mt_ev($e->location, 'name') : '';
 $luogoDoc = $luogoId !== '' ? meetoo_contenuto($luogoId) : null;
+/* The place AS IT WAS on the event's date: a site that has moved since shows,
+ * on its past events, the address they happened at (place-history.php). */
+$luogoIndirizzo = '';
+if($luogoDoc){
+	require_once ws_admin_abspath().'/lib/place-history.php';
+	$luogoDoc = place_at_date($luogoDoc, (string)$dal);
+	$a = is_array($luogoDoc['address'] ?? null) ? $luogoDoc['address'] : array();
+	$luogoIndirizzo = implode(', ', array_filter(array(
+		trim((string)($a['streetAddress'] ?? '')),
+		trim(trim((string)($a['postalCode'] ?? '')).' '.(is_string($a['addressLocality'] ?? null) ? $a['addressLocality'] : '')),
+	)));
+}
 if($luogoDoc){
 	$luogoNome = mt_luogo_testo($luogoDoc) ?: $luogoNome;
 }
@@ -180,7 +192,7 @@ $luogoHref = $luogoId !== '' ? meetoo_indirizzo($luogoId) : '';
 
 $ics_inizio = mt_utc($dal, $fuso);
 $ics_fine = mt_utc($al !== '' ? $al : $dal, $fuso);
-$ics_dove = trim($luogoNome);
+$ics_dove = trim($luogoNome.($luogoIndirizzo !== '' ? ', '.$luogoIndirizzo : ''));
 $ics_testo = mt_piano(isset($e->abstract) ? $e->abstract->innerHTML() : mt_ev($e, 'description'));
 $ics_url = ws_href(trim((string)$ws_query['wspath'], '/'));
 
@@ -471,6 +483,7 @@ include_template('template-parts/header');
 								echo $luogoHref !== ''
 									? '<a href="'.mt_esc($luogoHref).'">'.mt_esc($luogoNome).'</a>'
 									: mt_esc($luogoNome);
+								if($luogoIndirizzo !== ''){ echo '<small class="mt-indirizzo">'.mt_esc($luogoIndirizzo).'</small>'; }
 							?></span></p>
 <?php } ?>
 <?php if(count($tipi)){ ?>

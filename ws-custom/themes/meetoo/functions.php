@@ -258,7 +258,9 @@ function meetoo_mappa(){
 		// Le pagine GENERATE (i tre elenchi, i livelli intermedi) condividono il
 		// contenuto della zona: qui si cerca la pagina PROPRIA di un contenuto, e
 		// quelle non lo sono.
-		if(strpos($q, 'elenco=') !== false or strpos($q, 'zona=') !== false){
+		// An OLD address that redirects (template=redirect) is not the page of
+		// its content either: it would win over the real one, being added last.
+		if(strpos($q, 'elenco=') !== false or strpos($q, 'zona=') !== false or strpos($q, 'template=redirect') !== false){
 			continue;
 		}
 		if(!preg_match('/[?&]content=([^&]*)/', $q, $m)){

@@ -507,6 +507,7 @@ if (!function_exists('ws_mappa_wspath')) {
             $voci[] = $g;
         }
 
+        $rinvii = [];   // former address => the content that lives on
         foreach (ws_mappa_entita($localeDir) as $rel) {
             $raw = (string)@file_get_contents("$localeDir/$rel/index.json");
             $doc = json_decode($raw, true);
@@ -545,6 +546,26 @@ if (!function_exists('ws_mappa_wspath')) {
                 'description' => ws_mappa_meta_descrizione($e),
                 'dateModified' => (string)($doc['dateModified'] ?? $e['dateModified'] ?? date('c')),
             ];
+
+            /* The addresses it HAD: a site renamed when it changed postcode keeps
+             * its former ids (place-history.php), and the page each of them had
+             * now sends to this one. Collected here, added after every real page:
+             * an old address never takes a place a live page needs. */
+            foreach ((array)($e['meetoo:formerIds'] ?? []) as $vecchio) {
+                $vecchio = trim((string)$vecchio, '/');
+                if ($vecchio === '' || $vecchio === $rel) continue;
+                $prima = ws_mappa_wspath($vecchio, $tipi, $ctx, $e);
+                if ($prima && $prima[0] !== $wspath) $rinvii[$prima[0]] = $rel;
+            }
+        }
+        foreach ($rinvii as $vecchioPath => $rel) {
+            if (isset($presi[$vecchioPath])) continue;
+            $presi[$vecchioPath] = $rel;
+            $voci[] = [
+                'wspath' => $vecchioPath, 'rel' => $rel, 'template' => 'redirect', 'tipo' => 'WebPage',
+                'title' => '', 'description' => '', 'dateModified' => date('c'),
+                'robots' => 'noindex, follow', 'extra' => ['to' => $rel],
+            ];
         }
 
         $xml = ws_mappa_xml($voci, $sito, $locale);
@@ -581,7 +602,7 @@ if (!function_exists('ws_mappa_wspath')) {
             $out .= "\t\t<description>" . ws_mappa_esc($v['description']) . "</description>\n";
             $out .= "\t\t<changefreq>weekly</changefreq>\n";
             $out .= "\t\t<priority>0.6</priority>\n";
-            $out .= "\t\t<robots>index, follow</robots>\n";
+            $out .= "\t\t<robots>" . ws_mappa_esc($v['robots'] ?? 'index, follow') . "</robots>\n";
             $out .= "\t\t<dateModified>" . ws_mappa_esc($v['dateModified']) . "</dateModified>\n";
             $out .= "\t</url>\n";
         }
