@@ -126,6 +126,7 @@ if (!function_exists('event_index_org_type')) {
 require_once __DIR__ . '/ws-auth.php';
 require_once __DIR__ . '/event-dates.php';
 require_once __DIR__ . '/event-inherit.php';
+require_once __DIR__ . '/event-offers.php';
 
 // Voce compatta dell'indice a partire dal documento evento e dal percorso (schema c).
 // $base (.../contents/meetoo/it_IT) serve a risolvere il luogo: se omesso, la voce
@@ -174,6 +175,8 @@ if (!function_exists('event_index_item')) {
          * The site picks the next one when it draws a list (see
          * ws-admin/lib/event-dates.php); here they are only written down. */
         $quando = event_dates_expand($doc);
+        // What it costs, in a few words for the cards (event-offers.php).
+        $costo = event_offers_summary($doc);
 
         return [
             'path'         => $relPath,
@@ -210,6 +213,10 @@ if (!function_exists('event_index_item')) {
             'dates'        => $quando['dates'],
             'until'        => $quando['until'],
             'rule'         => $quando['rule'],
+            'priceMin'     => $costo['min'],
+            'priceMax'     => $costo['max'],
+            'free'         => $costo['free'],
+            'registration' => $costo['registration'],
         ];
     }
 }

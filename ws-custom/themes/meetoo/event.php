@@ -243,6 +243,57 @@ $valuta = isset($e->offers) ? (mt_ev($e->offers, 'priceCurrency') ?: 'EUR') : 'E
 $offerta = ($gratis or $prezzo === '0' or $prezzo === '0.00') ? __('Ingresso libero')
 	: ($prezzo !== '' ? $prezzo.' '.$valuta : '');
 
+/* THE TICKETS: one row per price - for whom, on which date - and the way to
+ * get it: buy, book, sign up by email (ws-admin/lib/event-offers.php). Read
+ * from the JSON, completed by the series for an occurrence. */
+require_once ws_admin_abspath().'/lib/event-offers.php';
+$doc_offerte = meetoo_evento_con_serie($rel) ?: (meetoo_contenuto($rel) ?: array());
+$offerte = event_offers($doc_offerte);
+$biglietti = array();
+$azioni = array();
+foreach($offerte as $o){
+	$p = event_offer_price($o);
+	$dettagli = array();
+	$eta_o = trim((string)($o['meetoo:eligibleAge'] ?? ''));
+	if($eta_o !== ''){ $dettagli[] = mt_eta($eta_o); }
+	if(trim((string)($o['meetoo:audience'] ?? '')) !== ''){ $dettagli[] = trim((string)$o['meetoo:audience']); }
+	if(trim((string)($o['description'] ?? '')) !== ''){ $dettagli[] = trim((string)$o['description']); }
+	$giorni = array();
+	foreach((array)($o['meetoo:dates'] ?? array()) as $g){
+		$d = meetoo_istante(substr((string)$g, 0, 10).'T12:00:00', $fuso);
+		if($d){ $giorni[] = $d->format('j').' '.mt_mese_num((int)$d->format('n')); }
+	}
+	if($giorni){ $dettagli[] = sprintf(__('solo il %s'), implode(', ', $giorni)); }
+	$biglietti[] = array(
+		'nome' => trim((string)($o['name'] ?? '')) ?: __('Biglietto'),
+		// "Ingresso gratuito · gratuito" says it twice: a free row whose name already says so gets no price.
+		'prezzo' => $p === null ? '' : ($p == 0 ? (stripos((string)($o['name'] ?? ''), 'gratuit') !== false ? '' : __('gratuito')) : event_price_text($p, (string)($o['priceCurrency'] ?? 'EUR'))),
+		'dettagli' => implode(' · ', $dettagli),
+	);
+	/* One button per destination, not per price: full and reduced are bought
+	 * on the same page. What the button says depends on what it leads to. */
+	$url = trim((string)($o['url'] ?? ''));
+	if($url !== '' and !isset($azioni[$url])){
+		$iscrizione = (($o['meetoo:registration'] ?? '') === 'required');
+		$mail = (stripos($url, 'mailto:') === 0);
+		if($mail){
+			$url_vero = $url.(strpos($url, '?') === false ? '?' : '&').'subject='.rawurlencode(sprintf(__('Iscrizione: %s'), $titolo));
+			$azioni[$url] = array($url_vero, 'mail', __('Iscriviti per email'), substr($url, 7));
+		} else {
+			$host = preg_replace('#^www\.#', '', (string)parse_url($url, PHP_URL_HOST));
+			$azioni[$url] = array($url, 'confirmation_number',
+				($p !== null and $p == 0) || $iscrizione ? sprintf(__('Prenota su %s'), $host) : sprintf(__('Biglietti su %s'), $host), '');
+		}
+	}
+}
+// The single line of the side panel says it short: the detail is the block below.
+if($offerte){
+	$som = event_offers_summary($doc_offerte);
+	$offerta = $som['free'] ? __('Ingresso libero')
+		: ($som['min'] !== null ? ($som['max'] > $som['min'] ? sprintf(__('da %s'), event_price_text($som['min'])) : event_price_text($som['min'])) : $offerta);
+	if($som['registration']){ $offerta .= ' · '.__('su iscrizione'); }
+}
+
 // Le capienze si mostrano solo se l'evento le conta.
 $posti = mt_ev($e, 'maximumAttendeeCapacity');
 $rimasti = mt_ev($e, 'remainingAttendeeCapacity');
@@ -523,6 +574,25 @@ if($serie){
 					          Sta nel contenuto e non nell'aside perché un elenco di nomi ed
 					          email ha bisogno di larghezza. */ ?>
 					<section id="mt-partecipanti" class="mt-sezione" hidden></section>
+<?php if($biglietti or $azioni){ ?>
+					<section id="biglietti" class="mt-sezione mt-biglietti">
+						<h2 class="sec-head"><?php echo mt_icona('confirmation_number'); ?><?php _e('Biglietti'); ?></h2>
+<?php if($biglietti){ ?>
+						<ul class="mt-prezzi">
+<?php foreach($biglietti as $b){ ?>
+							<li><span class="mt-prezzo-nome"><?php echo mt_esc($b['nome']); ?><?php if($b['dettagli'] !== ''){ ?> <small><?php echo mt_esc($b['dettagli']); ?></small><?php } ?></span><span class="mt-prezzo"><?php echo mt_esc($b['prezzo']); ?></span></li>
+<?php } ?>
+						</ul>
+<?php } ?>
+<?php if($azioni){ ?>
+						<p class="mt-biglietti-azioni">
+<?php foreach($azioni as $a){ ?>
+							<a class="mt-azione mt-azione-forte" href="<?php echo mt_esc($a[0]); ?>"<?php echo $a[1] === 'mail' ? '' : ' rel="noopener" target="_blank"'; ?>><?php echo mt_icona($a[1]); ?><span><?php echo mt_esc($a[2]); ?></span></a><?php if($a[3] !== ''){ ?> <small class="mt-nota"><?php echo mt_esc($a[3]); ?></small><?php } ?>
+<?php } ?>
+						</p>
+<?php } ?>
+					</section>
+<?php } ?>
 					</div><!-- .mt-principale -->
 
 					<aside class="mt-aside">

@@ -90,7 +90,6 @@ function toSchedule(s, fuso) {
 
 /** JSON-LD (index.json) -> dati del form. */
 export function fromJsonLd(doc) {
-  const o = doc.offers ?? {};
   const loc = doc.location ?? {};
   const rating = doc.aggregateRating ?? {};
   const typeArr = asArray(doc['@type']);
@@ -153,12 +152,21 @@ export function fromJsonLd(doc) {
     bookedAttendeeCapacity: Math.max(0, maxTotal - remaining),
     remainingAttendeeCapacity: remaining,
     isAccessibleForFree: asBool(doc.isAccessibleForFree),
-    offers: {
-      availability: o.availability ?? '',
-      price: o.price ?? 0,
-      priceCurrency: o.priceCurrency ?? 'EUR',
-      url: o.url ?? '',
-    },
+    // One row per price (ws-admin/lib/event-offers.php has the model); an older
+    // single Offer object is a list of one.
+    offers: asArray(doc.offers).filter((x) => x && typeof x === 'object').map((x) => ({
+      name: x.name ?? '',
+      price: x.price === undefined || x.price === null || x.price === '' ? '' : Number(x.price),
+      priceCurrency: x.priceCurrency ?? 'EUR',
+      url: x.url ?? '',
+      availability: x.availability ?? '',
+      condizione: x.description ?? '',
+      eta: x['meetoo:eligibleAge'] ?? '',
+      pubblico: x['meetoo:audience'] ?? '',
+      minimo: x.eligibleQuantity?.minValue ?? '',
+      date: asArray(x['meetoo:dates']).map((d) => String(d).slice(0, 10)),
+      iscrizione: x['meetoo:registration'] === 'required',
+    })),
     location: {
       id: loc['@id'] ?? '',
       type: loc['@type'] ?? 'Place',
@@ -333,18 +341,31 @@ export function toJsonLd(d) {
   const remaining = num(d.remainingAttendeeCapacity);
   const kw = mergeKeywords(d);
 
-  // Sotto-oggetti opzionali: inclusi solo se hanno contenuto reale.
-  const price = num(d.offers?.price);
-  const offers =
-    d.offers?.availability || price || d.offers?.url
-      ? {
-          '@type': 'Offer',
-          ...(d.offers?.availability ? { availability: d.offers.availability } : {}),
-          ...(price ? { price } : {}),
-          priceCurrency: d.offers?.priceCurrency || 'EUR',
-          ...(d.offers?.url ? { url: d.offers.url } : {}),
-        }
-      : null;
+  /* One Offer per row. An email typed as it is becomes a mailto: link - that
+   * is what "per iscrizioni: indirizzo@…" means. (The price used to go through
+   * num(), which zeroes everything unless «Posti limitati» is on: a price was
+   * saved only for events with limited seats.) */
+  const comeUrl = (u) => {
+    const v = String(u || '').trim();
+    return /^[^\s@:/]+@[^\s@]+\.[^\s@]+$/.test(v) ? `mailto:${v}` : v;
+  };
+  const righe = (Array.isArray(d.offers) ? d.offers : [])
+    .filter((r) => r && (r.name || r.url || (r.price !== '' && r.price !== undefined && r.price !== null)))
+    .map((r) => ({
+      '@type': 'Offer',
+      ...(r.name ? { name: r.name } : {}),
+      ...(r.price !== '' && r.price !== undefined && r.price !== null && !Number.isNaN(Number(r.price)) ? { price: Number(r.price) } : {}),
+      priceCurrency: r.priceCurrency || 'EUR',
+      ...(r.url ? { url: comeUrl(r.url) } : {}),
+      ...(r.availability ? { availability: r.availability } : {}),
+      ...(r.condizione ? { description: r.condizione } : {}),
+      ...(Number(r.minimo) > 1 ? { eligibleQuantity: { '@type': 'QuantitativeValue', minValue: Number(r.minimo) } } : {}),
+      ...(r.eta ? { 'meetoo:eligibleAge': r.eta } : {}),
+      ...(r.pubblico ? { 'meetoo:audience': r.pubblico } : {}),
+      ...(r.date?.length ? { 'meetoo:dates': [...r.date].sort() } : {}),
+      ...(r.iscrizione ? { 'meetoo:registration': 'required' } : {}),
+    }));
+  const offers = righe.length ? righe : null;
   const location =
     d.location?.id || d.location?.name
       ? {

@@ -448,3 +448,11 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
      con la pagina. */
   --content-gutter: 1rem;
 }
+
+/* Tickets: one row per price, and the way to get it (event.php, #biglietti). */
+.mt-prezzi { list-style: none; margin: 0 0 1rem; padding: 0; }
+.mt-prezzi li { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .5rem 0; border-bottom: 1px solid var(--color-line); }
+.mt-prezzi small { display: block; color: var(--color-hint); }
+.mt-prezzo { font-weight: 600; white-space: nowrap; color: var(--color-heading); }
+.mt-biglietti-azioni { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0; }
+.mt-biglietti-azioni .mt-azione { text-decoration: none; }

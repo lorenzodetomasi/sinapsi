@@ -164,16 +164,9 @@ export const schema = {
      * non della persona: sta nell'editor della cosa, come nelle schede. */
     contributor: { type: 'array', title: 'Chi altro può modificarlo', items: { type: 'string' } },
     isAccessibleForFree: { type: 'boolean', title: 'Gratuito' },
-    offers: {
-      type: 'object',
-      title: 'Offerta',
-      properties: {
-        availability: { type: 'string', title: 'Disponibilità', oneOf: AVAILABILITY },
-        price: { type: 'number', title: 'Prezzo' },
-        priceCurrency: { type: 'string', title: 'Valuta', default: 'EUR' },
-        url: { type: 'string', title: 'URL' },
-      },
-    },
+    // Più prezzi: intero, ridotto, under 12, matinée, 2° figlio, quota con
+    // iscrizione (OfferteRenderer; il modello in ws-admin/lib/event-offers.php).
+    offers: { type: 'array', title: 'Biglietti e iscrizioni', items: { type: 'object', additionalProperties: true } },
     location: {
       type: 'object',
       title: 'Luogo',
@@ -478,25 +471,8 @@ export const uischema = {
       type: 'Group',
       label: 'Offerta',
       options: { icon: 'payments' },
-      // CONDIZIONE: mostra la sezione solo se l'evento NON è gratuito.
-      rule: {
-        effect: 'SHOW',
-        condition: {
-          scope: '#/properties/isAccessibleForFree',
-          schema: { const: false },
-        },
-      },
-      elements: [
-        {
-          type: 'HorizontalLayout',
-          elements: [
-            ctrl('#/properties/offers/properties/availability'),
-            ctrl('#/properties/offers/properties/price'),
-            ctrl('#/properties/offers/properties/priceCurrency'),
-            ctrl('#/properties/offers/properties/url'),
-          ],
-        },
-      ],
+      // Sempre visibile: anche un evento gratuito può chiedere di prenotare o iscriversi.
+      elements: [ctrl('#/properties/offers', { options: { offerte: true } })],
     },
     ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
     // Single → programma interno; Series → occorrenze (link @id)

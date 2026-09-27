@@ -712,3 +712,12 @@ pre.code-area-testo .line-error {
 .occ-testa .material-symbols-outlined { color: var(--text-dim); }
 .occ-testa .field-label { margin: 0; font-weight: 700; }
 .quando-chip.chip-warn { border-color: var(--danger); color: var(--danger); }
+
+/* Tickets and sign-ups (OfferteRenderer) */
+.offerte { display: grid; gap: var(--sp-sm); }
+.offerta { display: grid; gap: var(--sp-xs); padding: var(--sp-sm) 0; border-bottom: 1px solid var(--border); }
+.offerta input:not([type="checkbox"]) { width: auto; min-width: 0; }
+.offerta .offerta-url { flex: 1 1 14em; }
+.offerta-dettagli { color: var(--text-dim); font-size: var(--fs-label); }
+.quando-chip.on { border-color: var(--accent); color: var(--accent); }
+button.quando-chip { background: transparent; cursor: pointer; padding: 2px var(--sp-sm); color: var(--text); }

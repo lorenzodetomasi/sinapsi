@@ -856,6 +856,13 @@ function meetoo_jsonld_date($doc){
 			continue;
 		}
 		$uno = array('@type' => $tipo ?: 'Event') + $copia + array('startDate' => $d['start'], 'url' => $url);
+		/* Only the prices of THAT date: the matinée costs what the matinée
+		   costs, the Sunday what the Sunday does (event-offers.php). */
+		if(!empty($copia['offers'])){
+			require_once ws_admin_abspath().'/lib/event-offers.php';
+			$sue = event_offers_on(event_offers($copia), substr((string)$d['start'], 0, 10));
+			if($sue){ $uno['offers'] = $sue; } else { unset($uno['offers']); }
+		}
 		if(($d['end'] ?? '') !== ''){
 			$uno['endDate'] = $d['end'];
 		}

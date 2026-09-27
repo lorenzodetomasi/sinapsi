@@ -297,6 +297,26 @@ function mt_card_evento($ev, $o = array()){
 	 * cosa che legge chi cerca qualcosa da fare con i figli. In una pastiglia si
 	 * scrive corta — «0+», «14+», «6-10» — che è come si legge su una locandina;
 	 * per esteso si dice sulla scheda, dove c'è spazio per una frase. */
+	/* What it costs, in the fewest words: "Gratuito", "10 €", "da 6 €" - and
+	 * whether one has to sign up. The detail is on the event's page. */
+	if(array_key_exists('free', $ev)){
+		$costo = '';
+		if(!empty($ev['free'])){
+			$costo = __('Gratuito');
+		} else if(isset($ev['priceMin']) and $ev['priceMin'] !== null){
+			require_once ws_admin_abspath().'/lib/event-offers.php';
+			$piu = (($ev['priceMax'] ?? null) !== null and $ev['priceMax'] > $ev['priceMin']);
+			$costo = $piu
+				? sprintf(__('da %s'), event_price_text((float)$ev['priceMin']))
+				: event_price_text((float)$ev['priceMin']);
+		}
+		if(!empty($ev['registration'])){
+			$costo = trim($costo.($costo !== '' ? ' · ' : '').__('su iscrizione'));
+		}
+		if($costo !== ''){
+			$meta[] = mt_meta('confirmation_number', $costo);
+		}
+	}
 	$eta = trim((string)($ev['ageRange'] ?? ''));
 	if($eta !== ''){
 		$meta[] = mt_meta('escalator_warning', meetoo_fascia_breve($eta));

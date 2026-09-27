@@ -25,6 +25,7 @@ import TimezoneRenderer, { timezoneTester } from './TimezoneRenderer.jsx';
 import CoerenzaRenderer, { coerenzaTester } from './CoerenzaRenderer.jsx';
 import SerieRenderer, { serieTester } from './SerieRenderer.jsx';
 import RassegneRenderer, { rassegneTester } from './RassegneRenderer.jsx';
+import OfferteRenderer, { offerteTester } from './OfferteRenderer.jsx';
 import QuandoRenderer, { quandoTester } from './QuandoRenderer.jsx';
 import OccorrenzeRenderer, { occorrenzeTester } from './OccorrenzeRenderer.jsx';
 import { loadEntities, findEntityById } from './entities.js';
@@ -64,6 +65,7 @@ const renderers = [
   { tester: coerenzaTester, renderer: CoerenzaRenderer },
   { tester: serieTester, renderer: SerieRenderer },
   { tester: rassegneTester, renderer: RassegneRenderer },
+  { tester: offerteTester, renderer: OfferteRenderer },
   { tester: quandoTester, renderer: QuandoRenderer },
   { tester: occorrenzeTester, renderer: OccorrenzeRenderer },
 ];
@@ -104,8 +106,6 @@ export default function App() {
   /* The series this event is an occurrence of: { rel, doc } or null. The form
    * shows the occurrence complete; the file keeps only what differs from it. */
   const [serieMadre, setSerieMadre] = useState(null);
-  const [tab, setTab] = useState('form');
-
   /* Data from OUTSIDE the form (opening, loading, a new event, applied JSON)
    * restarts the form. JSONForms reports its initial data once it has
    * compiled the schema - slow on a cold cache - and that late report, of the
@@ -128,6 +128,8 @@ export default function App() {
     const d = deriveCapacities(nuovi);
     setData((prima) => (JSON.stringify(prima) === JSON.stringify(d) ? prima : d));
   }, []);
+  const [tab, setTab] = useState('form');
+
   // File operations (Fase 1: carica · Fase 2: apri web · Fase 3: salva su PC). Flash = messaggio transitorio.
   const fileRef = useRef(null);
   const baseDirRef = useRef(null); // FileSystemDirectoryHandle radice contenuti (ricordato)
@@ -869,9 +871,9 @@ export default function App() {
           ) : null}
           <EditorContext.Provider value={{ creaBozza, site: SITE, loggato: !!authToken }}>
             <JsonForms
+              key={nascita}
               schema={schema}
               uischema={uischema}
-              key={nascita}
               data={data}
               renderers={renderers}
               cells={vanillaCells}
