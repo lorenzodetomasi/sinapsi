@@ -17,79 +17,8 @@
 
 require_once __DIR__ . '/../../lib/ws-auth.php';
 require_once __DIR__ . '/../../lib/ws-sites.php';
-
-const GLOSSARY_FILE = 'glossary.jsonld';
-const GLOSSARY_MAX_BYTES = 8 * 1024 * 1024;
-
-/* Markup allowed in content. Twin: ws-custom/themes/isotype/glossary/glossary.js
- * (INLINE / BLOCK). Keep the two lists equal. */
-const GLOSSARY_INLINE = ['em', 'strong', 'i', 'b', 'sup', 'sub', 'q', 'cite', 'abbr', 'dfn',
-    'small', 'mark', 's', 'u', 'code', 'kbd', 'bdi', 'br'];
-const GLOSSARY_BLOCK = ['p', 'ul', 'ol', 'li', 'blockquote'];
-const GLOSSARY_DROP = ['script', 'style', 'template', 'iframe', 'object', 'embed', 'noscript',
-    'svg', 'math', 'head', 'title', 'textarea', 'select', 'button', 'form', 'input'];
-
-/* ---- Interface strings --------------------------------------------------------
- * The module is not a CMS page, so it has no __(): it reads the same catalogue
- * the glossary app reads, ws-custom/languages/glossary-<locale>.po, and hands
- * the same array to the page's script. */
-function glossary_catalogue(string $locale = 'it_IT'): array
-{
-    static $cache = [];
-    if (isset($cache[$locale])) return $cache[$locale];
-    $file = __DIR__ . '/../../../ws-custom/languages/glossary-' . preg_replace('/[^A-Za-z_]/', '', $locale) . '.po';
-    return $cache[$locale] = is_file($file) ? glossary_parse_po((string)file_get_contents($file)) : [];
-}
-
-/** A .po file as msgid => msgstr (or => [forms]); a msgctxt is joined by "\x04". Twin of parsePo() in glossary.js. */
-function glossary_parse_po(string $po): array
-{
-    $out = [];
-    $cur = ['msgid' => '', 'forms' => []];
-    $field = null;
-    $unq = static fn(string $s) => stripcslashes(substr($s, 1, -1));
-    $flush = static function () use (&$out, &$cur, &$field) {
-        if ($cur['msgid'] !== '') {
-            $key = (isset($cur['msgctxt']) ? $cur['msgctxt'] . "\x04" : '') . $cur['msgid'];
-            $out[$key] = isset($cur['plural']) ? $cur['forms'] : ($cur['forms'][0] ?? '');
-        }
-        $cur = ['msgid' => '', 'forms' => []];
-        $field = null;
-    };
-    foreach (preg_split('/\R/', $po) as $line) {
-        $line = trim($line);
-        if ($line === '' || $line[0] === '#') { if ($line === '' && $field) $flush(); continue; }
-        if (preg_match('/^msgctxt\s+(".*")$/', $line, $m)) { if ($field && $field !== 'msgctxt') $flush(); $cur['msgctxt'] = $unq($m[1]); $field = 'msgctxt'; }
-        elseif (preg_match('/^msgid\s+(".*")$/', $line, $m)) { if ($field && $field !== 'msgctxt') $flush(); $cur['msgid'] = $unq($m[1]); $field = 'msgid'; }
-        elseif (preg_match('/^msgid_plural\s+(".*")$/', $line, $m)) { $cur['plural'] = $unq($m[1]); $field = 'msgid_plural'; }
-        elseif (preg_match('/^msgstr(?:\[(\d+)\])?\s+(".*")$/', $line, $m)) { $k = (int)($m[1] ?: 0); $cur['forms'][$k] = $unq($m[2]); $field = 'msgstr' . $k; }
-        elseif (preg_match('/^(".*")$/', $line, $m) && $field) {
-            $s = $unq($m[1]);
-            if ($field === 'msgctxt') $cur['msgctxt'] .= $s;
-            elseif ($field === 'msgid') $cur['msgid'] .= $s;
-            elseif ($field === 'msgid_plural') $cur['plural'] .= $s;
-            else { $k = (int)substr($field, 6); $cur['forms'][$k] = ($cur['forms'][$k] ?? '') . $s; }
-        }
-    }
-    $flush();
-    return $out;
-}
-
-function glossary_t(string $msgid, ...$args): string
-{
-    $s = glossary_catalogue()[$msgid] ?? '';
-    $s = is_string($s) && $s !== '' ? $s : $msgid;
-    return $args ? vsprintf($s, $args) : $s;
-}
-
-/** Plural: tn('%d entry', '%d entries', $n) - $n fills the placeholder unless other arguments follow. */
-function glossary_tn(string $single, string $plural, int $n, ...$args): string
-{
-    $s = glossary_catalogue()[$single] ?? null;
-    $i = $n === 1 ? 0 : 1;
-    $chosen = is_array($s) && ($s[$i] ?? '') !== '' ? $s[$i] : ($i ? $plural : $single);
-    return vsprintf($chosen, $args ?: [$n]);
-}
+// The app's own library - the catalogue, the markup whitelist, the model - and its EPUB.
+require_once __DIR__ . '/../../../ws-custom/themes/isotype/glossary/epub.php';
 
 /* ---- Who ---------------------------------------------------------------------- */
 
@@ -258,42 +187,4 @@ function glossary_apply(string $dir, array $new, array $user, ?string $proposal,
         'proposal' => $proposal, 'previous' => basename($backup), 'summary' => $summary,
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
     return basename($backup);
-}
-
-/* ---- Content markup ---------------------------------------------------------------------- */
-
-/**
- * The HTML of a description or of front/back matter, reduced to the allowed
- * elements, as well-formed XHTML (the EPUB needs it). Twin of sanitize() in glossary.js.
- */
-function glossary_sanitize(?string $html, bool $blocks = false): string
-{
-    if ($html === null || $html === '') return '';
-    $allowed = $blocks ? array_merge(GLOSSARY_INLINE, GLOSSARY_BLOCK) : GLOSSARY_INLINE;
-    $doc = new DOMDocument();
-    libxml_use_internal_errors(true);
-    $doc->loadHTML('<?xml encoding="UTF-8"?><body>' . $html . '</body>', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
-    libxml_clear_errors();
-    $body = $doc->getElementsByTagName('body')->item(0);
-    return $body ? glossary_sanitize_children($body, $allowed) : '';
-}
-
-function glossary_sanitize_children(DOMNode $from, array $allowed): string
-{
-    $out = '';
-    foreach ($from->childNodes as $n) {
-        if ($n instanceof DOMText) { $out .= htmlspecialchars($n->data, ENT_XML1 | ENT_QUOTES, 'UTF-8'); continue; }
-        if (!$n instanceof DOMElement) continue;
-        $tag = strtolower($n->tagName);
-        if (in_array($tag, GLOSSARY_DROP, true)) continue;
-        if (!in_array($tag, $allowed, true)) { $out .= glossary_sanitize_children($n, $allowed); continue; }
-        $attrs = '';
-        $lang = $n->getAttribute('lang');
-        if ($lang !== '' && preg_match('/^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/', $lang)) $attrs .= ' lang="' . $lang . '" xml:lang="' . $lang . '"';
-        if (($tag === 'abbr' || $tag === 'dfn') && $n->getAttribute('title') !== '') {
-            $attrs .= ' title="' . htmlspecialchars($n->getAttribute('title'), ENT_XML1 | ENT_QUOTES, 'UTF-8') . '"';
-        }
-        $out .= $tag === 'br' ? "<br$attrs/>" : "<$tag$attrs>" . glossary_sanitize_children($n, $allowed) . "</$tag>";
-    }
-    return $out;
 }

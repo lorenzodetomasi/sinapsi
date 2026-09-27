@@ -1,0 +1,55 @@
+@charset "utf-8";
+/* The EPUB's stylesheet (epub.php). Readers override fonts and colours as
+ * their users ask; this sets only what a book needs to read well: a serif,
+ * justified text, quiet labels, the entry's rule on the left. */
+html { font-size: 100%; }
+body { font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif; line-height: 1.55; margin: 0; padding: 0 1em; -webkit-hyphens: auto; hyphens: auto; }
+h1, h2, h3 { font-family: "Iowan Old Style", Palatino, Georgia, serif; line-height: 1.15; font-weight: 700; }
+h1 { font-size: 1.7em; margin: 1em 0 .5em; }
+h2 { font-size: 1.18em; margin: 1.2em 0 .35em; }
+p { margin: 0 0 .8em; text-align: justify; }
+a { text-decoration: none; border-bottom: 1px solid rgba(70, 60, 121, .35); }
+
+/* Cover and title page */
+.cover { margin: 0; padding: 0; text-align: center; }
+.cover img { max-width: 100%; max-height: 100vh; height: auto; }
+.titlepage { text-align: center; padding-top: 12%; }
+.titlepage p { text-align: center; }
+.series { font-variant: small-caps; letter-spacing: .12em; font-size: .82em; }
+.titlepage .title { font-size: 2.1em; margin: .6em 0 .3em; }
+.reading { font-variant: small-caps; letter-spacing: .14em; font-size: .95em; margin-bottom: 2em; }
+.subtitle { font-style: italic; max-width: 30em; margin: 0 auto .8em; }
+.titlepage .note { font-size: .88em; max-width: 30em; margin: 0 auto 2em; }
+.author { font-variant: small-caps; letter-spacing: .1em; }
+
+/* Reading paths and tables */
+.path { margin: 0 0 1.1em; padding: 0 0 .6em; border-bottom: 1px solid #e7e3d8; }
+.path ol { margin: 0; padding-left: 1.4em; }
+.table table { border-collapse: collapse; width: 100%; font-size: .86em; line-height: 1.4; }
+.table th, .table td { text-align: left; vertical-align: top; padding: .4em .5em; border-top: 1px solid #dbd6c9; }
+.table thead th { font-weight: 400; font-variant: small-caps; letter-spacing: .08em; border-top: 0; }
+
+/* The entries */
+.letter h1 { font-size: 2em; border-bottom: 2px solid #dbd6c9; padding-bottom: .05em; }
+.letter > dl { margin: 0; }
+.letter > dl > dt { font-size: 1.16em; font-weight: 700; margin: 1.1em 0 .15em; padding-left: .8em; border-left: 2px solid #c9c3d6; page-break-after: avoid; break-after: avoid; }
+.letter > dl > dt dfn { font-style: normal; }
+.label { font-weight: 400; font-variant: small-caps; letter-spacing: .06em; font-size: .62em; margin-left: .5em; }
+.letter > dl > dd { margin: 0; padding-left: .8em; border-left: 2px solid #c9c3d6; }
+.def { margin: .1em 0 0; }
+.props { margin: .5em 0 0; font-size: .9em; }
+.props dt { font-variant: small-caps; letter-spacing: .06em; }
+.props dd { margin: 0 0 .3em 1em; }
+.see { margin: .4em 0 0; font-size: .92em; text-align: left; }
+.see-label { font-style: italic; margin-right: .3em; }
+.theme { font-style: italic; }
+
+/* Back matter and colophon */
+.colophon p { text-align: center; font-size: .9em; }
+.license-code { font-variant: small-caps; letter-spacing: .16em; font-weight: 700; }
+.license-terms { list-style: none; padding: .7em 0 0; margin: .8em 0 0; border-top: 1px solid #e7e3d8; font-size: .84em; }
+.license-terms li { margin: 0 0 .4em; }
+
+/* Navigation */
+nav ol { list-style: none; padding-left: 1em; }
+nav > ol { padding-left: 0; }

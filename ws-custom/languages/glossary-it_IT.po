@@ -436,3 +436,29 @@ msgstr "Applicato. La versione precedente è in %s."
 
 msgid "Could not apply: %s"
 msgstr "Impossibile applicare: %s"
+
+# ---- The EPUB (themes/isotype/glossary/epub.php) and the page template ---------
+
+msgid "Cover"
+msgstr "Copertina"
+
+msgid "Title page"
+msgstr "Frontespizio"
+
+msgid "Contents"
+msgstr "Indice"
+
+msgid "Colophon"
+msgstr "Colophon"
+
+msgid "Cannot write %s."
+msgstr "Impossibile scrivere %s."
+
+msgid "Download the EPUB: %s"
+msgstr "Scarica l’EPUB: %s"
+
+msgid "Build the EPUBs"
+msgstr "Genera gli EPUB"
+
+msgid "EPUBs built: %s"
+msgstr "EPUB generati: %s"

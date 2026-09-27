@@ -60,3 +60,4 @@
 .review-preview::backdrop { background: rgb(0 0 0 / .5); }
 .review-preview__bar { position: sticky; top: 0; z-index: 50; display: flex; justify-content: flex-end; padding: 8px; background: var(--color-background-section1); }
 .review-preview__body { --g-sticky-top: 52px; }
+.review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gutter-d2); }

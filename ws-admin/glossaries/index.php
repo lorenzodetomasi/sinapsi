@@ -25,7 +25,7 @@ $docRoot = realpath((string)($_SERVER['DOCUMENT_ROOT'] ?? '')) ?: $repo;
 $siteBase = str_starts_with($repo, $docRoot) ? rtrim(substr($repo, strlen($docRoot)), '/') : '';
 $url = static fn(string $abs) => $siteBase . '/' . ltrim(substr($abs, strlen($repo)), '/');
 
-/* ---- Apply ------------------------------------------------------------------------ */
+/* ---- Apply a review, build the EPUBs ----------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
     ini_set('display_errors', '0');
@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     };
     $in = json_decode((string)file_get_contents('php://input'), true);
-    if (!is_array($in) || ($in['action'] ?? '') !== 'apply') $fail(400, glossary_t('Invalid request.'));
+    $action = is_array($in) ? (string)($in['action'] ?? '') : '';
+    if (!in_array($action, ['apply', 'epub'], true)) $fail(400, glossary_t('Invalid request.'));
     $root = ws_admin_site_path((string)($in['site'] ?? ''));
     if (!$root) $fail(400, glossary_t('Invalid request.'));
     $user = glossary_user($root);
@@ -46,6 +47,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $file = $dir . '/' . GLOSSARY_FILE;
     $current = glossary_read($file);
     if (!$current || !glossary_can_review($current, $user)) $fail(403, glossary_t('You cannot review this glossary.'));
+
+    /* The EPUBs are made from the glossary: after an apply they are made again,
+     * or they would go on selling the version that was just replaced. */
+    $epubs = static function (array $g) use ($dir) {
+        try { return array_column(glossary_epub_all($g, $dir), 'file'); }
+        catch (Throwable $e) { return ['error' => $e->getMessage()]; }
+    };
+    if ($action === 'epub') {
+        echo json_encode(['success' => true, 'epubs' => $epubs($current)], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     // Somebody else applied in the meantime: this review was made against a version that is gone.
     if (!hash_equals(sha1_file($file), (string)($in['base'] ?? ''))) $fail(409, glossary_t('The glossary changed after this page was opened: reload it.'));
     $new = $in['result'] ?? null;
@@ -58,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Throwable $e) {
         $fail(500, $e->getMessage());
     }
-    echo json_encode(['success' => true, 'previous' => 'history/' . $previous], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['success' => true, 'previous' => 'history/' . $previous, 'epubs' => $epubs($new)], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -145,7 +158,16 @@ $theme = $siteBase . '/ws-custom/themes';
     <section class="review-card">
       <h2><?= $h($g['name'] ?? $rel) ?></h2>
       <p class="review-meta"><?= $h(glossary_tn('%d entry', '%d entries', count((array)($g['hasDefinedTerm'] ?? [])))) ?> · <?= $h(glossary_t('Version %s', $g['version'] ?? '?')) ?> · <?= $h($g['dateModified'] ?? '') ?> · <code><?= $h($rel) ?></code></p>
-      <p><a class="button" href="<?= $h($theme) ?>/isotype/glossary/viewer.html?src=<?= $h(urlencode($url($file))) ?>&amp;skin=isotype" target="_blank"><span class="material-symbols-outlined left">visibility</span><?= $h(glossary_t('View')) ?></a></p>
+      <p class="review-actions">
+        <a class="button" href="<?= $h($theme) ?>/isotype/glossary/viewer.html?src=<?= $h(urlencode($url($file))) ?>&amp;skin=isotype" target="_blank"><span class="material-symbols-outlined left">visibility</span><?= $h(glossary_t('View')) ?></a>
+        <?php if ($mayReview): ?>
+          <button type="button" class="button" data-epub="<?= $h($rel) ?>"><span class="material-symbols-outlined left">menu_book</span><?= $h(glossary_t('Build the EPUBs')) ?></button>
+        <?php endif; ?>
+        <?php foreach (glob(dirname($file) . '/*.epub') ?: [] as $epub): ?>
+          <a href="<?= $h($url($epub)) ?>" download><code><?= $h(basename($epub)) ?></code></a>
+        <?php endforeach; ?>
+      </p>
+      <p class="review-meta" data-epub-status="<?= $h($rel) ?>" aria-live="polite"></p>
       <h3><?= $h(glossary_t('Proposals')) ?></h3>
       <?php if (!$proposals): ?><p class="review-meta"><?= $h(glossary_t('No proposals waiting.')) ?></p><?php endif; ?>
       <ul class="review-proposals">
@@ -159,6 +181,20 @@ $theme = $siteBase . '/ws-custom/themes';
       </ul>
     </section>
   <?php endforeach; ?>
+  <script>
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-epub]');
+    if (!b) return;
+    var rel = b.getAttribute('data-epub'), out = document.querySelector('[data-epub-status="' + CSS.escape(rel) + '"]');
+    b.disabled = true; out.textContent = '\u2026';
+    fetch(location.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify({ action: 'epub', site: <?= $json($siteId) ?>, glossary: rel, csrf: <?= $json($csrf) ?> }) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { out.textContent = j.error || <?= $json(glossary_t('EPUBs built: %s')) ?>.replace('%s', (j.epubs || []).join(', ')); })
+      .catch(function (e) { out.textContent = e.message; })
+      .then(function () { b.disabled = false; });
+  });
+  </script>
 <?php else: ?>
   <h1><?= $h(glossary_t('Review of %s', $current['name'] ?? '')) ?></h1>
   <p class="review-meta"><?= $h(glossary_t('Proposal: %s', $proposalName)) ?> · <code><?= $h($glossaryRel) ?></code></p>

@@ -380,7 +380,8 @@
     }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
       .then(function (r) {
         if (!r.ok) throw new Error(r.body.error || '');
-        status.replaceChildren(t('Applied. The previous version is in %s.', r.body.previous), ' ',
+        var epubs = Array.isArray(r.body.epubs) ? ' ' + t('EPUBs built: %s', r.body.epubs.join(', ')) : '';
+        status.replaceChildren(t('Applied. The previous version is in %s.', r.body.previous) + epubs, ' ',
           h('a', { href: box.dataset.viewer, target: '_blank', text: t('View') }));
         box.querySelectorAll('input, select').forEach(function (el) { el.disabled = true; });
       })
