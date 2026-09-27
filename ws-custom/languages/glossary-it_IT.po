@@ -1,0 +1,438 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WS Glossary\n"
+"PO-Revision-Date: 2026-09-27 16:00+0200\n"
+"Last-Translator: Lorenzo De Tomasi <lorenzo.detomasi@gmail.com>\n"
+"Language-Team: \n"
+"Language: it_IT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;t;tn:1,2;tx:1c,2\n"
+
+# ---- The glossary (themes/isotype/glossary/glossary.js) ----------------------
+
+msgid "Introduction"
+msgstr "Introduzione"
+
+msgid "Reading paths"
+msgstr "Percorsi di consultazione"
+
+msgid "Choose a path to see only its entries; choose it again to return to the whole glossary."
+msgstr "Tocca un percorso per vedere solo le sue voci; toccalo di nuovo per tornare all’intero glossario."
+
+msgid "Reading"
+msgstr "Lettura"
+
+msgid "Whole glossary"
+msgstr "Glossario completo"
+
+msgid "Search a word, a concept…"
+msgstr "Cerca una parola, un concetto…"
+
+msgid "Search the glossary"
+msgstr "Cerca nel glossario"
+
+msgid "Clear search"
+msgstr "Cancella la ricerca"
+
+msgid "Categories"
+msgstr "Ambiti"
+
+msgid "Reset filters"
+msgstr "Azzera filtri"
+
+msgid "Alphabetical index"
+msgstr "Indice alfabetico"
+
+msgid "See also"
+msgstr "Rimando"
+
+msgid "No entry matches"
+msgstr "Nessuna voce corrisponde"
+
+msgid "Try another word or remove the filters."
+msgstr "Prova con un’altra parola o rimuovi i filtri."
+
+msgid "Show all entries"
+msgstr "Mostra tutte le voci"
+
+msgid "entry"
+msgid_plural "entries"
+msgstr[0] "voce"
+msgstr[1] "voci"
+
+msgid "letter"
+msgid_plural "letters"
+msgstr[0] "lettera"
+msgstr[1] "lettere"
+
+msgid "reading path"
+msgid_plural "reading paths"
+msgstr[0] "percorso di lettura"
+msgstr[1] "percorsi di lettura"
+
+#, c-format
+msgid "%d entry"
+msgid_plural "%d entries"
+msgstr[0] "%d voce"
+msgstr[1] "%d voci"
+
+msgid "%1$s entry"
+msgid_plural "%1$s entries"
+msgstr[0] "%1$s voce"
+msgstr[1] "%1$s voci"
+
+msgid "%1$s of %2$s entry"
+msgid_plural "%1$s of %2$s entries"
+msgstr[0] "%1$s di %2$s voce"
+msgstr[1] "%1$s di %2$s voci"
+
+msgid "Version %1$s, updated on %2$s"
+msgstr "Versione %1$s, aggiornata il %2$s"
+
+msgid "Version %s"
+msgstr "Versione %s"
+
+msgid "Updated on %s"
+msgstr "Aggiornato il %s"
+
+msgid "Download (%s)"
+msgstr "Scarica (%s)"
+
+msgid "This work is licensed under %1$s."
+msgstr "Quest’opera è distribuita con licenza %1$s."
+
+msgid "This work is licensed under a %1$s license."
+msgstr "Quest’opera è distribuita con licenza %1$s."
+
+msgid "Creative Commons %1$s %2$s International"
+msgstr "Creative Commons %1$s %2$s Internazionale"
+
+msgctxt "license name"
+msgid "Attribution"
+msgstr "Attribuzione"
+
+msgctxt "license name"
+msgid "NonCommercial"
+msgstr "NonCommerciale"
+
+msgctxt "license name"
+msgid "ShareAlike"
+msgstr "CondividiAlloStessoModo"
+
+msgctxt "license name"
+msgid "NoDerivatives"
+msgstr "NonOpereDerivate"
+
+msgctxt "license term"
+msgid "Attribution"
+msgstr "Attribuzione"
+
+msgctxt "license term"
+msgid "NonCommercial"
+msgstr "NonCommerciale"
+
+msgctxt "license term"
+msgid "ShareAlike"
+msgstr "StessaLicenza"
+
+msgctxt "license term"
+msgid "NoDerivatives"
+msgstr "NonOpereDerivate"
+
+msgctxt "license term"
+msgid "You must give appropriate credit, provide a link to the license, and indicate if changes were made."
+msgstr "va riconosciuta la paternità dell’opera, con un link alla licenza, indicando le eventuali modifiche."
+
+msgctxt "license term"
+msgid "You may not use the material for commercial purposes."
+msgstr "il materiale non può essere usato per scopi commerciali."
+
+msgctxt "license term"
+msgid "If you remix, transform, or build upon the material, you must distribute your contributions under the same license as the original."
+msgstr "le opere derivate vanno distribuite con la medesima licenza."
+
+msgctxt "license term"
+msgid "If you remix, transform, or build upon the material, you may not distribute the modified material."
+msgstr "non si possono distribuire opere derivate dal materiale."
+
+# ---- Problems found in the data ------------------------------------------------
+
+msgid "This file has no DefinedTermSet."
+msgstr "Questo file non contiene un DefinedTermSet."
+
+msgid "A term has no name."
+msgstr "Una voce non ha nome."
+
+msgid "Duplicate id: %s"
+msgstr "Identificativo duplicato: %s"
+
+msgid "Reading path \"%1$s\": unknown entry %2$s"
+msgstr "Percorso «%1$s»: voce sconosciuta %2$s"
+
+msgid "\"%1$s\" refers to an unknown entry: %2$s"
+msgstr "«%1$s» rimanda a una voce sconosciuta: %2$s"
+
+msgid "Could not load %1$s (HTTP %2$s)."
+msgstr "Impossibile caricare %1$s (HTTP %2$s)."
+
+msgid "The file is too large."
+msgstr "Il file è troppo grande."
+
+msgid "Data not found: %s"
+msgstr "Dati non trovati: %s"
+
+msgid "No glossary to show: add ?src= followed by the address of a JSON-LD file."
+msgstr "Nessun glossario da mostrare: aggiungi ?src= seguito dall’indirizzo di un file JSON-LD."
+
+msgid "Only http and https addresses can be opened."
+msgstr "Si possono aprire solo indirizzi http e https."
+
+# ---- The viewer (themes/isotype/glossary/viewer.html) --------------------------
+
+msgid "Glossary viewer"
+msgstr "Visualizzatore di glossari"
+
+msgid "Address of a JSON-LD glossary"
+msgstr "Indirizzo di un glossario JSON-LD"
+
+msgid "Open"
+msgstr "Apri"
+
+msgid "Open a file"
+msgstr "Apri un file"
+
+msgid "Style"
+msgstr "Stile"
+
+msgid "None"
+msgstr "Nessuno"
+
+msgid "Download standalone HTML"
+msgstr "Scarica l’HTML autonomo"
+
+msgid "Loading…"
+msgstr "Caricamento…"
+
+msgid "%1$s entries, no problems found."
+msgstr "%1$s voci, nessun problema trovato."
+
+msgid "%1$s entries."
+msgstr "%1$s voci."
+
+#, c-format
+msgid "%d problem in the data"
+msgid_plural "%d problems in the data"
+msgstr[0] "%d problema nei dati"
+msgstr[1] "%d problemi nei dati"
+
+msgid "Could not build the file: %s"
+msgstr "Impossibile creare il file: %s"
+
+msgid "Could not read %1$s: %2$s"
+msgstr "Impossibile leggere %1$s: %2$s"
+
+msgid "Open a glossary: the address of a JSON-LD file, or a file from this computer."
+msgstr "Apri un glossario: l’indirizzo di un file JSON-LD, o un file da questo computer."
+
+# ---- The glossaries module (ws-admin/glossaries) --------------------------------
+
+msgid "Glossaries"
+msgstr "Glossari"
+
+msgid "Site"
+msgstr "Sito"
+
+msgid "No glossary in this site yet."
+msgstr "Questo sito non ha ancora glossari."
+
+msgid "View"
+msgstr "Guarda"
+
+msgid "Proposals"
+msgstr "Proposte"
+
+msgid "No proposals waiting."
+msgstr "Nessuna proposta in attesa."
+
+msgid "Review"
+msgstr "Rivedi"
+
+msgid "Review of %s"
+msgstr "Revisione di %s"
+
+msgid "Proposal: %s"
+msgstr "Proposta: %s"
+
+msgid "Back to the glossaries"
+msgstr "Torna ai glossari"
+
+msgid "Sign in to continue."
+msgstr "Accedi per continuare."
+
+msgid "Sign in"
+msgstr "Accedi"
+
+msgid "Local development: you are a super-admin because this is PHP's development server."
+msgstr "Sviluppo in locale: sei super-admin perché questo è il server di sviluppo di PHP."
+
+msgid "You cannot review this glossary."
+msgstr "Non puoi rivedere questo glossario."
+
+msgid "Unknown glossary."
+msgstr "Glossario sconosciuto."
+
+msgid "Unknown proposal."
+msgstr "Proposta sconosciuta."
+
+msgid "Invalid request."
+msgstr "Richiesta non valida."
+
+msgid "Your session has expired: reload the page."
+msgstr "La sessione è scaduta: ricarica la pagina."
+
+msgid "The glossary changed after this page was opened: reload it."
+msgstr "Il glossario è cambiato dopo l’apertura di questa pagina: ricaricala."
+
+msgid "The file is not a DefinedTermSet."
+msgstr "Il file non è un DefinedTermSet."
+
+msgid "The glossary has no entries."
+msgstr "Il glossario non ha voci."
+
+msgid "An entry has no @id or no name."
+msgstr "Una voce non ha @id o non ha nome."
+
+msgid "Cannot create %s."
+msgstr "Impossibile creare %s."
+
+msgid "Cannot save the previous version."
+msgstr "Impossibile conservare la versione precedente."
+
+msgid "Cannot write the glossary."
+msgstr "Impossibile scrivere il glossario."
+
+msgid "All"
+msgstr "Tutto"
+
+msgid "New entries"
+msgstr "Voci nuove"
+
+msgid "Changed entries"
+msgstr "Voci modificate"
+
+msgid "Removed entries"
+msgstr "Voci eliminate"
+
+msgid "Settings and parts"
+msgstr "Impostazioni e parti"
+
+msgid "Filter entries…"
+msgstr "Filtra le voci…"
+
+msgid "Accept all shown"
+msgstr "Accetta tutte quelle visibili"
+
+msgid "Reject all shown"
+msgstr "Rifiuta tutte quelle visibili"
+
+msgid "Accept"
+msgstr "Accetta"
+
+msgid "new"
+msgstr "nuova"
+
+msgid "changed"
+msgstr "modificata"
+
+msgid "removed"
+msgstr "eliminata"
+
+msgid "Before"
+msgstr "Prima"
+
+msgid "After"
+msgstr "Dopo"
+
+msgid "Category"
+msgstr "Ambito"
+
+msgid "In the selection \"%s\""
+msgstr "Nella selezione «%s»"
+
+msgid "The glossary"
+msgstr "Il glossario"
+
+msgid "Title"
+msgstr "Titolo"
+
+msgid "Subtitle"
+msgstr "Sottotitolo"
+
+msgid "Note"
+msgstr "Nota"
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "Name of the whole"
+msgstr "Nome dell’intero"
+
+msgid "Definition"
+msgstr "Definizione"
+
+msgid "Label"
+msgstr "Etichetta"
+
+msgid "Categories and selections"
+msgstr "Ambiti e selezioni"
+
+msgid "Properties"
+msgstr "Proprietà"
+
+msgid "Text"
+msgstr "Testo"
+
+msgid "Entries"
+msgstr "Voci"
+
+msgid "Rows"
+msgstr "Righe"
+
+msgid "Columns"
+msgstr "Colonne"
+
+msgid "Version"
+msgstr "Versione"
+
+msgid "Last modified"
+msgstr "Ultima modifica"
+
+msgid "Published"
+msgstr "Pubblicato"
+
+msgid "%1$s of %2$s changes accepted"
+msgstr "%1$s di %2$s modifiche accettate"
+
+msgid "Preview"
+msgstr "Anteprima"
+
+msgid "Apply"
+msgstr "Applica"
+
+msgid "Close"
+msgstr "Chiudi"
+
+msgid "Saving…"
+msgstr "Salvataggio…"
+
+msgid "Apply %d accepted changes? The current version is kept in the history."
+msgstr "Applicare %d modifiche accettate? La versione attuale resta nello storico."
+
+msgid "Applied. The previous version is in %s."
+msgstr "Applicato. La versione precedente è in %s."
+
+msgid "Could not apply: %s"
+msgstr "Impossibile applicare: %s"
