@@ -11,7 +11,7 @@ contents/{tenant}/{locale}/{collection}/{slug}/
 
 - **tenant**: es. `meetoo`
 - **locale**: es. `it_IT`
-- **collection**: `events` | `organizations` | `places` | `persons` | `users`
+- **collection**: `events` | `organizations` | `places` | `lists` | `persons` | `users`
 - **slug**: identificatore dell'entità (nome cartella)
 
 ### File per entità
@@ -35,6 +35,48 @@ contents/{tenant}/{locale}/{collection}/{slug}/
 Slug istanza evento: `{yyyymmdd}T{hhmm}-{codiceLuogo}-{descrittivo}`
 (es. `20260723T1830-IT00122-reading_party`). Il descrittivo finale evita collisioni
 tra eventi con stessa data/luogo.
+
+## Luoghi, organizzazioni, attività (decisione del 27 settembre 2026)
+
+**Una cosa reale = un file solo**, e la cartella dice che cos'è:
+
+| Cartella | Che cos'è | Esempi |
+|---|---|---|
+| `places/{CAP}/{slug}` | ci si può andare: un luogo pubblico, una sede, un'attività con una sede sola (LocalBusiness: è Organization e Place insieme) | spiaggia, parco, statua, teatro, libreria |
+| `places/{zona}` | una zona dell'albero (City, AdministrativeArea) e i percorsi (Lungomare, Lungotevere) | `places/lido-di-ostia`, `places/lido-di-ostia/lungomare` |
+| `organizations/{slug}` | un soggetto senza sede propria, o con **più sedi**, o che si è trasferito (vedi sotto) | associazione, compagnia, rete, catena |
+| `lists/…` | le liste: raccolte di cose, non posti | BookCrossing, Libri e letture, fasce d'età |
+
+**L'`@id` di una sede contiene il CAP e deve dire il vero.**
+- Lo slug è il **nome**, neutro (`savethechildren`). Solo se nello stesso CAP c'è già una
+  sede con quel nome si aggiunge un distintivo **stabile**: il nome della sede
+  (`savethechildren-punto_luce`) o la zona (`baubeach-ostia_ponente`), **mai la via**.
+- **Trasloco nello stesso CAP**: si aggiorna l'indirizzo; il precedente va nello storico
+  interno con le date. L'`@id` non cambia.
+- **Trasloco in un altro CAP**: si aggiorna l'indirizzo, lo storico si allunga e l'`@id` si
+  **rinomina** (`places/IT00121/x` → `places/IT00122/x`); l'editor aggiorna ogni file che
+  la nomina (eventi, liste, organizzazioni, sedi, gestori). Il vecchio `@id` resta nel file
+  (`meetoo:formerIds`) e il suo indirizzo pubblico **rimanda** (301) al nuovo.
+- Lo storico degli indirizzi (`meetoo:addressHistory`: indirizzo, dal, al, Google Place ID)
+  serve alle pagine degli eventi passati, che mostrano l'indirizzo **valido in quella data**.
+
+**Continuità: si promuove quando serve.** Finché un'attività ha una sede sola è un file solo
+in `places/` (listini, contatti, gestori, logo stanno lì). Alla seconda sede nasce il
+soggetto in `organizations/`: listini, contatti, gestori ed eventi organizzati passano a
+lui, e ogni sede è un luogo che dice di chi è (`parentOrganization`). Un evento dice chi lo
+organizza (`organizer`) e in quale sede si tiene (`location`).
+
+**Ibridi**: se sono due cose (un'associazione che gestisce un parco pubblico) diventano
+un'organizzazione e un luogo collegati; se sono una cosa sola (un bar, un teatro privato)
+restano un LocalBusiness unico.
+
+**Sede chiusa definitivamente**: la pagina resta (gli eventi passati ci rimandano) con lo
+stato in evidenza; esce da elenchi, mappa e scelte dell'editor per i nuovi eventi.
+
+**Google Place ID** (`meetoo:google_place_id`, uno per indirizzo dello storico): chiave per
+riconoscere una sede (niente doppioni), fonte dello stato (chiusa, trasferita) e dei dati
+(orari, telefono, sito, voto). Si interroga **a mano dalla Manutenzione**, e ogni
+differenza si **approva o rifiuta** in un confronto, come per le modifiche manuali.
 
 ## Convenzione @id e riferimenti (NORMALIZZATA)
 
