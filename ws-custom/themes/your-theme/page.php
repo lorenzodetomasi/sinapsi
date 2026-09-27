@@ -51,6 +51,7 @@ if($ws_content->headline){
 ?>
 				<div class="content">
 <?php if($ws_headings->wip == "true"){ ?><p><?php _e("Website under construction."); ?></p><?php } ?>
+<?php include_template('template-parts/draft-notice', array('require_once' => false)); ?>
 <?php
 if($ws_content->mainContentOfPage){
 	ws_echo($ws_content->mainContentOfPage->innerHTML());

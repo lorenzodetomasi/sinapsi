@@ -193,6 +193,27 @@ e non va mantenuto a mano (se presente, è un elenco denormalizzato).
 - **Upload** (form): il file va nella `media-sources/` dell'entità in editing; il
   campo salva `media-sources/{file}`.
 
+## Pagine in bozza (decisione del 27 settembre 2026)
+
+Una pagina non ancora pubblicata ma già sul sito si dichiara così nel suo `index.json`:
+
+```json
+"robots": "noindex, follow",
+"creativeWorkStatus": "Draft"
+```
+
+- `creativeWorkStatus` è schema.org (su ogni `CreativeWork`, quindi su ogni `WebPage`).
+- La pagina **risponde** al suo indirizzo e mostra in cima l'avviso «Bozza»
+  (`template-parts/draft-notice.php`, incluso da `page.php` e dal template dei glossari).
+- **Compare negli elenchi** delle pagine sopra di lei (`section-children.php`), con
+  l'etichetta «Bozza». Senza lo stato, `noindex` vuol dire quello che ha sempre voluto
+  dire: una pagina che nessuno deve incontrare, e dagli elenchi resta fuori.
+- **Non arriva ai motori**: niente `sitemap.xml` (esclude già le `noindex`), niente
+  `hasPart` nel JSON-LD della pagina madre.
+- La mappa (`ws_sitemap.wsx`) porta lo stato; «Rigenera le mappe» segnala una bozza
+  senza `noindex`. Per pubblicarla: togliere `creativeWorkStatus` (o metterlo a
+  `Published`), `robots` a `index, follow`, e rigenerare le mappe.
+
 ## Tipi di dato
 
 - Il JSON canonico usa **tipi reali** (numeri, booleani).

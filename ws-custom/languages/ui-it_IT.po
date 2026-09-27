@@ -1524,3 +1524,9 @@ msgstr "e %s"
 #, php-format
 msgid "and %d more dates"
 msgstr "e altre %d date"
+
+msgid "Draft"
+msgstr "Bozza"
+
+msgid "This page is not published yet: it is on the site, but search engines do not index it."
+msgstr "Questa pagina non è ancora pubblicata: è sul sito, ma i motori di ricerca non la indicizzano."

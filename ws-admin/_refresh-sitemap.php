@@ -32,14 +32,15 @@ require_once __DIR__ . '/lib/derived.php';
 require_once __DIR__ . '/refresh-contents.php';
 
 if (!defined('WS_SITEMAP_VERSION')) {
-    define('WS_SITEMAP_VERSION', 'sitemap 2026.09.16');
+    // 2026.09.27: entries carry creativeWorkStatus (a draft is listed on the site, not indexed).
+    define('WS_SITEMAP_VERSION', 'sitemap 2026.09.27');
 }
 
 if (!function_exists('ws_refresh_sitemap')) {
 
     /** The fields a map entry carries, in the order the old maps had them. */
     function ws_sitemap_fields(): array {
-        return ['wspath', 'query', 'inLanguage', 'type', 'title', 'description', 'keywords', 'name', 'parent', 'dateModified', 'changefreq', 'priority', 'robots'];
+        return ['wspath', 'query', 'inLanguage', 'type', 'title', 'description', 'keywords', 'name', 'parent', 'dateModified', 'changefreq', 'priority', 'robots', 'creativeWorkStatus'];
     }
 
     /*
@@ -274,6 +275,10 @@ if (!function_exists('ws_refresh_sitemap')) {
             }
             if ($e === null) { $out['problems'][] = "$rel: no wspath, left off the map"; continue; }
             if (empty($e['query'])) $out['problems'][] = "$rel: no query - the CMS cannot route it";
+            // A draft is on the site but not for the engines: its robots must say so.
+            if (strcasecmp($e['creativeWorkStatus'] ?? '', 'Draft') === 0 && stripos($e['robots'] ?? '', 'noindex') === false) {
+                $out['problems'][] = "$rel: a draft (creativeWorkStatus Draft) the engines may index - add robots noindex";
+            }
             $entries[] = $e;
         }
         ws_sitemap_sort($entries);

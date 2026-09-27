@@ -20,7 +20,8 @@
 global $ws_content, $rewrite_rule;
 
 $here = !empty($ws_content->wspath) ? (string)$ws_content->wspath : (string)($rewrite_rule->wspath ?? '');
-$children = ws_sitemap_children($here);
+// Drafts too: on the site they are pages like the others, only marked (see ws_is_draft()).
+$children = ws_sitemap_children($here, true);
 if(empty($children)){
 	return;
 }
@@ -48,7 +49,7 @@ foreach($children as $child){
 						<li class="grid-cell">
 							<div class="grid-item">
 								<a class="grid-link" href="<?php echo ws_href($child->wspath); ?>">
-									<h3><?php echo $name; ?></h3>
+									<h3><?php echo $name; ?><?php if(ws_is_draft($child)){ ?> <span class="status-badge"><?php _e('Draft'); ?></span><?php } ?></h3>
 <?php if($description !== ''){ ?>
 									<p><?php echo $description; ?></p>
 <?php } ?>

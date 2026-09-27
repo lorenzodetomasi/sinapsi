@@ -138,6 +138,7 @@ ws_stile_se_esiste('screen', 'screen', 'css/screen-abovethefold.css');
 ws_stile_se_esiste('vgrid', 'screen and (max-width: 999px)', 'css/vgrid-abovethefold.css');
 ws_stile_se_esiste('hgrid', 'screen and (min-width: 1000px)', 'css/hgrid-abovethefold.css');
 ws_stile_se_esiste('maxgrid', 'screen and (min-width: 1280px)', 'css/maxgrid-abovethefold.css');
+ws_stile_se_esiste('status', 'all', 'css/status-abovethefold.css');
 // 2. Linked
 /* APPENDED, not set: `ws_globals_set` replaces at the leaf - it says so itself
    in ws-core/templates.php - so this call used to wipe the icons declared
@@ -555,9 +556,27 @@ function ws_sitemap_entry($wspath){
 	return null;
 }
 }
+if(!function_exists('ws_is_draft')){
+/**
+ * Is this page a draft? A content, or its map entry, that says
+ * `"creativeWorkStatus": "Draft"` (schema.org, on any CreativeWork).
+ *
+ * A draft is a page of the site that is not published yet: it answers at its
+ * address and shows in the lists of the pages above it, marked as a draft,
+ * while `robots: noindex` keeps the search engines away. Without the status,
+ * noindex means what it always meant: a page nobody is meant to come across.
+ */
+function ws_is_draft($node){
+	return !empty($node) and !empty($node->creativeWorkStatus) and strcasecmp(trim((string)$node->creativeWorkStatus), 'Draft') === 0;
+}
+}
 if(!function_exists('ws_sitemap_children')){
-/** The pages of this site under a page, in map order, ready to be found. */
-function ws_sitemap_children($wspath){
+/**
+ * The pages of this site under a page, in map order, ready to be found.
+ * With $drafts, also the drafts among them (for the site's own lists; the
+ * JSON-LD declared to the engines never names a draft).
+ */
+function ws_sitemap_children($wspath, $drafts = false){
 	global $ws_sitemap;
 	$children = array();
 	if(empty($ws_sitemap)) return $children;
@@ -565,7 +584,7 @@ function ws_sitemap_children($wspath){
 	foreach($ws_sitemap->url as $entry){
 		if(empty($entry->parent) or empty($entry->parent->wspath)) continue;
 		if(ws_sitemap_normalize_path($entry->parent->wspath) !== $wanted) continue;
-		if(stripos((string)$entry->robots, 'noindex') !== false) continue;
+		if(stripos((string)$entry->robots, 'noindex') !== false and !($drafts and ws_is_draft($entry))) continue;
 		if(!ws_sitemap_is_ours($entry)) continue;
 		$children[] = $entry;
 	}

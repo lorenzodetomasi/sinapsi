@@ -59,6 +59,7 @@ include_template('template-parts/header');
 <?php if ($ws_content->parent->wspath) { ?>
 				<a class="link" href="<?php echo $ws_content->parent->wspath; ?>"><span class="material-symbols-outlined">arrow_upward</span></a>
 <?php } ?>
+<?php include_template('template-parts/draft-notice', array('require_once' => false)); ?>
 <?php if (!$glossary_model) { ?>
 				<h1><?php echo $ws_content->name ? $ws_content->name->innerHTML() : ''; ?></h1>
 				<p><?php echo glossary_x(glossary_t('This file has no DefinedTermSet.')); ?></p>
