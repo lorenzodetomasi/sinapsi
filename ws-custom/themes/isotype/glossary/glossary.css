@@ -9,8 +9,11 @@
  * from the data's ws:color): the dot, the entry's left rule, a pressed chip.
  * =========================================================================== */
 
+/* Light or dark: a page of its own (standalone, viewer) follows the reader's
+ * system; inside a site the glossary inherits the site's choice, which
+ * isotype writes as color-scheme on <html>. */
+.glossary-page { color-scheme: light dark; }
 :where(.glossary, .glossary-page) {
-  color-scheme: light dark;
   --g-bg: light-dark(#f7f7f5, #151518);
   --g-bg-2: light-dark(#efefec, #1c1c20);
   --g-panel: light-dark(#ffffff, #202025);
@@ -38,7 +41,9 @@
 }
 .glossary-page { margin: 0; background: var(--g-bg); }
 
+/* min-width: 0 - inside a site's flex or grid, the glossary must not stretch it to its widest row. */
 .glossary {
+  min-width: 0;
   background: var(--g-bg); color: var(--g-ink);
   font-family: var(--g-font-body); font-size: var(--g-body-size); line-height: 1.62;
   -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
@@ -104,25 +109,30 @@
 .glossary-table tbody th { border-left: 3px solid var(--c, var(--g-line)); white-space: nowrap; }
 .glossary-table td { color: var(--g-ink-2); }
 
-/* ---- The sticky bar: readings, search, count, categories ------------------------ */
+/* ---- The sticky bar: readings, search, count, categories ------------------------
+ * Some rules carry .glossary in front: a site's own form styles (isotype's
+ * _forms.css sets input[type=search]) must not reach inside. */
 .glossary-controls { position: sticky; top: var(--g-sticky-top); z-index: 30; margin-top: 40px; background: var(--g-bar-bg); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); border-bottom: 1px solid var(--g-line); font-family: var(--g-font-ui); }
 .glossary-controls__inner { max-width: var(--g-maxw); margin: 0 auto; padding: 12px var(--g-gutter); display: flex; align-items: center; gap: 12px 14px; flex-wrap: wrap; }
-.glossary-readings { display: inline-flex; width: 100%; border: 1px solid var(--g-line); border-radius: var(--g-radius-pill); padding: 3px; background: var(--g-panel); }
-.glossary-reading { flex: 1; border: 0; background: transparent; color: var(--g-ink-2); cursor: pointer; padding: 7px 14px; border-radius: var(--g-radius-pill); font-size: 13.5px; transition: background .18s, color .18s; }
+.glossary-readings { display: inline-flex; flex: 0 1 auto; border: 1px solid var(--g-line); border-radius: var(--g-radius-pill); padding: 3px; background: var(--g-panel); }
+.glossary .glossary-reading { flex: 1; white-space: nowrap; margin: 0; border: 0; background: transparent; color: var(--g-ink-2); cursor: pointer; padding: 7px 14px; border-radius: var(--g-radius-pill); font-size: 13.5px; transition: background .18s, color .18s; }
 .glossary-reading__count { font-size: 11.5px; color: var(--g-ink-3); margin-left: 4px; }
 .glossary-reading[aria-pressed="true"] { background: var(--g-accent); color: var(--g-on-accent); }
 .glossary-reading[aria-pressed="true"] .glossary-reading__count { color: inherit; opacity: .8; }
 .glossary-search { position: relative; flex: 1 1 300px; min-width: 220px; }
 .glossary-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; fill: none; stroke: var(--g-ink-3); stroke-width: 1.8; stroke-linecap: round; pointer-events: none; }
-.glossary-search__input { width: 100%; font: inherit; font-size: 16px; color: var(--g-ink); padding: 10px 40px; background: var(--g-panel); border: 1px solid var(--g-line); border-radius: var(--g-radius); appearance: none; }
-.glossary-search__input::placeholder { color: var(--g-ink-3); font-style: italic; }
+.glossary .glossary-search__input { width: 100%; margin: 0; font: inherit; font-size: 16px; color: var(--g-ink); padding: 10px 40px; background: var(--g-panel); border: 1px solid var(--g-line); border-radius: var(--g-radius); appearance: none; }
+.glossary .glossary-search__input::placeholder { color: var(--g-ink-3); font-style: italic; }
 .glossary-search__input::-webkit-search-cancel-button, .glossary-search__input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
-.glossary-search__input:focus { outline: none; border-color: var(--g-accent); box-shadow: 0 0 0 3px var(--g-accent-wash); }
+.glossary .glossary-search__input:focus { outline: none; border-color: var(--g-accent); box-shadow: 0 0 0 3px var(--g-accent-wash); }
 .glossary-search__clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; cursor: pointer; color: var(--g-ink-3); font-size: 20px; line-height: 1; padding: 6px; }
 .glossary-search__clear:hover { color: var(--g-ink); }
 .glossary-count { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--g-ink-3); white-space: nowrap; }
 .glossary-count b { color: var(--g-accent); font-weight: 600; }
-.glossary-chips { display: flex; gap: 7px; flex-wrap: wrap; width: 100%; }
+/* One row that scrolls sideways, however many categories: the bar is sticky, and every wrapped row is taken from the page. */
+.glossary-chips { display: flex; gap: 7px; flex-wrap: nowrap; width: 100%; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.glossary-chips::-webkit-scrollbar { display: none; }
+.glossary-chip { flex: 0 0 auto; }
 .glossary-chip { font-size: 12.5px; letter-spacing: .02em; cursor: pointer; color: var(--g-ink-2); background: transparent; border: 1px solid var(--g-line); border-radius: var(--g-radius-pill); padding: 6px 13px 6px 11px; display: inline-flex; align-items: center; gap: 7px; transition: background .18s, color .18s, border-color .18s; }
 .glossary-chip:hover { border-color: var(--g-ink-3); color: var(--g-ink); }
 .glossary-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--g-ink-3)); flex: none; }
@@ -198,8 +208,7 @@
   .glossary-spine__rail { display: none; }
   .glossary-spine a { width: 28px; height: 28px; line-height: 28px; margin: 2px; }
   .glossary-term { font-size: 1.42rem; }
-  .glossary-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-  .glossary-chip { flex: 0 0 auto; }
+  .glossary-readings { flex-basis: 100%; }
   .glossary-chip--reset { margin-left: 6px; }
   .glossary-props { grid-template-columns: minmax(0, 1fr); }
   .glossary-props dd { margin-bottom: 6px; }

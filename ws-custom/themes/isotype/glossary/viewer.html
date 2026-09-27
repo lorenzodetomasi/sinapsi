@@ -49,7 +49,7 @@
   </form>
   <p class="viewer-status" id="status" aria-live="polite"></p>
 </div>
-<div id="glossary"></div>
+<div id="glossary" data-sticky-under="#bar"></div>
 
 <script>window.WSGlossaryManual = true;</script>
 <script src="glossary.js"></script>
@@ -177,7 +177,6 @@
     var q = new URLSearchParams(location.search); q.set('skin', skinChoice.value);
     history.replaceState(null, '', '?' + q + location.hash);
   });
-  if (window.ResizeObserver) new ResizeObserver(function () { root.style.setProperty('--g-sticky-top', bar.offsetHeight + 'px'); }).observe(bar);
 
   var params = new URLSearchParams(location.search);
   if (params.has('skin')) setSkin(params.get('skin'));

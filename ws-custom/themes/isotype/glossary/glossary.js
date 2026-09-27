@@ -23,6 +23,9 @@
  * with English msgids; the catalogue is window.WSGlossaryL10n, built from
  * ws-custom/languages/glossary-<locale>.po.
  *
+ * data-sticky-under="#header" names the site's own sticky header, if any: the
+ * glossary's bar then stops under it, whatever height it has at the moment.
+ *
  * Content is untrusted: names are text, descriptions and matter may carry
  * only the markup in ALLOWED below, rebuilt element by element from an inert
  * document, without attributes except lang (and title on abbr/dfn).
@@ -31,9 +34,9 @@
   'use strict';
 
   /* ---- Markup allowed in content ------------------------------------------
-   * Twin: ws-admin/glossaries/lib/glossary.php (GLOSSARY_INLINE / _BLOCK).
-   * The two lists must stay equal, or the page and the EPUB would disagree on
-   * what a definition may contain. */
+   * Twin: lib.php (GLOSSARY_INLINE / _BLOCK / _DROP), with parsePo(), model()
+   * and slug()/anchor(). The lists must stay equal, or the page and the EPUB
+   * would disagree on what a definition may contain. */
   var INLINE = ['em', 'strong', 'i', 'b', 'sup', 'sub', 'q', 'cite', 'abbr', 'dfn',
     'small', 'mark', 's', 'u', 'code', 'kbd', 'bdi', 'br'];
   var BLOCK = ['p', 'ul', 'ol', 'li', 'blockquote'];
@@ -393,7 +396,8 @@
 
   function renderEntry(m, x) {
     var entry = withColor(h('article', { class: 'glossary-entry', id: x.anchor, 'data-id': x.id }), x.categories[0] && x.categories[0].color);
-    entry.appendChild(h('header', { class: 'glossary-entry__head' },
+    // A div, not a <header>: a site's stylesheet may style every header inside a section.
+    entry.appendChild(h('div', { class: 'glossary-entry__head' },
       h('h3', { class: 'glossary-term', text: x.name }),
       x.label ? h('span', { class: 'glossary-origin' }, h('span', { class: 'glossary-dot', 'aria-hidden': 'true' }), x.label) : null));
     if (x.description) entry.appendChild(h('p', { class: 'glossary-def' }, sanitize(x.description)));
@@ -652,11 +656,18 @@
     }, on);
     global.addEventListener('hashchange', function () { reveal(decodeURIComponent(location.hash.slice(1)), true); }, on);
 
-    // The sticky bar's height, for scroll-margin: it changes with the chips' wrapping.
+    /* Heights the layout depends on: the sticky bar's own (for scroll-margin),
+     * and - with data-sticky-under="#header" - the site's sticky header the bar
+     * must stop under. Both change: the chips wrap, a header compacts on scroll. */
     var bar = $('.glossary-controls');
+    var above = root.getAttribute('data-sticky-under') ? document.querySelector(root.getAttribute('data-sticky-under')) : null;
     if (global.ResizeObserver) {
-      var ro = new ResizeObserver(function () { root.style.setProperty('--glossary-controls-h', bar.offsetHeight + 'px'); });
+      var ro = new ResizeObserver(function () {
+        root.style.setProperty('--glossary-controls-h', bar.offsetHeight + 'px');
+        if (above) root.style.setProperty('--g-sticky-top', above.offsetHeight + 'px');
+      });
       ro.observe(bar);
+      if (above) ro.observe(above);
       listeners.signal.addEventListener('abort', function () { ro.disconnect(); });
     }
 

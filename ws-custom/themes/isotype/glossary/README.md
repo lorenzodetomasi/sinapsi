@@ -10,8 +10,28 @@ from it; nothing is written by hand in any of them.
 | `glossary.css` | the structure; every colour and font is a `--g-*` token |
 | `skins/*.css` | a look: redefines the tokens, may add ornaments (`isotype`, `sahaja`) |
 | `viewer.html` | opens any glossary (`?src=` or a local file), picks a skin, exports the standalone HTML |
-| `../glossary.php` | the isotype.org page template |
+| `lib.php` | the PHP side: catalogue, markup whitelist, model, one entry as XHTML (twins of the JS) |
+| `epub.php`, `epub.css` | the EPUB 3 books: the whole glossary and one per selection |
+| `../glossary.php` | the isotype.org page template (`template=glossary`, `&skin=` to choose the look) |
+| `ws-admin/glossaries/` | the list of a site's glossaries, the review of proposals, the EPUB build |
 | `ws-custom/languages/glossary-<locale>.po` | every interface string (msgids in English) |
+
+## The files of a glossary
+
+```
+projects/glossaries/sahaja-yoga/
+  index.json                   the page: template=glossary, mainEntity -> #glossario
+  glossary.jsonld              the glossary: the only source
+  proposals/<name>.jsonld      a new version waiting for review (-<name> once applied)
+  history/                     the versions an apply replaced, and log.jsonl
+  sahaja-yoga.epub             derived: the whole glossary
+  sahaja-yoga-essenziale.epub  derived: the selection #essenziale
+```
+
+The EPUBs are named after the folder, not the title, and are rebuilt by every
+apply (and by "Build the EPUBs" in the module): made from the glossary, they
+must never lag behind it. The page offers them for download by adding them
+to the data it embeds, as `encoding`; the glossary file is not touched.
 
 ## Where the data comes from
 

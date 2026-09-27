@@ -36,8 +36,8 @@
 .glossary-eyebrow { color: var(--g-accent-strong); letter-spacing: .2em; }
 .glossary-intro details, .glossary-path, .glossary-table__scroll, .glossary-license { border-width: 2px; }
 .glossary-path:hover, .glossary-path[aria-pressed="true"] { border-color: var(--g-accent); }
-.glossary-search__input { border-width: 2px; border-color: var(--g-accent); }
-.glossary-search__input:focus { border-color: var(--g-accent-strong); box-shadow: none; }
+.glossary .glossary-search__input { border-width: 2px; border-color: var(--g-accent); }
+.glossary .glossary-search__input:focus { border-color: var(--g-accent-strong); box-shadow: none; }
 .glossary-letter__char { font-weight: 700; color: var(--g-accent-strong); }
 .glossary-letter__rule { height: 2px; background: var(--g-accent-strong); opacity: .25; }
 .glossary-term { font-weight: 600; font-size: 1.45rem; }
