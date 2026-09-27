@@ -462,3 +462,110 @@ msgstr "Genera gli EPUB"
 
 msgid "EPUBs built: %s"
 msgstr "EPUB generati: %s"
+
+# ---- The editor (ws-admin/glossaries/review.js) ----------------------------------
+
+msgid "All changes"
+msgstr "Tutte le modifiche"
+
+msgid "All entries"
+msgstr "Tutte le voci"
+
+msgid "Edit"
+msgstr "Modifica"
+
+msgid "Edit the entry"
+msgstr "Modifica la voce"
+
+msgid "Delete the entry"
+msgstr "Elimina la voce"
+
+msgid "Restore"
+msgstr "Ripristina"
+
+msgid "Done"
+msgstr "Fatto"
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Add"
+msgstr "Aggiungi"
+
+msgid "Remove"
+msgstr "Rimuovi"
+
+msgid "Add an entry"
+msgstr "Aggiungi una voce"
+
+msgid "Name of the new entry"
+msgstr "Nome della nuova voce"
+
+msgid "An entry with this name already exists."
+msgstr "Esiste già una voce con questo nome."
+
+msgid "The name cannot be empty."
+msgstr "Il nome non può essere vuoto."
+
+msgid "An entry or a theme"
+msgstr "Una voce o un tema"
+
+msgid "An entry"
+msgstr "Una voce"
+
+msgid "No entry is called \"%s\"."
+msgstr "Nessuna voce si chiama «%s»."
+
+msgid "Property"
+msgstr "Proprietà"
+
+msgid "Value"
+msgstr "Valore"
+
+msgid "Abstract"
+msgstr "Sintesi"
+
+msgid "Credits"
+msgstr "Crediti"
+
+msgid "License"
+msgstr "Licenza"
+
+msgid "Image"
+msgstr "Immagine"
+
+msgid "Keywords"
+msgstr "Parole chiave"
+
+msgid "Colour"
+msgstr "Colore"
+
+msgid "Separated by commas."
+msgstr "Separate da virgole."
+
+msgid "Allowed markup: em, strong, sup, sub, q, cite, abbr, small."
+msgstr "Marcatura ammessa: em, strong, sup, sub, q, cite, abbr, small."
+
+msgid "Allowed markup: p, ul, ol, li, blockquote, and em, strong, sup, sub, q, cite, abbr, small."
+msgstr "Marcatura ammessa: p, ul, ol, li, blockquote, ed em, strong, sup, sub, q, cite, abbr, small."
+
+msgid "Save the draft"
+msgstr "Salva la bozza"
+
+msgid "What was accepted and edited becomes the proposal; refused changes leave it."
+msgstr "Ciò che è accettato e modificato diventa la proposta; le modifiche rifiutate ne escono."
+
+msgid "Draft saved."
+msgstr "Bozza salvata."
+
+msgid "Could not save: %s"
+msgstr "Impossibile salvare: %s"
+
+msgid "New version"
+msgstr "Nuova versione"
+
+msgid "Cannot save the proposal."
+msgstr "Impossibile salvare la proposta."
+
+msgid "The proposal changed after this page was opened: reload it."
+msgstr "La proposta è cambiata dopo l’apertura di questa pagina: ricaricala."

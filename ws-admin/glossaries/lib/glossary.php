@@ -199,9 +199,59 @@ function glossary_apply(string $dir, array $new, array $user, ?string $proposal,
         $p = glossary_proposal_file($dir, $proposal);
         if ($p) rename($p, dirname($p) . '/-' . basename($p));
     }
-    file_put_contents("$history/log.jsonl", json_encode([
-        'at' => date('c'), 'by' => $user['email'] ?: ($user['name'] ?? ''), 'uid' => $user['uid'] ?? '',
-        'proposal' => $proposal, 'previous' => basename($backup), 'summary' => $summary,
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+    glossary_log($dir, $user, ['action' => 'apply', 'proposal' => $proposal, 'previous' => basename($backup), 'summary' => $summary]);
     return basename($backup);
+}
+
+/** One line in history/log.jsonl: who, when, what. */
+function glossary_log(string $dir, array $user, array $what): void
+{
+    if (!is_dir($dir . '/history')) @mkdir($dir . '/history', 0775, true);
+    file_put_contents($dir . '/history/log.jsonl', json_encode(
+        ['at' => date('c'), 'by' => ($user['email'] ?? '') ?: ($user['name'] ?? ''), 'uid' => $user['uid'] ?? ''] + $what,
+        JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", FILE_APPEND | LOCK_EX);
+}
+
+/** "2" -> "3", "1.4" -> "1.5", "" -> "1". */
+function glossary_next_version(string $v): string
+{
+    if (preg_match('/^(.*?)(\d+)$/', trim($v), $m)) return $m[1] . ((int)$m[2] + 1);
+    return trim($v) === '' ? '1' : trim($v) . '.1';
+}
+
+/**
+ * A new version to work on: a proposal that is the glossary as it is, with
+ * the next version number and today's date. Returns its file name.
+ */
+function glossary_new_proposal(string $dir, array $current, array $user): string
+{
+    $draft = $current;
+    $draft['version'] = glossary_next_version(glossary_text($current['version'] ?? ''));
+    $draft['dateModified'] = date('Y-m-d');
+    if (!is_dir($dir . '/proposals') && !mkdir($dir . '/proposals', 0775, true)) throw new RuntimeException(glossary_t('Cannot create %s.', 'proposals/'));
+    $base = date('Y-m-d') . '-v' . preg_replace('/[^A-Za-z0-9.-]/', '-', $draft['version']);
+    $name = $base . '.jsonld';
+    for ($i = 2; is_file("$dir/proposals/$name") || is_file("$dir/proposals/-$name"); $i++) $name = "$base-$i.jsonld";
+    if (file_put_contents("$dir/proposals/$name", glossary_encode($draft), LOCK_EX) === false) throw new RuntimeException(glossary_t('Cannot save the proposal.'));
+    glossary_log($dir, $user, ['action' => 'new', 'proposal' => $name, 'version' => $draft['version']]);
+    return $name;
+}
+
+/**
+ * Save the work on a proposal: what was accepted and edited becomes the
+ * proposal; the previous state of the file goes to history/. Returns the
+ * file's new hash, the base of the next save.
+ */
+function glossary_save_proposal(string $dir, string $name, array $draft, array $user): string
+{
+    $file = glossary_proposal_file($dir, $name);
+    if (!$file) throw new RuntimeException(glossary_t('Unknown proposal.'));
+    if (!is_dir($dir . '/history') && !mkdir($dir . '/history', 0775, true)) throw new RuntimeException(glossary_t('Cannot create %s.', 'history/'));
+    $who = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($user['uid'] ?? 'unknown'));
+    $backup = $dir . '/history/proposal-' . basename($name, '.jsonld') . '-' . date('Ymd-His') . "-$who.jsonld";
+    if (!copy($file, $backup)) throw new RuntimeException(glossary_t('Cannot save the previous version.'));
+    $tmp = $file . '.tmp';
+    if (file_put_contents($tmp, glossary_encode($draft), LOCK_EX) === false || !rename($tmp, $file)) throw new RuntimeException(glossary_t('Cannot save the proposal.'));
+    glossary_log($dir, $user, ['action' => 'save', 'proposal' => $name, 'previous' => basename($backup)]);
+    return sha1_file($file);
 }

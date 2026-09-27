@@ -3,8 +3,9 @@
  * Glossaries - the list of a site's glossaries and the review of a proposal.
  *
  *   ?site=isotype/it_IT                                  the glossaries of a root
- *   ?site=…&glossary=projects/glossaries/x&proposal=y    the review of proposal y
- *   POST {action: "apply", …}                            write the reviewed version
+ *   ?site=…&glossary=projects/glossaries/x&proposal=y    the review of proposal y, and its editor
+ *   POST {action: "apply" | "save" | "new" | "epub", …}  write the reviewed version, save the
+ *                                                        draft, start a new version, build the EPUBs
  *
  * A proposal is a whole version of the glossary (from an import, from the
  * editor to come). The review shows, entry by entry and field by field, what
@@ -36,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
     $in = json_decode((string)file_get_contents('php://input'), true);
     $action = is_array($in) ? (string)($in['action'] ?? '') : '';
-    if (!in_array($action, ['apply', 'epub'], true)) $fail(400, glossary_t('Invalid request.'));
+    if (!in_array($action, ['apply', 'save', 'new', 'epub'], true)) $fail(400, glossary_t('Invalid request.'));
     $root = ws_admin_site_path((string)($in['site'] ?? ''));
     if (!$root) $fail(400, glossary_t('Invalid request.'));
     $user = glossary_user($root);
@@ -56,6 +57,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
     if ($action === 'epub') {
         echo json_encode(['success' => true, 'epubs' => $epubs($current)], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if ($action === 'new') {
+        try { $name = glossary_new_proposal($dir, $current, $user); }
+        catch (Throwable $e) { $fail(500, $e->getMessage()); }
+        echo json_encode(['success' => true, 'proposal' => $name,
+            'url' => '?' . http_build_query(['site' => $in['site'], 'glossary' => $in['glossary'], 'proposal' => $name])], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    if ($action === 'save') {
+        $name = (string)($in['proposal'] ?? '');
+        $pfile = glossary_proposal_file($dir, $name);
+        if (!$pfile) $fail(404, glossary_t('Unknown proposal.'));
+        if (!hash_equals(sha1_file($pfile), (string)($in['proposalBase'] ?? ''))) $fail(409, glossary_t('The proposal changed after this page was opened: reload it.'));
+        $draft = $in['draft'] ?? null;
+        if (!is_array($draft)) $fail(400, glossary_t('Invalid request.'));
+        if ($errors = glossary_errors($draft)) $fail(422, implode(' ', $errors));
+        try { $base = glossary_save_proposal($dir, $name, $draft, $user); }
+        catch (Throwable $e) { $fail(500, $e->getMessage()); }
+        echo json_encode(['success' => true, 'proposalBase' => $base], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
@@ -161,6 +182,7 @@ $theme = $siteBase . '/ws-custom/themes';
       <p class="review-actions">
         <a class="button" href="<?= $h($theme) ?>/isotype/glossary/viewer.html?src=<?= $h(urlencode($url($file))) ?>&amp;skin=isotype" target="_blank"><span class="material-symbols-outlined left">visibility</span><?= $h(glossary_t('View')) ?></a>
         <?php if ($mayReview): ?>
+          <button type="button" class="button strong" data-new="<?= $h($rel) ?>"><span class="material-symbols-outlined left">edit_note</span><?= $h(glossary_t('New version')) ?></button>
           <button type="button" class="button" data-epub="<?= $h($rel) ?>"><span class="material-symbols-outlined left">menu_book</span><?= $h(glossary_t('Build the EPUBs')) ?></button>
         <?php endif; ?>
         <?php foreach (glob(dirname($file) . '/*.epub') ?: [] as $epub): ?>
@@ -182,14 +204,25 @@ $theme = $siteBase . '/ws-custom/themes';
     </section>
   <?php endforeach; ?>
   <script>
+  var post = function (body) {
+    return fetch(location.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+      body: JSON.stringify(Object.assign({ site: <?= $json($siteId) ?>, csrf: <?= $json($csrf) ?> }, body)) })
+      .then(function (r) { return r.json(); });
+  };
   document.addEventListener('click', function (ev) {
+    var n = ev.target.closest('[data-new]');
+    if (n) {
+      n.disabled = true;
+      post({ action: 'new', glossary: n.getAttribute('data-new') }).then(function (j) {
+        if (j.url) location.href = j.url; else { alert(j.error || ''); n.disabled = false; }
+      });
+      return;
+    }
     var b = ev.target.closest('[data-epub]');
     if (!b) return;
     var rel = b.getAttribute('data-epub'), out = document.querySelector('[data-epub-status="' + CSS.escape(rel) + '"]');
     b.disabled = true; out.textContent = '\u2026';
-    fetch(location.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-      body: JSON.stringify({ action: 'epub', site: <?= $json($siteId) ?>, glossary: rel, csrf: <?= $json($csrf) ?> }) })
-      .then(function (r) { return r.json(); })
+    post({ action: 'epub', glossary: rel })
       .then(function (j) { out.textContent = j.error || <?= $json(glossary_t('EPUBs built: %s')) ?>.replace('%s', (j.epubs || []).join(', ')); })
       .catch(function (e) { out.textContent = e.message; })
       .then(function () { b.disabled = false; });
@@ -200,7 +233,7 @@ $theme = $siteBase . '/ws-custom/themes';
   <p class="review-meta"><?= $h(glossary_t('Proposal: %s', $proposalName)) ?> · <code><?= $h($glossaryRel) ?></code></p>
   <div id="review" class="review"
        data-site="<?= $h($siteId) ?>" data-glossary="<?= $h($glossaryRel) ?>" data-proposal="<?= $h($proposalName) ?>"
-       data-base="<?= $h(sha1_file($dir . '/' . GLOSSARY_FILE)) ?>" data-csrf="<?= $h($csrf) ?>"
+       data-base="<?= $h(sha1_file($dir . '/' . GLOSSARY_FILE)) ?>" data-proposal-base="<?= $h(sha1_file($proposalFile)) ?>" data-csrf="<?= $h($csrf) ?>"
        data-viewer="<?= $h($theme) ?>/isotype/glossary/viewer.html?src=<?= $h(urlencode($url($dir . '/' . GLOSSARY_FILE))) ?>&amp;skin=isotype"></div>
   <script type="application/json" id="review-current"><?= $json($current) ?></script>
   <script type="application/json" id="review-proposal"><?= $json($proposal) ?></script>

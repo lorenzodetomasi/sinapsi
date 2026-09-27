@@ -61,3 +61,27 @@
 .review-preview__bar { position: sticky; top: 0; z-index: 50; display: flex; justify-content: flex-end; padding: 8px; background: var(--color-background-section1); }
 .review-preview__body { --g-sticky-top: 52px; }
 .review-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gutter-d2); }
+
+/* The editor */
+.review-card__tools { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.review-card__tools .button, .review-editor .button, .review-adder .button { font-size: 13px; padding: 3px 10px; }
+.review-card__head .review-accept + .review-card__tools { margin-left: var(--gutter-d2); }
+.review-field__head .review-accept { margin-left: auto; }
+.review-edit { border: 0; background: transparent; color: var(--color-link); cursor: pointer; padding: 2px 4px; line-height: 1; }
+.review-edit .material-symbols-outlined { font-size: 18px; }
+.review-edit:hover { color: var(--color-hover); }
+.review-value, .review-empty { margin: var(--gutter-d4) 0 0; max-width: 72ch; }
+.review-empty { color: var(--color-hint); }
+.review-editor { display: flex; flex-direction: column; gap: 8px; margin-top: var(--gutter-d4); max-width: 72ch; }
+.review-input { font: inherit; width: 100%; padding: 6px 10px; border: var(--border-width) solid var(--color-link); border-radius: var(--border-radius); background: var(--color-background-section1); color: var(--color-text); box-sizing: border-box; }
+textarea.review-input { resize: vertical; line-height: 1.5; }
+.review-hint { color: var(--color-hint); }
+.review-editor__add { display: flex; gap: 8px; }
+.review-editor__buttons { display: flex; gap: 8px; }
+.review-chips--edit li { display: inline-flex; align-items: center; gap: 4px; }
+.review-x { border: 0; background: transparent; cursor: pointer; color: var(--color-danger); font-size: 16px; line-height: 1; padding: 0 2px; }
+.review-props { display: flex; flex-direction: column; gap: 6px; }
+.review-props__row { display: grid; grid-template-columns: minmax(8em, 1fr) 2fr auto; gap: 6px; align-items: center; }
+.review-color { width: 64px; height: 36px; padding: 0; border: 0; background: transparent; }
+.review-adder { display: flex; gap: 6px; flex: 1 1 320px; }
+.review-adder .review-input { flex: 1; }

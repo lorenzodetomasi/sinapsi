@@ -13,7 +13,7 @@ from it; nothing is written by hand in any of them.
 | `lib.php` | the PHP side: catalogue, markup whitelist, model, one entry as XHTML (twins of the JS) |
 | `epub.php`, `epub.css` | the EPUB 3 books: the whole glossary and one per selection |
 | `../glossary.php` | the isotype.org page template (`template=glossary`, `&skin=` to choose the look) |
-| `ws-admin/glossaries/` | the list of a site's glossaries, the review of proposals, the EPUB build |
+| `ws-admin/glossaries/` | a site's glossaries: new version, review and editing of a proposal, the EPUB build |
 | `ws-custom/languages/glossary-<locale>.po` | every interface string (msgids in English) |
 
 ## The files of a glossary
@@ -126,3 +126,21 @@ Choices, and why:
 English msgids. The catalogue is `window.WSGlossaryL10n`: the viewer parses
 `glossary-<locale>.po` itself, the PHP template and the standalone file embed
 it. After changing the `.po`: `msgfmt -c -o glossary-it_IT.mo glossary-it_IT.po`.
+
+## Versions: how a glossary changes
+
+1. **New version** (module, list page): a proposal that is the glossary as it
+   is, with the next version number and today's date
+   (`proposals/2026-09-27-v3.jsonld`). An import (a new PDF) is a proposal too.
+2. **Review and edit** the proposal: every difference from the current
+   version, paired by `@id`, is a change to accept or refuse; every field of
+   every entry, the settings and the parts can be edited, entries added,
+   deleted, restored. An edit is a change that starts accepted.
+3. **Save the draft** when the work takes more than one sitting or more than
+   one person: what is accepted and edited becomes the proposal, refused
+   changes leave it, the previous file goes to `history/`.
+4. **Apply**: the result becomes `glossary.jsonld`, the old one goes to
+   `history/`, the proposal is switched off (`-name`), the EPUBs are rebuilt.
+
+Both writes refuse to overwrite a file that changed after the page was
+opened (409): reload and redo, nothing is lost silently.
