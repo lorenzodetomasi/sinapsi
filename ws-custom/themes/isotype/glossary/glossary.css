@@ -61,6 +61,11 @@
 .glossary-hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--g-line); background: var(--g-hero-bg, var(--g-bg)); }
 .glossary-hero__ornament { display: none; }
 .glossary-hero__inner { position: relative; max-width: var(--g-maxw); margin: 0 auto; padding: 72px var(--g-gutter) 58px; text-align: center; }
+/* For who may edit (data-edit): the glossary's link at the top, a pencil on each entry. */
+.glossary-edit { position: absolute; top: 16px; right: var(--g-gutter); font-family: var(--g-font-ui); font-size: 13px; color: var(--g-accent); text-decoration: none; border: 1px solid var(--g-accent); border-radius: var(--g-radius-pill); padding: 5px 12px; background: var(--g-panel); }
+.glossary-edit:hover { background: var(--g-accent-wash); }
+.glossary-entry__edit { margin-left: auto; color: var(--g-ink-3); text-decoration: none; font-size: 1.05rem; line-height: 1; padding: 2px 6px; border-radius: var(--g-radius); }
+.glossary-entry__edit:hover { color: var(--g-accent); background: var(--g-accent-wash); }
 .glossary-eyebrow { font-family: var(--g-font-ui); font-size: 12.5px; letter-spacing: .3em; text-transform: uppercase; color: var(--g-ink-3); margin: 0 0 24px; }
 .glossary-title { font-size: clamp(2.5rem, 7vw, 4.4rem); line-height: 1.04; margin: 0 auto; max-width: 18ch; color: var(--g-accent-strong); text-wrap: balance; }
 .glossary-subtitle { font-size: clamp(1.02rem, 2.3vw, 1.22rem); color: var(--g-ink-2); max-width: 56ch; margin: 22px auto 0; line-height: 1.55; }

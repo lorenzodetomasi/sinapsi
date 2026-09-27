@@ -109,8 +109,24 @@ $csrf = $user && empty($user['dev']) ? ws_gettone_sessione() : '';
 
 $mode = 'list';
 $error = '';
+$onlyRel = '';
 $glossaryRel = (string)($_GET['glossary'] ?? '');
 $proposalName = (string)($_GET['proposal'] ?? '');
+$term = (string)($_GET['term'] ?? '');
+/* A glossary without a proposal - the "Edit" link on the glossary's page: the
+ * latest proposal waiting, if there is one; otherwise this glossary alone in
+ * the list, where "New version" starts one. */
+if ($user && $glossaryRel !== '' && $proposalName === '' && ($d = glossary_dir($root, $glossaryRel))) {
+    $waiting = glossary_proposals($d);
+    if ($waiting && glossary_can_review(glossary_read($d . '/' . GLOSSARY_FILE) ?? [], $user)) {
+        uasort($waiting, static fn($a, $b) => $b['modified'] <=> $a['modified']);
+        header('Location: ?' . http_build_query(array_filter(['site' => $siteId, 'glossary' => $glossaryRel,
+            'proposal' => array_key_first($waiting), 'term' => $term])), true, 302);
+        exit;
+    }
+    $onlyRel = $glossaryRel;
+    $glossaryRel = '';
+}
 if ($user && $glossaryRel !== '') {
     $dir = glossary_dir($root, $glossaryRel);
     $current = $dir ? glossary_read($dir . '/' . GLOSSARY_FILE) : null;
@@ -171,6 +187,9 @@ $theme = $siteBase . '/ws-custom/themes';
     </label>
   </form>
   <?php $found = glossary_find($root); ?>
+  <?php if ($onlyRel !== ''): $found = array_intersect_key($found, [$onlyRel => true]); ?>
+    <p class="review-notice"><?= $h(glossary_t('No proposal is waiting: start a new version to edit the glossary.')) ?></p>
+  <?php endif; ?>
   <?php if (!$found): ?><p><?= $h(glossary_t('No glossary in this site yet.')) ?></p><?php endif; ?>
   <?php foreach ($found as $rel => $file):
       $g = glossary_read($file) ?? [];
@@ -214,7 +233,10 @@ $theme = $siteBase . '/ws-custom/themes';
     if (n) {
       n.disabled = true;
       post({ action: 'new', glossary: n.getAttribute('data-new') }).then(function (j) {
-        if (j.url) location.href = j.url; else { alert(j.error || ''); n.disabled = false; }
+        // The entry the "Edit" link came for, carried to the editor.
+        var term = new URLSearchParams(location.search).get('term');
+        if (j.url) location.href = j.url + (term ? '&term=' + encodeURIComponent(term) : '');
+        else { alert(j.error || ''); n.disabled = false; }
       });
       return;
     }

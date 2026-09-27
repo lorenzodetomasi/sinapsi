@@ -26,6 +26,10 @@
  * data-sticky-under="#header" names the site's own sticky header, if any: the
  * glossary's bar then stops under it, whatever height it has at the moment.
  *
+ * data-edit="url" and data-edit-term="url with {id}" - given by the page only
+ * to who may edit the glossary - add an "Edit" link to the glossary and a
+ * pencil to each entry. Nobody else gets them, in the markup or elsewhere.
+ *
  * Content is untrusted: names are text, descriptions and matter may carry
  * only the markup in ALLOWED below, rebuilt element by element from an inert
  * document, without attributes except lang (and title on abbr/dfn).
@@ -397,9 +401,11 @@
   function renderEntry(m, x) {
     var entry = withColor(h('article', { class: 'glossary-entry', id: x.anchor, 'data-id': x.id }), x.categories[0] && x.categories[0].color);
     // A div, not a <header>: a site's stylesheet may style every header inside a section.
+    var edit = m.editTerm ? safeUrl(m.editTerm.replace('{id}', encodeURIComponent(x.id)), m.base) : '';
     entry.appendChild(h('div', { class: 'glossary-entry__head' },
       h('h3', { class: 'glossary-term', text: x.name }),
-      x.label ? h('span', { class: 'glossary-origin' }, h('span', { class: 'glossary-dot', 'aria-hidden': 'true' }), x.label) : null));
+      x.label ? h('span', { class: 'glossary-origin' }, h('span', { class: 'glossary-dot', 'aria-hidden': 'true' }), x.label) : null,
+      edit ? h('a', { class: 'glossary-entry__edit', href: edit, title: t('Edit this entry'), 'aria-label': t('Edit this entry') + ': ' + x.name, text: '✎' }) : null));
     if (x.description) entry.appendChild(h('p', { class: 'glossary-def' }, sanitize(x.description)));
     if (x.properties.length) {
       entry.appendChild(h('dl', { class: 'glossary-props' }, x.properties.map(function (p) {
@@ -450,6 +456,7 @@
     var hero = h('header', { class: 'glossary-hero' },
       h('div', { class: 'glossary-hero__ornament', 'aria-hidden': 'true' }, h('i'), h('i'), h('i')),
       h('div', { class: 'glossary-hero__inner' },
+        m.edit && safeUrl(m.edit, m.base) ? h('a', { class: 'glossary-edit', href: safeUrl(m.edit, m.base) }, '✎ ', t('Edit the glossary')) : null,
         m.series.length ? h('p', { class: 'glossary-eyebrow', text: m.series.join(' \u00b7 ') }) : null,
         h('h1', { class: 'glossary-title', text: m.name }),
         m.description ? h('p', { class: 'glossary-subtitle' }, sanitize(m.description)) : null,
@@ -702,6 +709,8 @@
   }
   function mount(root, data, base) {
     var m = model(data, { base: base });
+    m.edit = root.getAttribute('data-edit') || '';
+    m.editTerm = root.getAttribute('data-edit-term') || '';
     render(root, m);
     var ctl = enhance(root, m);
     root.dispatchEvent(new CustomEvent('glossary:ready', { bubbles: true, detail: { model: m, controller: ctl } }));

@@ -569,3 +569,14 @@ msgstr "Impossibile salvare la proposta."
 
 msgid "The proposal changed after this page was opened: reload it."
 msgstr "La proposta è cambiata dopo l’apertura di questa pagina: ricaricala."
+
+# ---- Editing from the glossary's page -----------------------------------------------
+
+msgid "Edit the glossary"
+msgstr "Modifica il glossario"
+
+msgid "Edit this entry"
+msgstr "Modifica questa voce"
+
+msgid "No proposal is waiting: start a new version to edit the glossary."
+msgstr "Nessuna proposta in attesa: crea una nuova versione per modificare il glossario."

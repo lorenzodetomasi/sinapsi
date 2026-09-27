@@ -649,5 +649,17 @@
 
   computeChanges();
   drawAll();
-  selectTab(changes.length ? 'changes' : 'entries');
+  /* ?term=#id - the pencil beside an entry on the glossary's page: that entry, open. */
+  var focus = new URLSearchParams(location.search).get('term');
+  if (focus && (dTerms.has(focus) || curTerms.has(focus))) {
+    selectTab('entries');
+    expanded.add('term|' + focus);
+    refresh('term', focus);
+    var target = cards.get('term|' + focus);
+    target.classList.add('is-focus');
+    target.scrollIntoView({ block: 'start' });
+    window.scrollBy(0, -(document.querySelector('.review-tools').offsetHeight + 16));
+  } else {
+    selectTab(changes.length ? 'changes' : 'entries');
+  }
 })();

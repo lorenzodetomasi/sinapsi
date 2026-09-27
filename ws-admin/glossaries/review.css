@@ -85,3 +85,4 @@ textarea.review-input { resize: vertical; line-height: 1.5; }
 .review-color { width: 64px; height: 36px; padding: 0; border: 0; background: transparent; }
 .review-adder { display: flex; gap: 6px; flex: 1 1 320px; }
 .review-adder .review-input { flex: 1; }
+.review-card.is-focus { box-shadow: 0 0 0 3px var(--color-link); }

@@ -13,6 +13,9 @@
  *   download: they are added to the data here, as `encoding`, not written into
  *   the glossary, since they are made from it.
  * - Without JavaScript the entries are still there, as a plain list.
+ * - Who is signed in and may edit this glossary (ws-admin/glossaries) gets an
+ *   "Edit" link and a pencil on each entry, leading to the editor; nobody else
+ *   gets them - not hidden, absent.
  *
  * @package WS
  * @subpackage isotype
@@ -41,6 +44,23 @@ if ($glossary_model) {
     if ($encoding) $glossary['encoding'] = $encoding;
 }
 
+/* Who may edit: the module's own rule (glossary_can_review()), asked of the
+ * session the google-login plugin opened. A visitor with no session costs
+ * nothing: ws_autentica_sessione() reads a session only when there is one. */
+$glossary_edit = '';
+$glossary_edit_term = '';
+if ($glossary_model && is_file(ws_admin_abspath() . '/glossaries/lib/glossary.php')) {
+    require_once ws_admin_abspath() . '/glossaries/lib/glossary.php';
+    $content_parts = explode('/', ws_content_id());
+    $site_id = isset($content_parts[1]) && preg_match('/^[a-z]{2}_[A-Z]{2}$/', $content_parts[1]) ? $content_parts[0] . '/' . $content_parts[1] : $content_parts[0];
+    $glossary_rel = substr(ws_content_id(), strlen($site_id) + 1);
+    $editor = glossary_user(ws_contents_abspath() . '/' . $site_id);
+    if ($editor && glossary_can_review($glossary, $editor)) {
+        $glossary_edit = rtrim(ws_admin_url(), '/') . '/glossaries/?' . http_build_query(['site' => $site_id, 'glossary' => $glossary_rel]);
+        $glossary_edit_term = $glossary_edit . '&term={id}';
+    }
+}
+
 $skin = (string)($ws_query['skin'] ?? '');
 if (!preg_match('/^[a-z0-9-]+$/', $skin) || !is_file(__DIR__ . '/glossary/skins/' . $skin . '.css')) $skin = 'isotype';
 $assets = ws_theme_url() . 'glossary/';
@@ -64,7 +84,7 @@ include_template('template-parts/header');
 				<h1><?php echo $ws_content->name ? $ws_content->name->innerHTML() : ''; ?></h1>
 				<p><?php echo glossary_x(glossary_t('This file has no DefinedTermSet.')); ?></p>
 <?php } else { ?>
-				<div data-glossary data-source="#glossary-data" data-sticky-under="#header" data-base="<?php echo glossary_x($glossary_url); ?>">
+				<div data-glossary data-source="#glossary-data" data-sticky-under="#header" data-base="<?php echo glossary_x($glossary_url); ?>"<?php if ($glossary_edit) { ?> data-edit="<?php echo glossary_x($glossary_edit); ?>" data-edit-term="<?php echo glossary_x($glossary_edit_term); ?>"<?php } ?>>
 					<noscript>
 						<h1><?php echo glossary_x($glossary_model['name']); ?></h1>
 						<dl class="glossary-fallback">
