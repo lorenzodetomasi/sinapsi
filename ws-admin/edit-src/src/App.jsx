@@ -106,6 +106,28 @@ export default function App() {
   const [serieMadre, setSerieMadre] = useState(null);
   const [tab, setTab] = useState('form');
 
+  /* Data from OUTSIDE the form (opening, loading, a new event, applied JSON)
+   * restarts the form. JSONForms reports its initial data once it has
+   * compiled the schema - slow on a cold cache - and that late report, of the
+   * EMPTY form it was born with, used to overwrite the event that had arrived
+   * in the meantime: an event opened from a link showed up empty, now and
+   * then. A form born with the right data has nothing stale to report. */
+  const [nascita, setNascita] = useState(0);
+  const nascitaRef = useRef(0);
+  const caricaDati = useCallback((d) => { setData(d); nascitaRef.current += 1; setNascita(nascitaRef.current); }, []);
+  /* What the form reports. Two guards, both needed:
+   *  - a report from a form already replaced is ignored: JSONForms sends its
+   *    reports on a timer (debounced), and a timer outlives the component, so
+   *    the empty form's report could land after an event had been opened;
+   *  - a report that changes nothing is ignored: each one used to become a NEW
+   *    object, which went back into the form, which reported it again - an
+   *    endless loop (hundreds of reports a second) that kept whatever it
+   *    carried, the empty form included. */
+  const dalForm = useCallback((istanza, nuovi) => {
+    if (istanza !== nascitaRef.current) return;
+    const d = deriveCapacities(nuovi);
+    setData((prima) => (JSON.stringify(prima) === JSON.stringify(d) ? prima : d));
+  }, []);
   // File operations (Fase 1: carica · Fase 2: apri web · Fase 3: salva su PC). Flash = messaggio transitorio.
   const fileRef = useRef(null);
   const baseDirRef = useRef(null); // FileSystemDirectoryHandle radice contenuti (ricordato)
@@ -199,7 +221,7 @@ export default function App() {
       const d = fromJsonLd(docNuovo(tipo));
       const modo = { repliche: 'piu', regola: 'regola', periodo: 'periodo' }[tipo];
       if (modo) d.quando = { ...d.quando, modo };
-      setData(deriveCapacities(d));
+      caricaDati(deriveCapacities(d));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -277,7 +299,7 @@ export default function App() {
       parsed.mainEntity && typeof parsed.mainEntity === 'object' ? parsed.mainEntity : parsed;
     const dati = deriveCapacities(fromJsonLd(doc));
     const dopo = toJsonLd(dati);
-    setData(dati);
+    caricaDati(dati);
     return Object.keys(doc).filter((k) => !(k in dopo));
   }
 
@@ -285,7 +307,7 @@ export default function App() {
   async function fixXhtml() {
     try {
       const out = await api('fix_xhtml', { type: 'json', payload });
-      if (out.success) setData(fromJsonLd(JSON.parse(out.result)));
+      if (out.success) caricaDati(fromJsonLd(JSON.parse(out.result)));
     } catch (e) {
       console.error(e);
     }
@@ -487,7 +509,7 @@ export default function App() {
     const merged = mergeChoices(data, diff.changes, keepTheirs);
     const mergedPayload = JSON.stringify(perIlFile(deriveCapacities(merged)), null, 2);
     const rel = diff.rel;
-    doSaveWeb(rel, mergedPayload, () => { setData(deriveCapacities(merged)); setDiff(null); });
+    doSaveWeb(rel, mergedPayload, () => { caricaDati(deriveCapacities(merged)); setDiff(null); });
   }
 
   async function doSaveWeb(rel, payloadToSave, onDone, origine) {
@@ -553,7 +575,7 @@ export default function App() {
   // l'URL (?id=…) e i marcatori del confronto.
   function newEvent() {
     setSerieMadre(null);
-    setData(deriveCapacities(fromJsonLd(blankJsonLd)));
+    caricaDati(deriveCapacities(fromJsonLd(blankJsonLd)));
     setChangedPaths(new Set());
     setDiff(null);
     try { history.replaceState(null, '', window.location.pathname); } catch { /* ignora */ }
@@ -569,7 +591,7 @@ export default function App() {
       // Un index.json evento è "flat"; se arriva incapsulato (mainEntity) lo srotolo.
       const doc = parsed && typeof parsed === 'object' && parsed.mainEntity && typeof parsed.mainEntity === 'object'
         ? parsed.mainEntity : parsed;
-      setData(deriveCapacities(fromJsonLd(doc)));
+      caricaDati(deriveCapacities(fromJsonLd(doc)));
       showFlash(`Caricato «${file.name}»`, 'ok');
     } catch (e) {
       showFlash('File JSON non valido: ' + (e?.message || e), 'err');
@@ -672,7 +694,7 @@ export default function App() {
         });
       }
       doc = await conSerie(doc);
-      setData(deriveCapacities(fromJsonLd(doc)));
+      caricaDati(deriveCapacities(fromJsonLd(doc)));
       setOpenWeb(false);
       if (asCopy) {
         try { history.replaceState(null, '', window.location.pathname); } catch { /* ignora */ }
@@ -849,10 +871,11 @@ export default function App() {
             <JsonForms
               schema={schema}
               uischema={uischema}
+              key={nascita}
               data={data}
               renderers={renderers}
               cells={vanillaCells}
-              onChange={({ data }) => setData(deriveCapacities(data))}
+              onChange={({ data: nuovi }) => dalForm(nascita, nuovi)}
             />
           </EditorContext.Provider>
         </section>
