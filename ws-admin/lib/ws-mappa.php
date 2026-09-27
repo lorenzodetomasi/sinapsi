@@ -155,6 +155,14 @@ if (!function_exists('ws_mappa_wspath')) {
      *
      * Ritorna [wspath, template, tipo] oppure null per ciò che pagina non è.
      */
+    /** A list's page: a route (TouristTrip) has the line, any other list the collection. */
+    function ws_mappa_lista(array $e, string $wspath): array {
+        $altri = array_map('strval', (array)($e['additionalType'] ?? []));
+        return in_array('TouristTrip', $altri, true)
+            ? [$wspath, 'trip', 'TouristTrip']
+            : [$wspath, 'collection', 'ItemList'];
+    }
+
     function ws_mappa_wspath(string $rel, array $tipi, array $ctx = [], array $e = []): ?array {
         $slug = ws_mappa_slug($rel);
         $lista = in_array('ItemList', $tipi, true);
@@ -180,6 +188,17 @@ if (!function_exists('ws_mappa_wspath')) {
             return ["$base/$slug", $serie ? 'collection' : 'event', $serie ? 'EventSeries' : 'Event'];
         }
 
+        /* THE LISTS of a zone - lists/lido-di-ostia/bookcrossing - have the same
+         * address they had under places/: /roma/municipio10/lido-di-ostia/bookcrossing.
+         * The folder says what a thing is; the address, where it is. */
+        if (strpos($rel, 'lists/') === 0) {
+            $pezzi = explode('/', trim($rel, '/'));
+            if (count($pezzi) === 3 && isset($zone[$pezzi[1]])) {
+                return ws_mappa_lista($e, '/' . $dove($pezzi[1]) . "/$slug");
+            }
+            return ["/liste/$slug", 'collection', 'ItemList'];
+        }
+
         if (strpos($rel, 'places/') === 0) {
             $pezzi = explode('/', trim($rel, '/'));
             // Una ZONA — `places/lido-di-ostia` — non è un posto dove si va: è il
@@ -202,11 +221,7 @@ if (!function_exists('ws_mappa_wspath')) {
                  * DICHIARA il contenuto, con `additionalType: "TouristTrip"` - il
                  * tipo schema.org per un itinerario fra luoghi d'interesse - e
                  * non lo si indovina più dai dati delle fermate. */
-                $altri = array_map('strval', (array)($e['additionalType'] ?? []));
-                if (in_array('TouristTrip', $altri, true)) {
-                    return ['/' . $dove($pezzi[1]) . "/$slug", 'trip', 'TouristTrip'];
-                }
-                return ['/' . $dove($pezzi[1]) . "/$slug", 'collection', 'ItemList'];
+                return ws_mappa_lista($e, '/' . $dove($pezzi[1]) . "/$slug");
             }
             // Un luogo sta nella zona che rivendica il suo CAP.
             $zonaSlug = $cap[$pezzi[1] ?? ''] ?? '';

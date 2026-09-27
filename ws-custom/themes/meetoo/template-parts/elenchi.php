@@ -370,7 +370,16 @@ function meetoo_percorsi($ent, $dove){
 		 * Un PERCORSO invece è di questo posto e basta — il lungomare di Ostia non è
 		 * il lungomare di nessun altro — e sta dove sta. */
 		$categoria = (strpos($id, 'categories/') === 0);
-		$istanza = $categoria ? 'places/'.$dove.'/'.$slug : $id;
+		/* The instance of a category is a LIST of this zone: lists/<zone>/<slug>.
+		 * It used to live under places/, which is for places; a server not yet
+		 * migrated still has it there, and is still read. */
+		$istanza = $id;
+		if($categoria){
+			$istanza = 'lists/'.$dove.'/'.$slug;
+			if(!meetoo_contenuto($istanza) and meetoo_contenuto('places/'.$dove.'/'.$slug)){
+				$istanza = 'places/'.$dove.'/'.$slug;
+			}
+		}
 		$href = meetoo_indirizzo($istanza);
 		/* «In preparazione» non vuol dire «la pagina non c'è»: vuol dire «qui non
 		 * c'è ancora niente». Una categoria può essere aperta — la sua istanza

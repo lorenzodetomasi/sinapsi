@@ -74,12 +74,12 @@ function ws_read_stored($id) {
  * erano protetti da `function_exists`, quindi bastava che questo file e la libreria
  * finissero nella stessa richiesta per fermare tutto con un errore fatale. */
 require_once __DIR__ . '/../lib/ws-auth.php';
-// @id → percorso sicuro sotto it_IT (solo places/organizations, niente traversal).
+// @id → percorso sicuro sotto it_IT (places, organizations, lists; niente traversal).
 function ws_id_to_path($id) {
     if (!is_string($id) || $id === '') return null;
     $parts = explode('/', $id);
     if (count($parts) < 2) return null;
-    if (!in_array($parts[0], ['places', 'organizations'], true)) return null;
+    if (!in_array($parts[0], ['places', 'organizations', 'lists'], true)) return null;
     foreach ($parts as $p) { if (!preg_match('#^[A-Za-z0-9._-]+$#', $p) || $p === '.' || $p === '..') return null; }
     return WS_MEETOO_ROOT . '/' . implode('/', $parts);
 }
@@ -460,7 +460,7 @@ if ($action === 'users') {
 
 // 3-quater. Elenco dei JSON che l'utente può MODIFICARE (per aprirli e editarli):
 // tutti per admin/super-admin, altrimenti solo dove è creator o contributor (e i
-// legacy senza creator). Scansione una tantum di places/ e organizations/.
+// legacy senza creator). Scansione una tantum di places/, organizations/ e lists/.
 if ($action === 'editable') {
     $authorizedRoles = ['user', 'client', 'admin', 'super-admin'];
     if (!in_array($userRole, $authorizedRoles, true)) {
@@ -468,7 +468,9 @@ if ($action === 'editable') {
         exit;
     }
     $items = [];
-    foreach (WS_INDEX_SCAN_DIRS as $sub) {
+    // The lists too (lists/): they are edited here, though they are neither
+    // places nor subjects, and stay out of the entity and Place ID indexes.
+    foreach (array_merge(WS_INDEX_SCAN_DIRS, ['lists']) as $sub) {
         $base = WS_MEETOO_ROOT . '/' . $sub;
         if (!is_dir($base)) continue;
         $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($base, FilesystemIterator::SKIP_DOTS));
