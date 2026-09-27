@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 /*
  * «Normalizza i contenuti»: una passata sola, in fasi ordinate.
  *
@@ -255,7 +256,7 @@ function ws_norm_rmdir(string $base, string $dir): bool {
 function ws_norm_gruppi(string $ambito): array {
     // Da «Gestione | Eventi» si normalizzano gli eventi e basta; dall'hub, tutto.
     if ($ambito === 'events') return ['events/*'];
-    return ['events/*', 'places/*', 'places/*/*', 'organizations/*', 'users/*'];
+    return ws_content_globs(true);
 }
 
 /** Il gemello XML, se esiste già. Non se ne creano di nuovi: chi non ce l'ha non lo vuole. */

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 /*
  * meetoo:listRule — la regola che dice CHI sta in una lista e in CHE ORDINE.
  *
@@ -394,7 +395,7 @@ if (!function_exists('ws_listrule_match')) {
     /** Le liste che dichiarano una regola, come [percorso file => documento]. */
     function ws_listrule_lists(string $base): array {
         $out = [];
-        foreach (['places/*/*', 'places/*', 'events/*', 'organizations/*'] as $g) {
+        foreach (ws_content_globs() as $g) {
             foreach (glob(rtrim($base, '/') . "/$g/index.json") as $f) {
                 $j = json_decode((string)@file_get_contents($f), true);
                 if (!is_array($j)) continue;

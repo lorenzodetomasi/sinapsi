@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 /*
  * «Contenuti da migrare»: chi ha ancora il testo nel campo sbagliato.
  *
@@ -45,7 +46,7 @@ function ws_migrazione_stato(string $base): array {
     $ok = 0;
     $ordine = ['events' => 1, 'places' => 2, 'organizations' => 3];
 
-    foreach (['events/*', 'places/*', 'places/*/*', 'organizations/*'] as $gruppo) {
+    foreach (ws_content_globs() as $gruppo) {
         foreach (glob("$base/$gruppo/index.json") as $file) {
             $doc = json_decode((string)@file_get_contents($file), true);
             if (!is_array($doc)) continue;

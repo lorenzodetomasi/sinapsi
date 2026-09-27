@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 /**
  * La mappa del sito Meetoo, generata dai contenuti.
  *
@@ -279,7 +280,7 @@ if (!function_exists('ws_mappa_wspath')) {
     /** Tutte le entità con un index.json, come percorsi relativi al locale. */
     function ws_mappa_entita(string $localeDir): array {
         $out = [];
-        foreach (['events/*', 'places/*', 'places/*/*', 'organizations/*'] as $g) {
+        foreach (ws_content_globs() as $g) {
             foreach (glob("$localeDir/$g/index.json") as $f) {
                 $out[] = trim(str_replace($localeDir, '', dirname($f)), '/');
             }

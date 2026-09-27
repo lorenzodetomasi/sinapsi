@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 /*
  * Il guscio di pagina: `ItemPage` + `mainEntity`.
  *
@@ -67,7 +68,7 @@ if (!function_exists('ws_wrap_migrate')) {
      */
     function ws_wrap_migrate(string $base, bool $apply): array {
         $done = []; $failed = [];
-        foreach (['events/*', 'places/*/*', 'places/*', 'organizations/*', 'users/*'] as $g) {
+        foreach (ws_content_globs(true) as $g) {
             foreach (glob(rtrim($base, '/') . "/$g/index.json") as $f) {
                 $raw = (string)@file_get_contents($f);
                 $doc = json_decode($raw, true);

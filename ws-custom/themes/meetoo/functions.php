@@ -66,7 +66,11 @@ if(!function_exists('meetoo_derivati_freschi')){
 		   nasce il gemello .xml mentre la pagina si disegna, e sembrerebbe una
 		   voce nuova a ogni prima visita. Si' quelle dei CAP (`places/IT00121`),
 		   che contengono solo cartelle: un luogo nuovo si copia li' dentro. */
-		$cartelle = array($base.'/events', $base.'/places', $base.'/organizations');
+		require_once ws_admin_abspath().'/lib/ws-content-folders.php';
+		$cartelle = array($base.'/events', $base.'/places', $base.'/organizations', $base.'/lists');
+		foreach(glob($base.'/lists/*', GLOB_ONLYDIR) ?: array() as $d){
+			$cartelle[] = $d;   // a zone's lists folder: a new list is copied in there
+		}
 		foreach(glob($base.'/places/*', GLOB_ONLYDIR) ?: array() as $d){
 			if(!file_exists($d.'/index.json')){ $cartelle[] = $d; }
 		}
@@ -74,7 +78,7 @@ if(!function_exists('meetoo_derivati_freschi')){
 		foreach($cartelle as $d){
 			$piu_nuovo = max($piu_nuovo, $quando($d));
 		}
-		foreach(array('index', 'events/*', 'places/*', 'places/*/*', 'organizations/*') as $dove){
+		foreach(array_merge(array('index'), ws_content_globs()) as $dove){
 			foreach(glob($base.'/'.$dove.'/index.json') ?: array() as $f){
 				$piu_nuovo = max($piu_nuovo, $quando($f));
 			}
