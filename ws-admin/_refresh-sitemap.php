@@ -32,8 +32,8 @@ require_once __DIR__ . '/lib/derived.php';
 require_once __DIR__ . '/refresh-contents.php';
 
 if (!defined('WS_SITEMAP_VERSION')) {
-    // 2026.09.27: entries carry creativeWorkStatus (a draft is listed on the site, not indexed).
-    define('WS_SITEMAP_VERSION', 'sitemap 2026.09.27');
+    // 2026.09.27: entries carry creativeWorkStatus; a draft is listed on the site, and noindex.
+    define('WS_SITEMAP_VERSION', 'sitemap 2026.09.27.2');
 }
 
 if (!function_exists('ws_refresh_sitemap')) {
@@ -175,6 +175,20 @@ if (!function_exists('ws_refresh_sitemap')) {
             $v = trim(strip_tags((string)$v));
             if ($v !== '') $e[$f] = preg_replace('/\s+/u', ' ', $v);
         }
+        return ws_sitemap_draft_robots($e);
+    }
+
+    /**
+     * A draft is never for the engines: whatever its robots say, the entry says
+     * noindex (follow or nofollow kept). So a page's `robots` can already be
+     * what it will be once published, and publishing is removing the status.
+     * The page's <meta name="robots"> and sitemap.xml both read the map.
+     */
+    function ws_sitemap_draft_robots(array $e): array {
+        if (strcasecmp($e['creativeWorkStatus'] ?? '', 'Draft') !== 0 || stripos($e['robots'] ?? '', 'noindex') !== false) return $e;
+        $rest = array_filter(array_map('trim', explode(',', (string)($e['robots'] ?? ''))),
+            fn($r) => $r !== '' && strcasecmp($r, 'index') !== 0 && strcasecmp($r, 'all') !== 0);
+        $e['robots'] = implode(', ', array_merge(['noindex'], $rest ?: ['follow']));
         return $e;
     }
 
@@ -194,7 +208,7 @@ if (!function_exists('ws_refresh_sitemap')) {
             $v = trim($f === 'parent' ? $x->evaluate('string(/*/parent/wspath)') : $x->evaluate("string(/*/$f)"));
             if ($v !== '') $e[$f] = preg_replace('/\s+/u', ' ', $v);
         }
-        return $e;
+        return ws_sitemap_draft_robots($e);
     }
 
     /** Tree order: a page before the pages under it, siblings by path. */
@@ -275,10 +289,6 @@ if (!function_exists('ws_refresh_sitemap')) {
             }
             if ($e === null) { $out['problems'][] = "$rel: no wspath, left off the map"; continue; }
             if (empty($e['query'])) $out['problems'][] = "$rel: no query - the CMS cannot route it";
-            // A draft is on the site but not for the engines: its robots must say so.
-            if (strcasecmp($e['creativeWorkStatus'] ?? '', 'Draft') === 0 && stripos($e['robots'] ?? '', 'noindex') === false) {
-                $out['problems'][] = "$rel: a draft (creativeWorkStatus Draft) the engines may index - add robots noindex";
-            }
             $entries[] = $e;
         }
         ws_sitemap_sort($entries);

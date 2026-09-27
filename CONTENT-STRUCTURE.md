@@ -198,9 +198,13 @@ e non va mantenuto a mano (se presente, è un elenco denormalizzato).
 Una pagina non ancora pubblicata ma già sul sito si dichiara così nel suo `index.json`:
 
 ```json
-"robots": "noindex, follow",
 "creativeWorkStatus": "Draft"
 ```
+
+**Una bozza è sempre `noindex`**, qualunque cosa dica il suo `robots`: la mappa la
+scrive così (`ws_sitemap_draft_robots()`), e da lì la leggono il `<meta name="robots">`
+della pagina e `sitemap.xml`. Il `robots` della pagina può quindi dire già come sarà
+una volta pubblicata (`index, follow`).
 
 - `creativeWorkStatus` è schema.org (su ogni `CreativeWork`, quindi su ogni `WebPage`).
 - La pagina **risponde** al suo indirizzo e mostra in cima l'avviso «Bozza»
@@ -210,9 +214,8 @@ Una pagina non ancora pubblicata ma già sul sito si dichiara così nel suo `ind
   dire: una pagina che nessuno deve incontrare, e dagli elenchi resta fuori.
 - **Non arriva ai motori**: niente `sitemap.xml` (esclude già le `noindex`), niente
   `hasPart` nel JSON-LD della pagina madre.
-- La mappa (`ws_sitemap.wsx`) porta lo stato; «Rigenera le mappe» segnala una bozza
-  senza `noindex`. Per pubblicarla: togliere `creativeWorkStatus` (o metterlo a
-  `Published`), `robots` a `index, follow`, e rigenerare le mappe.
+- La mappa (`ws_sitemap.wsx`) porta lo stato. **Per pubblicarla**: togliere
+  `creativeWorkStatus` (o metterlo a `Published`) e rigenerare le mappe.
 
 ## Tipi di dato
 

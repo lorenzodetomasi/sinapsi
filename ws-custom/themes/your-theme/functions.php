@@ -514,7 +514,8 @@ $GLOBALS['ws_html_attributes']['header1-headline']['class'][] = 'header-espanso-
  *
  * A page whose robots say noindex is left out. It is not finished for readers,
  * so it is not finished for a menu either — and that is the switch to use for
- * a page that exists but is not ready to be found.
+ * a page that exists but is not ready to be found. A DRAFT is the exception
+ * the site's own lists make (ws_is_draft()): noindex, but shown, and marked.
  *
  * The map the CMS routes with is ONE for every site it serves (isotype,
  * your-website, meetoo, the admin's pages), and every site's top pages name
@@ -563,8 +564,9 @@ if(!function_exists('ws_is_draft')){
  *
  * A draft is a page of the site that is not published yet: it answers at its
  * address and shows in the lists of the pages above it, marked as a draft,
- * while `robots: noindex` keeps the search engines away. Without the status,
- * noindex means what it always meant: a page nobody is meant to come across.
+ * and it is noindex whatever its robots say (the site map sees to it:
+ * ws_sitemap_draft_robots()). Without the status, noindex means what it
+ * always meant: a page nobody is meant to come across.
  */
 function ws_is_draft($node){
 	return !empty($node) and !empty($node->creativeWorkStatus) and strcasecmp(trim((string)$node->creativeWorkStatus), 'Draft') === 0;
