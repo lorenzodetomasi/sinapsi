@@ -42,12 +42,29 @@ function glossary_users_xml(string $root): ?string
 function glossary_user(string $root): ?array
 {
     $user = ws_autentica_sessione(glossary_users_xml($root));
-    if ($user) return $user;
+    if ($user) {
+        // "Super-admins shared across sites" (ws-admin/README.md): whoever is one
+        // on any site is one here, even where this site's users.xml says less.
+        if ($user['role'] !== 'super-admin' && glossary_is_super_admin_anywhere($user['uid'])) $user['role'] = 'super-admin';
+        return $user;
+    }
     $local = in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true);
     if (PHP_SAPI === 'cli-server' && $local) {
         return ['uid' => 'local', 'email' => '', 'name' => 'localhost', 'role' => 'super-admin', 'dev' => true];
     }
     return null;
+}
+
+function glossary_is_super_admin_anywhere(string $uid): bool
+{
+    $seen = [];
+    foreach (ws_admin_sites(ws_admin_contents_abspath()) as $s) {
+        $xml = glossary_users_xml($s['path']);
+        if (!$xml || isset($seen[$xml])) continue;
+        $seen[$xml] = true;
+        if (ws_ruolo_utente($uid, $xml) === 'super-admin') return true;
+    }
+    return false;
 }
 
 /** The @id of every Person the glossary names as author, editor or contributor. */
