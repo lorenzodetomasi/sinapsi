@@ -89,7 +89,8 @@ if ($user && $glossaryRel !== '') {
 }
 
 $h = static fn($s) => htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
-$json = static fn($v) => str_replace('<', '<', json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+// JSON_HEX_TAG: no "</script>" in the data can close the block it travels in.
+$json = static fn($v) => json_encode($v, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
 $theme = $siteBase . '/ws-custom/themes';
 ?>
 <!DOCTYPE html>
