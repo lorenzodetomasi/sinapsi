@@ -26,6 +26,7 @@ import CoerenzaRenderer, { coerenzaTester } from './CoerenzaRenderer.jsx';
 import SerieRenderer, { serieTester } from './SerieRenderer.jsx';
 import RassegneRenderer, { rassegneTester } from './RassegneRenderer.jsx';
 import OfferteRenderer, { offerteTester } from './OfferteRenderer.jsx';
+import CreditiRenderer, { creditiTester } from './CreditiRenderer.jsx';
 import QuandoRenderer, { quandoTester } from './QuandoRenderer.jsx';
 import OccorrenzeRenderer, { occorrenzeTester } from './OccorrenzeRenderer.jsx';
 import { loadEntities, findEntityById } from './entities.js';
@@ -66,6 +67,7 @@ const renderers = [
   { tester: serieTester, renderer: SerieRenderer },
   { tester: rassegneTester, renderer: RassegneRenderer },
   { tester: offerteTester, renderer: OfferteRenderer },
+  { tester: creditiTester, renderer: CreditiRenderer },
   { tester: quandoTester, renderer: QuandoRenderer },
   { tester: occorrenzeTester, renderer: OccorrenzeRenderer },
 ];
@@ -689,10 +691,14 @@ export default function App() {
         // dell'originale (media/cover.jpg) qui non troverebbe più il file, quindi
         // lo si riscrive come percorso dalla radice dei contenuti.
         ['image', 'logo'].forEach((k) => {
-          const v = doc[k];
+          // An ImageObject keeps its credit: only its address is re-rooted.
+          const oggetto = doc[k] && typeof doc[k] === 'object' && !Array.isArray(doc[k]);
+          const v = oggetto ? doc[k].url || doc[k].contentUrl : doc[k];
           if (typeof v !== 'string' || !v || /^https?:\/\//i.test(v)) return;
           if (/^(events|places|organizations)\//.test(v)) return;   // già assoluto
-          if (origin) doc[k] = (origin.includes('/') ? origin : 'events/' + origin) + '/' + v.replace(/^\/+/, '');
+          if (!origin) return;
+          const radicato = (origin.includes('/') ? origin : 'events/' + origin) + '/' + v.replace(/^\/+/, '');
+          doc[k] = oggetto ? { ...doc[k], url: radicato } : radicato;
         });
       }
       doc = await conSerie(doc);

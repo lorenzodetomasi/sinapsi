@@ -456,3 +456,12 @@ a#mt-modifica { display: inline-flex; align-items: center; justify-content: cent
 .mt-prezzo { font-weight: 600; white-space: nowrap; color: var(--color-heading); }
 .mt-biglietti-azioni { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0; }
 .mt-biglietti-azioni .mt-azione { text-decoration: none; }
+
+/* Credits: the programme's roles and names, in its order (event.php). */
+.mt-crediti { margin: 1rem 0; display: grid; gap: .35rem; }
+.mt-crediti > div { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: .75rem; }
+.mt-crediti dt { color: var(--color-hint); font-size: .9375rem; }
+.mt-crediti dt::first-letter { text-transform: uppercase; }
+.mt-crediti dd { margin: 0; }
+@media (max-width: 599px) { .mt-crediti > div { grid-template-columns: 1fr; gap: 0; } }
+.mt-credito { color: var(--color-hint); font-size: .8125rem; margin-top: .25rem; }

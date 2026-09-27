@@ -509,10 +509,12 @@ include_template('template-parts/header');
 						</div>
 					</div>
 
-<?php $cover = meetoo_media($rel, mt_ev($e, 'image') ?: mt_ev($e, 'logo')); if($cover !== ''){ ?>
+<?php $cover = meetoo_media($rel, meetoo_immagine($e->image ?? '') ?: meetoo_immagine($e->logo ?? '')); if($cover !== ''){ ?>
 					<figure class="mt-copertina">
 						<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
-<?php $credito = trim((string)meetoo_campo_meetoo($e, 'imageCredit')); if($credito !== ''){ ?>
+<?php /* The credit travels WITH the image (ImageObject.creditText); the older
+	   meetoo:imageCredit field beside it is still read. */
+	$credito = meetoo_credito_immagine($e->image ?? null) ?: trim((string)meetoo_campo_meetoo($e, 'imageCredit')); if($credito !== ''){ ?>
 						<figcaption class="mt-credito"><?php echo mt_esc($credito); ?></figcaption>
 <?php } ?>
 					</figure>
@@ -528,6 +530,17 @@ include_template('template-parts/header');
 
 <?php $testo = meetoo_testo_visibile($e); if($testo !== ''){ ?>
 					<div class="mt-corpo mt-abstract"><?php ws_echo($testo); ?></div>
+<?php } ?>
+<?php
+/* The credits, in the programme's order and words (event-credits.php). */
+require_once ws_admin_abspath().'/lib/event-credits.php';
+$crediti = event_credits($doc_offerte);
+if($crediti){ ?>
+					<dl class="mt-crediti">
+<?php foreach($crediti as $c){ ?>
+						<div><dt><?php echo mt_esc($c['roleName']); ?></dt><dd><?php echo mt_esc(event_credits_names($c['agents'])); ?></dd></div>
+<?php } ?>
+					</dl>
 <?php } else if(mt_ev($e, 'description') !== ''){ ?>
 					<p class="mt-abstract mt-sommario"><?php echo mt_esc(mt_ev($e, 'description')); ?></p>
 <?php } ?>

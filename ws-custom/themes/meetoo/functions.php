@@ -663,6 +663,35 @@ function meetoo_ora($valore, $fuso = ''){
  * Chi ha già un indirizzo suo — assoluto, o che comincia con uno slash — si
  * lascia com'è.
  */
+/**
+ * The address of an image node, whatever its shape: a plain path, or an
+ * ImageObject (url / contentUrl) carrying its credit. In the XML an ImageObject
+ * is an element with children, and (string) of it is empty - reading it as a
+ * string lost the cover.
+ */
+function meetoo_immagine($nodo){
+	if(!is_object($nodo)){
+		return trim((string)$nodo);
+	}
+	foreach(array('url', 'contentUrl') as $k){
+		if(isset($nodo->$k) and trim((string)$nodo->$k) !== ''){
+			return trim((string)$nodo->$k);
+		}
+	}
+	return trim((string)$nodo);
+}
+
+/** The credit of an image node: "Foto di Giulio Avarello", '' when none. */
+function meetoo_credito_immagine($nodo){
+	if(!is_object($nodo)){
+		return '';
+	}
+	if(isset($nodo->creditText) and trim((string)$nodo->creditText) !== ''){
+		return trim((string)$nodo->creditText);
+	}
+	return isset($nodo->creator->name) ? trim((string)$nodo->creator->name) : '';
+}
+
 function meetoo_media($rel, $file){
 	$f = trim((string)$file);
 	if($f === '' or preg_match('#^(https?:)?//#', $f) or $f[0] === '/'){
@@ -811,11 +840,28 @@ function meetoo_jsonld(){
 	 * silent: without it, the third Spritzalibro would have no description. */
 	$pezzi = explode('/', trim((string)$ws_query['content'], '/'), 3);
 	$full = isset($pezzi[2]) ? meetoo_evento_con_serie($pezzi[2]) : null;
-	if($full !== null){
-		$doc = json_decode($raw, true);
-		if(isset($doc['mainEntity']) and is_array($doc['mainEntity'])){ $doc['mainEntity'] = $full; } else { $doc = $full; }
-		$raw = (string)json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+	$doc = json_decode($raw, true);
+	$avvolto = (isset($doc['mainEntity']) and is_array($doc['mainEntity']));
+	$ent = $full !== null ? $full : ($avvolto ? $doc['mainEntity'] : $doc);
+	/* The credits as schema.org says them: each row of meetoo:credits declares
+	 * its property (ws-admin/lib/event-credits.php). */
+	if(!empty($ent['meetoo:credits'])){
+		require_once ws_admin_abspath().'/lib/event-credits.php';
+		$ent += event_credits_schema($ent);
 	}
+	/* Who created a file and who may edit it are users of this site
+	 * (users/<id>): internal, not something to publish in every page. */
+	foreach(array('creator', 'contributor', 'meetoo:manager') as $k){
+		if(!isset($ent[$k])){ continue; }
+		$lista = (is_array($ent[$k]) and array_key_exists(0, $ent[$k])) ? $ent[$k] : array($ent[$k]);
+		$lista = array_values(array_filter($lista, function($x){
+			$id = is_array($x) ? (string)($x['@id'] ?? '') : (string)$x;
+			return strpos($id, 'users/') !== 0;
+		}));
+		if($lista){ $ent[$k] = $lista; } else { unset($ent[$k]); }
+	}
+	if($avvolto){ $doc['mainEntity'] = $ent; } else { $doc = $ent; }
+	$raw = (string)json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 	// `</script>` dentro una descrizione chiuderebbe il blocco: si spezza la
 	// sequenza senza toccare il significato del JSON.
 	$out = '<script type="application/ld+json">'."\n".str_replace('</', '<\/', $raw)."\n".'</script>';
@@ -878,6 +924,12 @@ function meetoo_jsonld_date($doc){
 	return "\n".'<script type="application/ld+json">'."\n".str_replace('</', '<\/', (string)$json)."\n".'</script>';
 }
 $GLOBALS['ws_scripts']['head']['meetoo_jsonld'] = meetoo_jsonld();
+/* One description of the page, not two. The parent theme prints a generic one
+ * (ws_page_jsonld), and with it the content's internal references (users/…);
+ * where Meetoo prints the content itself, the parent's goes. */
+if($GLOBALS['ws_scripts']['head']['meetoo_jsonld'] !== ''){
+	unset($GLOBALS['ws_scripts']['head']['jsonld']);
+}
 
 /* ---------------------------------------------------------------------------
  * Chi sei, detto dal server.

@@ -134,7 +134,19 @@ export function fromJsonLd(doc) {
     // dove sono — la migrazione è a mano — e il campo Descrizione lo segnala.
     abstract: doc.abstract ?? '',
     description: doc.description ?? '',
-    image: doc.image ?? '',
+    // The cover as an address; its credit, when the file has one, travels with
+    // it as an ImageObject (creditText) and is shown under the image.
+    image: doc.image && typeof doc.image === 'object' ? (doc.image.url || doc.image.contentUrl || '') : (doc.image ?? ''),
+    imageCredit: doc.image && typeof doc.image === 'object' ? (doc.image.creditText || '') : '',
+    // Credits in the programme's order and words, each with its schema.org
+    // property (ws-admin/lib/event-credits.php).
+    crediti: asArray(doc['meetoo:credits']).filter((r) => r && typeof r === 'object').map((r) => ({
+      ruolo: r.roleName ?? '',
+      proprieta: r.property ?? '',
+      persone: asArray(r.agents).map((a) => (typeof a === 'string'
+        ? { nome: a, nota: '', tipo: 'Person' }
+        : { nome: a?.name ?? '', nota: a?.description ?? '', tipo: a?.['@type'] ?? 'Person', id: a?.['@id'] ?? '' })),
+    })),
     logo: doc.logo ?? '',
     // Nel form le date stanno senza scarto: i campi datetime-local vogliono l'ora
     // di parete, che è anche quella scritta sulla locandina.
@@ -328,6 +340,19 @@ export function toJsonLd(d) {
     ...(d.rassegne ?? []).filter(Boolean).map((id) => ({ '@id': toEventRef(id), '@type': 'EventSeries', 'meetoo:strand': true })),
   ];
 
+  const crediti = (d.crediti ?? [])
+    .map((r) => ({
+      roleName: String(r.ruolo || '').trim(),
+      property: r.proprieta || '',
+      agents: (r.persone ?? []).filter((p) => String(p?.nome || '').trim()).map((p) => ({
+        '@type': p.tipo || 'Person',
+        name: String(p.nome).trim(),
+        ...(String(p.nota || '').trim() ? { description: String(p.nota).trim() } : {}),
+        ...(p.id ? { '@id': p.id } : {}),
+      })),
+    }))
+    .filter((r) => r.agents.length);
+
   // sameAs: solo gli url (schema.org), il "social" del form è d'aiuto UI
   const sameAs = (d.sameAs ?? []).map((s) => (s?.url ?? '').trim()).filter(Boolean);
 
@@ -404,7 +429,11 @@ export function toJsonLd(d) {
     name: d.name ?? '',
     ...(d.abstract ? { abstract: d.abstract } : {}),
     ...(d.description ? { description: d.description } : {}),
-    ...(d.image ? { image: d.image } : {}),
+    ...(d.image
+      ? { image: d.imageCredit?.trim()
+          ? { '@type': 'ImageObject', url: d.image, creditText: d.imageCredit.trim() }
+          : d.image }
+      : {}),
     ...(d.logo ? { logo: d.logo } : {}),
     /* Le date escono con lo scarto da UTC. Un'ora senza scarto è ambigua: «17:30»
      * a Ostia e «17:30» a Berlino sono due istanti diversi, e chi legge il JSON da
@@ -434,6 +463,7 @@ export function toJsonLd(d) {
      * più e non si legge più — lo diceva già la fascia, e un fatto scritto in due
      * posti prima o poi si contraddice. Nei file di prima resta finché non li si
      * risalva; le liste non lo guardano più. */
+    ...(crediti.length ? { 'meetoo:credits': crediti } : {}),
     ...(d.childrenMustBeAccompanied ? { 'meetoo:childrenMustBeAccompanied': true } : {}),
     ...(d.forSeparatedParents ? { 'meetoo:forSeparatedParents': true } : {}),
     // Chi altro può modificarlo. Sempre presente (anche vuoto) perché il server

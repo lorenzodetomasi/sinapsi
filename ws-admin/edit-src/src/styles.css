@@ -721,3 +721,8 @@ pre.code-area-testo .line-error {
 .offerta-dettagli { color: var(--text-dim); font-size: var(--fs-label); }
 .quando-chip.on { border-color: var(--accent); color: var(--accent); }
 button.quando-chip { background: transparent; cursor: pointer; padding: 2px var(--sp-sm); color: var(--text); }
+/* In the credits and prices rows the drop-downs sit inline, as wide as their
+   text: the form's `select { width: 100% }` put each one on a line of its own. */
+.crediti select, .offerte select { width: auto; max-width: 100%; flex: 0 1 auto; margin: 0; }
+.crediti .quando-linea > input[type="text"]:first-child { flex: 1 1 12em; }
+.crediti .offerta-dettagli input[placeholder="nome"] { flex: 1 1 12em; }

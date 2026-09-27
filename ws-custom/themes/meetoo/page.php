@@ -21,7 +21,7 @@ include_template('template-parts/header');
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina'))); ?>>
 <?php if(!empty($e->image)){ ?>
 				<figure class="mt-copertina">
-					<img src="<?php echo htmlspecialchars((string)$e->image, ENT_QUOTES, 'UTF-8'); ?>" alt="" loading="lazy" />
+					<img src="<?php echo htmlspecialchars(meetoo_immagine($e->image), ENT_QUOTES, 'UTF-8'); ?>" alt="" loading="lazy" />
 				</figure>
 <?php } ?>
 				<h1 class="mt-h1"><?php echo htmlspecialchars($titolo, ENT_QUOTES, 'UTF-8'); ?></h1>

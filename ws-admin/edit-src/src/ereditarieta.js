@@ -15,7 +15,7 @@ export const CHIAVI_EREDITATE = [
   'offers', 'isAccessibleForFree', 'eventAttendanceMode', 'typicalAgeRange', 'audience',
   'maximumAttendeeCapacity', 'maximumPhysicalAttendeeCapacity', 'maximumVirtualAttendeeCapacity',
   'meetoo:timezone', 'meetoo:isChildrensEvent', 'meetoo:forSeparatedParents',
-  'meetoo:childrenMustBeAccompanied', 'ws:icon',
+  'meetoo:childrenMustBeAccompanied', 'ws:icon', 'meetoo:credits',
 ];
 
 const vuoto = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0);

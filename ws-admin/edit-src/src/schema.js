@@ -134,6 +134,11 @@ export const schema = {
     abstract: { type: 'string', title: 'Sommario', format: 'xhtml' },
     description: { type: 'string', title: 'Descrizione', format: 'seo' },
     image: { type: 'string', title: 'Immagine', format: 'image' },
+    // Il credito della foto: viaggia CON l'immagine (ImageObject.creditText).
+    imageCredit: { type: 'string', title: 'Credito della foto (es. «Foto di Giulio Avarello»)' },
+    // I crediti come li scrive il programma, in ordine; ogni riga dice la sua
+    // proprietà schema.org (CreditiRenderer, ws-admin/lib/event-credits.php).
+    crediti: { type: 'array', title: 'Crediti', items: { type: 'object', additionalProperties: true } },
     logo: { type: 'string', title: 'Logo', format: 'image' },
     // Il fuso in cui l'evento succede: da qui esce lo scarto (+02:00) che rende
     // le date non ambigue per chi legge il JSON da fuori.
@@ -373,6 +378,8 @@ export const uischema = {
             ctrl('#/properties/image', { options: { icon: 'image' } }),
           ],
         },
+        ctrl('#/properties/imageCredit', { options: { icon: 'photo_camera' } }),
+        ctrl('#/properties/crediti', { options: { crediti: true } }),
       ],
     },
     {

@@ -46,7 +46,7 @@ include_template('template-parts/header');
 <?php
 /* The cover: its path in the document is relative to ITS folder, and this page
  * serves it from another address - `meetoo_media()` does the arithmetic. */
-$cover = meetoo_media(meetoo_rel_corrente(), (string)($e->image ?? ''));
+$cover = meetoo_media(meetoo_rel_corrente(), meetoo_immagine($e->image ?? ''));
 if($cover !== ''){ ?>
 				<figure class="mt-copertina">
 					<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />

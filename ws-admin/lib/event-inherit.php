@@ -33,7 +33,7 @@ if (!function_exists('event_inherit')) {
                 'offers', 'isAccessibleForFree', 'eventAttendanceMode', 'typicalAgeRange', 'audience',
                 'maximumAttendeeCapacity', 'maximumPhysicalAttendeeCapacity', 'maximumVirtualAttendeeCapacity',
                 'meetoo:timezone', 'meetoo:isChildrensEvent', 'meetoo:forSeparatedParents',
-                'meetoo:childrenMustBeAccompanied', 'ws:icon'];
+                'meetoo:childrenMustBeAccompanied', 'ws:icon', 'meetoo:credits'];
     }
 
     /** Is there nothing in this value? ('' and [] say nothing; false and 0 do.) */

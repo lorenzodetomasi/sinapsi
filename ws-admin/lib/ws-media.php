@@ -173,8 +173,9 @@ if (!function_exists('ws_media_covers')) {
             if (!is_array($doc)) continue;
             $e = isset($doc['mainEntity']) && is_array($doc['mainEntity']) ? 'mainEntity' : null;
             $t = $e ? $doc[$e] : $doc;
-            $img = $t['image'] ?? '';
-            $img = is_array($img) ? (string)($img['url'] ?? $img['@id'] ?? '') : (string)$img;
+            // An ImageObject keeps its credit: only its address changes (see below).
+            $imgRaw = $t['image'] ?? '';
+            $img = is_array($imgRaw) ? (string)($imgRaw['url'] ?? $imgRaw['contentUrl'] ?? $imgRaw['@id'] ?? '') : (string)$imgRaw;
             if ($img === '') {
                 $c = $cands($dir);
                 if (count($c) !== 1) continue;
@@ -207,7 +208,13 @@ if (!function_exists('ws_media_covers')) {
                     @mkdir("$dir/media-sources", 0775, true); @copy($srcPath, "$dir/media-sources/" . basename($srcPath));
                 }
             }
-            $t['image'] = $coverRel;
+            if (is_array($imgRaw) && !array_key_exists(0, $imgRaw)) {
+                $imgRaw['url'] = $coverRel;
+                unset($imgRaw['contentUrl']);
+                $t['image'] = $imgRaw;
+            } else {
+                $t['image'] = $coverRel;
+            }
             if ($e) $doc[$e] = $t; else $doc = $t;
             file_put_contents($file, json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }

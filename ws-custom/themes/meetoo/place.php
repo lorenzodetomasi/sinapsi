@@ -53,7 +53,7 @@ include_template('template-parts/header');
 /* La copertina: il percorso nel documento è relativo alla SUA cartella
  * (`media-sources/cover.jpg`), e questa pagina la serve da un altro indirizzo —
  * `meetoo_media()` fa i conti. Senza, era un 404 su ogni scheda. */
-$cover = meetoo_media(meetoo_rel_corrente(), (string)($e->image ?? ''));
+$cover = meetoo_media(meetoo_rel_corrente(), meetoo_immagine($e->image ?? ''));
 if($cover !== ''){ ?>
 				<figure class="mt-copertina">
 					<img src="<?php echo mt_esc($cover); ?>" alt="" loading="lazy" decoding="async" />
