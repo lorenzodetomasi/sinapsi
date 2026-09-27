@@ -59,7 +59,7 @@ ws-admin/
 |---|---|---|---|
 | `refresh-contents.php` | `_refresh-content.php` | `index.json` → `index.xml`; until migrated, a hand-written `.wsx` → its resolved `.xml` | built |
 | `migrate-pages.php` | `_migrate-page.php` | a hand-written `index.wsx` → `index.json` (+ its twin); the `.wsx` is set aside as `-index.wsx` | built |
-| `refresh-sitemaps.php` | `_refresh-sitemap.php` | every page of a root → `ws_sitemap.wsx`, then the public `sitemap.xml` | built, applied on isotype |
+| `refresh-sitemaps.php` | `_refresh-sitemap.php` | every page of a root → `ws_sitemap.wsx`, then the public `sitemap.xml` | built; lazy since 2026-09-27: `_sitemap-fresh.php`, called by query.php before it routes, rebuilds a root's map when a page file or folder is newer than it |
 | `refresh-html.php` | `_refresh-html.php` | a page → `<cache>/<host>/<path>.html`, only when `output` lists `html` and the visitor has no session | then |
 | `refresh-images.php` | `_refresh-image.php` | `<image>` sources → the declared destinations | later |
 | (amp plugin) | | a page → `amp/index.html` when `output` lists `amp` | later |

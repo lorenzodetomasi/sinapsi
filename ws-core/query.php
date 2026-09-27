@@ -28,6 +28,12 @@ $uri_parts = parse_url($uri);
 if(!empty($uri_parts['query'])){
 	parse_str($uri_parts['query'], $uri_query);
 }
+// A map derived from pages is rebuilt first if a page changed since (ws-admin/_sitemap-fresh.php):
+// the map is what routes this very request, so it cannot wait for the page to be found.
+if(file_exists(ws_admin_abspath().'/_sitemap-fresh.php')){
+	require_once ws_admin_abspath().'/_sitemap-fresh.php';
+	ws_sitemaps_ensure(ws_contents_abspath());
+}
 // Load sitemap and rewrite rules
 if(file_exists(ws_contents_abspath().'/ws_sitemap.wsx')){
 	$ws_sitemap_abspath = ws_contents_abspath().'/ws_sitemap.wsx';
