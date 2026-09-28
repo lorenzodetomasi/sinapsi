@@ -19,7 +19,20 @@ global $ws_query, $rewrite_rule, $ws_headings, $ws_contentmap, $ws_content, $ws_
  * sempre; il marchio non si stampa affatto - `ws_brand_mark()` risponde gia'
  * «niente disegno, scrivi il nome». */
 $ws_ha_testate = !empty($ws_headings);
-$index_url = $ws_ha_testate && !empty($ws_headings->url) ? (string)$ws_headings->url[0] : ws_href('');
+/* The home is where THIS server serves the site. The headings may name it with
+ * a full address, and for a site that lives on one server it is the right one
+ * (each of isotype's languages has its own). But Meetoo's contents travel
+ * between isotype.org/meetoo and meetoo.it: the address they carry names one
+ * host, and on the other it would send the visitor away. An address on another
+ * host gives way to the CMS's own. */
+$index_url = ws_href('');
+if($ws_ha_testate and !empty($ws_headings->url)){
+	$declared = (string)$ws_headings->url[0];
+	$declared_host = (string)parse_url($declared, PHP_URL_HOST);
+	if($declared_host === '' or strcasecmp($declared_host, (string)parse_url(ws_root_url(), PHP_URL_HOST)) === 0){
+		$index_url = $declared;
+	}
+}
 $ws_nome_sito = '';
 if($ws_ha_testate and !empty($ws_headings->mainEntity->name)){
 	$ws_nome_sito = $ws_headings->mainEntity->name->innerHTML();
