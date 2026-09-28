@@ -134,7 +134,7 @@ if (!class_exists('GoogleAuth')) {
         }
 
         /**
-         * The <user> of whoever is signed in, from <site>/<locale>/users/users.xml.
+         * The <user> of whoever is signed in, from the site's <site>/users/users.xml.
          *
          * That file is a list of XIncludes, one per user, and each user includes
          * its <person>: simplexml_load_file() does not follow them, so they are
