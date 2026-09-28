@@ -25,7 +25,9 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     exit;
 }
 
-$XML_FILE_PATH = ws_content_root_abspath() . '/users/users.xml';
+// The users of THIS site (ws_content_users_abspath): Meetoo's are per language,
+// isotype's per site.
+$XML_FILE_PATH = ws_content_users_abspath();
 $user_sub_id = 'sub:' . ($_SESSION['user_sub'] ?? '');
 
 if ($user_sub_id === 'sub:') {

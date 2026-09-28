@@ -275,7 +275,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ultimo = $dom->getElementsByTagName('last_login')->item(0);
             $out[] = [
                 'uid' => $voce,
-                'role' => utenti_ruolo($dom),
+                // The role IN EFFECT: a super-admin is declared by the server
+                // (ws-config.php), and the file's may be worth an admin.
+                'role' => ws_ruolo_utente($voce, utenti_base() . '/users/users.xml'),
                 'name' => $p['name'],
                 'alternateName' => $p['alternateName'],
                 'lastLogin' => $ultimo ? trim($ultimo->textContent) : '',
@@ -302,6 +304,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $uid = preg_replace('/[^0-9]/', '', (string)($_POST['uid'] ?? ''));
         $ruolo = (string)($_POST['role'] ?? '');
+        // A super-admin belongs to the server, not to the site (ws-auth.php).
+        if ($ruolo === 'super-admin' && ws_super_admins() !== null) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Un super-admin non si assegna da qui: si dichiara nel ws-config.php del server (WS_SUPER_ADMINS).']);
+            exit;
+        }
         if ($uid === '' || !in_array($ruolo, RUOLI, true)) {
             http_response_code(400);
             echo json_encode(['error' => 'Utente o ruolo non valido.']);
@@ -552,7 +560,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         return '<tr data-uid="' + esc(u.uid) + '">'
           + '<td><div class="u-nome">' + esc(nome) + (u.io ? '<span class="u-io">sei tu</span>' : '') + '</div>'
           + '<div class="u-uid">' + esc(u.uid) + '</div></td>'
-          + '<td><select class="u-ruolo" disabled title="Il ruolo di un super-admin lo cambia un altro super-admin, dal file"><option selected>super-admin</option></select><span class="u-esito"></span></td>'
+          + '<td><select class="u-ruolo" disabled title="Un super-admin si dichiara nel ws-config.php del server, non da qui"><option selected>super-admin</option></select><span class="u-esito"></span></td>'
           + '<td><span class="u-tutto"><span class="material-symbols-outlined">all_inclusive</span>tutto, perché è super-admin</span></td>'
           + '<td class="u-nessuno">' + esc(u.lastLogin || '—') + '</td></tr>';
       }
@@ -571,7 +579,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // Il proprio ruolo non si tocca da qui, e un admin non promuove nessuno:
       // il menu c'è ma è spento, così si vede la regola invece di indovinarla.
       const spento = !ioSonoSuperAdmin || u.io;
-      const opzioni = ruoli.map((r) =>
+      // super-admin is not assigned by the site: it is declared by the server.
+      const opzioni = ruoli.filter((r) => r !== 'super-admin' || u.role === 'super-admin').map((r) =>
         '<option value="' + esc(r) + '"' + (r === u.role ? ' selected' : '') + '>' + esc(r) + '</option>').join('');
       return '<tr data-uid="' + esc(u.uid) + '">'
         + '<td><div class="u-nome">' + esc(nome) + (u.io ? '<span class="u-io">sei tu</span>' : '') + '</div>'

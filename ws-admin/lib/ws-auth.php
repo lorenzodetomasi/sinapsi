@@ -21,7 +21,7 @@ if (!function_exists('ws_authenticate')) {
         $emailVerified = !empty($info['email_verified']) && $info['email_verified'] !== 'false';
         // Un'email non verificata non dà diritto a nessun ruolo: chiunque potrebbe
         // dichiarare l'indirizzo di un altro.
-        $role = $emailVerified ? ws_ruolo_utente($uid, $usersXmlPath) : 'logged-visitor';
+        $role = $emailVerified ? ws_ruolo_utente($uid, $usersXmlPath, (string)($info['email'] ?? '')) : 'logged-visitor';
 
         return [
             'uid' => $uid,
@@ -46,8 +46,40 @@ if (!function_exists('ws_authenticate')) {
  * Chi non è in elenco è `verified-visitor`: ha dimostrato di essere qualcuno, ma
  * qui dentro non è nessuno in particolare.
  */
+/**
+ * THE SUPER-ADMINS OF THIS SERVER (decided on 28 Sep 2026).
+ *
+ * An admin manages a site's contents and is assigned by the site, in its
+ * users, like any role. A super-admin manages the system - sites, roles,
+ * indexes - and belongs to the SERVER: each one lists its own in its
+ * ws-custom/ws-config.php, by Google sub or verified email:
+ *
+ *   define('WS_SUPER_ADMINS', array('100449157359400577039', 'name@example.com'));
+ *
+ * isotype.org and meetoo.it each have their list, and a person may be on both.
+ * Until a server declares one, a super-admin written in the users file still
+ * counts - nobody is locked out the day this code arrives.
+ */
+if (!function_exists('ws_super_admins')) {
+    function ws_super_admins(): ?array {
+        if (!defined('WS_SUPER_ADMINS')) {
+            // The admin endpoints run without the CMS, which loads ws-config.php:
+            // read it here (include_once: a no-op when the CMS already did).
+            $config = dirname(__DIR__, 2) . '/ws-custom/ws-config.php';
+            if (is_file($config)) { @include_once $config; }
+        }
+        if (!defined('WS_SUPER_ADMINS') || !is_array(WS_SUPER_ADMINS)) return null;
+        return array_values(array_filter(array_map(fn($x) => strtolower(trim((string)$x)), WS_SUPER_ADMINS)));
+    }
+}
+
 if (!function_exists('ws_ruolo_utente')) {
-    function ws_ruolo_utente(string $uid, ?string $usersXmlPath = null): string {
+    function ws_ruolo_utente(string $uid, ?string $usersXmlPath = null, string $email = ''): string {
+        $super = ws_super_admins();
+        if ($super !== null && ($uid !== '' && in_array(strtolower($uid), $super, true)
+                || $email !== '' && in_array(strtolower($email), $super, true))) {
+            return 'super-admin';
+        }
         $ruolo = 'verified-visitor';
         $usersXmlPath = $usersXmlPath ?: (__DIR__ . '/../../ws-custom/contents/meetoo/it_IT/users/users.xml');
         if (!is_file($usersXmlPath)) return $ruolo;
@@ -70,6 +102,9 @@ if (!function_exists('ws_ruolo_utente')) {
         if (!empty($trovati) && isset($trovati[0]->role) && (string)$trovati[0]->role !== '') {
             $ruolo = (string)$trovati[0]->role;
         }
+        // Once the server lists its super-admins, a site cannot make one: in a
+        // users file the role is worth an admin.
+        if ($ruolo === 'super-admin' && $super !== null) $ruolo = 'admin';
         return $ruolo;
     }
 }
@@ -106,7 +141,7 @@ if (!function_exists('ws_autentica_sessione')) {
             'email_verified' => true,
             'name' => (string)($_SESSION['user_name'] ?? ''),
             'picture' => (string)($_SESSION['user_picture'] ?? ''),
-            'role' => ws_ruolo_utente($uid, $usersXmlPath),
+            'role' => ws_ruolo_utente($uid, $usersXmlPath, (string)($_SESSION['user_email'] ?? '')),
             'locale' => (string)($_SESSION['user_locale'] ?? 'it'),
         ];
     }
