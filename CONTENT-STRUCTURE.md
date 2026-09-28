@@ -11,7 +11,7 @@ contents/{tenant}/{locale}/{collection}/{slug}/
 
 - **tenant**: es. `meetoo`
 - **locale**: es. `it_IT`
-- **collection**: `events` | `organizations` | `places` | `lists` | `persons` | `users`
+- **collection**: `events` | `organizations` | `places` | `lists` (per lingua); `users` | `persons` (per sito)
 - **slug**: identificatore dell'entità (nome cartella)
 
 ### File per entità
@@ -89,9 +89,13 @@ differenza si **approva o rifiuta** in un confronto, come per le modifiche manua
   non dà identificativi diversi per applicazione). La stessa persona arriva con lo stesso
   `sub` su isotype.org e su meetoo.it. Cambiano la **sessione** (i cookie sono di un
   dominio: si accede su ciascun sito) e i **dati**.
-- **Ogni sito ha i suoi utenti**: `contents/{sito}/{lingua}/users/` quando il sito è in
-  una lingua (Meetoo), `contents/{sito}/users/` quando è in più lingue (isotype). Una
-  persona può stare in due siti con ruoli e accessi diversi (`ws_content_users_abspath`).
+- **Ogni sito ha i suoi utenti, al livello del SITO, non della lingua**:
+  `contents/{sito}/users/` e i loro profili pubblici `contents/{sito}/persons/` (Meetoo e
+  isotype allo stesso modo). Un utente è una persona, non una traduzione: la lingua che
+  preferisce sta nella sua scheda. Una persona può stare in due siti con ruoli e accessi
+  diversi. Il percorso lo decide un posto solo (`ws_users_dir`, `ws_persons_dir`,
+  `ws_content_users_abspath`); un server non ancora migrato li tiene ancora in
+  `{sito}/{lingua}/users/`, e vengono letti lì. I riferimenti restano `users/{sub}`.
 - **I dati personali** (nome, email) non sono contenuto: stanno in `ws-admin/_private/`,
   sul server, fuori da git, e non viaggiano mai.
 - **Ruoli.** L'**admin** gestisce i contenuti di un sito (modifica tutto, manutenzione,

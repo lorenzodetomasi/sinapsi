@@ -48,7 +48,9 @@ SKIP="--exclude-glob .DS_Store --exclude-glob derived.lock"
 #   local copy would overwrite what was registered in the meantime;
 # - the indexes (_index/, events/_index/) are rebuilt by each server by
 #   itself: uploading local ones would overwrite newer ones.
-UTENTI="-x ^it_IT/users/ -x ^it_IT/persons/"
+# At site level (contents/meetoo/users, …/persons); the per-language paths are a
+# server not yet migrated.
+UTENTI="-x ^users/ -x ^persons/ -x ^it_IT/users/ -x ^it_IT/persons/"
 ATTIVITA="--exclude-glob rsvp.json --exclude-glob likes.json --exclude-glob reviews.xml"
 INDICI="-x /_index/"
 opts() { echo "--no-perms $SKIP$( (( DRY )) && echo ' --dry-run')$( (( DELETE )) && echo ' --delete')"; }
@@ -80,7 +82,7 @@ put_prod() {
     case "$(basename "$rel")" in
         rsvp.json|likes.json|reviews.xml) die "$rel is born on meetoo.it (what users do): it is never uploaded there" ;;
     esac
-    [[ $rel != *_index* && $rel != it_IT/users* && $rel != it_IT/persons* ]] \
+    [[ $rel != *_index* && $rel != users* && $rel != persons* && $rel != it_IT/users* && $rel != it_IT/persons* ]] \
         || die "$rel is an index or a user's data: meetoo.it keeps its own"
     load_target meetoo; lock
     local c d; c=$(mktemp)

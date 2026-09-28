@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 // Dati personali (nome, email, foto) — FUORI dai contenuti pubblicati.
 //
 // I contenuti sotto ws-custom/ sono file statici serviti dal web: qualunque cosa
@@ -69,7 +70,7 @@ if (!function_exists('ws_privacy_migrate')) {
         $PERSONALI = ['name', 'email', 'image', 'telephone', 'givenName', 'familyName'];
         $rep = ['profiles' => [], 'rsvp' => [], 'fields' => 0, 'entries' => 0, 'applied' => $apply];
 
-        foreach (glob("$base/users/*/index.json") as $f) {
+        foreach (glob(ws_users_dir($base) . "/*/index.json") ?: [] as $f) {
             $uid = basename(dirname($f));
             $doc = json_decode((string)file_get_contents($f), true);
             if (!is_array($doc)) continue;

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 // Autenticazione condivisa (Google Identity): verifica il Google ID token via
 // oauth2.googleapis.com/tokeninfo e risolve il RUOLO dell'utente da users.xml
 // (XInclude). Stessa logica del backend places, estratta per riuso.
@@ -81,7 +82,7 @@ if (!function_exists('ws_ruolo_utente')) {
             return 'super-admin';
         }
         $ruolo = 'verified-visitor';
-        $usersXmlPath = $usersXmlPath ?: (__DIR__ . '/../../ws-custom/contents/meetoo/it_IT/users/users.xml');
+        $usersXmlPath = $usersXmlPath ?: (ws_users_dir(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT') . '/users.xml');
         if (!is_file($usersXmlPath)) return $ruolo;
 
         $dom = new DOMDocument();

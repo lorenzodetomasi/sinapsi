@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/ws-content-folders.php';
 require_once __DIR__ . '/ws-wrap.php';
 // Profilo dell'utente/visitatore Google, keyed sull'UID: users/{uid}/index.json (Person +
 // preferenze meetoo). Separato da users/users.xml (che controlla i RUOLI dell'editor):
@@ -13,7 +14,7 @@ if (!function_exists('ws_user_upsert')) {
     function ws_user_upsert(string $base, array $auth): array {
         $uid  = (string)($auth['uid'] ?? '');
         if ($uid === '') return [];
-        $dir  = rtrim($base, '/') . '/users/' . $uid;
+        $dir  = ws_users_dir($base) . '/' . $uid;
         $file = "$dir/index.json";
         $now  = date('c');
 
@@ -66,7 +67,7 @@ if (!function_exists('ws_user_set_prefs')) {
         foreach (['language', 'notifications'] as $k) if (array_key_exists($k, $prefs)) $cur[$k] = $prefs[$k];
         $doc['meetoo:preferences'] = $cur;
         $doc['dateModified'] = date('c');
-        $dir = rtrim($base, '/') . '/users/' . $uid;
+        $dir = ws_users_dir($base) . '/' . $uid;
         @mkdir($dir, 0775, true);
         @file_put_contents("$dir/index.json", json_encode(
             is_array($documento) ? ws_wrap_set($documento, $doc) : ws_wrap_one($doc),
@@ -77,7 +78,7 @@ if (!function_exists('ws_user_set_prefs')) {
 
 if (!function_exists('ws_user_get')) {
     function ws_user_get(string $base, string $uid): ?array {
-        $file = rtrim($base, '/') . '/users/' . $uid . '/index.json';
+        $file = ws_users_dir($base) . '/' . $uid . '/index.json';
         $doc = is_file($file) ? json_decode((string)@file_get_contents($file), true) : null;
         return is_array($doc) ? $doc : null;
     }
@@ -87,7 +88,7 @@ if (!function_exists('ws_user_get')) {
 // non dipende dal browser. Idempotente: aggiunge o toglie una sola volta.
 if (!function_exists('ws_user_toggle_like')) {
     function ws_user_toggle_like(string $base, string $uid, string $eventRel, bool $on, string $campo = 'meetoo:interestedIn'): bool {
-        $f = "$base/users/$uid/index.json";
+        $f = ws_users_dir($base) . "/$uid/index.json";
         $d = is_file($f) ? json_decode((string)@file_get_contents($f), true) : null;
         if (!is_array($d)) return false;
         $e = isset($d['mainEntity']) && is_array($d['mainEntity']) ? 'mainEntity' : null;
@@ -119,7 +120,7 @@ if (!function_exists('ws_user_record')) {
 
     function ws_user_record(string $base, string $uid, string $locale = ''): bool {
         if (!preg_match('/^[A-Za-z0-9_-]{1,64}$/', $uid)) return false;
-        $dir  = rtrim($base, '/') . '/users/' . $uid;
+        $dir  = ws_users_dir($base) . '/' . $uid;
         $file = "$dir/index.xml";
         $loc  = preg_match('/^[a-z]{2}[_-][A-Z]{2}$/', $locale) ? str_replace('-', '_', $locale) : 'it_IT';
 
@@ -140,7 +141,7 @@ if (!function_exists('ws_user_record')) {
 
     /** Aggiunge l'<xi:include> in users.xml, se non c'è già. */
     function ws_users_xml_include(string $base, string $uid): bool {
-        $f = rtrim($base, '/') . '/users/users.xml';
+        $f = ws_users_dir($base) . '/users.xml';
         if (!is_file($f)) return false;
         $s = (string)@file_get_contents($f);
         if (strpos($s, "\"$uid/index.xml\"") !== false) return true;   // già registrato

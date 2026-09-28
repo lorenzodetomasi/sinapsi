@@ -32,6 +32,7 @@
 ini_set('display_errors', '0');
 
 require_once __DIR__ . '/../lib/ws-auth.php';
+require_once __DIR__ . '/../lib/ws-content-folders.php';
 
 const RUOLI = ['logged-visitor', 'verified-visitor', 'user', 'client', 'admin', 'super-admin'];
 
@@ -39,7 +40,7 @@ function utenti_base(): string { return __DIR__ . '/../../ws-custom/contents/mee
 
 /** Il nome di una persona, dal suo profilo. Vuoto se non l'ha mai scritto. */
 function utenti_persona(string $uid): array {
-    $f = utenti_base() . "/persons/$uid/index.xml";
+    $f = ws_persons_dir(utenti_base()) . "/$uid/index.xml";
     if (!is_file($f)) return ['name' => '', 'alternateName' => ''];
     $dom = new DOMDocument();
     $dom->preserveWhiteSpace = false;
@@ -57,7 +58,7 @@ function utenti_persona(string $uid): array {
 /** Il documento dell'utente, com'è sul disco (spazi compresi: si riscrive un nodo
  *  solo, e il resto del file deve restare identico a com'era). */
 function utenti_dom(string $uid): ?DOMDocument {
-    $f = utenti_base() . "/users/$uid/index.xml";
+    $f = ws_users_dir(utenti_base()) . "/$uid/index.xml";
     if (!is_file($f)) return null;
     $dom = new DOMDocument();
     $dom->preserveWhiteSpace = true;   // NON toccare la formattazione del resto
@@ -267,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'list') {
         $out = [];
-        foreach (scandir(utenti_base() . '/users') ?: [] as $voce) {
+        foreach (scandir(ws_users_dir(utenti_base())) ?: [] as $voce) {
             if (!preg_match('/^\d{6,}$/', $voce)) continue;
             $dom = utenti_dom($voce);
             if (!$dom) continue;
@@ -277,7 +278,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'uid' => $voce,
                 // The role IN EFFECT: a super-admin is declared by the server
                 // (ws-config.php), and the file's may be worth an admin.
-                'role' => ws_ruolo_utente($voce, utenti_base() . '/users/users.xml'),
+                'role' => ws_ruolo_utente($voce, ws_users_dir(utenti_base()) . '/users.xml'),
                 'name' => $p['name'],
                 'alternateName' => $p['alternateName'],
                 'lastLogin' => $ultimo ? trim($ultimo->textContent) : '',
@@ -329,7 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$n) { http_response_code(500); echo json_encode(['error' => 'Il file di questo utente non ha un ruolo.']); exit; }
         $prima = trim($n->textContent);
         $n->nodeValue = $ruolo;
-        $f = utenti_base() . "/users/$uid/index.xml";
+        $f = ws_users_dir(utenti_base()) . "/$uid/index.xml";
         if (@file_put_contents($f, $dom->saveXML()) === false) {
             http_response_code(500);
             echo json_encode(['error' => 'Scrittura fallita (permessi?).']);

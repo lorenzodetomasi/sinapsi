@@ -379,7 +379,8 @@ $userRole = 'logged-visitor';
 if ($isEmailVerified) {
     $userRole = 'verified-visitor';
 
-    $usersXmlPath = '../../ws-custom/contents/meetoo/it_IT/users/users.xml';
+    require_once __DIR__ . '/../lib/ws-content-folders.php';
+    $usersXmlPath = ws_users_dir(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT') . '/users.xml';
 
     if (file_exists($usersXmlPath)) {
         $dom = new DOMDocument();
@@ -429,8 +430,9 @@ if ($action === 'users') {
         echo json_encode(["error" => "Permessi insufficienti (Ruolo: $userRole).", 'users' => []]);
         exit;
     }
-    $usersDir = '../../ws-custom/contents/meetoo/it_IT/users';
-    $personsDir = '../../ws-custom/contents/meetoo/it_IT/persons';
+    require_once __DIR__ . '/../lib/ws-content-folders.php';
+    $usersDir = ws_users_dir(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT');
+    $personsDir = ws_persons_dir(__DIR__ . '/../../ws-custom/contents/meetoo/it_IT');
     $out = [];
     if (is_dir($usersDir)) {
         foreach (scandir($usersDir) as $entry) {
