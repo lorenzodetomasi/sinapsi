@@ -90,6 +90,10 @@ if (( ${#uploads[@]} )); then
     git archive --format=tar "$head" -- "${uploads[@]}" | tar -x -C "$tmp"
     made=$'\n'   # bash 3.2 on macOS: no associative arrays
     for f in "${uploads[@]}"; do
+        # A file marked export-ignore (a library's own .gitattributes, as
+        # scssphp's) is tracked but not exported: it is not the site's, and a
+        # put of a missing file would stop the upload half way.
+        [[ -e $tmp/$f || -L $tmp/$f ]] || continue
         d=$(dirname "$f")
         if [[ $d != . && $made != *$'\n'"$d"$'\n'* ]]; then
             echo "mkdir -p -f $(lq "$d")" >> "$cmds"
