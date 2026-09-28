@@ -1,3 +1,14 @@
+# meetoo.it answers on https only. TopHost's own rule for a site with its own
+# .htaccess: behind its proxy, X-Forwarded-Proto says what the visitor used.
+# Only for meetoo.it: isotype.org is left as it is.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteCond %{HTTP_HOST} ^www\.meetoo\.it$ [NC]
+RewriteCond %{HTTPS} off
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301,NE]
+</IfModule>
+
 # BEGIN WordPress
 <IfModule mod_rewrite.c>
 RewriteEngine On
