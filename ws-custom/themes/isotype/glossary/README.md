@@ -127,6 +127,20 @@ English msgids. The catalogue is `window.WSGlossaryL10n`: the viewer parses
 `glossary-<locale>.po` itself, the PHP template and the standalone file embed
 it. After changing the `.po`: `msgfmt -c -o glossary-it_IT.mo glossary-it_IT.po`.
 
+## A new glossary
+
+"Create a new glossary" (module, list page) asks a name, a folder (from the
+name, editable) and, optionally, an author. It makes, beside the others
+(`projects/glossaries/<folder>/`): an empty `glossary.jsonld`, a first
+version to edit (`proposals/<date>-v1.jsonld`, opened at once in the
+editor), and - when the folder above is a page - the glossary's page, as a
+draft (`index.json`, `template=glossary`). The site map picks the page up by
+itself. Whoever creates it is its `creator` (`users/<id>`), so it is theirs to
+edit; the page shows the creator's name, never the account.
+
+In the editor, "Settings and parts" adds the parts an empty glossary needs:
+opening or closing text, reading path, category, selection.
+
 ## Versions: how a glossary changes
 
 1. **New version** (module, list page): a proposal that is the glossary as it

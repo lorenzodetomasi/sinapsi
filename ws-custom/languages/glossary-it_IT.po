@@ -580,3 +580,53 @@ msgstr "Modifica questa voce"
 
 msgid "No proposal is waiting: start a new version to edit the glossary."
 msgstr "Nessuna proposta in attesa: crea una nuova versione per modificare il glossario."
+
+# ---- A new glossary, and its parts --------------------------------------------------
+
+msgid "Create a new glossary"
+msgstr "Crea un nuovo glossario"
+
+msgid "Name of the glossary"
+msgstr "Nome del glossario"
+
+msgid "Folder"
+msgstr "Cartella"
+
+msgid "Inside"
+msgstr "Dentro"
+
+msgid "Author"
+msgstr "Autore"
+
+msgid "Optional"
+msgstr "Facoltativo"
+
+msgid "Create and open the editor"
+msgstr "Crea e apri l’editor"
+
+msgid "You cannot create a glossary."
+msgstr "Non puoi creare un glossario."
+
+msgid "A folder with this name already exists: %s"
+msgstr "Esiste già una cartella con questo nome: %s"
+
+msgid "Opening text"
+msgstr "Testo iniziale"
+
+msgid "Closing text"
+msgstr "Testo finale"
+
+msgid "Reading path"
+msgstr "Percorso di lettura"
+
+msgid "Selection"
+msgstr "Selezione"
+
+msgid "Name of the new part"
+msgstr "Nome della nuova parte"
+
+msgid "Add a part"
+msgstr "Aggiungi una parte"
+
+msgid "Delete"
+msgstr "Elimina"

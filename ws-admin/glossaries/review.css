@@ -86,3 +86,11 @@ textarea.review-input { resize: vertical; line-height: 1.5; }
 .review-adder { display: flex; gap: 6px; flex: 1 1 320px; }
 .review-adder .review-input { flex: 1; }
 .review-card.is-focus { box-shadow: 0 0 0 3px var(--color-link); }
+.review-adder[hidden] { display: none; }
+.review-part-type { flex: 0 0 auto; width: auto; }
+.review-create { margin: 0 0 var(--gutter); }
+.review-create > summary { list-style: none; display: inline-flex; align-items: center; cursor: pointer; }
+.review-create > summary::-webkit-details-marker { display: none; }
+.review-create__form { margin-top: var(--gutter-d2); padding: var(--gutter-d2) var(--gutter); background: var(--card-background); border-radius: var(--border-radius); max-width: 720px; }
+.review-create__path { display: flex; align-items: center; gap: 4px; flex: 1; }
+.review-create__path input { flex: 1; }

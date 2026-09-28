@@ -148,6 +148,30 @@
     draft.hasDefinedTerm.push(clone(curTerms.get(id)));
     touch('term', id);
   }
+  /* A part: front or back matter, a reading path, a category, a selection. */
+  function addPart(type, name) {
+    name = name.trim();
+    if (!name) return null;
+    var base = '#' + G.slug(name), id = base;
+    for (var i = 2; dParts.has(id) || curParts.has(id) || dTerms.has(id) || curTerms.has(id); i++) id = base + '-' + i;
+    var node = type === 'front' || type === 'back' ? { '@type': 'CreativeWork', '@id': id, name: name, 'ws:placement': type, text: '' }
+      : type === 'path' ? { '@type': 'ItemList', '@id': id, name: name, itemListElement: [] }
+      : { '@type': 'DefinedTermSet', '@id': id, name: name, 'ws:role': type };
+    if (type === 'category') node['ws:color'] = '#888888';
+    draft.hasPart.push(node);
+    expanded.add('part|' + id);
+    touch('part', id);
+    return id;
+  }
+  function deletePart(id) {
+    draft.hasPart = draft.hasPart.filter(function (x) { return x['@id'] !== id; });
+    accepted.delete(keyOf('part', id, ''));
+    touch('part', id);
+  }
+  function restorePart(id) {
+    draft.hasPart.push(clone(curParts.get(id)));
+    touch('part', id);
+  }
 
   /* ---- Showing values ------------------------------------------------------------------------ */
   function h(tag, attrs) {
@@ -441,7 +465,9 @@
         kind ? h('span', { class: 'review-kind', text: t(KIND_LABELS[kind]) }) : null,
         whole ? acceptBox(whole) : null,
         h('span', { class: 'review-card__tools' },
-          dr && !(whole && whole.kind === 'added') ? h('button', { type: 'button', class: 'button', 'data-toggle': 'part|' + id, text: full ? t('Close') : t('Edit') }) : null)));
+          dr && !(whole && whole.kind === 'added') ? h('button', { type: 'button', class: 'button', 'data-toggle': 'part|' + id, text: full ? t('Close') : t('Edit') }) : null,
+          dr ? h('button', { type: 'button', class: 'button', 'data-delete-part': id, text: t('Delete') }) : null,
+          !dr && cur ? h('button', { type: 'button', class: 'button', 'data-restore-part': id, text: t('Restore') }) : null)));
     if (full) {
       partFields(n).forEach(function (f) { el.appendChild(fieldRow('part', id, f, list.filter(function (c) { return c.field === f; })[0])); });
       list.forEach(function (c) { if (c.field && partFields(n).indexOf(c.field) === -1) el.appendChild(fieldRow('part', id, c.field, c)); });
@@ -475,6 +501,11 @@
     h('button', { type: 'button', class: 'button', 'data-bulk': '0', text: t('Reject all shown') }));
   var newName = h('input', { type: 'text', class: 'review-input', placeholder: t('Name of the new entry') });
   var adder = h('form', { class: 'review-adder' }, newName, h('button', { type: 'submit', class: 'button strong', text: t('Add an entry') }));
+  var partType = h('select', { class: 'review-input review-part-type' },
+    [['front', 'Opening text'], ['back', 'Closing text'], ['path', 'Reading path'], ['category', 'Category'], ['selection', 'Selection']]
+      .map(function (o) { return h('option', { value: o[0], text: t(o[1]) }); }));
+  var partName = h('input', { type: 'text', class: 'review-input', placeholder: t('Name of the new part') });
+  var partAdder = h('form', { class: 'review-adder', hidden: true }, partType, partName, h('button', { type: 'submit', class: 'button strong', text: t('Add a part') }));
   var datalist = h('datalist', { id: 'review-term-names' });
   var settings = h('section', { class: 'review-group', 'data-group': 'settings' });
   var terms = h('section', { class: 'review-group', 'data-group': 'terms' });
@@ -487,7 +518,7 @@
   var dialog = h('dialog', { class: 'review-preview' },
     h('form', { method: 'dialog', class: 'review-preview__bar' }, h('button', { class: 'button', text: t('Close') })),
     h('div', { class: 'review-preview__body' }));
-  box.append(h('div', { class: 'review-tools' }, tabs, search, bulk, adder), datalist, settings, terms, bar, dialog);
+  box.append(h('div', { class: 'review-tools' }, tabs, search, bulk, adder, partAdder), datalist, settings, terms, bar, dialog);
   function say(text) { status.textContent = text || ''; }
 
   var tab = 'changes';
@@ -550,6 +581,8 @@
   }
   function selectTab(k) {
     tab = k;
+    adder.hidden = k === 'settings';
+    partAdder.hidden = k !== 'settings';
     tabs.querySelectorAll('[data-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.getAttribute('data-tab') === k)); });
     filter();
   }
@@ -588,6 +621,8 @@
     }
     if (b.hasAttribute('data-delete')) return deleteTerm(b.getAttribute('data-delete'));
     if (b.hasAttribute('data-restore')) return restoreTerm(b.getAttribute('data-restore'));
+    if (b.hasAttribute('data-delete-part')) return deletePart(b.getAttribute('data-delete-part'));
+    if (b.hasAttribute('data-restore-part')) return restorePart(b.getAttribute('data-restore-part'));
     if (b.hasAttribute('data-edit')) {
       var row = b.closest('.review-field');
       row.querySelector('.review-field__body').replaceChildren(editor(row.getAttribute('data-scope'), row.getAttribute('data-id'), row.getAttribute('data-field')));
@@ -602,6 +637,16 @@
     var card = cards.get('term|' + id);
     card.scrollIntoView({ block: 'center' });
     var edit = card.querySelector('[data-field="description"] [data-edit]');
+    if (edit) edit.click();
+  });
+  partAdder.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var id = addPart(partType.value, partName.value);
+    if (!id) return;
+    partName.value = '';
+    var card = cards.get('part|' + id);
+    card.scrollIntoView({ block: 'center' });
+    var edit = card.querySelector('[data-field="text"] [data-edit], [data-field="itemListElement"] [data-edit]');
     if (edit) edit.click();
   });
   var timer;

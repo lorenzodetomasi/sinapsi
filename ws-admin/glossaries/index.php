@@ -37,12 +37,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     };
     $in = json_decode((string)file_get_contents('php://input'), true);
     $action = is_array($in) ? (string)($in['action'] ?? '') : '';
-    if (!in_array($action, ['apply', 'save', 'new', 'epub'], true)) $fail(400, glossary_t('Invalid request.'));
+    if (!in_array($action, ['apply', 'save', 'new', 'epub', 'create'], true)) $fail(400, glossary_t('Invalid request.'));
     $root = ws_admin_site_path((string)($in['site'] ?? ''));
     if (!$root) $fail(400, glossary_t('Invalid request.'));
     $user = glossary_user($root);
     if (!$user) $fail(401, glossary_t('Sign in to continue.'));
     if (empty($user['dev']) && !ws_gettone_valido((string)($in['csrf'] ?? ''))) $fail(403, glossary_t('Your session has expired: reload the page.'));
+
+    // A new glossary: no glossary to check yet, only the right to create one and a place for it.
+    if ($action === 'create') {
+        if (!glossary_can_create($user)) $fail(403, glossary_t('You cannot create a glossary.'));
+        $parent = (string)($in['parent'] ?? '');
+        if (!in_array($parent, glossary_parents($root), true)) $fail(400, glossary_t('Invalid request.'));
+        try {
+            [$rel, $proposal] = glossary_create($root, $parent, (string)($in['slug'] ?? ''), trim((string)($in['name'] ?? '')), trim((string)($in['author'] ?? '')), $user);
+        } catch (Throwable $e) {
+            $fail(400, $e->getMessage());
+        }
+        echo json_encode(['success' => true, 'url' => '?' . http_build_query(['site' => $in['site'], 'glossary' => $rel, 'proposal' => $proposal])], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     $dir = glossary_dir($root, (string)($in['glossary'] ?? ''));
     if (!$dir) $fail(404, glossary_t('Unknown glossary.'));
     $file = $dir . '/' . GLOSSARY_FILE;
@@ -186,6 +201,26 @@ $theme = $siteBase . '/ws-custom/themes';
       </select>
     </label>
   </form>
+  <?php if ($onlyRel === '' && glossary_can_create($user)): $parents = glossary_parents($root); ?>
+    <details class="review-create">
+      <summary class="button strong"><span class="material-symbols-outlined left">add</span><?= $h(glossary_t('Create a new glossary')) ?></summary>
+      <form id="create" class="review-create__form">
+        <label class="field horizontal width-full"><strong><?= $h(glossary_t('Name of the glossary')) ?></strong>
+          <input type="text" name="name" required></label>
+        <label class="field horizontal width-full"><strong><?= $h(glossary_t('Folder')) ?></strong>
+          <span class="review-create__path"><code><?= $h(count($parents) === 1 ? $parents[0] . '/' : '') ?></code><input type="text" name="slug" pattern="[a-z0-9][a-z0-9\-]*" required></span></label>
+        <?php if (count($parents) > 1): ?>
+          <label class="field horizontal"><strong><?= $h(glossary_t('Inside')) ?></strong>
+            <select name="parent"><?php foreach ($parents as $p): ?><option><?= $h($p) ?></option><?php endforeach; ?></select></label>
+        <?php else: ?>
+          <input type="hidden" name="parent" value="<?= $h($parents[0]) ?>">
+        <?php endif; ?>
+        <label class="field horizontal width-full"><strong><?= $h(glossary_t('Author')) ?></strong>
+          <input type="text" name="author" placeholder="<?= $h(glossary_t('Optional')) ?>"></label>
+        <p><button type="submit" class="button strong"><?= $h(glossary_t('Create and open the editor')) ?></button> <span class="review-meta" id="create-status" aria-live="polite"></span></p>
+      </form>
+    </details>
+  <?php endif; ?>
   <?php $found = glossary_find($root); ?>
   <?php if ($onlyRel !== ''): $found = array_intersect_key($found, [$onlyRel => true]); ?>
     <p class="review-notice"><?= $h(glossary_t('No proposal is waiting: start a new version to edit the glossary.')) ?></p>
@@ -228,6 +263,23 @@ $theme = $siteBase . '/ws-custom/themes';
       body: JSON.stringify(Object.assign({ site: <?= $json($siteId) ?>, csrf: <?= $json($csrf) ?> }, body)) })
       .then(function (r) { return r.json(); });
   };
+  var create = document.getElementById('create');
+  if (create) {
+    // The folder follows the name until it is typed in by hand.
+    var slugged = true;
+    var slug = function (s) { return s.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
+    var field = function (n) { return create.elements.namedItem(n); };   // not create.name: that is the form's own
+    field('name').addEventListener('input', function () { if (slugged) field('slug').value = slug(field('name').value); });
+    field('slug').addEventListener('input', function () { slugged = field('slug').value === ''; });
+    create.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var out = document.getElementById('create-status');
+      out.textContent = '…';
+      post({ action: 'create', name: field('name').value, slug: field('slug').value, parent: field('parent').value, author: field('author').value })
+        .then(function (j) { if (j.url) location.href = j.url; else out.textContent = j.error || ''; })
+        .catch(function (e) { out.textContent = e.message; });
+    });
+  }
   document.addEventListener('click', function (ev) {
     var n = ev.target.closest('[data-new]');
     if (n) {

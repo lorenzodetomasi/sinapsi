@@ -219,6 +219,89 @@ function glossary_next_version(string $v): string
     return trim($v) === '' ? '1' : trim($v) . '.1';
 }
 
+/* ---- A new glossary --------------------------------------------------------------------- */
+
+/** Where new glossaries go: the folders that already hold one, or glossaries/ when there is none. */
+function glossary_parents(string $root): array
+{
+    $parents = array_values(array_unique(array_map('dirname', array_keys(glossary_find($root)))));
+    $parents = array_values(array_filter($parents, static fn($p) => $p !== '.'));
+    return $parents ?: ['glossaries'];
+}
+
+/**
+ * A glossary from nothing, in <root>/<parent>/<slug>/:
+ *   glossary.jsonld           empty: a name, a language, who made it
+ *   proposals/<date>-v1.jsonld   the first version, to open in the editor
+ *   index.json                its page, as a draft, when the parent folder is
+ *                             a page itself (/progetti/glossari/<slug>)
+ * The one who creates it is its `creator`: it is theirs to edit (glossary_people()).
+ * Returns [folder relative to the root, proposal name, whether a page was made].
+ */
+function glossary_create(string $root, string $parent, string $slug, string $name, string $author, array $user): array
+{
+    $slug = glossary_slug($slug !== '' ? $slug : $name);
+    $parent = trim($parent, '/');
+    if ($name === '' || !preg_match('#^[a-z0-9][a-z0-9_-]*(/[a-z0-9][a-z0-9_-]*)*$#', $parent) || !preg_match('/^[a-z0-9][a-z0-9-]*$/', $slug)) {
+        throw new InvalidArgumentException(glossary_t('Invalid request.'));
+    }
+    $base = realpath($root);
+    $parentAbs = $base . '/' . $parent;
+    $dir = $parentAbs . '/' . $slug;
+    if (file_exists($dir)) throw new RuntimeException(glossary_t('A folder with this name already exists: %s', "$parent/$slug"));
+    if (!is_dir($parentAbs) && !mkdir($parentAbs, 0775, true)) throw new RuntimeException(glossary_t('Cannot create %s.', $parent));
+    if (!mkdir($dir . '/proposals', 0775, true)) throw new RuntimeException(glossary_t('Cannot create %s.', "$parent/$slug"));
+
+    $locale = basename($root);
+    $lang = preg_match('/^([a-z]{2})_[A-Z]{2}$/', $locale, $m) ? $m[1] : 'it';
+    $today = date('Y-m-d');
+    $creator = ['@type' => 'Person', '@id' => 'users/' . ($user['uid'] ?? ''), 'name' => (string)($user['name'] ?? '')];
+    $g = [
+        '@context' => ['https://schema.org', ['skos' => 'http://www.w3.org/2004/02/skos/core#', 'ws' => 'https://localbiz.it/ws#']],
+        '@type' => 'DefinedTermSet',
+        '@id' => '#glossario',
+        'name' => $name,
+        'inLanguage' => $lang,
+        'version' => '0',
+        'dateModified' => $today,
+        'creator' => $creator,
+    ];
+    if ($author !== '') $g['author'] = ['@type' => 'Person', 'name' => $author];
+    $g['hasPart'] = [];
+    $g['hasDefinedTerm'] = [];
+    if (file_put_contents($dir . '/' . GLOSSARY_FILE, glossary_encode($g), LOCK_EX) === false) throw new RuntimeException(glossary_t('Cannot write the glossary.'));
+    $first = ['version' => '1', 'datePublished' => $today, 'dateModified' => $today] + $g;
+    $proposal = $today . '-v1.jsonld';
+    file_put_contents($dir . '/proposals/' . $proposal, glossary_encode($first), LOCK_EX);
+
+    // The page, when the folder above is a page: same site, same language, same title suffix.
+    $page = false;
+    $above = is_file($parentAbs . '/index.json') ? json_decode((string)file_get_contents($parentAbs . '/index.json'), true) : null;
+    if (is_array($above) && !empty($above['wspath'])) {
+        $site = basename(dirname($base)) . '/' . $locale;
+        $suffix = preg_match('/\s[–-]\s(.+)$/u', (string)($above['title'] ?? ''), $t) ? ' – ' . $t[1] : '';
+        $theme = preg_match('/[?&]theme=([A-Za-z0-9_-]+)/', (string)($above['query'] ?? ''), $q) ? $q[1] : 'isotype';
+        $index = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebPage',
+            '@id' => "$parent/$slug",
+            'wspath' => rtrim($above['wspath'], '/') . '/' . $slug,
+            'query' => "/?theme=$theme&template=glossary&content=$site/$parent/$slug",
+            'parent' => ['wspath' => $above['wspath']],
+            'inLanguage' => $above['inLanguage'] ?? str_replace('_', '-', $locale),
+            'title' => $name . $suffix,
+            'robots' => 'index, follow',
+            'creativeWorkStatus' => 'Draft',
+            'dateCreated' => $today . 'T00:00:00Z', 'datePublished' => $today . 'T00:00:00Z', 'dateModified' => $today . 'T00:00:00Z',
+            'name' => $name,
+            'mainEntity' => ['@type' => 'DefinedTermSet', '@id' => "$parent/$slug#glossario", 'name' => $name],
+        ];
+        $page = file_put_contents($dir . '/index.json', json_encode($index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n", LOCK_EX) !== false;
+    }
+    glossary_log($dir, $user, ['action' => 'create', 'proposal' => $proposal, 'page' => $page]);
+    return ["$parent/$slug", $proposal, $page];
+}
+
 /**
  * A new version to work on: a proposal that is the glossary as it is, with
  * the next version number and today's date. Returns its file name.

@@ -61,6 +61,19 @@ if ($glossary_model && is_file(ws_admin_abspath() . '/glossaries/lib/glossary.ph
     }
 }
 
+/* The people keep their names, not their accounts: "users/<id>" is the CMS's key
+ * for who may edit (glossary_people(), asked just above), and a Google account's
+ * id has no business in a public page. */
+foreach (['author', 'editor', 'creator', 'contributor'] as $role) {
+    if (!is_array($glossary) || !isset($glossary[$role]) || !is_array($glossary[$role])) continue;
+    $people = array_is_list($glossary[$role]) ? $glossary[$role] : [$glossary[$role]];
+    foreach ($people as &$person) {
+        if (is_array($person) && str_starts_with((string)($person['@id'] ?? ''), 'users/')) unset($person['@id']);
+    }
+    unset($person);
+    $glossary[$role] = array_is_list($glossary[$role]) ? $people : $people[0];
+}
+
 $skin = (string)($ws_query['skin'] ?? '');
 if (!preg_match('/^[a-z0-9-]+$/', $skin) || !is_file(__DIR__ . '/glossary/skins/' . $skin . '.css')) $skin = 'isotype';
 $assets = ws_theme_url() . 'glossary/';
