@@ -1,3 +1,9 @@
+# The tools of the author's computer are never served, even when a hand upload
+# carries them here: deploy/ holds the FTP passwords of both servers.
+<IfModule mod_alias.c>
+RedirectMatch 404 ^/(deploy|archive|\.claude|ws-admin/edit-src)(/|$)
+</IfModule>
+
 # meetoo.it answers on https only. TopHost's own rule for a site with its own
 # .htaccess: behind its proxy, X-Forwarded-Proto says what the visitor used.
 # Only for meetoo.it: isotype.org is left as it is.
