@@ -13,6 +13,9 @@
 #                                      it_IT/events/20261220T2100-IT00121-x
 #   deploy/contents.sh seed-prod       the whole folder -> meetoo.it, ONCE:
 #                                      it refuses if meetoo.it already has it
+#   deploy/contents.sh pull-dev        isotype.org/meetoo -> this computer:
+#                                      before meetoo.it opens, the original is
+#                                      there (run it right before seed-prod)
 #
 #   --dry-run   says what it would do, and does nothing
 #   --delete    pull / push-dev / sync-dev: also removes what the source no
@@ -60,6 +63,17 @@ pull() {
     local c; c=$(mktemp)
     echo "mirror $(opts) $(lq "$REMOTE") $(lq "$LOCAL")" > "$c"
     say "meetoo.it -> this computer$( (( DRY )) && echo ' (dry run)')"
+    lftp_run "$c"; rm -f "$c"
+}
+
+# Until meetoo.it opens, isotype.org/meetoo is where people edit: its contents
+# come here once, to be the seed of meetoo.it. Its users stay there - they are
+# the development copy's from now on - and so do its indexes.
+pull_dev() {
+    load_target isotype; lock
+    local c; c=$(mktemp)
+    echo "mirror $(opts) $UTENTI $INDICI $(lq "$REMOTE") $(lq "$LOCAL")" > "$c"
+    say "isotype.org/meetoo -> this computer$( (( DRY )) && echo ' (dry run)')"
     lftp_run "$c"; rm -f "$c"
 }
 
@@ -112,16 +126,18 @@ seed_prod() {
         fi
     fi
     echo "mkdir -p -f $(lq "$REMOTE")" > "$c"
-    echo "mirror -R --no-perms $SKIP$( (( DRY )) && echo ' --dry-run') $(lq "$LOCAL") $(lq "$REMOTE")" >> "$c"
+    # Not the bin (_trash): what was thrown away stays on this computer.
+    echo "mirror -R --no-perms $SKIP -x $(lq '(^|/)_trash/')$( (( DRY )) && echo ' --dry-run') $(lq "$LOCAL") $(lq "$REMOTE")" >> "$c"
     say "first upload of the contents to meetoo.it$( (( DRY )) && echo ' (dry run)')"
     lftp_run "$c"; rm -f "$c"
 }
 
 case $cmd in
     pull) pull ;;
+    pull-dev) pull_dev ;;
     push-dev) push_dev ;;
     sync-dev) pull; rmdir "$STATE/meetoo.lock" 2>/dev/null || true; push_dev ;;
     put-prod) put_prod ;;
     seed-prod) seed_prod ;;
-    *) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac

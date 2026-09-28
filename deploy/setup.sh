@@ -2,8 +2,10 @@
 # The files each server keeps as its OWN: done once, by hand, never by deploy.sh.
 #
 #   deploy/setup.sh meetoo    meetoo.it: its ws-config.php (this computer's,
-#                             plus deploy/meetoo.it/ws-config.additions.php)
-#                             and its main map (deploy/meetoo.it/ws_sitemap.wsx).
+#                             plus deploy/meetoo.it/ws-config.additions.php),
+#                             its main map (deploy/meetoo.it/ws_sitemap.wsx)
+#                             and the Google keys of the places tools
+#                             (ws-admin/places/config.php, secret, not in git).
 #                             Refuses to overwrite what is already there.
 #   deploy/setup.sh isotype   isotype.org: adds the private copy of Meetoo
 #                             (deploy/isotype.org/ws-config.additions.php) to
@@ -52,7 +54,11 @@ super_admins() {
 
 case $TARGET in
 meetoo)
-    for f in ws-custom/ws-config.php ws-custom/contents/ws_sitemap.wsx; do
+    # The places keys (Maps for the editors, Places API for the import) are
+    # secret: git does not have them, so deploy.sh never carries them.
+    keys=''
+    [[ -f $REPO/ws-admin/places/config.php ]] && keys=ws-admin/places/config.php
+    for f in ws-custom/ws-config.php ws-custom/contents/ws_sitemap.wsx $keys; do
         if (( ! FORCE )) && exists "$f"; then
             die "meetoo.it already has $f: nothing overwritten (--force to replace it)"
         fi
@@ -63,12 +69,16 @@ meetoo)
     # The local file may already declare them (it was copied whole just above).
     grep -q WS_SUPER_ADMINS "$work/ws-config.php" || super_admins >> "$work/ws-config.php"
     php -l "$work/ws-config.php" >/dev/null || die "the resulting ws-config.php does not parse"
-    say "meetoo.it: ws-custom/ws-config.php and ws-custom/contents/ws_sitemap.wsx"
+    say "meetoo.it: ws-custom/ws-config.php, ws-custom/contents/ws_sitemap.wsx${keys:+ and $keys}"
     if (( DRY )); then tail -8 "$work/ws-config.php"; exit 0; fi
     {
         echo "mkdir -p -f ws-custom/contents"
         echo "put -O ws-custom $(lq "$work/ws-config.php")"
         echo "put -O ws-custom/contents $(lq "$DEPLOY_DIR/meetoo.it/ws_sitemap.wsx")"
+        if [[ -n $keys ]]; then
+            echo "mkdir -p -f ws-admin/places"
+            echo "put -O ws-admin/places $(lq "$REPO/$keys")"
+        fi
     } > "$c"
     lftp_run "$c"
     ;;
