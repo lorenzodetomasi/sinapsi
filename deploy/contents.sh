@@ -40,6 +40,17 @@ LOCAL="$REPO/ws-custom/contents/meetoo"
 REMOTE="ws-custom/contents/meetoo"
 # The lock of the automatic rebuild, and the Mac's folder notes.
 SKIP="--exclude-glob .DS_Store --exclude-glob derived.lock"
+# Decided on 28 Sep 2026:
+# - the USERS of Meetoo (users/, persons/) never reach the development copy:
+#   it has its own, and a sync must not erase who signed up there;
+# - what users DO (attendances, likes, reviews) is born on meetoo.it: it is
+#   copied to the development copy, and NEVER uploaded to meetoo.it, where a
+#   local copy would overwrite what was registered in the meantime;
+# - the indexes (_index/, events/_index/) are rebuilt by each server by
+#   itself: uploading local ones would overwrite newer ones.
+UTENTI="-x ^it_IT/users/ -x ^it_IT/persons/"
+ATTIVITA="--exclude-glob rsvp.json --exclude-glob likes.json --exclude-glob reviews.xml"
+INDICI="-x /_index/"
 opts() { echo "--no-perms $SKIP$( (( DRY )) && echo ' --dry-run')$( (( DELETE )) && echo ' --delete')"; }
 
 pull() {
@@ -54,7 +65,7 @@ push_dev() {
     load_target isotype; lock
     local c; c=$(mktemp)
     echo "mkdir -p -f $(lq "$REMOTE")" > "$c"
-    echo "mirror -R $(opts) $(lq "$LOCAL") $(lq "$REMOTE")" >> "$c"
+    echo "mirror -R $(opts) $UTENTI $(lq "$LOCAL") $(lq "$REMOTE")" >> "$c"
     say "this computer -> isotype.org/meetoo$( (( DRY )) && echo ' (dry run)')"
     lftp_run "$c"; rm -f "$c"
 }
@@ -66,12 +77,17 @@ put_prod() {
         || die "put-prod wants one file or folder inside contents/meetoo, not all of it"
     [[ $rel != *..* ]] || die "no .. in the path"
     [[ -e $LOCAL/$rel ]] || die "$LOCAL/$rel does not exist"
+    case "$(basename "$rel")" in
+        rsvp.json|likes.json|reviews.xml) die "$rel is born on meetoo.it (what users do): it is never uploaded there" ;;
+    esac
+    [[ $rel != *_index* && $rel != it_IT/users* && $rel != it_IT/persons* ]] \
+        || die "$rel is an index or a user's data: meetoo.it keeps its own"
     load_target meetoo; lock
     local c d; c=$(mktemp)
     d=$(dirname "$rel")
     echo "mkdir -p -f $(lq "$REMOTE/$d")" > "$c"
     if [[ -d $LOCAL/$rel ]]; then
-        echo "mirror -R --no-perms $SKIP$( (( DRY )) && echo ' --dry-run') $(lq "$LOCAL/$rel") $(lq "$REMOTE/$rel")" >> "$c"
+        echo "mirror -R --no-perms $SKIP $ATTIVITA $INDICI$( (( DRY )) && echo ' --dry-run') $(lq "$LOCAL/$rel") $(lq "$REMOTE/$rel")" >> "$c"
     elif (( DRY )); then
         echo "echo would upload $(lq "$rel")" >> "$c"
     else

@@ -73,10 +73,37 @@ restano un LocalBusiness unico.
 **Sede chiusa definitivamente**: la pagina resta (gli eventi passati ci rimandano) con lo
 stato in evidenza; esce da elenchi, mappa e scelte dell'editor per i nuovi eventi.
 
+**Gli eventi non si rinominano.** Quando una sede cambia CAP, i suoi eventi (anche
+futuri) tengono il loro `@id`: dice quando e dove erano stati programmati, i link restano
+validi, e la pagina mostra comunque l'indirizzo giusto perché lo legge dalla sede (e, per
+gli eventi passati, dallo storico: l'indirizzo valido in quella data).
+
 **Google Place ID** (`meetoo:google_place_id`, uno per indirizzo dello storico): chiave per
 riconoscere una sede (niente doppioni), fonte dello stato (chiusa, trasferita) e dei dati
 (orari, telefono, sito, voto). Si interroga **a mano dalla Manutenzione**, e ogni
 differenza si **approva o rifiuta** in un confronto, come per le modifiche manuali.
+
+## Utenti (decisione del 28 settembre 2026)
+
+- **Il `sub` di Google è lo stesso ovunque**: identifica l'account, non il sito (Google
+  non dà identificativi diversi per applicazione). La stessa persona arriva con lo stesso
+  `sub` su isotype.org e su meetoo.it. Cambiano la **sessione** (i cookie sono di un
+  dominio: si accede su ciascun sito) e i **dati**.
+- **Ogni sito ha i suoi utenti**: `contents/{sito}/{lingua}/users/` quando il sito è in
+  una lingua (Meetoo), `contents/{sito}/users/` quando è in più lingue (isotype). Una
+  persona può stare in due siti con ruoli e accessi diversi (`ws_content_users_abspath`).
+- **I dati personali** (nome, email) non sono contenuto: stanno in `ws-admin/_private/`,
+  sul server, fuori da git, e non viaggiano mai.
+- **Ruoli.** L'**admin** gestisce i contenuti di un sito (modifica tutto, manutenzione,
+  cestino definitivo) e glielo assegna il sito, come ogni ruolo. Il **super-admin** gestisce
+  il sistema (siti, ruoli, indici) e appartiene al **server**: si dichiara nel suo
+  `ws-custom/ws-config.php`, per `sub` o email verificata
+  (`define('WS_SUPER_ADMINS', [...])`). Dichiarata la lista, un «super-admin» scritto
+  nel file utenti di un sito vale admin.
+- **Copia di sviluppo.** Gli utenti di Meetoo (`users/`, `persons/`) non vanno mai sulla
+  copia: ha i suoi. Le attività (`rsvp.json`, `likes.json`, `reviews.xml`) ci vanno, per
+  avere gli stessi numeri; **verso meetoo.it non vanno mai** (nascono lì), e nemmeno gli
+  indici (`_index/`), che ogni server si rifà da sé (`deploy/contents.sh`).
 
 ## Convenzione @id e riferimenti (NORMALIZZATA)
 
