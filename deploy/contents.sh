@@ -21,7 +21,7 @@
 #   --delete    pull / push-dev / sync-dev: also removes what the source no
 #               longer has. Without it nothing is ever removed.
 #
-# Files are compared by size and date; lftp carries the date along (MFMT), so
+# Files are compared by size and date; lftp carries the date along (SITE UTIME), so
 # what did not change does not travel again.
 
 source "$(dirname "$0")/lib.sh"
@@ -68,11 +68,14 @@ pull() {
 
 # Until meetoo.it opens, isotype.org/meetoo is where people edit: its contents
 # come here once, to be the seed of meetoo.it. Its users stay there - they are
-# the development copy's from now on - and so do its indexes.
+# the development copy's from now on - and so do its indexes and its bin.
+# Only what is NEWER there: this computer has work the server has not seen.
+# And look at --dry-run first: a file uploaded by hand takes the date of the
+# upload, so an old content can look newer (28 Sep 2026: 36 of them did).
 pull_dev() {
     load_target isotype; lock
     local c; c=$(mktemp)
-    echo "mirror $(opts) $UTENTI $INDICI $(lq "$REMOTE") $(lq "$LOCAL")" > "$c"
+    echo "mirror --only-newer $(opts) $UTENTI $INDICI -x $(lq '(^|/)_trash/') $(lq "$REMOTE") $(lq "$LOCAL")" > "$c"
     say "isotype.org/meetoo -> this computer$( (( DRY )) && echo ' (dry run)')"
     lftp_run "$c"; rm -f "$c"
 }

@@ -50,6 +50,21 @@ load_target() {
 # Quotes a string for an lftp command line.
 lq() { local s=${1//\\/\\\\}; s=${s//\"/\\\"}; printf '"%s"' "$s"; }
 
+# The authorities lftp trusts: the system's, plus deploy/ca/. Homebrew's lftp
+# does not know where the system's are; and TopHost's FTP server sends its
+# certificate (*.th.seeweb.it) without the intermediate that signed it,
+# RapidSSL TLS RSA CA G1 - public, from the address the certificate itself
+# names (http://cacerts.rapidssl.com/RapidSSLTLSRSACAG1.crt), valid until
+# Nov 2027. Without it nothing can be verified.
+ca_file() {
+    local out="$STATE/ca.pem" sys
+    for sys in /opt/homebrew/etc/ca-certificates/cert.pem /usr/local/etc/ca-certificates/cert.pem /etc/ssl/cert.pem; do
+        [[ -f $sys ]] && break
+    done
+    cat "$sys" "$DEPLOY_DIR"/ca/*.pem > "$out" 2>/dev/null
+    echo "$out"
+}
+
 # Runs the lftp commands in file $1 on the current target, from its root.
 lftp_run() {
     local cmds=$1 script
@@ -60,9 +75,12 @@ lftp_run() {
         echo "set net:timeout 30"
         echo "set ftp:ssl-allow yes"
         echo "set ssl:verify-certificate $TLS_VERIFY"
-        # The date of a file goes up with it: the next comparison is by size
-        # AND date, and without this every file would look changed.
-        echo "set ftp:use-mfmt yes"
+        echo "set ssl:ca-file $(lq "$(ca_file)")"
+        # The date of a file goes up with it (SITE UTIME, lftp's default): the
+        # next comparison is by size AND date, and without it every file would
+        # look changed. 4.9 has no ftp:use-mfmt, and an unknown setting stops
+        # the whole script.
+        echo "set ftp:use-site-utime yes"
         echo "open --env-password -u $(lq "$USER_") $(lq "$PROTOCOL://$HOST")"
         echo "cd $(lq "$ROOT")"
         cat "$cmds"
