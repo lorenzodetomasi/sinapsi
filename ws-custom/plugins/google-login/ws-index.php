@@ -64,9 +64,10 @@ function google_login_profilo(){
 	if($utente !== null and isset($utente->person)){
 		$persona = $utente->person;
 		$p['name']  = get_consented_data($persona->name, $anon);
-		// L'email sta fuori da `person`, nel documento dell'utente.
-		$p['email'] = get_consented_data($utente->email, null);
-		$p['image'] = get_consented_data($utente->image, null);
+		// Email and image are in `person`, as Meetoo writes them; a user
+		// document that still keeps them on `user` is read there.
+		$p['email'] = get_consented_data($persona->email, get_consented_data($utente->email, null));
+		$p['image'] = get_consented_data($persona->image, get_consented_data($utente->image, null));
 		$p['org_name'] = get_consented_data($persona->worksFor->organization->name, null);
 		$p['org_logo'] = get_consented_data($persona->worksFor->organization->logo, null);
 	}
@@ -87,7 +88,7 @@ if (!function_exists('get_google_initials_avatar')) {
 // 2. CONFIGURAZIONE API
 $google_api_oauth20_client = json_decode(GOOGLE_API_OAUTH20_CLIENT, true);
 $CLIENT_ID = $google_api_oauth20_client['web']['client_id'];
-$XML_FILE_PATH = ws_content_root_abspath() . '/users/users.xml';
+$XML_FILE_PATH = ws_content_users_abspath();
 
 // 3. ENDPOINT LOGIN/LOGOUT
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['credential'])) {
@@ -132,17 +133,32 @@ if (!class_exists('GoogleAuth')) {
             ];
         }
 
+        /**
+         * The <user> of whoever is signed in, from <site>/<locale>/users/users.xml.
+         *
+         * That file is a list of XIncludes, one per user, and each user includes
+         * its <person>: simplexml_load_file() does not follow them, so they are
+         * resolved on a DOM first. The id is written two ways, the bare Google
+         * `sub` (as in Meetoo's files) and `sub:<sub>`; both are accepted, as
+         * ws_ruolo_utente() in ws-admin/lib/ws-auth.php does.
+         */
         public static function getRegisteredUser() {
-            $sub = 'sub:' . ($_SESSION['user_sub'] ?? '');
-            $xml_path = ws_content_root_abspath() . '/users/users.xml';
-            
-            if ($sub === 'sub:' || !file_exists($xml_path)) return null;
-            
-            $xml = simplexml_load_file($xml_path);
-            foreach ($xml->user as $user) {
-                if (trim((string)$user['id']) === $sub) return $user;
-            }
-            return null;
+            $sub = trim((string)($_SESSION['user_sub'] ?? ''));
+            $xml_path = ws_content_users_abspath();
+            // A Google `sub` is digits; anything else must not reach the XPath.
+            if (!preg_match('/^[A-Za-z0-9_-]+$/', $sub) || $xml_path === '' || !is_file($xml_path)) return null;
+
+            $dom = new DOMDocument();
+            $errors = libxml_use_internal_errors(true);
+            $loaded = $dom->load($xml_path, LIBXML_NONET);
+            if ($loaded) $dom->xinclude(LIBXML_NONET);
+            libxml_clear_errors();
+            libxml_use_internal_errors($errors);
+            if (!$loaded) return null;
+
+            $xml = simplexml_import_dom($dom);
+            $found = $xml ? $xml->xpath("//user[@id='$sub' or @id='sub:$sub']") : array();
+            return empty($found) ? null : $found[0];
         }
 
         public static function getClientId() {
