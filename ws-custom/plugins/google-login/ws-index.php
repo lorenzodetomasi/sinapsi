@@ -41,7 +41,7 @@ if (!function_exists('get_consented_data')) {
  */
 if(!function_exists('google_login_profilo')){
 function google_login_profilo(){
-	$anon = function_exists('__') ? __('Utente') : 'Utente';
+	$anon = function_exists('__') ? __('User') : 'User';
 	// `&&`, non `and`: `and` ha precedenza più bassa dell'uguale, e $vivo si
 	// prenderebbe solo la prima metà della condizione.
 	$vivo = class_exists('GoogleAuth') && function_exists('get_consented_data');

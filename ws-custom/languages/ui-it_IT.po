@@ -1530,3 +1530,19 @@ msgstr "Bozza"
 
 msgid "This page is not published yet: it is on the site, but search engines do not index it."
 msgstr "Questa pagina non è ancora pubblicata: è sul sito, ma i motori di ricerca non la indicizzano."
+
+#: ../plugins/google-login/template-parts/modal-profile.php
+msgid "Edit User Profile"
+msgstr "Modifica il profilo"
+
+#: ../plugins/google-login/template-parts/modal-profile.php
+msgid "Complete User Subscription"
+msgstr "Completa l'iscrizione"
+
+#: ../plugins/google-login/template-parts/modal-profile.php
+msgid "Logout"
+msgstr "Esci"
+
+#: ../plugins/google-login/ws-index.php
+msgid "User"
+msgstr "Utente"
