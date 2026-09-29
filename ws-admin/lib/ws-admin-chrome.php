@@ -246,8 +246,9 @@ if (!function_exists('ws_admin_chrome_site')) {
         return '<header class="mt-header ws-admin-header" data-site="' . $e($site['site']) . '">'
             . '<div class="mt-row mt-row-1">'
             . '<div class="mt-left"><button class="mt-icon-btn" id="mt-menu" title="Menu" aria-label="Menu"><span class="material-symbols-outlined">menu</span></button>'
-            . ws_admin_chrome_brand($site)
-            . '<span class="ws-admin-label">Gestione</span></div>'
+            // The logo (and the name) alone: that this is the Gestione the row
+            // below already says, in its crumbs.
+            . ws_admin_chrome_brand($site) . '</div>'
             . '<div class="mt-actions"><span id="mt-slot"></span>'
             . '<button class="mt-icon-btn" id="mt-settings" title="Impostazioni" aria-label="Impostazioni"><span class="material-symbols-outlined">settings</span></button>'
             . '<span id="mt-account"></span></div>'

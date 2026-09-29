@@ -2,7 +2,7 @@
  * The Gestione's header and footer, dressed as the site being managed
  * (lib/ws-admin-chrome.php). The header is header.js's own (meetoo.css draws
  * it); here only what the chrome adds: the name beside a logo that does not
- * say it, the word "Gestione", and the site's footer. The colours and fonts
+ * say it, and the site's footer. The colours and fonts
  * are the site's tokens, loaded before this sheet.
  * ========================================================================== */
 
@@ -13,11 +13,7 @@
   font-family: var(--font-family1); font-weight: 700; font-size: 1.15rem; color: var(--color-heading);
 }
 .ws-admin-brand-name small { font-weight: 400; font-size: .75rem; color: var(--color-link); }
-.ws-admin-label {
-  margin-left: .75rem; padding-left: .75rem; border-left: 1px solid var(--color-line);
-  font-family: var(--font-family1); font-weight: 600; font-size: .95rem; color: var(--color-hint);
-}
-@media (max-width: 30rem) { .ws-admin-label, .ws-admin-brand-name small { display: none; } }
+@media (max-width: 30rem) { .ws-admin-brand-name small { display: none; } }
 
 /* The site's footer, as on the site: who runs it, the legal menu, the credits. */
 .ws-admin-footer { margin-top: 3rem; border-top: 1px solid var(--color-line); background: var(--color-background-main); }
