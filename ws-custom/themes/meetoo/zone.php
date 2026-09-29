@@ -57,9 +57,21 @@ include_template('template-parts/header');
 
 			<article<?php echo ws_html_attributes('main-content', array('class' => array('mt-pagina', 'mt-zona-pagina'))); ?>>
 				<section class="mt-esplora" aria-label="<?php echo mt_esc(__('Esplora')); ?>">
-					<div class="grid">
+					<div class="cards cards-row">
 <?php
-foreach(array('eventi' => 'event', 'gruppi' => 'groups', 'luoghi' => 'place') as $quale => $icona){
+/* The three doors, the fullest first: what a zone has most of is what it is
+ * about (29 Sep 2026). The counts are those of the lists behind the doors -
+ * meetoo_voci() of this zone, which the page asks for anyway - and on a tie
+ * the order stays events, groups, places. */
+$porte = array('eventi' => 'event', 'gruppi' => 'groups', 'luoghi' => 'place');
+$quante = array();
+foreach(array_keys($porte) as $i => $quale){
+	$quante[$quale] = array(count(meetoo_voci($quale)), $i);
+}
+uksort($porte, function($a, $b) use ($quante){
+	return array($quante[$b][0], $quante[$a][1]) <=> array($quante[$a][0], $quante[$b][1]);
+});
+foreach($porte as $quale => $icona){
 	echo mt_card_tile(array(
 		'href' => meetoo_elenco_url($qui, $quale),
 		'icon' => $icona,
