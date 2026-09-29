@@ -26,6 +26,8 @@
   display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1.5rem;
   color: var(--color-hint); font-size: .9rem;
 }
+/* The grid spaces the parts: not the 32px meetoo.css gives every section. */
+.ws-admin-footer .mt-footer > * { margin: 0; }
 .ws-admin-footer h3 { font-size: 1rem; margin: 0 0 .5rem; color: var(--color-heading); }
 .ws-admin-footer p { margin: 0 0 .5rem; }
 .ws-admin-footer ul { list-style: none; margin: 0; padding: 0; }

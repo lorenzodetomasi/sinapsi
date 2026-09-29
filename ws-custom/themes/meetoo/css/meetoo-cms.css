@@ -125,6 +125,9 @@
   max-width: 56rem; margin: 0 auto; padding: 2rem 1rem 3rem;
   color: var(--color-hint); font-size: .9rem;
 }
+/* Meetoo gives every section 32px above (meetoo.css): not the first part of
+   the footer, which starts where the footer starts. */
+.mt-footer > :first-child { margin-top: 0; }
 .mt-footer > * + * { margin-top: 1.5rem; }
 @media (min-width: 1000px) { .mt-footer > * + * { margin-top: 0; } }
 .mt-footer h3 { font-size: 1rem; margin: 0 0 .5rem; color: var(--color-heading); }
