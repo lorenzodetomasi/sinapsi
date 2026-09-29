@@ -251,6 +251,9 @@ a.mt-chip:hover { border-color: var(--color-link); color: var(--color-link); }
 .mt-azione-forte { background: var(--color-link); color: var(--color-background-main); border-color: transparent; }
 .mt-azione-forte:hover:not(:disabled) { filter: brightness(1.08); color: var(--color-background-main); }
 .mt-azione-forte.on { background: transparent; color: var(--color-link); border-color: var(--color-link); }
+/* Pressed, it is an outline button: the hover of the filled one would paint its
+ * text the colour of the page it stands on - white on white in the light theme. */
+.mt-azione-forte.on:hover:not(:disabled) { filter: none; color: var(--color-link); background: var(--color-background-section2); }
 .mt-conto:not(:empty) { font-size: .8rem; opacity: .8; }
 .mt-azioni-nota { font-size: .9rem; color: var(--color-hint); margin: -.5rem 0 1rem; }
 .mt-azioni-nota.avviso { color: var(--color-past, #c0392b); }
