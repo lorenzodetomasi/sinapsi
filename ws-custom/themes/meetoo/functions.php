@@ -260,7 +260,8 @@ function meetoo_mappa(){
 		// quelle non lo sono.
 		// An OLD address that redirects (template=redirect) is not the page of
 		// its content either: it would win over the real one, being added last.
-		if(strpos($q, 'elenco=') !== false or strpos($q, 'zona=') !== false or strpos($q, 'template=redirect') !== false){
+		// Nor is a tool of the site (template=admin/…, the profile page).
+		if(strpos($q, 'elenco=') !== false or strpos($q, 'zona=') !== false or strpos($q, 'template=redirect') !== false or strpos($q, 'template=admin/') !== false){
 			continue;
 		}
 		if(!preg_match('/[?&]content=([^&]*)/', $q, $m)){

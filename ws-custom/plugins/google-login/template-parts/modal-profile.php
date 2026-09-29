@@ -24,8 +24,10 @@ if(empty($profilo['collegato']) or empty($profilo['sessione'])){
 $sessione = $profilo['sessione'];
 $registrato = !empty($profilo['registrato']);
 
-$radice = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
-$profilo_url = htmlspecialchars($radice) . '/profilo-utente';
+/* The profile page of the site that is answering: under its mount
+ * (isotype.org/meetoo/profilo-utente), not at the root of the domain, which
+ * is another site with other users. */
+$profilo_url = htmlspecialchars(function_exists('ws_href') ? ws_href('profilo-utente') : '/profilo-utente');
 $registrazione = $registrato ? '' : '?init=register';
 $incorporato = $profilo_url . ($registrazione ? $registrazione . '&' : '?') . 'embed=1';
 ?>

@@ -14,6 +14,9 @@ $embed = isset($_GET['embed']) && $_GET['embed'] !== '0';
 /* The site root, rather than `https://www.isotype.org` written by hand: this
  * file also runs elsewhere, and a hardcoded address would take it back here. */
 $site_root = function_exists('ws_root_url') ? rtrim(ws_root_url(), '/') : '';
+/* Where you go back to is the home of the site that is answering: under its
+ * mount (isotype.org/meetoo/), not the root of the domain, another site. */
+$site_home = function_exists('ws_href') ? ws_href('') : $site_root . '/';
 
 // Basic access check
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
@@ -21,17 +24,106 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
         echo '<p class="mt-prof-vuoto">' . __('Sign in to complete your profile.') . '</p>';
         exit;
     }
-    header('Location: ' . $site_root);
+    header('Location: ' . $site_home);
     exit;
 }
 
-// The users of THIS site (ws_content_users_abspath): Meetoo's are per language,
-// isotype's per site.
+// The users of THIS site (ws_content_users_abspath), at the level of the site.
 $XML_FILE_PATH = ws_content_users_abspath();
-$user_sub_id = 'sub:' . ($_SESSION['user_sub'] ?? '');
+$user_sub = (string)($_SESSION['user_sub'] ?? '');
+$user_sub_id = 'sub:' . $user_sub;
 
-if ($user_sub_id === 'sub:') {
+if ($user_sub === '') {
     die(__('Session error: the Sub ID is missing. Sign out and sign in again.'));
+}
+
+/* WHERE THE PROFILE LIVES. Two layouts, one per kind of site:
+ *
+ *   - one users.xml for everyone (isotype): a <user id="sub:…"> per person,
+ *     with name, email, description and image on it and the rest in its
+ *     <person>;
+ *   - one folder per user (Meetoo, ws-admin/lib/ws-users.php): users.xml only
+ *     lists includes; the CMS record (role, locale) is users/<sub>/index.xml,
+ *     and it includes the public profile, persons/<sub>/index.xml, where
+ *     every public field is.
+ *
+ * This page knew only the first, and on Meetoo it would have added a second,
+ * inline <user> next to the included one. ws_profile_open() gives the rest of
+ * the page the elements to read and write whatever the layout: 'record' (role,
+ * locale), 'top' (name, email, description, image) and 'person' (gender, job,
+ * organization) - on Meetoo 'top' and 'person' are the same element. */
+if (!function_exists('ws_profile_open')) {
+    function ws_profile_open(string $users_xml, string $sub, bool $create): ?array {
+        if (!is_file($users_xml)) return null;
+        $dir = dirname($users_xml);
+        $split = strpos((string)@file_get_contents($users_xml), 'xi:include') !== false || is_dir("$dir/$sub");
+        if (!$split) {
+            $xml = simplexml_load_file($users_xml);
+            if (!$xml) return null;
+            $user = null;
+            foreach ($xml->user as $u) {
+                if (trim((string)$u['id']) === "sub:$sub") { $user = $u; break; }
+            }
+            if (!$user) {
+                if (!$create) return array('layout' => 'inline', 'registered' => false, 'record' => null, 'top' => null, 'person' => null);
+                $user = $xml->addChild('user');
+                $user->addAttribute('id', "sub:$sub");
+                $user->addChild('role', 'user');
+                $user->addChild('access_paths')->addChild('path', '/progetti/guest/');
+            }
+            return array('layout' => 'inline', 'registered' => true, 'doc' => $xml, 'file' => $users_xml,
+                         'record' => $user, 'top' => $user, 'person' => isset($user->person) ? $user->person[0] : null);
+        }
+        if (!preg_match('/^\d{6,}$/', $sub)) return null;   // a Google sub is numeric: it becomes a folder name
+        $record_file = "$dir/$sub/index.xml";
+        if (!is_file($record_file)) {
+            if (!$create) return array('layout' => 'split', 'registered' => false, 'record' => null, 'top' => null, 'person' => null);
+            // The same record the first sign-in writes, with the site's default
+            // role: completing a profile is not a promotion. ws_users_dir() takes
+            // any folder of the site and answers with its users/.
+            require_once ws_admin_abspath() . '/lib/ws-users.php';
+            ws_user_record(dirname($dir) . '/' . basename(dirname($dir)), $sub, (string)($_SESSION['user_locale'] ?? ''));
+        }
+        $record = simplexml_load_file($record_file);
+        if (!$record) return null;
+        $person_file = dirname($dir) . "/persons/$sub/index.xml";
+        $person = is_file($person_file) ? simplexml_load_file($person_file) : null;
+        if (!$person and $create) {
+            $person = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><person xmlns:xi="http://www.w3.org/2001/XInclude" id="' . $sub . '"/>');
+        }
+        return array('layout' => 'split', 'registered' => true, 'sub' => $sub,
+                     'record' => $record, 'record_file' => $record_file,
+                     'top' => $person ?: null, 'person' => $person ?: null, 'person_file' => $person_file);
+    }
+
+    /** The element for gender, job and organization, made when first needed. */
+    function ws_profile_person(array &$profile): SimpleXMLElement {
+        if ($profile['person'] === null) $profile['person'] = $profile['top']->addChild('person');
+        return $profile['person'];
+    }
+
+    function ws_profile_write(SimpleXMLElement $xml, string $file): bool {
+        $dom = new DOMDocument('1.0');
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = true;
+        $dom->loadXML($xml->asXML());
+        @mkdir(dirname($file), 0775, true);
+        return $dom->save($file) !== false;
+    }
+
+    function ws_profile_save(array $profile): bool {
+        if ($profile['layout'] === 'inline') return ws_profile_write($profile['doc'], $profile['file']);
+        $ok = ws_profile_write($profile['record'], $profile['record_file'])
+           && ws_profile_write($profile['top'], $profile['person_file']);
+        // The record shows the profile by including it, as the first sign-in's do.
+        $s = (string)@file_get_contents($profile['record_file']);
+        $sub = $profile['sub'];
+        if ($ok and strpos($s, "persons/$sub/index.xml") === false and ($pos = strrpos($s, '</user>')) !== false) {
+            $include = "  <xi:include href=\"../../persons/$sub/index.xml\" xpointer=\"xpointer(/*[1])\"/>\n";
+            $ok = @file_put_contents($profile['record_file'], substr($s, 0, $pos) . $include . substr($s, $pos)) !== false;
+        }
+        return $ok;
+    }
 }
 
 // ============================================================================
@@ -39,30 +131,15 @@ if ($user_sub_id === 'sub:') {
 // ============================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings'])) {
     
-    if (file_exists($XML_FILE_PATH)) {
-        $xml = simplexml_load_file($XML_FILE_PATH);
-        $target_user = null;
-        
-        foreach ($xml->user as $u) {
-            if (trim((string)$u['id']) === $user_sub_id) { 
-                $target_user = $u; 
-                break; 
-            }
-        }
-
-        if (!$target_user) {
-            $target_user = $xml->addChild('user');
-            $target_user->addAttribute('id', $user_sub_id);
-            $target_user->addChild('role', 'user');
-            $ap = $target_user->addChild('access_paths');
-            $ap->addChild('path', '/progetti/guest/');
-        }
+    $profile = ws_profile_open($XML_FILE_PATH, $user_sub, true);
+    if ($profile) {
+        $target_user = $profile['top'];
 
         $locale_val = $_SESSION['user_locale'] ?? 'it';
-        if (!isset($target_user->locale)) {
-            $target_user->addChild('locale', $locale_val);
+        if (!isset($profile['record']->locale)) {
+            $profile['record']->addChild('locale', $locale_val);
         } else {
-            $target_user->locale = $locale_val;
+            $profile['record']->locale = $locale_val;
         }
 
         $now = date('c');
@@ -120,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
 
         // 5. Gender
         if (isset($_POST['is_gender_public'])) {
-            $person = $target_user->person ?? $target_user->addChild('person');
+            $person = ws_profile_person($profile);
             $gender_text = trim($_POST['GenderType'] ?? '');
             
             if (!empty($gender_text)) {
@@ -130,12 +207,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
                 unset($person->gender['id']); // Non usiamo più ID JSON per il datalist nativo
             } else { unset($person->gender); }
         } else {
-            if (isset($target_user->person->gender)) unset($target_user->person->gender);
+            if (isset($profile['person']->gender)) unset($profile['person']->gender);
         }
 
         // 6. Organization Role
         if (isset($_POST['is_role_public'])) {
-            $person = $target_user->person ?? $target_user->addChild('person');
+            $person = ws_profile_person($profile);
             $organizationRole_input = trim($_POST['organizationRole'] ?? '');
             
             if (!empty($organizationRole_input)) {
@@ -144,14 +221,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
                 $person->jobTitle['consented_at'] = $now;
             } else { unset($person->jobTitle); }
         } else {
-            if (isset($target_user->person->jobTitle)) unset($target_user->person->jobTitle);
+            if (isset($profile['person']->jobTitle)) unset($profile['person']->jobTitle);
         }
 
         // 7. Organization Name & Logo
-        $existing_logo = isset($target_user->person->worksFor->organization->logo) ? (string)$target_user->person->worksFor->organization->logo : '';
+        $existing_logo = isset($profile['person']->worksFor->organization->logo) ? (string)$profile['person']->worksFor->organization->logo : '';
 
         if (isset($_POST['is_organizationName_public']) && !empty(trim($_POST['organizationName'] ?? ''))) {
-            $person = $target_user->person ?? $target_user->addChild('person');
+            $person = ws_profile_person($profile);
             $worksFor = $person->worksFor ?? $person->addChild('worksFor');
             $worksFor['type'] = 'Organization';
             $org = $worksFor->organization ?? $worksFor->addChild('organization');
@@ -181,23 +258,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
             } else { unset($org->logo); }
 
         } else {
-            if (isset($target_user->person->worksFor->organization)) unset($target_user->person->worksFor->organization);
-            if (isset($target_user->person->worksFor) && $target_user->person->worksFor->count() === 0) unset($target_user->person->worksFor);
+            if (isset($profile['person']->worksFor->organization)) unset($profile['person']->worksFor->organization);
+            if (isset($profile['person']->worksFor) && $profile['person']->worksFor->count() === 0) unset($profile['person']->worksFor);
         }
         
-        // Housekeeping
-        if (isset($target_user->person) && $target_user->person->count() === 0) unset($target_user->person);
+        // Housekeeping: an empty <person> inside an isotype <user> goes away.
+        if ($profile['layout'] === 'inline' && isset($target_user->person) && $target_user->person->count() === 0) unset($target_user->person);
 
-        $dom = new DOMDocument("1.0");
-        $dom->preserveWhiteSpace = false;
-        $dom->formatOutput = true;
-        $dom->loadXML($xml->asXML());
-        $dom->save($XML_FILE_PATH);
+        ws_profile_save($profile);
 
         if ($embed) {
             $saved = true;
         } else {
-            header('Location: ' . $site_root);
+            header('Location: ' . $site_home);
             exit;
         }
     }
@@ -206,15 +279,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_privacy_settings
 // ============================================================================
 // READING THE CURRENT STATE
 // ============================================================================
-$current_xml_user = null;
-if (file_exists($XML_FILE_PATH)) {
-    $xml = simplexml_load_file($XML_FILE_PATH);
-    foreach ($xml->user as $u) {
-        if (trim((string)$u['id']) === $user_sub_id) { $current_xml_user = $u; break; }
-    }
-}
+$profile_now = ws_profile_open($XML_FILE_PATH, $user_sub, false);
+$current_xml_user = $profile_now['top'] ?? null;
 
-$is_registered         = ($current_xml_user !== null);
+$is_registered         = !empty($profile_now['registered']);
 $is_name_public        = isset($current_xml_user->name['consented_at']);
 $is_email_public       = isset($current_xml_user->email['consented_at']);
 $is_image_public       = isset($current_xml_user->image['consented_at']);
@@ -236,8 +304,8 @@ $current_gender_text       = '';
 $current_organizationName  = '';
 $current_org_logo          = '';
 
-if ($current_xml_user !== null && isset($current_xml_user->person)) {
-    $p = $current_xml_user->person;
+if (($profile_now['person'] ?? null) !== null) {
+    $p = $profile_now['person'];
     
     $is_role_public = isset($p->jobTitle['consented_at']);
     $current_organizationRole = (string)($p->jobTitle ?? '');
@@ -432,7 +500,7 @@ include_template('template-parts/header');
             </label>
         </p>
         <p>
-            <a class="link" href="<?= htmlspecialchars(function_exists('ws_href') ? ws_href('') : $site_root.'/') ?>" class="btn btn-outline"><?php _e('Cancel'); ?></a>
+            <a class="link" href="<?= htmlspecialchars($site_home) ?>" class="btn btn-outline"><?php _e('Cancel'); ?></a>
             <button class="button" type="submit" style="margin-left:12px;"><?php _e('Save and continue'); ?></button>
         </p>
     </form>

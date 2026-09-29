@@ -568,6 +568,20 @@ if (!function_exists('ws_mappa_wspath')) {
             ];
         }
 
+        /* The page where whoever is signed in edits their public profile. It is
+         * the site's own, like its users (contents/<site>/users): the profile
+         * panel used to open isotype's, which on meetoo.it does not exist and on
+         * isotype.org/meetoo edited isotype's users. The template is the parent
+         * theme's; the content only names the site. */
+        if (!isset($presi['/profilo-utente'])) {
+            $presi['/profilo-utente'] = 'users';
+            $voci[] = [
+                'wspath' => '/profilo-utente', 'rel' => 'users', 'template' => 'admin/user-profile', 'tipo' => 'WebPage',
+                'title' => 'Profilo utente', 'description' => '', 'dateModified' => date('c'),
+                'robots' => 'noindex, nofollow',
+            ];
+        }
+
         $xml = ws_mappa_xml($voci, $sito, $locale);
         $file = rtrim($contentRoot, '/') . '/ws_sitemap.wsx';
         $scritto = false;
