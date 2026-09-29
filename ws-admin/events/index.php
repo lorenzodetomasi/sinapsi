@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        quello predefinito e si salverebbe nel posto sbagliato. */
     const EDIT = SITE_ROOT + 'ws-admin/events/edit/';
     const editHref = (query) => EDIT + query + (SITE ? '&site=' + encodeURIComponent(SITE) : '');
-    const NUOVO = SITE_ROOT + 'ws-admin/events/nuovo/';   // la scelta del tipo, prima del modulo
+    const NUOVO = SITE_ROOT + 'ws-admin/events/add/';   // la scelta del tipo, prima del modulo
     const PAGE = 10;                       // quanti se ne mostrano per volta
     const esc = Meetoo.cardUtils.esc;
 

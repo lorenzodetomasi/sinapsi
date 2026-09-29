@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        * header.js a chi ha il ruolo per vederla, su tutte le pagine. */
       Meetoo.setNav([
         { label: 'Gestione eventi', icon: 'event_note', href: ADMIN + 'events/index.php' },
-        { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/nuovo/' },
+        { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/add/' },
         { label: 'Luoghi e gruppi', icon: 'place', href: ADMIN + 'places/edit/' },
         { label: 'Utenti e ruoli', icon: 'manage_accounts', href: ADMIN + 'users/' },
         { label: 'Siti', icon: 'language', href: ADMIN + 'sites.php' },
@@ -221,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     const TOOLS = {
       'sec-eventi': [
         { href: ADMIN + 'events/index.php', icon: 'event_note', title: 'Gestione eventi', meta: 'Elenco, ricerca, cestino, indice' },
-        { href: ADMIN + 'events/nuovo/', icon: 'note_add', title: 'Nuovo evento', meta: 'Scegli il tipo, poi il modulo' },
+        { href: ADMIN + 'events/add/', icon: 'note_add', title: 'Nuovo evento', meta: 'Scegli il tipo, poi il modulo' },
       ],
       /* Luoghi e gruppi hanno lo stesso editor — cambia solo lo schema, che si
        * sceglie dall'@id — e lo stesso backend. L'IMPORTATORE è un'altra cosa:

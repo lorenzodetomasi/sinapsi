@@ -596,7 +596,7 @@ function meetoo_url_crea($tipo = 'events'){
 	if($tipo !== 'events'){
 		return '';
 	}
-	return rtrim(ws_root_url(), '/').'/ws-admin/events/nuovo/';
+	return rtrim(ws_root_url(), '/').'/ws-admin/events/add/';
 }
 
 /**
