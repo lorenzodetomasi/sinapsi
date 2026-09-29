@@ -1,23 +1,21 @@
 <?php
 /*
- * Aggiungi un evento — la domanda che viene PRIMA del modulo.
+ * Add an event - the question that comes BEFORE the form.
  *
- * Il modulo degli eventi è uno solo e sa fare tutto, ed è per questo che si apre
- * sempre uguale: mille campi, nessuno compilato, e chi arriva deve capire da sé
- * quali riguardano il suo caso. Qui si chiede l'unica cosa che il modulo non può
- * indovinare — che TIPO di cosa stai per scrivere — e da lì in poi il modulo
- * arriva già impostato.
+ * The events form is one and can do everything, which is why it opens the same
+ * for everyone: here the one thing it cannot guess is asked - what SHAPE in
+ * time the thing has - and the form arrives already set, showing only what that
+ * shape needs (ws-admin/edit-src/src/forma.js).
  *
- * Tre risposte, e la differenza fra loro non è di comodità ma di modello:
- *   - un appuntamento singolo è un `Event`;
- *   - una giornata a blocchi è ANCORA un `Event`, con un programma dentro
- *     (`subEvent` in linea) — non una collezione, anche se «sono tre cose»;
- *   - una rassegna che si ripete è un `EventSeries`, e le sue occorrenze sono
- *     eventi veri con un indirizzo ciascuno.
- * Sbagliare questa scelta non è un fastidio: cambia l'@id e quindi l'indirizzo, e
- * a quel punto non si torna indietro senza rompere i collegamenti. Per questo la
- * domanda si fa prima, in chiaro, invece di lasciarla dedurre da un menu dentro
- * al modulo.
+ * Six shapes in one list, the most frequent first (29 Sep 2026):
+ *   - one appointment: an `Event`;
+ *   - several meetings, each its own: a container, an `EventSeries` whose
+ *     occurrences are events with a page each;
+ *   - days in a row, the same event in several dates, every week always the
+ *     same: an `EventSeries` in ONE file, its dates in eventSchedule;
+ *   - a day with several appointments: STILL an `Event`, with its programme
+ *     inside (`subEvent` without pages).
+ * The shape decides the @id, and so the address: asked first, in plain words.
  *
  * Questo file è ANCHE il suo piccolo endpoint JSON (POST):
  *   action=auth → identità, ruolo e se questa persona può creare
@@ -105,14 +103,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       border-radius: 999px; padding: 2px 8px;
     }
 
-    /* Le varianti compaiono solo dentro la carta scelta: finché non hai deciso di
-       che cosa parliamo, chiederti come si ripete è rumore. */
-    .varianti { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-line); }
-    .tipo-card[aria-pressed="true"] .varianti { display: block; }
-    .variante { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; cursor: pointer; }
-    .variante input { margin-top: 4px; accent-color: var(--color-link); }
-    .variante .v-nome { font-weight: 600; }
-    .variante .v-esempio { margin: 2px 0 0; color: var(--color-hint); font-size: .9375rem; }
 
     .nota-duplica {
       display: flex; align-items: flex-start; gap: 10px;
@@ -156,86 +146,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         vive nel sito — e cambia il suo indirizzo, quindi conviene sceglierla adesso
         e non dopo.</p>
 
+      <!-- The six shapes, the most frequent first (29 Sep 2026; ws-admin/edit-src/src/forma.js).
+           The value goes to the editor as ?tipo=, and the form comes already set. -->
       <div class="tipi">
         <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="singolo">
           <div class="tipo-testa">
             <span class="material-symbols-outlined">calendar_today</span>
             <div>
-              <div class="tipo-nome">Un evento singolo</div>
-              <p class="tipo-desc">Un appuntamento con la sua data e il suo luogo.</p>
+              <div class="tipo-nome">Un appuntamento</div>
+              <p class="tipo-desc">Una data, un luogo: comincia, dura, finisce.</p>
               <p class="tipo-esempio">Una presentazione, un concerto, una passeggiata.</p>
             </div>
           </div>
-          <div class="varianti">
-            <label class="variante">
-              <input type="radio" name="v-singolo" value="singolo" checked>
-              <span>
-                <span class="v-nome">Una data</span>
-                <p class="v-esempio">Comincia, dura, finisce.</p>
-              </span>
-            </label>
-            <label class="variante">
-              <input type="radio" name="v-singolo" value="repliche">
-              <span>
-                <span class="v-nome">Più date, stesso evento</span>
-                <p class="v-esempio">Le repliche di uno spettacolo: il 29 e il 30 ottobre, alle
-                  17.30 e alle 19.30. Una pagina sola, con tutte le date.</p>
-              </span>
-            </label>
-            <label class="variante">
-              <input type="radio" name="v-singolo" value="regola">
-              <span>
-                <span class="v-nome">Si ripete con regolarità</span>
-                <p class="v-esempio">Un laboratorio ogni lunedì da settembre a giugno. Le date
-                  le calcola il sito; scrivi solo le eccezioni.</p>
-              </span>
-            </label>
-            <label class="variante">
-              <input type="radio" name="v-singolo" value="periodo">
-              <span>
-                <span class="v-nome">Da un giorno a un altro</span>
-                <p class="v-esempio">Una mostra, un festival, un laboratorio di una settimana —
-                  con gli orari di apertura, se ci sono.</p>
-              </span>
-            </label>
-            <label class="variante">
-              <input type="radio" name="v-singolo" value="giornata">
-              <span>
-                <span class="v-nome">In un giorno solo, ma a blocchi</span>
-                <p class="v-esempio">Tre conferenze in orari diversi, o una giornata con
-                  laboratori a fasce. Resta un evento solo, con dentro il suo programma.</p>
-              </span>
-            </label>
-          </div>
         </div>
 
-        <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="serie">
+        <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="incontri">
           <div class="tipo-testa">
             <span class="material-symbols-outlined">collections_bookmark</span>
             <div>
-              <div class="tipo-nome">Una collezione di eventi</div>
-              <p class="tipo-desc">Più appuntamenti che stanno insieme, ognuno con la sua pagina.</p>
-              <p class="tipo-esempio">Il club del libro di ogni mese, dove ogni incontro ha il suo libro.
-                (Se sono solo repliche della stessa cosa, basta un evento con più date.)</p>
+              <div class="tipo-nome">Più incontri, ognuno diverso</div>
+              <p class="tipo-desc">Appuntamenti che stanno insieme, ognuno con i suoi contenuti e la sua pagina.</p>
+              <p class="tipo-esempio">Un corso con la lezione 1, la lezione 2…; il libro del mese, con un libro diverso a ogni incontro.</p>
             </div>
           </div>
-          <div class="varianti">
-            <label class="variante">
-              <input type="radio" name="v-serie" value="serie-regolare" checked>
-              <span>
-                <span class="v-nome">Con una ricorrenza</span>
-                <p class="v-esempio">Ogni giovedì, il primo sabato del mese: la ricorrenza
-                  propone le date, e ogni occorrenza diventa una pagina che eredita dalla collezione.</p>
-              </span>
-            </label>
-            <label class="variante">
-              <input type="radio" name="v-serie" value="serie-variabile">
-              <span>
-                <span class="v-nome">Con date decise volta per volta</span>
-                <p class="v-esempio">Tre giovedì fra ottobre e dicembre, senza un ritmo fisso.
-                  Le aggiungi tu; per ognuna «Crea bozza» fa la sua cartella.</p>
-              </span>
-            </label>
+        </div>
+
+        <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="periodo">
+          <div class="tipo-testa">
+            <span class="material-symbols-outlined">date_range</span>
+            <div>
+              <div class="tipo-nome">Più giorni di fila</div>
+              <p class="tipo-desc">Da un giorno a un altro, con gli orari di apertura se ci sono. Una pagina sola.</p>
+              <p class="tipo-esempio">Una mostra, un festival, un laboratorio di una settimana.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="repliche">
+          <div class="tipo-testa">
+            <span class="material-symbols-outlined">event_repeat</span>
+            <div>
+              <div class="tipo-nome">Lo stesso evento in più date</div>
+              <p class="tipo-desc">Le repliche: stesso contenuto, date diverse. Una pagina sola, con tutte le date.</p>
+              <p class="tipo-esempio">Uno spettacolo il 29 e il 30 ottobre, alle 17.30 e alle 19.30.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="regola">
+          <div class="tipo-testa">
+            <span class="material-symbols-outlined">update</span>
+            <div>
+              <div class="tipo-nome">Ogni settimana o ogni mese, sempre uguale</div>
+              <p class="tipo-desc">Si ripete con regolarità e ogni volta è la stessa cosa: le date le calcola il sito, tu scrivi solo le eccezioni. Una pagina sola.</p>
+              <p class="tipo-esempio">Un laboratorio ogni lunedì da settembre a giugno.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tipo-card" role="button" tabindex="0" aria-pressed="false" data-tipo="giornata">
+          <div class="tipo-testa">
+            <span class="material-symbols-outlined">view_timeline</span>
+            <div>
+              <div class="tipo-nome">Una giornata con più appuntamenti</div>
+              <p class="tipo-desc">Un giorno solo, a blocchi: resta un evento, con dentro il suo programma.</p>
+              <p class="tipo-esempio">Un convegno con tre interventi, una giornata di laboratori a fasce.</p>
+            </div>
           </div>
         </div>
 
@@ -284,13 +260,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .then((r) => r.json().then((j) => ({ status: r.status, body: j }), () => ({ status: r.status, body: {} })));
     }
 
-    /* La scelta: la carta dice DI CHE COSA parliamo, la variante COME. Il valore
-     * che passa all'editor è quello della variante, perché è lui che porta
-     * l'informazione completa. */
+    // The chosen shape: its value goes to the editor as ?tipo=.
     function valore() {
-      if (!scelto) return '';
-      const r = scelto.querySelector('input[type="radio"]:checked');
-      return r ? r.value : (scelto.dataset.tipo || '');
+      return scelto ? (scelto.dataset.tipo || '') : '';
     }
 
     function aggiorna() {
@@ -309,10 +281,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scegli(); }
       });
-      // Cliccare una variante sceglie anche la carta: sono lo stesso gesto.
-      card.querySelectorAll('input[type="radio"]').forEach((r) => {
-        r.addEventListener('change', () => { scegli(); aggiorna(); });
-      });
+      // A double click chooses and goes on: one gesture for who knows already.
+      card.addEventListener('dblclick', () => { scegli(); document.getElementById('avanti').click(); });
     });
 
     document.getElementById('annulla').addEventListener('click', () => { location.href = ELENCO; });

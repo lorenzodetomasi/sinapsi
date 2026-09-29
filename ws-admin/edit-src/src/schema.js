@@ -1,3 +1,4 @@
+import { FORME } from './forma.js';
 // JSON Schema (dati) — copertura COMPLETA di index.json.
 // I campi rich-text usano "format": "xhtml" (renderer custom).
 // Tendine con etichetta (title) distinta dal valore salvato (const): JSON Forms
@@ -122,6 +123,8 @@ export const schema = {
       },
     },
     primaryType: { type: 'string', title: 'Tipo di evento', default: 'Event', oneOf: PRIMARY_TYPE },
+    // The shape in time (forma.js): it sets primaryType and «Quando».
+    forma: { type: 'string', title: 'Forma', default: 'singolo', oneOf: FORME },
     types: { type: 'array', title: 'Macrocategorie', items: { type: 'string' } },
     additionalType: { type: 'array', title: 'additionalType', format: 'tags', items: { type: 'string' } },
     keywords: { type: 'array', title: 'Keywords', format: 'tags', items: { type: 'string' } },
@@ -341,7 +344,9 @@ export const uischema = {
         {
           type: 'HorizontalLayout',
           elements: [
-            ctrl('#/properties/primaryType', { options: { icon: 'event' } }),
+            // The shape (forma.js), not the bare type: choosing it sets the type
+            // and «Quando», and the form shows only what that shape needs.
+            ctrl('#/properties/forma', { options: { icon: 'event' } }),
             // Serie contenitrice accanto al tipo, solo per gli eventi non-serie (Evento singolo)
             ctrl('#/properties/superEvent', { options: { icon: 'account_tree', serie: true }, rule: showIfNotSeries }),
           ],
@@ -483,10 +488,11 @@ export const uischema = {
     },
     ctrl('#/properties/organizer', { label: 'Organizzatori', options: { icon: 'groups', variant: 'row' } }),
     // Single → programma interno; Series → occorrenze (link @id)
+    // The programme of the day: only for «Una giornata con più appuntamenti».
     ctrl('#/properties/subEvent', {
-      label: 'Programma dell’evento',
+      label: 'Programma della giornata',
       options: { icon: 'event', variant: 'stack' },
-      rule: showIfNotSeries,
+      rule: { effect: 'SHOW', condition: { scope: '#/properties/forma', schema: { const: 'giornata' } } },
     }),
     ctrl('#/properties/occurrences', {
       label: 'Occorrenze',

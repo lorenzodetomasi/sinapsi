@@ -102,23 +102,27 @@ if (!function_exists('event_inherit')) {
      * Not every EventSeries is one (decided on 29 Sep 2026): the same show in
      * several dates, a festival from… to…, a workshop every Monday that is
      * always the same are EventSeries too, but in ONE file, with their dates
-     * in their own eventSchedule. They are shown and treated as an event: an
-     * event page, the lists at their next date, one takes part in them.
+     * in the file itself. They are shown and treated as an event: an event
+     * page, the lists at their next date, one takes part in them.
      *
      *   container = EventSeries with occurrences (subEvent), or a strand, or
-     *               with no dates of its own (a series still to be filled).
+     *               one that says so (meetoo:container - the editor writes it
+     *               on a collection still without occurrences).
+     *
+     * Said by the data and not guessed from the dates: a container may have
+     * a rule and a first and last day too.
      */
     function event_is_container(array $e): bool {
         if (!event_is_series($e)) return false;
-        if (!empty($e['meetoo:strand']) || !empty($e['subEvent'])) return true;
-        // One Schedule written as an object, or a list of them.
-        $orari = $e['eventSchedule'] ?? [];
-        if (is_array($orari) && !array_is_list($orari)) $orari = [$orari];
-        foreach ((array)$orari as $s) {
-            // Opening hours are not dates: a place's, not an appointment's.
-            if (is_array($s) && ($s['meetoo:kind'] ?? '') !== 'opening-hours') return false;
+        if (!empty($e['meetoo:strand']) || !empty($e['meetoo:container'])) return true;
+        // Occurrences are events with a page of their own: an @id. Rows without
+        // one are the programme of a day (09:30 opening, 10:00 first talk…).
+        foreach ((array)($e['subEvent'] ?? []) as $k => $s) {
+            if (is_array($s) && !empty($s['@id'])) return true;
+            if (is_string($s) && $s !== '') return true;
+            if ($k === '@id') return true;   // one reference written as an object
         }
-        return true;
+        return false;
     }
 
     /**

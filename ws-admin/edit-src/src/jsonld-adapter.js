@@ -1,5 +1,6 @@
 import { conOffset, senzaOffset, fusoPer } from './quando.js';
 import { quandoDa, quandoPer, QUANDO_VUOTO, giornoDi, oraDi as oraIso } from './quandoModello.js';
+import { formaDi } from './forma.js';
 
 // Adapter tra il modello "piatto" del form e la forma JSON-LD reale (index.json).
 // Tutte le chiavi @-prefissate, i @type (anche array) e i namespace (meetoo:…)
@@ -33,6 +34,24 @@ const toEventRef = (id) => {
 // Tipi schema.org di RADICE derivati da meetoo:@type (non editabili tra i tag):
 // meetoo:EventSingle -> Event, meetoo:EventSeries -> EventSeries.
 const BASE_TYPES = ['Event', 'EventSeries'];
+
+/* A CONTAINER, the same rule as the server's (event_is_container in
+ * ws-admin/lib/event-inherit.php): an EventSeries with occurrences - events
+ * with an @id -, a strand, or one that says so (meetoo:container). In the form
+ * it is a «Collezione» (primaryType EventSeries: occurrences, no «Quando»).
+ *
+ * Every other EventSeries is a series in ONE file (29 Sep 2026): the same show
+ * in several dates, a period, a rule that is always the same. In the form it is
+ * an event with its «Quando», and it is written back as EventSeries. */
+export function eContenitore(doc) {
+  if (!asArray(doc?.['@type']).includes('EventSeries')) return false;
+  if (doc['meetoo:strand'] || doc['meetoo:container']) return true;
+  const sub = doc.subEvent;
+  if (sub && !Array.isArray(sub) && typeof sub === 'object') return !!sub['@id'];
+  return asArray(sub).some((s) => (typeof s === 'string' ? s !== '' : !!s?.['@id']));
+}
+// The «Quando» of an event that is a series in one file.
+const PIU_DATE = ['piu', 'regola', 'periodo'];
 
 // sameAs (schema.org) è un array di url. Il "social" nel form è solo un'etichetta
 // d'aiuto: al caricamento lo deduciamo dall'host, in uscita emettiamo solo gli url.
@@ -93,7 +112,8 @@ export function fromJsonLd(doc) {
   const loc = doc.location ?? {};
   const rating = doc.aggregateRating ?? {};
   const typeArr = asArray(doc['@type']);
-  const primaryType = typeArr.find((t) => BASE_TYPES.includes(t)) || 'Event';
+  // In the form a series in one file is an event (see eContenitore).
+  const primaryType = eContenitore(doc) ? 'EventSeries' : 'Event';
   const isSeries = primaryType === 'EventSeries';
   const subEventArr = doc.subEvent ?? [];
   // Capienze: il totale è presenza+remoto (o il valore salvato), i prenotati si
@@ -114,7 +134,7 @@ export function fromJsonLd(doc) {
     'bookedAttendeeCapacity',
     'remainingAttendeeCapacity',
   ].some((k) => Number(doc[k]) > 0);
-  return {
+  const out = {
     id: doc['@id'] ?? '',
     url: doc.url ?? '',
     sameAs: asArray(doc.sameAs)
@@ -242,6 +262,9 @@ export function fromJsonLd(doc) {
     contributor: (Array.isArray(doc.contributor) ? doc.contributor : (doc.contributor ? [doc.contributor] : []))
       .map((x) => (x && typeof x === 'object' ? String(x['@id'] ?? '') : String(x))).filter(Boolean),
   };
+  // Its shape in time (forma.js), read from what the form now holds.
+  out.forma = formaDi(out);
+  return out;
 }
 
 /**
@@ -291,7 +314,12 @@ export function toJsonLd(d) {
   const primaryType = d.primaryType === 'EventSeries' ? 'EventSeries' : 'Event';
   const isSeries = primaryType === 'EventSeries';
   const subtypes = (d.types ?? []).filter((t) => !BASE_TYPES.includes(t));
-  const typeArr = [primaryType, ...subtypes];
+  /* An event whose «Quando» has several dates, a rule or a period is a series
+   * in ONE file (29 Sep 2026): EventSeries, with its dates in eventSchedule.
+   * A «Collezione» is a container, and says so (meetoo:container), so that it
+   * stays one before its first occurrence exists. */
+  const inUnFile = !isSeries && PIU_DATE.includes(d.quando?.modo);
+  const typeArr = [isSeries || inUnFile ? 'EventSeries' : 'Event', ...subtypes];
   const types = typeArr.length === 1 ? typeArr[0] : typeArr;
 
   const addTypeArr = Array.isArray(d.additionalType) ? d.additionalType.filter(Boolean) : d.additionalType ? [d.additionalType] : [];
@@ -302,7 +330,9 @@ export function toJsonLd(d) {
   const fuso = fusoPer(d);
 
   // Nodi figli con i soli campi valorizzati (niente stringhe/valori vuoti).
-  const program = (d.subEvent ?? [])
+  // The programme is written only for «giornata»: a shape changed to another
+  // leaves its rows in the form, not in the file.
+  const program = (d.forma && d.forma !== 'giornata' ? [] : d.subEvent ?? [])
     .filter((s) => s.name || s.description || s.startDate || s.endDate)
     .map((s) => ({
       '@type': 'Event',
@@ -424,6 +454,7 @@ export function toJsonLd(d) {
     ...(d.url ? { url: d.url } : {}),
     ...(sameAs.length ? { sameAs } : {}),
     '@type': types,
+    ...(isSeries ? { 'meetoo:container': true } : {}),
     ...(additionalType ? { additionalType } : {}),
     ...(kw.length ? { keywords: kw } : {}),
     name: d.name ?? '',
@@ -497,11 +528,12 @@ export function docNuovo(tipo) {
     // Una riga di programma vuota: dice dove vanno i blocchi, senza compilarli.
     return { ...blankJsonLd, subEvent: [{ '@type': 'Event', name: '', startDate: '', endDate: '' }] };
   }
+  if (tipo === 'incontri' || tipo === 'serie-variabile') {
+    // A container from the start: it says so, having no occurrences yet.
+    return { ...blankJsonLd, '@type': 'EventSeries', 'meetoo:container': true };
+  }
   if (tipo === 'serie-regolare') {
-    return { ...blankJsonLd, '@type': 'EventSeries', eventSchedule: { '@type': 'Schedule', repeatFrequency: 'P1W' } };
+    return { ...blankJsonLd, '@type': 'EventSeries', 'meetoo:container': true, eventSchedule: { '@type': 'Schedule', repeatFrequency: 'P1W' } };
   }
-  if (tipo === 'serie-variabile') {
-    return { ...blankJsonLd, '@type': 'EventSeries' };
-  }
-  return blankJsonLd;   // «singolo», e qualunque cosa non riconosciamo
+  return blankJsonLd;   // «singolo», e le forme in un file: le fa «Quando»
 }

@@ -4,6 +4,7 @@ import { JsonForms } from '@jsonforms/react';
 import { vanillaRenderers, vanillaCells } from '@jsonforms/vanilla-renderers';
 import { schema, uischema } from './schema.js';
 import { fromJsonLd, toJsonLd, blankJsonLd, docNuovo, dedupeKeywords } from './jsonld-adapter.js';
+import { conForma, formaDaTipo } from './forma.js';
 import XhtmlRichTextRenderer, { xhtmlControlTester } from './XhtmlRichTextRenderer.jsx';
 import SeoDescrizioneRenderer, { seoDescrizioneTester } from './SeoDescrizioneRenderer.jsx';
 import LabeledEnumRenderer, { labeledEnumTester } from './LabeledEnumRenderer.jsx';
@@ -127,8 +128,12 @@ export default function App() {
    *    carried, the empty form included. */
   const dalForm = useCallback((istanza, nuovi) => {
     if (istanza !== nascitaRef.current) return;
-    const d = deriveCapacities(nuovi);
-    setData((prima) => (JSON.stringify(prima) === JSON.stringify(d) ? prima : d));
+    setData((prima) => {
+      // A new shape (forma.js) sets the type and «Quando» it needs.
+      const n = prima && nuovi?.forma && nuovi.forma !== prima.forma ? conForma(nuovi, nuovi.forma) : nuovi;
+      const d = deriveCapacities(n);
+      return JSON.stringify(prima) === JSON.stringify(d) ? prima : d;
+    });
   }, []);
   const [tab, setTab] = useState('form');
 
@@ -221,11 +226,10 @@ export default function App() {
     if (from) loadFromWeb(from, true);
     else if (id) loadFromWeb(id);
     else if (tipo) {
-      // The shape chosen before the form starts «Quando» in the right mode.
-      const d = fromJsonLd(docNuovo(tipo));
-      const modo = { repliche: 'piu', regola: 'regola', periodo: 'periodo' }[tipo];
-      if (modo) d.quando = { ...d.quando, modo };
-      caricaDati(deriveCapacities(d));
+      // The shape chosen before the form (forma.js): the type, «Quando» in the
+      // right mode, and only the sections that shape needs.
+      const forma = formaDaTipo(tipo);
+      caricaDati(deriveCapacities(conForma(fromJsonLd(docNuovo(forma)), forma)));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
