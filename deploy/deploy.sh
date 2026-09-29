@@ -37,6 +37,10 @@ while (( $# )); do
 done
 load_target "$target"
 cd "$REPO"
+# In line BEFORE reading where the server is: commits in a row start one run
+# each, and a run that chose its files while the one before was uploading
+# would upload the same files again.
+(( DRY )) || lock
 
 # Never on a server: tools, sources of the built editors, notes, the past.
 DEFAULT_EXCLUDE='^(\.gitignore|\.claude/|deploy/|archive/|ws-admin/edit-src/|ws-dev-router\.php$|LICENSE$)|\.md$'
@@ -80,7 +84,6 @@ if (( ${#uploads[@]} == 0 && ${#deletes[@]} == 0 && ! BUNDLES )); then
     exit 0
 fi
 
-lock
 tmp=$(mktemp -d)
 cmds=$(mktemp)
 cleanup() { rm -rf "$tmp" "$cmds"; rmdir "$STATE/$TARGET.lock" 2>/dev/null || true; }
