@@ -13,31 +13,31 @@ if($section_id === ''){
 ?>
 <section<?php if($section_id !== ''){ echo ' id="' . htmlspecialchars($section_id) . '"'; } ?>>
 	<h2 class="h1"><?php echo $section->name; ?></h2>
-	<ul class="grid-container">
+<?php
+/* THE LOGOS as the shared cards (css/cards.css, .cards-logos): square cells on
+ * white, two across and four from 960px, the grey of isotype on hover. A logo
+ * with a link is a link over the whole cell, named by the item - there is no
+ * text beside the image to name it. */
+?>
+	<ul class="cards cards-logos">
 <?php
 $itemListElements = $section->xpath($section->xpath);
 foreach ($itemListElements as $itemListElement) {
-	$url = $itemListElement->item->url[0];
 	$image = $itemListElement->xpath("item/figure[@type='logo']/image");
-	if(!empty($image)){
-		if(!empty($url)){
+	if(empty($image)){
+		continue;
+	}
+	$url = trim((string)($itemListElement->item->url[0] ?? ''));
+	$name = trim((string)($itemListElement->item->name ?? ''));
+	$media = get_media($image);
+	if($url !== ''){
 ?>
-		<li class="grid-cell"><a href="<?php echo $itemListElement->item->url[0]; ?>" alt="<?php echo $itemListElement->item->name; ?>">
-			<?php
-				echo get_media($image);
-			?>
-		</a></li>
+		<li class="card"><a class="card-link card-media" href="<?php echo htmlspecialchars($url); ?>" title="<?php echo htmlspecialchars($name); ?>" aria-label="<?php echo htmlspecialchars($name); ?>"><?php echo $media; ?></a></li>
 <?php
-		} else {
+	} else {
 ?>
-		<li class="grid-cell">
-			<?php
-				echo get_media($image);
-			?>
-		</li>
+		<li class="card"><div class="card-media"><?php echo $media; ?></div></li>
 <?php
-		}
-
 	}
 }
 ?>
