@@ -13,6 +13,9 @@
 #                                      it_IT/events/20261220T2100-IT00121-x
 #   deploy/contents.sh seed-prod       the whole folder -> meetoo.it, ONCE:
 #                                      it refuses if meetoo.it already has it
+#   deploy/contents.sh put-dev <path>  one file or folder -> isotype.org/meetoo,
+#                                      to look at it on the development copy
+#                                      before it goes to meetoo.it
 #   deploy/contents.sh pull-dev        isotype.org/meetoo -> this computer:
 #                                      before meetoo.it opens, the original is
 #                                      there (run it right before seed-prod)
@@ -90,18 +93,23 @@ push_dev() {
 }
 
 put_prod() {
+    put_one meetoo
+}
+
+put_one() {
+    local target=$1
     local rel=${ONE#/}
     rel=${rel#ws-custom/contents/meetoo/}
     [[ -n $rel && $rel != . && $rel != it_IT && $rel != it_IT/ ]] \
-        || die "put-prod wants one file or folder inside contents/meetoo, not all of it"
+        || die "put-prod and put-dev want one file or folder inside contents/meetoo, not all of it"
     [[ $rel != *..* ]] || die "no .. in the path"
     [[ -e $LOCAL/$rel ]] || die "$LOCAL/$rel does not exist"
     case "$(basename "$rel")" in
         rsvp.json|likes.json|reviews.xml) die "$rel is born on meetoo.it (what users do): it is never uploaded there" ;;
     esac
     [[ $rel != *_index* && $rel != users* && $rel != persons* && $rel != it_IT/users* && $rel != it_IT/persons* ]] \
-        || die "$rel is an index or a user's data: meetoo.it keeps its own"
-    load_target meetoo; lock
+        || die "$rel is an index or a user's data: each server keeps its own"
+    load_target "$target"; lock
     local c d; c=$(mktemp)
     d=$(dirname "$rel")
     echo "mkdir -p -f $(lq "$REMOTE/$d")" > "$c"
@@ -112,8 +120,14 @@ put_prod() {
     else
         echo "put -O $(lq "$REMOTE/$d") $(lq "$LOCAL/$rel")" >> "$c"
     fi
-    say "this computer -> meetoo.it: $rel"
+    say "this computer -> $HOST ($target): $rel"
     lftp_run "$c"; rm -f "$c"
+}
+
+# One piece to the development copy, to be looked at before put-prod. The
+# same guards as put-prod: no activity, no index, no user.
+put_dev() {
+    put_one isotype
 }
 
 seed_prod() {
@@ -141,6 +155,7 @@ case $cmd in
     push-dev) push_dev ;;
     sync-dev) pull; rmdir "$STATE/meetoo.lock" 2>/dev/null || true; push_dev ;;
     put-prod) put_prod ;;
+    put-dev) put_dev ;;
     seed-prod) seed_prod ;;
-    *) sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    *) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
 esac
