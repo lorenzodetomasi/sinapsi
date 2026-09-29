@@ -59,7 +59,10 @@ if($ws_content->mainContentOfPage){
 include_template('template-parts/offer-catalog');
 global $section;
 foreach ($ws_content->section as $section) {
-    if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
+    // A portfolio: works with their images, in the shared cards (template-parts/portfolio.php).
+    if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " portfolio ")]')) {
+		include_template('template-parts/portfolio', array('require_once' => false));
+    } else if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
 		include_template('template-parts/grid-1_1-image_gallery', array('require_once' => false));
     } else {
         ws_echo($section->innerHTML());

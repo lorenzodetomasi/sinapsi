@@ -40,7 +40,10 @@ if($ws_content->mainContentOfPage){
 <?php
 global $section;
 foreach ($ws_content->section as $section) {
-    if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
+    // A portfolio: works with their images, in the shared cards (template-parts/portfolio.php).
+    if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " portfolio ")]')) {
+		include_template('template-parts/portfolio', array('require_once' => false));
+    } else if ($section->xpath('self::*[contains(concat(" ", normalize-space(@class), " "), " grid ")]')) {
 		/* NOT require_once, which is include_template's default: this runs once
 		   per grid, and the second grid would find the file already included
 		   and silently get nothing. That is how the home showed the clients
