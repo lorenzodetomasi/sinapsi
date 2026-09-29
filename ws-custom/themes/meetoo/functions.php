@@ -67,7 +67,7 @@ if(!function_exists('meetoo_derivati_freschi')){
 		   voce nuova a ogni prima visita. Si' quelle dei CAP (`places/IT00121`),
 		   che contengono solo cartelle: un luogo nuovo si copia li' dentro. */
 		require_once ws_admin_abspath().'/lib/ws-content-folders.php';
-		$cartelle = array($base.'/events', $base.'/places', $base.'/organizations', $base.'/lists');
+		$cartelle = array($base.'/events', $base.'/places', $base.'/organizations', $base.'/lists', $base.'/pages');
 		foreach(glob($base.'/lists/*', GLOB_ONLYDIR) ?: array() as $d){
 			$cartelle[] = $d;   // a zone's lists folder: a new list is copied in there
 		}
@@ -78,7 +78,7 @@ if(!function_exists('meetoo_derivati_freschi')){
 		foreach($cartelle as $d){
 			$piu_nuovo = max($piu_nuovo, $quando($d));
 		}
-		foreach(array_merge(array('index'), ws_content_globs()) as $dove){
+		foreach(array_merge(array('index', 'pages/*'), ws_content_globs()) as $dove){
 			foreach(glob($base.'/'.$dove.'/index.json') ?: array() as $f){
 				$piu_nuovo = max($piu_nuovo, $quando($f));
 			}
@@ -786,7 +786,10 @@ function meetoo_titolo($wspath){
  * testo di un estraneo), oppure '' se non c'è niente da dire.
  */
 function meetoo_testo_visibile($e){
-	foreach(array('abstract', 'description') as $campo){
+	/* `text` first: the body of a page that is only text - the privacy notice,
+	 * the cookie policy (schema.org CreativeWork.text). Nothing else has it, so
+	 * for events, places and groups nothing changes. */
+	foreach(array('text', 'abstract', 'description') as $campo){
 		if(!empty($e->$campo)){
 			$html = trim($e->$campo->innerHTML());
 			if($html !== ''){
@@ -1069,6 +1072,10 @@ $GLOBALS['ws_html_attributes']['html']['class'][] = 'meetoo';
  * registra adesso e si applica al disegno.
  */
 add_filter('ws_nav_href', function($href, $item){
+	// A page of another site, written in full (<url>): no map of ours knows it.
+	if(preg_match('#^https?://#i', trim((string)($item->url ?? '')))){
+		return $href;
+	}
 	$contenuto = trim((string)$item->content);
 	if($contenuto !== ''){
 		$indirizzo = meetoo_indirizzo($contenuto);

@@ -245,6 +245,14 @@ if (!function_exists('ws_mappa_wspath')) {
             $percorso = $zonaSlug ? $dove($zonaSlug) : '';
             return [($percorso ? "/$percorso/gruppi/$slug" : "/gruppi/$slug"), 'organizer', 'Organization'];
         }
+        /* A PAGE of the site - pages/privacy - at the root of the site: /privacy.
+         * What it is (PrivacyPage, CookiesPage, DisclaimerPage…) it declares in
+         * additionalType, and that is its type in the map: the legal menu and
+         * ws_pageLink() look pages up by it, as on isotype. */
+        if (strpos($rel, 'pages/') === 0 && count(explode('/', trim($rel, '/'))) === 2) {
+            $altri = array_values(array_filter(array_map('strval', (array)($e['additionalType'] ?? []))));
+            return ["/$slug", 'page', $altri[0] ?? 'WebPage'];
+        }
         return null; // users, persons, brand, _index, _trash: non sono pagine
     }
 
@@ -295,7 +303,9 @@ if (!function_exists('ws_mappa_wspath')) {
     /** Tutte le entità con un index.json, come percorsi relativi al locale. */
     function ws_mappa_entita(string $localeDir): array {
         $out = [];
-        foreach (ws_content_globs() as $g) {
+        // The site's own pages (privacy, cookie…) are pages and nothing else:
+        // no list, index or picker has to know them, so they are only here.
+        foreach (array_merge(ws_content_globs(), ['pages/*']) as $g) {
             foreach (glob("$localeDir/$g/index.json") as $f) {
                 $out[] = trim(str_replace($localeDir, '', dirname($f)), '/');
             }
@@ -546,6 +556,11 @@ if (!function_exists('ws_mappa_wspath')) {
                 'description' => ws_mappa_meta_descrizione($e),
                 'dateModified' => (string)($doc['dateModified'] ?? $e['dateModified'] ?? date('c')),
             ];
+            /* The legal pages are for whoever looks for them, not for a search
+             * engine: isotype's say so too. */
+            if (in_array($tipo, ['PrivacyPage', 'CookiesPage', 'DisclaimerPage', 'TermsPage'], true)) {
+                $voci[count($voci) - 1]['robots'] = 'noindex, follow';
+            }
 
             /* The addresses it HAD: a site renamed when it changed postcode keeps
              * its former ids (place-history.php), and the page each of them had

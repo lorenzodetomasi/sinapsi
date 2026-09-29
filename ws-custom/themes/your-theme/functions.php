@@ -925,7 +925,14 @@ if(!function_exists('ws_nav_href')){
 	 * l'ordine non conta: e' la sola strada per cui un figlio decide davvero.
 	 */
 	function ws_nav_href($item){
-		$href = !empty($item->wspath) ? ws_href($item->wspath) : '';
+		/* A page of another site - Meetoo's legal menu points to isotype's
+		 * contacts - is written as a full address, <url>, and taken as it is. */
+		$url = trim((string)($item->url ?? ''));
+		if(preg_match('#^https?://#i', $url)){
+			$href = $url;
+		} else {
+			$href = !empty($item->wspath) ? ws_href($item->wspath) : '';
+		}
 		return apply_filters('ws_nav_href', $href, $item);
 	}
 }

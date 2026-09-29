@@ -118,16 +118,21 @@
 .mt-altri { grid-column: 1 / -1; display: flex; justify-content: center; padding: .5rem 0; }
 .mt-altri.caricando { opacity: .5; pointer-events: none; }
 
-/* Il piede: in fondo al contenuto, non incollato allo schermo. */
+/* The footer: at the end of the content, not stuck to the screen. Its parts
+   are isotype's (fiscal data, legal menu, credits); from 1000px the parent's
+   hgrid.css lays them out in two columns, as on isotype. */
 .mt-footer {
   max-width: 56rem; margin: 0 auto; padding: 2rem 1rem 3rem;
-  border-top: 1px solid var(--color-line); color: var(--color-hint);
-  display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: baseline;
+  color: var(--color-hint); font-size: .9rem;
 }
-.mt-footer-voci ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1rem; }
-.mt-footer-voci a { color: var(--color-link); text-decoration: none; }
-.mt-footer-voci a:hover { text-decoration: underline; }
-.mt-footer-firma { margin: 0; font-size: .9rem; }
+.mt-footer > * + * { margin-top: 1.5rem; }
+@media (min-width: 1000px) { .mt-footer > * + * { margin-top: 0; } }
+.mt-footer h3 { font-size: 1rem; margin: 0 0 .5rem; color: var(--color-heading); }
+.mt-footer p { margin: 0 0 .5rem; }
+.mt-footer ul { list-style: none; margin: 0; padding: 0; }
+.mt-footer li { margin: 0 0 .3rem; }
+.mt-footer a { color: var(--color-link); text-decoration: none; }
+.mt-footer a:hover { text-decoration: underline; }
 
 /* ---------- Gruppo verificato ----------
    Il segno sta accanto al nome, alla sua altezza, e non lo sovrasta: dice «dietro
