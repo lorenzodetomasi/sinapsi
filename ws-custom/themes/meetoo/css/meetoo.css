@@ -157,7 +157,7 @@ h3.sec-head .count { font-size: .75rem; border-width: 1px; }
 .card-date .y { font-size: .68rem; }
 .card-body {
   flex: 1 1 auto; min-width: 0; padding: 12px 12px 12px 2px;
-  display: flex; flex-direction: column; justify-content: center;
+  display: flex; flex-direction: column; justify-content: flex-start;
 }
 .card-title { font-family: var(--font-family1); font-weight: 600; font-size: 1.05rem; margin: 0 0 4px; overflow-wrap: anywhere; }
 a.card {
