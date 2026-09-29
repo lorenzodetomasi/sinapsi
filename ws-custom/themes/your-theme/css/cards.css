@@ -1,0 +1,382 @@
+/* ==========================================================================
+ * CARDS - one component for every site of this installation.
+ *
+ * A list of things, each one a card. The LIST says how they are laid out,
+ * with classes on its container; the CARD always has the same anatomy:
+ *
+ *   .cards.<variant>[.cols-N][.ratio-WxH]      ul, ol or div
+ *     .card                                    li, article or div - never a link
+ *       .card-media > img [+ img.card-media-alt]   an image; the second one
+ *                                              takes its place on hover
+ *       .card-date | .card-icon                the lead block, drawn by the site
+ *       .card-body
+ *         .card-title > a.card-link            the link: it covers the card
+ *         .card-meta > span…                   short facts
+ *         .card-text                           a description
+ *       .card-tools > .card-tool…              icon buttons stacked at the far
+ *                                              right: share, interest, edit
+ *       .card-actions > .card-act…             labelled buttons (the admin)
+ *       .card-arrow                            the arrow, when there are no tools
+ *
+ * The card is not a link because buttons cannot live inside one. It used to be
+ * a link with its buttons laid over it from outside; now the title's link
+ * stretches over the card (its ::after) and the buttons sit inside, above it.
+ *
+ * The variants:
+ *   .cards-list     one per line (the upcoming events) - the default
+ *   .cards-row      a grid, each card as tall as its content (Eventi | Gruppi |
+ *                   Luoghi, the categories, isotype's services)
+ *   .cards-squares  a strip of squares that scrolls sideways; a square's header
+ *                   and footer stay put and its body scrolls (the waterfront)
+ *   .cards-logos    square cells of logos on white (clients, awards)
+ *   .cards-gallery  images with their caption below (a portfolio of books)
+ *   .cards-mosaic   images edge to edge; on hover the second image and the
+ *                   title on a veil (a portfolio of projects)
+ *
+ * Columns and ratio are classes too: .cols-2 … .cols-6 is the most a line
+ * holds (fewer as the list narrows); .ratio-1x1, 4x3, 3x4, 3x2, 2x3, 16x9,
+ * 9x16, 5x4, 4x5 is the shape of the images.
+ * ========================================================================== */
+
+.cards {
+  --cards-gap: var(--gutter);
+  --cols: 1;
+  --card-ratio: 1;
+  container: cards / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cards-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.cards > .card { margin: 0; }
+
+/* ---------- The card ---------- */
+.card {
+  position: relative;
+  display: flex;
+  gap: var(--gutter);
+  align-items: stretch;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  background: var(--color-background-section1);
+  border: 1px solid var(--color-line);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  transition: border-color .15s, transform .15s;
+}
+.card:has(.card-link):hover { border-color: var(--color-link); transform: translateY(-1px); }
+.card:has(.card-link:focus-visible) { outline: 2px solid var(--color-link); outline-offset: 2px; }
+
+.card-link { color: inherit; text-decoration: none; }
+.card-link:focus-visible { outline: none; }
+.card-link::after { content: ""; position: absolute; inset: 0; z-index: 0; }
+/* What else can be clicked stays above the stretched link. */
+.card-tools, .card-actions, .card-meta a, .card-text a { position: relative; z-index: 1; }
+/* In the admin the card holds its own buttons, and a click beside them must not
+   open the page: there the link is the title alone. */
+.card:has(.card-actions) .card-link::after { content: none; }
+.card:has(.card-actions) .card-link:hover { text-decoration: underline; }
+
+.card:has(.card-link) .card-title,
+.card:has(.card-link) .card-arrow { color: var(--color-link); }
+
+.card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 12px 12px 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.card-title {
+  font-family: var(--font-family1);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0 0 4px;
+  overflow-wrap: anywhere;
+}
+.card-meta { display: flex; flex-wrap: wrap; gap: 4px var(--gutter); color: var(--color-hint); font-size: .85rem; }
+.card-meta span { display: inline-flex; align-items: center; gap: 4px; }
+.card-text {
+  margin: .35em 0 0;
+  font-size: .9rem;
+  line-height: 1.45;
+  color: var(--color-hint);
+}
+.card-arrow { flex: 0 0 auto; align-self: center; padding-right: 12px; color: var(--color-hint); display: flex; }
+
+/* ---------- Tools: share, interest, edit - stacked at the far right ---------- */
+.card-tools {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 8px;
+  font-size: .9rem;
+  line-height: 1;
+  color: var(--color-link);
+}
+.card-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: .3em;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1;
+}
+.card-tool:hover, .card-tool:focus-visible { background: var(--color-background-section2); }
+.card-tool .material-symbols-outlined { font-size: 1.35em; }
+/* Pressed: the icon fills (in Material Symbols the name stays the same). */
+.card-tool.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; color: var(--color1); }
+
+/* ---------- Actions: labelled buttons of the admin ---------- */
+.card-actions {
+  flex: 0 0 auto;
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 12px;
+}
+/* Wide: the content keeps two thirds, the actions the last third on two rows of
+   two. A FIXED width, not what is left: so the actions line up across cards. */
+@container cards (min-width: 48rem) {
+  .card-actions { flex: 0 0 33.333%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .card-actions .card-act { justify-content: center; }
+}
+/* Narrow: four buttons beside the text would leave the title a column one
+   letter wide. They go under it, full width, two per row. */
+@container cards (max-width: 47.9375rem) {
+  .card:has(.card-actions) { flex-wrap: wrap; row-gap: 0; }
+  .card:has(.card-actions) .card-body { flex: 1 1 0; padding: 12px; }
+  .card-actions {
+    flex: 1 1 100%;
+    order: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--color-line);
+  }
+  .card-actions .card-act { justify-content: center; }
+}
+.card-act {
+  /* For an <a> and a <button> alike: the background is declared, or a button
+     takes the filled one of the global rule and its text vanishes. Sizes in em,
+     so the same button serves the admin (0.85rem) and the squares, which size
+     it with their width. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35em;
+  padding: .4em .85em;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-link);
+  font-family: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.card-act:hover { border-color: var(--color-link); background: var(--color-background-section2); }
+.card-act .material-symbols-outlined { font-size: 1.25em; }
+.card-act.primary { background: var(--color-link); border-color: transparent; color: var(--color-text-neg); }
+.card-act.primary:hover { background: var(--color-link); filter: brightness(1.08); }
+.card-act.icon-only { padding: 0; width: 2em; height: 2em; }
+
+/* ---------- The grids: row, logos, gallery, mosaic ----------
+   Flex that wraps, not CSS grid: a card can read the width of its list (a
+   container query), a grid track cannot. Each card takes 1/--cols of the
+   line; --cols-max, set by the width of the list, lowers it. */
+.cards-row, .cards-logos, .cards-gallery, .cards-mosaic {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.cards-row > .card, .cards-logos > .card, .cards-gallery > .card, .cards-mosaic > .card {
+  --n: min(var(--cols), var(--cols-max, 12));
+  flex: 0 0 calc((100% - (var(--n) - 1) * var(--cards-gap)) / var(--n));
+  max-width: calc((100% - (var(--n) - 1) * var(--cards-gap)) / var(--n));
+}
+.cards-row { --cols: 3; }
+.cols-2 { --cols: 2; }
+.cols-3 { --cols: 3; }
+.cols-4 { --cols: 4; }
+.cols-5 { --cols: 5; }
+.cols-6 { --cols: 6; }
+@container cards (max-width: 47.9375rem) {
+  .cards-row > .card, .cards-gallery > .card { --cols-max: 2; }
+  .cards-mosaic > .card { --cols-max: 3; }
+}
+@container cards (max-width: 29.9375rem) {
+  .cards-row > .card, .cards-gallery > .card { --cols-max: 1; }
+  .cards-mosaic > .card { --cols-max: 2; }
+}
+
+.ratio-1x1 { --card-ratio: 1; }
+.ratio-4x3 { --card-ratio: 4 / 3; }
+.ratio-3x4 { --card-ratio: 3 / 4; }
+.ratio-3x2 { --card-ratio: 3 / 2; }
+.ratio-2x3 { --card-ratio: 2 / 3; }
+.ratio-16x9 { --card-ratio: 16 / 9; }
+.ratio-9x16 { --card-ratio: 9 / 16; }
+.ratio-5x4 { --card-ratio: 5 / 4; }
+.ratio-4x5 { --card-ratio: 4 / 5; }
+
+/* An image in its box, whatever the box. */
+.card-media { position: relative; overflow: hidden; background: var(--color-background-section2); }
+.card-media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card-media .card-media-alt { position: absolute; inset: 0; opacity: 0; transition: opacity .25s; }
+
+/* ---------- Logos: square cells on white ----------
+   WHITE ON PURPOSE, in both themes: the logos are drawn for a white ground and
+   vanish on a dark one. Two per line, four from 960px - the grid of isotype. */
+.cards-logos {
+  --cards-gap: 0px;
+  --cols: 4;
+  border: 1px solid var(--color-line, #e6e6e6);
+  background: #fff;
+}
+.cards-logos > .card {
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line, #e6e6e6);
+  border-radius: 0;
+  background: transparent;
+  transition: background-color .2s;
+}
+.cards-logos > .card:hover { background: #e6e6e6; transform: none; border-color: var(--color-line, #e6e6e6); }
+.cards-logos .card-media { position: absolute; inset: 0; background: transparent; }
+.cards-logos .card-media img { object-fit: contain; }
+@container cards (max-width: 59.8125rem) {
+  .cards-logos > .card { --cols-max: 2; }
+}
+
+/* ---------- Gallery: the image, and its caption below ---------- */
+.cards-gallery > .card {
+  flex-direction: column;
+  gap: .5rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+.cards-gallery > .card:hover { transform: none; }
+.cards-gallery .card-media { aspect-ratio: var(--card-ratio); }
+.cards-gallery .card-body { padding: 0; }
+.cards-gallery .card-title { margin: 0; font-size: 1rem; }
+.cards-gallery .card-meta { flex-direction: column; gap: 0; font-size: .85rem; }
+.cards-gallery > .card:hover .card-media img { transform: scale(1.02); }
+.cards-gallery .card-media img { transition: transform .3s; }
+
+/* ---------- Mosaic: images edge to edge, no caption ----------
+   On hover: the second image takes the place of the first, if there is one;
+   the title comes up on a veil, if there is one - over the second image when
+   there are both. Where there is no hover (a phone) the title stays at the
+   bottom of the image. */
+.cards-mosaic { --cards-gap: 0px; --cols: 4; }
+.cards-mosaic > .card {
+  aspect-ratio: var(--card-ratio);
+  border: 0;
+  border-radius: 0;
+  background: var(--color-background-section2);
+}
+.cards-mosaic > .card:hover { transform: none; }
+.cards-mosaic .card-media { position: absolute; inset: 0; }
+.cards-mosaic > .card:hover .card-media-alt,
+.cards-mosaic > .card:focus-within .card-media-alt { opacity: 1; }
+.cards-mosaic .card-body {
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gutter);
+  text-align: center;
+  background: rgba(0, 0, 0, .5);
+  color: #fff;
+  opacity: 0;
+  transition: opacity .25s;
+}
+.cards-mosaic .card-title, .cards-mosaic .card-link { color: #fff; }
+.cards-mosaic .card-meta { justify-content: center; color: rgba(255, 255, 255, .85); }
+.cards-mosaic > .card:hover .card-body,
+.cards-mosaic > .card:focus-within .card-body { opacity: 1; }
+@media (hover: none) {
+  .cards-mosaic .card-body {
+    opacity: 1;
+    justify-content: flex-end;
+    background: linear-gradient(to top, rgba(0, 0, 0, .6), transparent 55%);
+  }
+}
+
+/* ---------- Squares: a strip that scrolls sideways ----------
+   Each square keeps its header and footer, and its body scrolls. The size of
+   a square is --card-size (a width); what is inside is sized in cqw, so a
+   square looks the same at any size. */
+.cards-squares {
+  --card-size: min(20rem, 82%);
+  flex-direction: row;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  padding-bottom: 6px;
+}
+.cards-squares > .card {
+  flex: 0 0 var(--card-size);
+  aspect-ratio: 1;
+  flex-direction: column;
+  gap: 0;
+  scroll-snap-align: start;
+  container: card / inline-size;
+}
+.cards-squares > .card:hover { transform: none; }
+.card-header, .card-footer { flex: 0 0 auto; padding: 10px 12px; }
+.card-header { border-bottom: 1px solid var(--color-line); }
+.card-footer { border-top: 1px solid var(--color-line); position: relative; z-index: 1; }
+.card-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding: 10px 12px;
+  position: relative;
+  z-index: 1;
+}
+.card-scroll section + section { margin-top: .75em; padding-top: .75em; border-top: 1px solid var(--color-line); }
+
+/* ---------- A passing message at the bottom of the screen ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 88px;
+  z-index: 2000;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: var(--color-background-neg, #14213D);
+  color: var(--color-text-neg, #fff);
+  font-size: .85rem;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(12px);
+  transition: opacity .25s, transform .25s;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast .material-symbols-outlined { font-size: 1.1em; }

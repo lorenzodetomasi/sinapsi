@@ -145,6 +145,9 @@ ws_stile_se_esiste('status', 'all', 'css/status-abovethefold.css');
    above, and no site on this theme has ever served a favicon. A list is added
    to one item at a time. */
 $GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/all.css').'" />';
+/* The cards, in a sheet of their own: every site has lists of cards, and a
+   site that drops the above-the-fold sheets (Meetoo does) still needs them. */
+$GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/cards.css').'" />';
 $GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (max-width: 999px)" href="'.ws_asset('css/vgrid.css').'" />';
 $GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1000px)" href="'.ws_asset('css/hgrid.css').'" />';
 $GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="screen and (min-width: 1280px)" href="'.ws_asset('css/maxgrid.css').'" />';
@@ -466,6 +469,11 @@ $GLOBALS['ws_scripts']['bodyend']['ws_modal'] =
  * collegamenti e stanno nel markup, cosi' funzionano anche senza. */
 $GLOBALS['ws_scripts']['bodyend']['ws_share'] =
 	'<script defer="defer" src="'.ws_asset('js/share.js').'"></script>';
+
+/* The cards: their markup in the browser (the twin of template-parts/cards.php)
+ * and what their tools do - share, interest. Every site has lists of cards. */
+$GLOBALS['ws_scripts']['bodyend']['ws_cards'] =
+	'<script defer="defer" src="'.ws_asset('js/cards.js').'"></script>';
 
 /* Ed è acceso di suo, per tutti i siti. Era una scelta di Meetoo; ma
  * un'intestazione grande all'apertura e discreta durante la lettura non è un

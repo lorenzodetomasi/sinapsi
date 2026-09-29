@@ -1546,3 +1546,11 @@ msgstr "Esci"
 #: ../plugins/google-login/ws-index.php
 msgid "User"
 msgstr "Utente"
+
+#: ../themes/your-theme/template-parts/cards.php
+msgid "I am interested"
+msgstr "Mi interessa"
+
+#: ../themes/your-theme/template-parts/cards.php
+msgid "Edit"
+msgstr "Modifica"
