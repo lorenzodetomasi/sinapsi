@@ -92,7 +92,8 @@
 /* «Da dove comincio»: le quattro porte della zona, subito sotto la testata.
    Attaccata alla testata: fra le due non ci va uno stacco di sezione. */
 .mt-esplora { margin-top: 0; }
-.mt-esplora .grid { grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+/* As many across as there are doors, each at least 13rem: they share the line. */
+.mt-esplora .cards-row > .card { flex: 1 1 13rem; max-width: none; }
 
 /* Quello che ci sarà, ma non ancora: una card che NON è un collegamento, e si deve
    vedere che non lo è. Un riquadro che sembra cliccabile e non fa niente è peggio

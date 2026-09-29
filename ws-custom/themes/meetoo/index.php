@@ -78,7 +78,7 @@ include_template('template-parts/header');
 <?php $nota = meetoo_testo_visibile($zone); if($nota !== ''){ ?>
 					<div class="mt-corpo mt-nota"><?php ws_echo($nota); ?></div>
 <?php } ?>
-					<div class="grid">
+					<div class="cards cards-row">
 <?php
 foreach($zone->itemListElement as $voce){
 	// Un ListItem porta il riferimento dentro `item`; si accetta anche il

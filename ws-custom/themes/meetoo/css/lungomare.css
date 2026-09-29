@@ -420,7 +420,7 @@ body.mt-percorso .mt-raccolta-pagina { display: none; }
    FISSA insieme alla barra colorata — è l'identità della card; scorre solo ciò
    che viene dopo. */
 .wf-card .wf-name { flex: 0 0 auto; margin: 0; padding: 3cqw 4.5cqw 2.5cqw; background: var(--card-background); }
-.wf-card .wf-name .place-name { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--color1); font-size: 6cqw; line-height: 1.15; }
+.wf-card .wf-name .place-name { font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; color: var(--color1); font-size: 6cqw; line-height: 1.15; margin-block-start: 0; margin-block-end: 0; }
 
 /* CORPO SCROLLABILE = tutto il resto (descrizione, azioni, attività, immagine) */
 .wf-body { position: relative; flex: 1 1 auto; min-height: 0; display: flex; }
@@ -465,10 +465,12 @@ body.mt-percorso .mt-raccolta-pagina { display: none; }
 /* PIEDE FISSO card: share + like SEMPRE visibili + freccia scroll, su scrim NERO
    (light e dark) così le icone bianche si leggono su qualunque contenuto sottostante. */
 .wf-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; min-height: 15cqw; padding: 0 3cqw 1.5cqw; display: flex; align-items: flex-end; justify-content: flex-end; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,.2) 55%, transparent); pointer-events: none; }
-.wf-foot .card-social { pointer-events: auto; display: flex; gap: 3cqw; }
-.card-social button { border: none; background: transparent; color: #fff; cursor: pointer; padding: 0; line-height: 0; filter: drop-shadow(0 1px 3px rgba(0,0,0,.85)); }
-.card-social .material-symbols-outlined { font-size: 7cqw; }
-.card-social .fav.on { color: #ff5a7a; }
+/* The card's tools (your-theme/css/cards.css), here in a row, white on the scrim. */
+.wf-foot .card-tools { pointer-events: auto; flex-direction: row; gap: 3cqw; padding: 0; font-size: inherit; color: #fff; }
+.wf-foot .card-tool { padding: 0; line-height: 0; color: #fff; filter: drop-shadow(0 1px 3px rgba(0,0,0,.85)); }
+.wf-foot .card-tool:hover { background: transparent; }
+.wf-foot .card-tool .material-symbols-outlined { font-size: 7cqw; }
+.wf-foot .card-tool.on .material-symbols-outlined { color: #ff5a7a; }
 .wf-foot .scroll-arrow { position: absolute; left: 50%; bottom: 1.5cqw; transform: translateX(-50%); color: #fff; opacity: 0; transition: opacity .2s; }
 .wf-foot .scroll-arrow .material-symbols-outlined { font-size: 6.5cqw; animation: scrollhint-bob 1.5s ease-in-out infinite; }
 .scroll-more .wf-foot .scroll-arrow { opacity: 1; }

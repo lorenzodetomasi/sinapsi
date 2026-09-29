@@ -89,10 +89,13 @@
     var segnati;
     try { segnati = JSON.parse(localStorage.getItem('meetoo:favorites') || '[]'); } catch (err) { segnati = []; }
     if (!segnati.length) return;
-    var box = document.querySelectorAll('.card-social[data-social-kind="place"]');
+    var box = document.querySelectorAll('.card-tools[data-kind="place"]');
     Array.prototype.forEach.call(box, function (b) {
-      var cuore = b.querySelector('.fav');
-      if (cuore) cuore.classList.toggle('on', segnati.indexOf(b.getAttribute('data-social-id')) !== -1);
+      var segno = b.querySelector('[data-tool="interest"]');
+      if (!segno) return;
+      var acceso = segnati.indexOf(b.getAttribute('data-id')) !== -1;
+      segno.classList.toggle('on', acceso);
+      segno.setAttribute('aria-pressed', acceso ? 'true' : 'false');
     });
   }
 

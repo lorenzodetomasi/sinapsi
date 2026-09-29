@@ -71,7 +71,7 @@ if($testo !== ''){
 <?php if(count($figli)){ ?>
 				<section class="mt-sezione">
 					<h2 class="sec-head"><?php echo mt_icona('place'); ?><?php echo mt_esc($intestazione); ?></h2>
-					<div class="grid">
+					<div class="cards cards-row">
 <?php
 foreach($figli as $figlio){
 	$id = meetoo_riferimento_nodo($figlio);

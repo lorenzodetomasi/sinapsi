@@ -535,11 +535,20 @@ function meetoo_rel_corrente(){
  * amministratore vede tutto.
  */
 function meetoo_puo_modificare(){
+	return meetoo_puo_modificare_di(meetoo_rel_corrente());
+}
+
+/**
+ * The same question for any content: every card with a pen asks it. Only a
+ * signed-in visitor costs the reading of the file; everyone else is answered
+ * at once.
+ */
+function meetoo_puo_modificare_di($rel){
 	$utente = meetoo_utente();
 	if(!is_array($utente) or !function_exists('ws_can_edit')){
 		return false;
 	}
-	$doc = meetoo_contenuto(meetoo_rel_corrente());
+	$doc = meetoo_contenuto($rel);
 	if(!is_array($doc)){
 		return false;
 	}
@@ -601,21 +610,30 @@ function meetoo_url_crea($tipo = 'events'){
 }
 
 /**
- * Dove si va per modificare questo contenuto, '' se non c'è dove andare.
+ * Where one goes to edit the content $rel, '' if nowhere.
  *
- * Solo per ciò che un editor sa aprire per nome: oggi gli eventi, che l'editor
- * carica con `?id=`. Per i luoghi e le organizzazioni l'editor esiste ma si apre
- * vuoto, e una penna che porta a un modulo bianco promette una cosa e ne fa
- * un'altra — meglio nessuna penna finché non sa aprire la scheda giusta.
+ * Only what an editor opens by name, with `?id=`: events in the events editor,
+ * places and groups in the places editor (it used to open empty, and a pen
+ * leading to a blank form promises one thing and does another; it opens the
+ * record now). Asked by the page's pen and by every card's.
  */
-function meetoo_url_modifica(){
-	$rel = meetoo_rel_corrente();
-	if(strpos($rel, 'events/') !== 0){
-		return '';
-	}
-	// `ws_root_url()` NON finisce con la barra: senza questa, l'indirizzo diventava
+function meetoo_url_modifica_di($rel){
+	$rel = trim((string)$rel, '/');
+	// `ws_root_url()` does NOT end with a slash: without this the address was
 	// «https://www.isotype.orgws-admin/…».
-	return rtrim(ws_root_url(), '/').'/ws-admin/events/edit/?id='.rawurlencode($rel);
+	$admin = rtrim(ws_root_url(), '/').'/ws-admin/';
+	if(strpos($rel, 'events/') === 0){
+		return $admin.'events/edit/?id='.rawurlencode($rel);
+	}
+	if(strpos($rel, 'places/') === 0 or strpos($rel, 'organizations/') === 0){
+		return $admin.'places/edit/?id='.rawurlencode($rel);
+	}
+	return '';
+}
+
+/** The same, for what the page is showing. */
+function meetoo_url_modifica(){
+	return meetoo_url_modifica_di(meetoo_rel_corrente());
 }
 
 /**
@@ -1024,6 +1042,9 @@ $GLOBALS['ws_scripts']['bodyend']['meetoo_azioni'] = '<script defer="defer" src=
 // I gesti delle card — condividi, «mi interessa» — sono già scritti una volta
 // sola in `cards.js`, che li intercetta sul documento: valgono anche per le card
 // che arrivano dal server, senza doverle costruire in JavaScript.
+// The shared cards first (your-theme, js/cards.js): Meetoo's are built on them.
+// The parent registers the same key later; the place in the page stays this one.
+$GLOBALS['ws_scripts']['bodyend']['ws_cards'] = '<script defer="defer" src="'.ws_asset('js/cards.js').'"></script>';
 $GLOBALS['ws_scripts']['bodyend']['meetoo_carte'] = '<script defer="defer" src="'.ws_asset('cards.js').'"></script>';
 // Le liste lunghe che si allungano mentre si scorre.
 $GLOBALS['ws_scripts']['bodyend']['meetoo_liste'] = '<script defer="defer" src="'.ws_asset('js/lista.js').'"></script>';

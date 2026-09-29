@@ -1,17 +1,17 @@
 /* ===========================================================================
- * cards.js — template CONDIVISI delle card di Meetoo (come meetoo.css per gli stili).
+ * cards.js - Meetoo's cards in the browser (the twin of template-parts/carte.php).
  *
- * Una card si scrive in UN posto solo: qui. Le pagine passano i dati e ottengono
- * il markup, così ordine dei meta, badge di stato e struttura restano identici
- * ovunque (home, organizer, collection, collezioni di luoghi).
+ * The skeleton and the tools are the shared ones: your-theme/js/cards.js
+ * (WS.cards), drawn by your-theme/css/cards.css. Here only what is Meetoo's:
+ * the lead block (a date, an icon), the facts of an event or a place, and what
+ * "interest" means on Meetoo.
  *
- * Uso:  <script src="cards.js"></script>   (dopo/insieme a header.js)
- *   Meetoo.eventCard(ev, opts)   evento dall'indice → card con data a sinistra
- *   Meetoo.tileCard(opts)        card generica con icona (collezioni, gruppi, sezioni)
- *   Meetoo.placeCard(place)      luogo → card con tipo, indirizzo, voto
+ *   Meetoo.eventCard(ev, opts)   an event from the index, its date on the left
+ *   Meetoo.tileCard(opts)        a card with an icon (collections, groups, sections)
+ *   Meetoo.placeCard(place)      a place: type, address, rating
  *
- * Struttura comune (invariata fra i tipi):
- *   a.card > .card-date|.card-icon + .card-body(.card-title + .card-meta) + .card-arrow
+ *   .card > .card-date|.card-icon + .card-body(.card-title > a.card-link,
+ *           .card-meta) + .card-tools | .card-actions | .card-arrow
  * =========================================================================== */
 (function () {
   var MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
@@ -23,129 +23,74 @@
   }
   function icon(name) { return '<span class="material-symbols-outlined">' + esc(name) + '</span>'; }
   function metaItem(ico, text) { return '<span>' + (ico ? icon(ico) : '') + esc(text) + '</span>'; }
+  function C() { return window.WS && window.WS.cards; }
 
-  /* ---- Condividi + «mi interessa» ------------------------------------------
-   * La coppia di icone che il lungomare aveva in fondo alle sue card, ora per
-   * tutte. Il MARKUP è uno solo; cambia dove finisce il «mi interessa»:
-   *   kind 'event'  → sul server (meetoo:interestedIn), serve essere collegati;
-   *   kind 'place'  → nel browser di chi guarda (i luoghi non hanno ancora un
-   *                   registro pubblico dei preferiti).
-   * Il click è intercettato una volta sola, sul documento: le card si creano e
-   * si distruggono di continuo e attaccare un ascoltatore a ognuna è sprecato. */
-  var FAV_KEY = 'meetoo:favorites';   // la stessa che usava il lungomare: i preferiti già segnati restano
+  /* ---- Interest ------------------------------------------------------------
+   * The shared cards ask ('ws:card-interest'); Meetoo answers:
+   *   an event  -> on the server (meetoo:interestedIn): one has to be signed in;
+   *   a place   -> in the browser of whoever looks (places have no public
+   *                register of favourites yet), under the key the waterfront
+   *                has always used, so what was marked stays marked. */
+  var FAV_KEY = 'meetoo:favorites';
   function favSet() {
     try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch (e) { return new Set(); }
   }
   function favSalva(set) {
-    // Array.from, non slice: un Set non ha indici e slice restituirebbe [].
+    // Array.from, not slice: a Set has no indices and slice would give [].
     try { localStorage.setItem(FAV_KEY, JSON.stringify(Array.from(set))); } catch (e) {}
   }
-
-  // Messaggio passeggero in fondo allo schermo (stili in meetoo.css).
-  var toastTimer = 0;
-  function toast(msg, ico) {
-    var t = document.getElementById('mt-toast');
-    if (!t) { t = document.createElement('div'); t.id = 'mt-toast'; t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
-    t.innerHTML = icon(ico || 'check_circle') + esc(msg);
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 4000);
+  function toast(msg, ico) { if (C()) C().toast(msg, ico); }
+  function share(url, titolo) { if (C()) C().share(url, titolo); }
+  function segna(btn, acceso) {
+    btn.classList.toggle('on', !!acceso);
+    btn.setAttribute('aria-pressed', acceso ? 'true' : 'false');
   }
 
-  /* Condivide: sui telefoni apre il pannello di sistema (si può mandare a
-   * WhatsApp, ai messaggi…), altrove copia il link e lo dice. */
-  function share(url, titolo) {
-    url = url || location.href;
-    if (navigator.share) {
-      navigator.share({ title: titolo || document.title, url: url }).catch(function () {});
-      return;
-    }
-    var fatto = function () { toast('Link copiato negli appunti'); };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(fatto, function () { copiaAlVolo(url, fatto); });
-    } else copiaAlVolo(url, fatto);
-  }
-  function copiaAlVolo(testo, poi) {
-    var ta = document.createElement('textarea');
-    ta.value = testo; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;left:-9999px';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); poi(); } catch (e) {}
-    ta.remove();
-  }
-
-  /* Markup della coppia. `id` è ciò che si condivide e si segna: il percorso
-   * dell'evento o l'@id del luogo. `url` è dove porta la condivisione. */
-  function social(o) {
-    o = o || {};
-    var attivo = o.kind === 'event' ? false : favSet().has(o.id);
-    return '<div class="card-social" data-social-kind="' + esc(o.kind || 'place') + '" data-social-id="' + esc(o.id || '') + '"' +
-      (o.url ? ' data-social-url="' + esc(o.url) + '"' : '') + '>' +
-      '<button type="button" class="share" title="Condividi">' + icon('share') + '</button>' +
-      '<button type="button" class="fav' + (attivo ? ' on' : '') + '" title="Mi interessa">' + icon('favorite') + '</button>' +
-      '</div>';
-  }
-
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest && e.target.closest('.card-social button');
-    if (!btn) return;
-    var box = btn.closest('.card-social');
-    e.preventDefault(); e.stopPropagation();   // la card sotto è un link: non seguirlo
-    var id = box.getAttribute('data-social-id') || '';
-    if (btn.classList.contains('share')) {
-      var url = box.getAttribute('data-social-url');
-      share(url ? new URL(url, location.href).href : location.href);
-      return;
-    }
-    // «mi interessa»
-    var kind = box.getAttribute('data-social-kind');
-    var S = window.meetooSession;
-    if (kind === 'event' && S && S.getUser && S.getUser()) {
-      btn.classList.toggle('on');                       // risposta immediata
-      S.api('like', { path: id }).then(function (r) {
+  document.addEventListener('ws:card-interest', function (e) {
+    var d = e.detail || {};
+    var btn = d.button;
+    e.preventDefault();                                  // Meetoo answers
+    if (d.kind === 'event') {
+      var S = window.meetooSession;
+      if (!(S && S.getUser && S.getUser())) { toast('Accedi per segnare gli eventi che ti interessano.', 'info'); return; }
+      var prima = btn.classList.contains('on');
+      segna(btn, !prima);                                // at once; the server confirms
+      S.api('like', { path: d.id }).then(function (r) {
         var ok = r.status === 200 && r.body && typeof r.body.liked === 'boolean';
-        if (ok) btn.classList.toggle('on', r.body.liked);
-        else { btn.classList.toggle('on'); toast('Non sono riuscito a registrare il tuo interesse.', 'error'); }
+        if (ok) segna(btn, r.body.liked);
+        else { segna(btn, prima); toast('Non sono riuscito a registrare il tuo interesse.', 'error'); }
       });
       return;
     }
-    if (kind === 'event') { toast('Accedi per segnare gli eventi che ti interessano.', 'info'); return; }
     var set = favSet();
-    if (set.has(id)) set.delete(id); else set.add(id);
+    if (set.has(d.id)) set.delete(d.id); else set.add(d.id);
     favSalva(set);
-    btn.classList.toggle('on', set.has(id));
+    segna(btn, set.has(d.id));
   });
 
-  // Scheletro unico: cambia solo il "cappello" (data o icona) e la coda.
-  // Senza azioni la card È un link (freccia in coda); con opts.actions diventa un
-  // contenitore con più azioni (i link non si annidano dentro un altro link):
-  // il titolo resta cliccabile su href. Stessa struttura in entrambi i casi.
+  /* The tools of a card: share + interest ('social') and the pen ('edit'). */
+  function strumenti(o) {
+    var t = {};
+    if (o.social) {
+      t.share = o.social.url || true;
+      t.interest = { kind: o.social.kind || 'place', id: o.social.id || '', on: o.social.kind !== 'event' && favSet().has(o.social.id) };
+    }
+    if (o.edit) t.edit = o.edit;
+    return (t.share || t.edit) ? t : null;
+  }
+  function social(o) { return C() ? C().tools(strumenti({ social: o || {} }), (o && o.url) || '') : ''; }
+
+  // One skeleton: only the lead block (date or icon) and the tail change.
+  // With opts.actions (the admin) the card holds labelled buttons and its link
+  // is the title alone; otherwise the title's link covers the card.
   function card(href, head, title, metas, opts) {
     opts = opts || {};
-    var cls = 'card' + (opts.className ? ' ' + opts.className : '');
-    var attrs = opts.external ? ' target="_blank" rel="noopener"' : '';
-    var arrow = opts.external ? 'open_in_new' : 'arrow_forward';
-    var acts = opts.actions || null;
-    var titleHtml = (acts && href) ? '<a href="' + esc(href) + '"' + attrs + '>' + title + '</a>' : title;
-    var body = '<div class="card-body"><h3 class="card-title">' + titleHtml + '</h3>' +
-      (metas && metas.length ? '<div class="card-meta">' + metas.join('') + '</div>' : '') + '</div>';
-
-    // Condividi + «mi interessa»: i pulsanti NON possono stare dentro il link
-    // (un elemento cliccabile dentro un altro), quindi la card resta un link e
-    // la coppia gli sta accanto, in un contenitore che li sovrappone in coda.
-    var soc = opts.social ? social(opts.social) : '';
-
-    if (!acts) {
-      var link = '<a class="' + cls + '" href="' + esc(href) + '"' + attrs + '>' +
-        head + body + (soc ? '' : '<div class="card-arrow">' + icon(arrow) + '</div>') + '</a>';
-      return soc ? '<div class="card-holder">' + link + soc + '</div>' : link;
-    }
-    var tail = '<div class="card-actions">' + acts.map(function (a) {
-      return '<a class="card-act' + (a.primary ? ' primary' : '') + '" href="' + esc(a.href) + '"' +
-        (a.external ? ' target="_blank" rel="noopener"' : '') +
-        (a.title ? ' title="' + esc(a.title) + '"' : '') + '>' +
-        icon(a.icon) + '<span>' + esc(a.label) + '</span></a>';
-    }).join('') + '</div>';
-    return '<div class="' + cls + '">' + head + body + tail + soc + '</div>';
+    return C().card({
+      href: href, external: opts.external, className: opts.className,
+      head: head, title: title, meta: metas,
+      tools: opts.actions ? null : strumenti(opts),
+      actions: opts.actions || null
+    });
   }
 
   // Icona di chi organizza/anima: distingue un GRUPPO o un'organizzazione da

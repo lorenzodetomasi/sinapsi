@@ -23,7 +23,7 @@ include_template('template-parts/header');
 					<p><?php _e('L’indirizzo che hai aperto non corrisponde a niente: può essere cambiato, oppure non è mai esistito.'); ?></p>
 				</div>
 
-				<div class="cards" style="margin-top:1.5rem">
+				<div class="cards cards-list" style="margin-top:1.5rem">
 <?php
 include_template('template-parts/carte');
 echo mt_card_tile(array(

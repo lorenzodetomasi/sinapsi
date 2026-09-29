@@ -46,25 +46,25 @@ function meetoo_invito(){
 function meetoo_sezioni($ampio = false){
 	return array(
 		'eventi' => array(
-			'titolo' => __('Prossimi eventi'), 'icona' => 'event', 'lista' => 'cards',
+			'titolo' => __('Prossimi eventi'), 'icona' => 'event', 'lista' => 'cards cards-list',
 			'primi' => $ampio ? 12 : 6,
 			'vuoto' => __('Nessun evento in programma al momento.'),
 			'sommario' => __('Le cose da fare nei prossimi giorni'),
 		),
 		'gruppi' => array(
-			'titolo' => __('Gruppi'), 'icona' => 'groups', 'lista' => 'grid',
+			'titolo' => __('Gruppi'), 'icona' => 'groups', 'lista' => 'cards cards-row',
 			'primi' => $ampio ? 12 : 6,
 			'vuoto' => __('Nessun gruppo nell’indice.'),
 			'sommario' => __('Chi anima il territorio'),
 		),
 		'luoghi' => array(
-			'titolo' => __('Luoghi'), 'icona' => 'place', 'lista' => 'cards',
+			'titolo' => __('Luoghi'), 'icona' => 'place', 'lista' => 'cards cards-list',
 			'primi' => $ampio ? 12 : 8,
 			'vuoto' => __('Nessun luogo nell’indice.'),
 			'sommario' => __('Dove succedono le cose'),
 		),
 		'collezioni' => array(
-			'titolo' => __('Eventi ricorrenti'), 'icona' => 'collections_bookmark', 'lista' => 'grid',
+			'titolo' => __('Eventi ricorrenti'), 'icona' => 'collections_bookmark', 'lista' => 'cards cards-row',
 			'primi' => $ampio ? 12 : 6,
 			'vuoto' => __('Nessun appuntamento che si ripete.'),
 			'sommario' => __('Gli appuntamenti che si ripetono'),
@@ -78,13 +78,13 @@ function meetoo_sezioni($ampio = false){
 		 * Non vengono da un indice ma dal contenuto della pagina stessa, e sono
 		 * tante (il lungomare ne ha 61): stesso caricamento pigro degli altri. */
 		'raccolta' => array(
-			'titolo' => __('In questa raccolta'), 'icona' => 'list', 'lista' => 'cards',
+			'titolo' => __('In questa raccolta'), 'icona' => 'list', 'lista' => 'cards cards-list',
 			'primi' => 12,
 			'vuoto' => __('Questa raccolta è ancora vuota.').' '.meetoo_invito(),
 			'sommario' => __('Che cosa c’è dentro'),
 		),
 		'archivio' => array(
-			'titolo' => __('Archivio eventi passati'), 'icona' => 'history', 'lista' => 'cards',
+			'titolo' => __('Archivio eventi passati'), 'icona' => 'history', 'lista' => 'cards cards-list',
 			'primi' => 0, 'manuale' => true,
 			'vuoto' => __('Nessun evento passato.'),
 			'sommario' => __('Quello che è già successo'),
@@ -477,7 +477,7 @@ function meetoo_griglia_percorsi($id, $icona, $titolo, $percorsi){
 ?>
 				<section id="<?php echo mt_esc($id); ?>" class="mt-sezione">
 					<h2 class="sec-head"><?php echo mt_icona($icona); ?><?php echo mt_esc($titolo); ?></h2>
-					<div class="grid">
+					<div class="cards cards-row">
 <?php foreach($percorsi as $p){
 	if($p['href'] !== ''){
 		echo mt_card_tile(array(
@@ -801,7 +801,7 @@ function meetoo_sezione($quale, $cfg, $tutto, $titoloLink = '', $vediTutti = '')
 		}
 		$cfg = $tutte[$quale];
 	}
-	$cfg += array('titolo' => $quale, 'icona' => 'list', 'lista' => 'cards', 'primi' => 12, 'vuoto' => __('Niente da mostrare.'));
+	$cfg += array('titolo' => $quale, 'icona' => 'list', 'lista' => 'cards cards-list', 'primi' => 12, 'vuoto' => __('Niente da mostrare.'));
 	/* Il livello del titolo. Una sezione è normalmente un `h2`; dentro una parte di
 	 * raccolta è un `h3`, perché lì il titolo di rango due è il nome della parte —
 	 * e una gerarchia saltata la sente chi legge con lo schermo spento. */

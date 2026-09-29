@@ -1,21 +1,21 @@
 <?php
 /**
- * Le card di Meetoo, scritte dal server.
+ * Meetoo's cards, written by the server.
  *
- * È il gemello di `cards.js`: stesse classi, stesso ordine dei pezzi, stesso
- * markup — perché il vestito è già scritto in `meetoo.css` e non ha senso
- * inventarne un secondo. Il gemello in JavaScript resta dov'è: serve alle pagine
- * costruite nel browser, e ai gesti (condividi, «mi interessa») che restano suoi
- * anche qui, perché il click lo intercetta lui una volta sola sul documento.
+ * The skeleton is the shared one (your-theme: template-parts/cards.php, drawn
+ * by css/cards.css, with js/cards.js as its twin in the browser): here only
+ * what is Meetoo's - the lead block (a date, an icon), the facts of an event,
+ * who may edit what. Meetoo's own cards.js builds the same cards in the browser.
  *
- * Le liste lunghe non le costruisce il browser: quando servono altre card è
- * questo stesso file a scriverle, e il browser le incolla e basta (vedi
- * `zone.php`, la parte `?parte=`). Così il modello della card resta uno, e la
- * pagina che arriva da un motore di ricerca è già completa.
+ * Long lists are not built by the browser: when more cards are needed this
+ * same file writes them and the browser pastes them in (see `zone.php`, the
+ * `?parte=` part). So there is one model of the card, and the page a search
+ * engine gets is already complete.
  *
- * Struttura comune, identica a cards.js:
- *   a.card > .card-date|.card-icon + .card-body(.card-title + .card-meta) + .card-arrow
+ *   .card > .card-date|.card-icon + .card-body(.card-title > a.card-link,
+ *           .card-meta) + .card-tools | .card-arrow
  */
+include_template('template-parts/cards');
 
 if(!function_exists('mt_card')){
 
@@ -47,56 +47,51 @@ function mt_meta($icona, $testo){
 }
 
 /**
- * Condividi + «mi interessa».
+ * Share + interest, as the tools of a card (ws_card_tools()).
  *
- * I pulsanti non possono stare DENTRO il link della card (un elemento cliccabile
- * dentro un altro non si fa), quindi la card resta un link e la coppia gli sta
- * accanto, dentro un contenitore che li sovrappone in coda. Chi risponde al click
- * è `cards.js`; qui si scrive solo che cosa si condivide e che cosa si segna.
- *
- * Il cuore parte spento: quali luoghi siano già segnati lo sa il browser di chi
- * guarda (i preferiti dei luoghi stanno in `localStorage`), e lo accende
- * `js/lista.js` appena la pagina è in piedi.
+ * Who answers the click is js/cards.js, once for the whole document; interest
+ * is then Meetoo's to decide (cards.js of this theme): recorded on the server
+ * for an event, kept in the browser for a place. The bookmark starts off:
+ * which places are already kept only the browser knows, and `js/lista.js`
+ * lights them as soon as the page is up.
  */
 function mt_social($o){
-	$tipo = isset($o['kind']) ? $o['kind'] : 'place';
-	$id = isset($o['id']) ? $o['id'] : '';
-	$url = isset($o['url']) ? $o['url'] : '';
-	return '<div class="card-social" data-social-kind="'.mt_esc($tipo).'" data-social-id="'.mt_esc($id).'"'
-		.($url ? ' data-social-url="'.mt_esc($url).'"' : '').'>'
-		.'<button type="button" class="share" title="'.mt_esc(__('Condividi')).'">'.mt_icona('share').'</button>'
-		.'<button type="button" class="fav" title="'.mt_esc(__('Mi interessa')).'">'.mt_icona('favorite').'</button>'
-		.'</div>';
+	return ws_card_tools(mt_strumenti($o));
+}
+
+/** The tools of a card from Meetoo's options: 'social' and, if allowed, 'edit'. */
+function mt_strumenti($o){
+	$t = array();
+	if(!empty($o['kind']) or !empty($o['id'])){          // called with the social options themselves
+		$o = array('social' => $o);
+	}
+	if(!empty($o['social'])){
+		$s = $o['social'];
+		$t['share'] = !empty($s['url']) ? $s['url'] : true;
+		$t['interest'] = array('kind' => $s['kind'] ?? 'place', 'id' => $s['id'] ?? '');
+	}
+	if(!empty($o['edit'])){
+		$t['edit'] = $o['edit'];
+	}
+	return $t ?: null;
 }
 
 /**
- * Lo scheletro: cambia solo il «cappello» (una data o un'icona) e la coda.
+ * The skeleton: only the lead block (a date or an icon) and the tail change.
  *
- * `$titolo` arriva già HTML — perché può portarsi dietro un badge — e chi lo
- * passa lo scappa. Tutto il resto lo scappa questa funzione.
+ * `$titolo` comes as HTML - it may carry a badge - and whoever passes it
+ * escapes it. Everything else is escaped here.
  */
 function mt_card($href, $testa, $titolo, $meta = array(), $o = array()){
-	$classe = 'card'.(!empty($o['className']) ? ' '.$o['className'] : '');
-	$fuori = !empty($o['external']);
-	$attr = $fuori ? ' target="_blank" rel="noopener"' : '';
-	$freccia = $fuori ? 'open_in_new' : 'arrow_forward';
-	$meta = array_filter($meta);
-	$corpo = '<div class="card-body"><h3 class="card-title">'.$titolo.'</h3>'
-		.($meta ? '<div class="card-meta">'.implode('', $meta).'</div>' : '')
-		.'</div>';
-	$soc = !empty($o['social']) ? mt_social($o['social']) : '';
-	/* Senza indirizzo la card NON è un link: è una scheda. Capita nelle collezioni,
-	 * dove una voce può essere un posto che una pagina non ce l'ha (una fermata, un
-	 * varco). Mostrarla lo stesso è giusto — è informazione — ma farle finta di
-	 * essere cliccabile no. */
-	if(trim((string)$href) === ''){
-		return '<div class="'.$classe.' mt-scheda">'.$testa.$corpo.'</div>';
-	}
-	$link = '<a class="'.$classe.'" href="'.mt_esc($href).'"'.$attr.'>'
-		.$testa.$corpo
-		.($soc ? '' : '<div class="card-arrow">'.mt_icona($freccia).'</div>')
-		.'</a>';
-	return $soc ? '<div class="card-holder">'.$link.$soc.'</div>' : $link;
+	return ws_card(array(
+		'href' => $href,
+		'external' => !empty($o['external']),
+		'className' => $o['className'] ?? '',
+		'head' => $testa,
+		'title' => $titolo,
+		'meta' => $meta,
+		'tools' => mt_strumenti($o),
+	));
 }
 
 /**
@@ -329,6 +324,10 @@ function mt_card_evento($ev, $o = array()){
 		.mt_badge_stato(isset($ev['status']) ? $ev['status'] : '');
 	if(!isset($o['social']) or $o['social'] !== false){
 		$o['social'] = array('kind' => 'event', 'id' => $path, 'url' => $href);
+		// The pen, only for whoever may edit this event (the same rule as saving).
+		if(function_exists('meetoo_puo_modificare_di') and meetoo_puo_modificare_di($path)){
+			$o['edit'] = meetoo_url_modifica_di($path);
+		}
 	}
 	return mt_card($href, $testa, $titolo, $meta, $o);
 }

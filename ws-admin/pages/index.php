@@ -158,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
+  <link rel="stylesheet" href="../../ws-custom/themes/your-theme/css/cards.css">
   <link rel="stylesheet" href="../../ws-custom/themes/meetoo/css/meetoo.css">
   <style>
     /* Solo le specificità di questa pagina: i token stanno in meetoo.css. */
@@ -252,6 +253,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
   </div>
 
+  <script src="../../ws-custom/themes/your-theme/js/cards.js"></script>
   <script src="../../ws-custom/themes/meetoo/cards.js"></script>
   <script src="../../ws-custom/themes/meetoo/header.js"></script>
   <script>

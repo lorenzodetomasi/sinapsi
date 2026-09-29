@@ -130,99 +130,23 @@ h3.sec-head .count { font-size: .75rem; border-width: 1px; }
   min-width: 2em;
 }
 
-/* ---------- Card ---------- */
-.cards { display: flex; flex-direction: column; gap: var(--gutter); }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gutter); }
-
-.card {
-  display: flex; gap: var(--gutter); align-items: stretch;
-  text-decoration: none; color: inherit;
-  background: var(--color-background-section1); border: 1px solid var(--color-line);
-  border-radius: var(--border-radius); overflow: hidden;
-  transition: border-color .15s, transform .15s;
-}
-.card:hover { border-color: var(--color-link); transform: translateY(-1px); }
+/* ---------- Card ----------
+   The card itself - lists, anatomy, tools, actions, the passing message - is
+   the shared one: your-theme/css/cards.css. Here only what Meetoo adds: the
+   lead block, a date or an icon, on the left of the card. */
 .card-icon,
 .card-date {
   flex: 0 0 76px;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  background: var(--color-background-section2);  
+  background: var(--color-background-section2);
 }
-.card-date {
-  padding: 10px 8px; text-align: center;
-}
+.card-date { padding: 10px 8px; text-align: center; }
 .card-date .d { font-family: var(--font-family1); font-weight: 700; font-size: 1.5rem; line-height: 1; }
 .card-date .m { text-transform: uppercase; font-size: .72rem; letter-spacing: .04em; margin-top: 2px; }
 .card-date .y { font-size: .68rem; }
-.card-body {
-  flex: 1 1 auto; min-width: 0; padding: 12px 12px 12px 2px;
-  display: flex; flex-direction: column; justify-content: flex-start;
-}
-.card-title { font-family: var(--font-family1); font-weight: 600; font-size: 1.05rem; margin: 0 0 4px; overflow-wrap: anywhere; }
-a.card {
-
-}
-a.card .card-title,
-a.card .card-icon,
-a.card .card-date,
-a.card .card-arrow { color: var(--color-link); }
-.card-meta { display: flex; flex-wrap: wrap; gap: 4px var(--gutter); color: var(--color-hint); font-size: .85rem; }
-.card-meta span { display: inline-flex; align-items: center; gap: 4px; }
-.card-arrow { flex: 0 0 auto; align-self: center; padding-right: 12px; color: var(--color-hint); display: flex; }
-
-/* Azioni in coda alla card (pagine di gestione): prendono il posto della freccia.
-   Qui la card non è un link — lo sono il titolo e le singole azioni. */
-.card-actions {
-  flex: 0 0 auto; align-self: center;
-  display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 12px;
-}
-/* Schermi larghi: il contenuto tiene i due terzi, le azioni l'ultimo terzo su due
-   righe di due (Visualizza Modifica / Duplica Cestina). Larghezza FISSA, non "quel
-   che avanza": così le azioni sono incolonnate fra card diverse. */
-@media (min-width: 48rem) {
-  .card-actions {
-    flex: 0 0 33.333%;
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .card-actions .card-act { justify-content: center; }
-}
-
-/* Schermi stretti: le azioni NON stanno accanto al testo — quattro pulsanti che
-   non vanno a capo lascerebbero al titolo una colonna larga un carattere. Vanno
-   sotto, a tutta larghezza, due per riga. */
-@media (max-width: 47.9375rem) {
-  /* row-gap a 0: il gap della card serve fra le colonne, non fra le due righe
-     (lascerebbe una banda vuota sopra i pulsanti). */
-  .card { flex-wrap: wrap; row-gap: 0; }
-  .card-body { flex: 1 1 0; min-width: 0; padding: 12px; }
-  .card-actions {
-    flex: 1 1 100%; order: 1;          /* sempre in fondo, anche dopo la data */
-    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-    border-top: 1px solid var(--color-line);
-  }
-  .card-actions .card-act { justify-content: center; }
-}
-.card-act {
-  /* Vale sia per un <a> sia per un <button>: lo sfondo va dichiarato, altrimenti
-     un button eredita quello pieno della regola globale e il testo (dello stesso
-     colore) sparisce.
-     Tutte le misure sono in `em`: così LO STESSO pulsante serve le card di
-     gestione (0.85rem) e le card quadrate del lungomare, che sono proporzionali
-     alla propria larghezza e gli danno una misura in `cqw`. Chi lo usa decide
-     solo il font-size. */
-  background: transparent; font-family: inherit; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: .35em;
-  padding: .4em .85em; border: 1px solid var(--color-line); border-radius: 999px;
-  text-decoration: none; color: var(--color-link);
-  font-size: .85rem; font-weight: 600; white-space: nowrap;
-}
-.card-act:hover { border-color: var(--color-link); background: var(--color-background-section2); }
-.card-act .material-symbols-outlined { font-size: 1.25em; }
-.card-act.primary { background: var(--color-link); border-color: transparent; color: var(--color-text-neg); }
-.card-act.primary:hover { background: var(--color-link); filter: brightness(1.08); }
-/* Solo icona: quadrato, senza testo (Info, Mappa…). */
-.card-act.icon-only { padding: 0; width: 2em; height: 2em; }
+.card:has(.card-link) .card-icon,
+.card:has(.card-link) .card-date { color: var(--color-link); }
 
 /* Descrizione breve dentro una card: due righe, poi taglia. Nata nel lungomare,
    serve a qualunque card che riassuma un testo. */
@@ -244,38 +168,6 @@ a.card .card-arrow { color: var(--color-link); }
 .scroll-hint .material-symbols-outlined { animation: mt-bob 1.5s ease-in-out infinite; }
 @keyframes mt-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
 
-/* Condividi + «mi interessa»: la coppia di icone in fondo a una card, su una
-   velatura scura così restano leggibili sopra qualsiasi contenuto. */
-/* La card resta un LINK: la coppia gli sta accanto, non dentro (un pulsante
-   dentro un link non si può). .card-holder è quel contenitore. */
-.card-holder { position: relative; }
-.card-holder > .card { padding-right: 4.2em; }
-.card-holder > .card-social { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); }
-.card-social {
-  display: flex; align-items: center; gap: .6em;
-  font-size: .9rem; line-height: 1; color: var(--color-link);
-}
-.card-social button {
-  background: transparent; border: none; padding: .25em; cursor: pointer;
-  color: inherit; display: inline-flex; line-height: 1;
-}
-.card-social button:hover { filter: brightness(1.15); }
-.card-social .material-symbols-outlined { font-size: 1.35em; }
-/* Cuore pieno quando è attivo (in Material Symbols il nome dell'icona non cambia). */
-.card-social .fav.on .material-symbols-outlined { font-variation-settings: 'FILL' 1; color: var(--color1); }
-
-/* Messaggio passeggero in fondo allo schermo (es. «Link copiato»). */
-.toast {
-  position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%) translateY(12px); z-index: 2000;
-  background: var(--color-background-neg, #14213D); color: var(--color-text-neg, #fff);
-  padding: 11px 18px; border-radius: 999px; font-size: .85rem; font-weight: 600;
-  box-shadow: 0 6px 20px rgba(0,0,0,.35); opacity: 0; pointer-events: none;
-  transition: opacity .25s, transform .25s; display: inline-flex; align-items: center; gap: 8px;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast .material-symbols-outlined { font-size: 1.1em; }
-.card-title a { text-decoration: none; color: inherit; }
-.card-title a:hover { text-decoration: underline; }
 
 /* ---------- Cover 16:9 ----------
    Immagine di copertina 1920×1080 con sfumatura in basso e cuore: la usano la
