@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/event-inherit.php';   // event_is_container()
 /**
  * Normalizzazione di date, fusi e @id degli eventi.
  *
@@ -86,7 +87,8 @@ if (!function_exists('ws_quando_documento')) {
         $nome = $cartella;
 
         $tipi = (array)($e['@type'] ?? []);
-        $serie = in_array('EventSeries', $tipi, true);
+        // A container's folder has no date; a series in one file is named like an event.
+        $serie = event_is_container($e);
 
         // 1) L'@id segue la cartella.
         $atteso = ws_quando_id_atteso($nome);
@@ -269,7 +271,7 @@ if (!function_exists('ws_quando_rinomina')) {
             $doc = json_decode((string)file_get_contents($file), true);
             if (!is_array($doc)) { $problemi[] = "$nome: JSON illeggibile"; continue; }
             $e = (isset($doc['mainEntity']) && is_array($doc['mainEntity'])) ? $doc['mainEntity'] : $doc;
-            $serie = in_array('EventSeries', (array)($e['@type'] ?? []), true);
+            $serie = event_is_container($e);
 
             $perche = ws_quando_nome_regolare($nome, $serie);
             if ($perche === '') continue;

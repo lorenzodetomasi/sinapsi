@@ -94,6 +94,34 @@ if (!function_exists('event_inherit')) {
     }
 
     /**
+     * A CONTAINER: a series whose appointments are events of their own - a
+     * book club whose every meeting has its book, a day of talks - or a strand
+     * (rassegna). It has a collection page, and one takes part in its
+     * occurrences, not in it.
+     *
+     * Not every EventSeries is one (decided on 29 Sep 2026): the same show in
+     * several dates, a festival from… to…, a workshop every Monday that is
+     * always the same are EventSeries too, but in ONE file, with their dates
+     * in their own eventSchedule. They are shown and treated as an event: an
+     * event page, the lists at their next date, one takes part in them.
+     *
+     *   container = EventSeries with occurrences (subEvent), or a strand, or
+     *               with no dates of its own (a series still to be filled).
+     */
+    function event_is_container(array $e): bool {
+        if (!event_is_series($e)) return false;
+        if (!empty($e['meetoo:strand']) || !empty($e['subEvent'])) return true;
+        // One Schedule written as an object, or a list of them.
+        $orari = $e['eventSchedule'] ?? [];
+        if (is_array($orari) && !array_is_list($orari)) $orari = [$orari];
+        foreach ((array)$orari as $s) {
+            // Opening hours are not dates: a place's, not an appointment's.
+            if (is_array($s) && ($s['meetoo:kind'] ?? '') !== 'opening-hours') return false;
+        }
+        return true;
+    }
+
+    /**
      * A media path written by the series is relative to ITS folder
      * (media/cover.jpg): in the occurrence it must say where that folder is.
      * Paths already from the content root, and web addresses, stay as they are.

@@ -335,7 +335,10 @@ foreach(mt_lista($e, 'subEvent') as $s){
 	}
 }
 
-$serie = (stripos((string)($rewrite_rule->type ?? ''), 'eventseries') !== false);
+/* A container, read from the content (event_is_container): a series in ONE
+ * file - the same show in several dates - is an EventSeries in the map too,
+ * and here it is an event one takes part in. */
+$serie = event_is_container(meetoo_contenuto($rel) ?: array());
 
 /* PASSATO O NO: cambia che cosa si puo' fare. A un appuntamento di ieri non ci
  * si iscrive e non lo si mette in agenda; lo si puo' ancora ricordare, e

@@ -140,9 +140,11 @@ if (!function_exists('event_index_item')) {
         $cap = '';
         if (preg_match('/^\d{8}T\d{4}-([A-Za-z0-9]+)/', basename($relPath), $m)) $cap = $m[1];
 
-        // Natura: 'series' = collection (EventSeries), altrimenti 'single'.
+        // Kind: 'series' = a container (event_is_container: occurrences of its
+        // own, or a strand), otherwise 'single' - a series in ONE file too, the
+        // same show in several dates: it is listed at its next date, like an event.
         $typeArr = isset($doc['@type']) ? (is_array($doc['@type']) ? $doc['@type'] : [$doc['@type']]) : [];
-        $kind = in_array('EventSeries', $typeArr, true) ? 'series' : 'single';
+        $kind = event_is_container($doc) ? 'series' : 'single';
         // The series it inherits from (not a strand), and everything it belongs to:
         // its page lists it in each of them (see event-inherit.php).
         $collection = event_series_ref($doc);

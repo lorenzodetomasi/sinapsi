@@ -167,6 +167,9 @@ if (!function_exists('ws_mappa_wspath')) {
         $slug = ws_mappa_slug($rel);
         $lista = in_array('ItemList', $tipi, true);
         $serie = in_array('EventSeries', $tipi, true);
+        // A series in ONE file (replicas, a period, a rule) is an event with its
+        // dates: the event page. Only a container gets the collection page.
+        $contenitore = $serie && event_is_container($e + ['@type' => $tipi]);
         $zone = $ctx['zone'] ?? [];
         $cap = $ctx['cap'] ?? [];
 
@@ -185,7 +188,7 @@ if (!function_exists('ws_mappa_wspath')) {
             // Una collezione di eventi e un evento singolo vivono nello stesso
             // posto: per chi legge sono la stessa cosa, un appuntamento che si
             // ripete o no.
-            return ["$base/$slug", $serie ? 'collection' : 'event', $serie ? 'EventSeries' : 'Event'];
+            return ["$base/$slug", $contenitore ? 'collection' : 'event', $serie ? 'EventSeries' : 'Event'];
         }
 
         /* THE LISTS of a zone - lists/lido-di-ostia/bookcrossing - have the same

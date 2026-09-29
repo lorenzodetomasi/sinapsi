@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/event-inherit.php';   // event_is_container()
 // Cestino degli eventi: spostare, ripristinare, eliminare per sempre.
 //
 // Cestinare = SPOSTARE la cartella da events/<slug> a _trash/events/<slug>.
@@ -82,7 +83,7 @@ if (!function_exists('ws_trash_dir')) {
             'path' => $rel,                              // dove tornerà col ripristino
             'name' => (string)($doc['name'] ?? $slug),
             'startDate' => (string)($doc['startDate'] ?? ''),
-            'kind' => in_array('EventSeries', (array)($doc['@type'] ?? []), true) ? 'series' : 'single',
+            'kind' => event_is_container($doc) ? 'series' : 'single',
             'trashedAt' => date('c'),
             'trashedBy' => isset($user['uid']) ? 'users/' . $user['uid'] : '',
             'trashedByName' => (string)($user['name'] ?? $user['email'] ?? ''),

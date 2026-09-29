@@ -80,7 +80,10 @@ if (!is_file($eventFile)) fail(404, 'Evento non trovato.');
 $event = json_decode((string)@file_get_contents($eventFile), true);
 if (!is_array($event)) fail(500, 'Evento illeggibile.');
 $types = (array)($event['@type'] ?? []);
-$isSeries = in_array('EventSeries', $types, true);
+// A container is not attended: its occurrences are. A series in ONE file -
+// the same show in several dates - is attended like an event.
+require_once __DIR__ . '/../lib/event-inherit.php';
+$isSeries = event_is_container($event['mainEntity'] ?? $event);
 
 $rsvpFile = "$base/$relPath/rsvp.json";
 function load_rsvp(string $f, string $rel): array {
