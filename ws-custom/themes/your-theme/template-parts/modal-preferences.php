@@ -56,6 +56,19 @@ $lingua_corrente = isset($ws_locales['content']) ? explode('-', $ws_locales['con
 			<button type="button" class="pill" data-appearance="dark" aria-pressed="false"><span class="material-symbols-outlined">dark_mode</span><?php _e('Dark'); ?></button>
 		</section>
 
+<?php
+/* STATISTICS: whoever looks decides whether Google Analytics may count them.
+ * Only on a site that asks for consent (WS_ANALYTICS_CONSENT): the answer
+ * given in the banner is shown and changed here (js/consent.js). */
+if (defined('WS_ANALYTICS_CONSENT') && WS_ANALYTICS_CONSENT && defined('GTAG') && GTAG): ?>
+		<section id="statistics" role="group" aria-label="<?php _e('Statistics'); ?>">
+			<h4><?php _e('Statistics'); ?></h4>
+			<p class="small"><?php _e('Google Analytics counts the visits in aggregate, only with your consent.'); ?></p>
+			<button type="button" class="pill" data-consent-analytics="1" aria-pressed="false"><span class="material-symbols-outlined">check</span><?php _e('I accept'); ?></button>
+			<button type="button" class="pill" data-consent-analytics="0" aria-pressed="false"><span class="material-symbols-outlined">block</span><?php _e('I refuse'); ?></button>
+		</section>
+
+<?php endif; ?>
 <?php if ($piu_lingue): ?>
 		<section id="language" role="group" aria-label="<?php _e('Language'); ?>">
 			<h4><span class="material-symbols-outlined" aria-hidden="true">language</span><?php _e('Language'); ?></h4>

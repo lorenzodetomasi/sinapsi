@@ -1554,3 +1554,19 @@ msgstr "Mi interessa"
 #: ../themes/your-theme/template-parts/cards.php
 msgid "Edit"
 msgstr "Modifica"
+
+#: ../themes/your-theme/template-parts/modal-preferences.php
+msgid "Statistics"
+msgstr "Statistiche"
+
+#: ../themes/your-theme/template-parts/modal-preferences.php
+msgid "Google Analytics counts the visits in aggregate, only with your consent."
+msgstr "Google Analytics conta le visite in forma aggregata, solo con il tuo consenso."
+
+#: ../themes/your-theme/template-parts/modal-preferences.php
+msgid "I accept"
+msgstr "Accetto"
+
+#: ../themes/your-theme/template-parts/modal-preferences.php
+msgid "I refuse"
+msgstr "Rifiuto"

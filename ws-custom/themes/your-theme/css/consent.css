@@ -1,0 +1,31 @@
+/* ==========================================================================
+ * The banner of consent (js/consent.js): at the bottom of the screen until an
+ * answer is given. Two buttons of the same weight - refusing is as easy as
+ * accepting, as the Garante asks - and the cookie policy. Only on a site that
+ * asks for consent (WS_ANALYTICS_CONSENT); the colours are the site's tokens.
+ * ========================================================================== */
+#ws-consent {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 3000;
+  transform: translateX(-50%);
+  width: min(40rem, calc(100% - 32px));
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-background-section1, #fff);
+  color: var(--color-text, #222);
+  border: 1px solid var(--color-line, #ddd);
+  border-radius: var(--border-radius, 12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .25);
+  font-size: .9rem;
+  line-height: 1.45;
+}
+#ws-consent p { flex: 1 1 18rem; margin: 0; }
+#ws-consent a { color: var(--color-link); }
+.ws-consent-actions { display: flex; gap: .5rem; margin-left: auto; }
+#ws-consent .pill { cursor: pointer; }

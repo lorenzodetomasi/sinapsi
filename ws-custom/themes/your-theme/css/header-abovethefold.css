@@ -432,14 +432,14 @@ body:has(#drawer.open) {
   padding: 0;
   list-style: none; }
 
-#appearance, #language {
+#appearance, #language, #statistics {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .5rem;
   padding-bottom: 1rem; }
 
-#appearance h4, #language h4 {
+#appearance h4, #language h4, #statistics h4 {
     display: flex;
     align-items: center;
     gap: .35rem;
@@ -480,8 +480,9 @@ body:has(#drawer.open) {
   border-color: var(--color-link, #2e3192); }
 
 /* Quella scelta. `.scelto` la mette il JavaScript dell'aspetto; `aria-current`
-   e' il modo in cui l'HTML dice «sei qui», ed e' quello che usa la lingua. */
-.pill.scelto, .pill[aria-current] {
+   e' il modo in cui l'HTML dice «sei qui», ed e' quello che usa la lingua;
+   `aria-pressed` quello di un pulsante che resta premuto (le statistiche). */
+.pill.scelto, .pill[aria-current], .pill[aria-pressed="true"] {
   border-color: var(--color-link, #2e3192);
   color: var(--color-link, #2e3192);
   font-weight: 600; }

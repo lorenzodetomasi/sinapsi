@@ -112,8 +112,33 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>';
 // - Global site tag (gtag.js) - Google Analytics
 // Defined in ws-custom/ws-config.php
+/* A site that asks for consent first - WS_ANALYTICS_CONSENT in its own
+ * ws-config.php (contents/<site>/ws-config.php) - does not get the tag: an
+ * analytics cookie needs the consent BEFORE it is written (Garante, 10 June
+ * 2021). It gets what js/consent.js needs to ask, and to load the tag after a
+ * yes: the measurement id, the site's name and its cookie policy. */
 if(GTAG){
-  $GLOBALS['ws_scripts']['head']['js_gtag'] = GTAG;
+  if(defined('WS_ANALYTICS_CONSENT') and WS_ANALYTICS_CONSENT and preg_match('/\bG-[A-Z0-9]+\b/', GTAG, $ws_ga_id)){
+    $ws_consent_policy = '';
+    if(function_exists('ws_pageDOMElements') and !empty($GLOBALS['ws_contentmap'])){
+      $ws_cookie_page = ws_pageDOMElements('CookiesPage');
+      if(!empty($ws_cookie_page[0]->wspath)){
+        $ws_consent_policy = ws_href((string)$ws_cookie_page[0]->wspath);
+      }
+    }
+    $ws_consent_name = (!empty($GLOBALS['ws_headings']) and !empty($GLOBALS['ws_headings']->mainEntity->name))
+      ? trim(strip_tags((string)$GLOBALS['ws_headings']->mainEntity->name)) : '';
+    $GLOBALS['ws_scripts']['head']['js_consent'] = '<script>window.WS_CONSENT = '.json_encode(array(
+      'site' => ws_content_root(),
+      'name' => $ws_consent_name,
+      'ga' => $ws_ga_id[0],
+      'policy' => $ws_consent_policy,
+    ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG).';</script>';
+    $GLOBALS['ws_scripts']['bodyend']['ws_consent'] = '<script defer="defer" src="'.ws_asset('js/consent.js').'"></script>';
+    $GLOBALS['ws_links'][] = '<link rel="stylesheet" type="text/css" media="all" href="'.ws_asset('css/consent.css').'" />';
+  } else {
+    $GLOBALS['ws_scripts']['head']['js_gtag'] = GTAG;
+  }
 }
 // Stylesheets
 // 1. AboveTheFold
