@@ -47,7 +47,15 @@
     return SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/';
   }
   var RSVP_URL  = SITE_ROOT + 'ws-admin/events/rsvp.php';
-  var LOGO_URL  = SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/brand/media/logo-h.svg';
+  /* The site being managed says who it is (ws-admin/lib/ws-admin-chrome.php):
+   * its home on THIS server - /meetoo/ on isotype.org, / on meetoo.it - and its
+   * logo. Written by hand here, they led meetoo.it's Gestione to /meetoo/…,
+   * pages that do not exist there. */
+  function metaVal(nome) {
+    var m = document.querySelector('meta[name="' + nome + '"]');
+    return (m && m.getAttribute('content')) || '';
+  }
+  var LOGO_URL  = metaVal('ws:site-logo') || SITE_ROOT + 'ws-custom/contents/meetoo/it_IT/brand/media/logo-h.svg';
   var THEME_DIR = SITE_ROOT + 'ws-custom/themes/meetoo/';
   /* IL SITO, non i prototipi.
    *
@@ -61,7 +69,7 @@
    * `/eventi` — perché «gli eventi» in assoluto non sono una pagina: sono la
    * domanda «dove?» lasciata senza risposta. Finché la zona viva è una, il menu la
    * nomina; quando se ne aprirà una seconda, questa lista andrà rifatta. */
-  var HOME      = SITE_ROOT + 'meetoo/';
+  var HOME      = metaPath('ws:site-home') || SITE_ROOT + 'meetoo/';
   var ZONA      = HOME + 'roma/municipio10/lido-di-ostia/';
   var NAV = [
     { label: 'Home', icon: 'home', href: HOME },
@@ -419,7 +427,7 @@
         (S.user.role ? '<div class="mt-prof-pillole"><span class="mt-pillola">' + esc(S.user.role) + '</span></div>' : '') +
       '</div>' +
       '<div class="mt-prof-azioni">' +
-        '<a class="mt-prof-btn" href="' + esc(SITE_ROOT + 'profilo-utente') + '">Modifica il profilo</a>' +
+        '<a class="mt-prof-btn" href="' + esc(HOME + 'profilo-utente') + '">Modifica il profilo</a>' +
         '<a class="mt-prof-btn mt-prof-esci" href="#" data-mt-logout>Esci</a>' +
       '</div>';
   }
@@ -458,6 +466,32 @@
       voce.remove();
     }
   }
+  /* THE GESTIONE'S CHROME for the pages the server does not write (the
+   * editors, static files built by Vite): the site's logo, its look, the menu
+   * of the Gestione and the site's footer, as the PHP pages get them in their
+   * markup (ws-admin/chrome.php). Only inside ws-admin, and only once. */
+  if (!servito && /\/ws-admin\//.test(location.pathname) && !document.querySelector('.ws-admin-footer')) {
+    var q = new URLSearchParams(location.search);
+    var cq = /\/ws-admin\/(events|places)\//.test(location.pathname) ? 'feature=events'
+      : (q.get('site') ? 'site=' + encodeURIComponent(q.get('site')) : '');
+    fetch(SITE_ROOT + 'ws-admin/chrome.php' + (cq ? '?' + cq : ''), { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (c) {
+        if (!c) return;
+        (c.css || []).forEach(function (u) {
+          if (document.querySelector('link[href="' + u + '"]')) return;
+          var l = document.createElement('link'); l.rel = 'stylesheet'; l.href = u; document.head.appendChild(l);
+        });
+        HOME = c.home || HOME;
+        Array.prototype.forEach.call(document.querySelectorAll('.mt-brand'), function (b) {
+          if (c.brand) b.outerHTML = c.brand;
+        });
+        if (c.nav && c.nav.length) { NAV = c.nav; var box = document.getElementById('mt-nav'); if (box) box.innerHTML = ''; }
+        if (c.footer) document.body.insertAdjacentHTML('beforeend', c.footer);
+      })
+      .catch(function () {});
+  }
+
   function openDrawer() { renderNav(); drawerOv.classList.add('open'); drawer.classList.add('open'); }
   function closeDrawer() { drawerOv.classList.remove('open'); drawer.classList.remove('open'); }
   document.getElementById('mt-menu').onclick = openDrawer;

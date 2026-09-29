@@ -152,6 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <?php /* The site being managed: its name, look, home and logo (lib/ws-admin-chrome.php). */
+  require_once __DIR__ . '/../lib/ws-admin-chrome.php';
+  $ws_chrome = ws_admin_chrome_site(''); ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pagine — Gestione</title>
@@ -160,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
   <link rel="stylesheet" href="../../ws-custom/themes/your-theme/css/cards.css">
   <link rel="stylesheet" href="../../ws-custom/themes/meetoo/css/meetoo.css">
+  <?php echo ws_admin_chrome_head($ws_chrome); /* the site's look (lib/ws-admin-chrome.php) */ ?>
   <style>
     /* Solo le specificità di questa pagina: i token stanno in meetoo.css. */
     #gate { text-align: center; padding: 48px 16px; color: var(--color-hint); }
@@ -218,6 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
+<?php echo ws_admin_chrome_header($ws_chrome); ?>
   <div class="wrap">
     <div id="gate">
       <span class="material-symbols-outlined">lock</span>
@@ -267,11 +272,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { label: 'Gestione', href: ADMIN + 'index.php' },
         { label: 'Pagine', current: true },
       ]);
-      Meetoo.setNav([
-        { label: 'Gestione', icon: 'home', href: ADMIN + 'index.php' },
-        { label: 'Siti', icon: 'language', href: ADMIN + 'sites.php' },
-        { label: 'Gestione eventi', icon: 'event_note', href: ADMIN + 'events/index.php' },
-      ]);
+      // The menu is the chrome's (lib/ws-admin-chrome.php): the Gestione's tools
+      // and the way back to the site being managed.
     })();
 
     /*
@@ -444,8 +446,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           /* La prima radice con delle pagine, non la prima in ordine
            * alfabetico: aprire il pannello su un archivio vuoto non dice
            * niente a nessuno. */
-          if (sel.value !== 'isotype/it_IT' && [...sel.options].some((o) => o.value === 'isotype/it_IT')) {
-            sel.value = 'isotype/it_IT';
+          /* The site the Gestione is working on (the chrome's, see
+           * lib/ws-admin-chrome.php): header, footer and list say the same. */
+          const qui = (document.querySelector('meta[name="ws:site-id"]') || {}).content || '';
+          if (qui && sel.value !== qui && [...sel.options].some((o) => o.value === qui)) {
+            sel.value = qui;
             load();
             return;
           }
@@ -479,7 +484,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     });
 
     ['f-state', 'f-q'].forEach((id) => $(id).addEventListener('input', render));
-    $('f-site').addEventListener('change', load);
+    // Another site: the whole page follows, header and footer included.
+    $('f-site').addEventListener('change', () => { location.search = '?site=' + encodeURIComponent($('f-site').value); });
 
     (function auth() {
       if (!window.meetooSession) { setTimeout(auth, 100); return; }
@@ -505,5 +511,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     })();
   })();
   </script>
+<?php echo ws_admin_chrome_footer($ws_chrome); ?>
 </body>
 </html>

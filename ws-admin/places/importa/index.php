@@ -6,6 +6,9 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <?php /* The site being managed: its name, look, home and logo (lib/ws-admin-chrome.php). */
+    require_once __DIR__ . '/../../lib/ws-admin-chrome.php';
+    $ws_chrome = ws_admin_chrome_site('events'); ?>
     <meta charset="UTF-8">
     <title>WS CMS - Data Ingestion Places</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -16,6 +19,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     <!-- Stili condivisi Meetoo: token, base e header (unica fonte di verità). -->
     <link rel="stylesheet" href="../../../ws-custom/themes/your-theme/css/cards.css">
     <link rel="stylesheet" href="../../../ws-custom/themes/meetoo/css/meetoo.css">
+    <?php echo ws_admin_chrome_head($ws_chrome); /* the site's look (lib/ws-admin-chrome.php) */ ?>
     <style>
         /* Solo ciò che è proprio di questa pagina: i token stanno in meetoo.css. */
         :root { --red: var(--color1); }
@@ -67,6 +71,7 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
     </style>
 </head>
 <body>
+<?php echo ws_admin_chrome_header($ws_chrome); ?>
 
 <div class="container">
     <div class="header">
@@ -749,5 +754,6 @@ $mapsJsKey = is_array($config) ? ($config['maps_js_key'] ?? '') : '';
   ]);
 })();
 </script>
+<?php echo ws_admin_chrome_footer($ws_chrome); ?>
 </body>
 </html>

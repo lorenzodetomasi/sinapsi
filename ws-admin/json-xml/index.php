@@ -45,11 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 <!DOCTYPE html>
 <html lang="it">
 <head>
+    <?php /* The site being managed: its name, look, home and logo (lib/ws-admin-chrome.php). */
+    require_once __DIR__ . '/../lib/ws-admin-chrome.php';
+    $ws_chrome = ws_admin_chrome_site(''); ?>
     <meta charset="UTF-8">
     <title>WS CMS - Convertitore strutturale e Validatore Server-Side</title>
     <!-- Stili condivisi Meetoo: token, base e header (unica fonte di verità). -->
     <link rel="stylesheet" href="../../ws-custom/themes/your-theme/css/cards.css">
     <link rel="stylesheet" href="../../ws-custom/themes/meetoo/css/meetoo.css">
+    <?php echo ws_admin_chrome_head($ws_chrome); /* the site's look (lib/ws-admin-chrome.php) */ ?>
     <style>
         /* Solo i token propri di questa pagina: gli altri (bg/surface/text/accent…)
            arrivano da meetoo.css, così l'admin usa la stessa palette del sito. */
@@ -236,6 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 </head>
 <body>
+<?php echo ws_admin_chrome_header($ws_chrome); ?>
 
     <header class="app-topbar">
         <h2>WS CMS - Parser & Validatore</h2>
@@ -561,5 +566,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   ]);
 })();
 </script>
+<?php echo ws_admin_chrome_footer($ws_chrome); ?>
 </body>
 </html>

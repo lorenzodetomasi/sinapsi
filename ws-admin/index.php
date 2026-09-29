@@ -107,14 +107,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <?php /* The site being managed: its name, look, home and logo (lib/ws-admin-chrome.php). */
+  require_once __DIR__ . '/lib/ws-admin-chrome.php';
+  $ws_chrome = ws_admin_chrome_site(''); ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestione — Meetoo</title>
+  <title>Gestione — <?php echo ws_admin_chrome_esc($ws_chrome['name']); ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
   <link rel="stylesheet" href="../ws-custom/themes/your-theme/css/cards.css">
   <link rel="stylesheet" href="../ws-custom/themes/meetoo/css/meetoo.css">
+  <?php echo ws_admin_chrome_head($ws_chrome); /* the site's look (lib/ws-admin-chrome.php) */ ?>
   <style>
     /* Solo le specificità di questa pagina: il resto è in meetoo.css. */
     #gate { text-align: center; padding: 48px 16px; color: var(--color-hint); }
@@ -132,6 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
+<?php echo ws_admin_chrome_header($ws_chrome); ?>
   <div class="wrap">
     <div id="gate">
       <span class="material-symbols-outlined">lock</span>
@@ -190,24 +195,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // Nell'admin il breadcrumb dice dove sei DENTRO la gestione: "Gestione" è la
       // radice (questa pagina), il sito si raggiunge dal logo.
       Meetoo.setBreadcrumb([{ label: 'Gestione', current: true }]);
-      /* E il menu dice dove si può andare DA QUI.
-       *
-       * Senza questa riga l'hamburger mostrava la lista di riserva che sta dentro
-       * header.js: le pagine di prova del tema, `index.html` e `waterfront.html`,
-       * che nella Gestione non c'entrano niente e come indirizzi sono superate dal
-       * sito vero. Qui le voci sono gli strumenti di questa pagina, più la via
-       * d'uscita verso il sito. La voce «Gestione» non si mette: la aggiunge
-       * header.js a chi ha il ruolo per vederla, su tutte le pagine. */
-      Meetoo.setNav([
-        { label: 'Gestione eventi', icon: 'event_note', href: ADMIN + 'events/index.php' },
-        { label: 'Nuovo evento', icon: 'note_add', href: ADMIN + 'events/add/' },
-        { label: 'Luoghi e gruppi', icon: 'place', href: ADMIN + 'places/edit/' },
-        { label: 'Utenti e ruoli', icon: 'manage_accounts', href: ADMIN + 'users/' },
-        { label: 'Siti', icon: 'language', href: ADMIN + 'sites.php' },
-        { label: 'Pagine', icon: 'description', href: ADMIN + 'pages/' },
-        { label: 'Convertitore JSON ⇄ XML', icon: 'sync_alt', href: ADMIN + 'json-xml/index.php' },
-        { label: 'Vai al sito', icon: 'public', href: SITE_ROOT + 'meetoo/' },
-      ]);
+      // The menu is the chrome's (lib/ws-admin-chrome.php): the Gestione's tools
+      // and the way back to the site being managed.
     })();
 
     const api = (action, extra) => {
@@ -244,7 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         { href: ADMIN + 'sites.php', icon: 'language', title: 'Siti', meta: 'Elenco, creazione, lingue, mainEntity' },
         { href: ADMIN + 'pages/', icon: 'description', title: 'Pagine', meta: 'Elenco, migrazione da .wsx, modifica' },
         { href: ADMIN + 'json-xml/index.php', icon: 'sync_alt', title: 'Convertitore JSON ⇄ XML', meta: 'Converte e valida i contenuti' },
-        { href: SITE_ROOT + 'meetoo/', icon: 'public', title: 'Vai al sito', meta: 'Meetoo, come lo vede chi lo legge', external: true },
+        { href: (document.querySelector('meta[name="ws:site-home"]') || {}).content || SITE_ROOT, icon: 'public', title: 'Vai al sito', meta: 'Meetoo, come lo vede chi lo legge', external: true },
       ],
     };
 
@@ -259,13 +248,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     let MAINT = [];
     // The site the operations run on. Chosen in the select; sent with every
     // call, so the registry works on the root the user is looking at.
-    let SITE = '';
+    // The site the chrome is dressed as (lib/ws-admin-chrome.php): the same one.
+    let SITE = (document.querySelector('meta[name="ws:site-id"]') || {}).content || '';
 
     function maintSites(sites, site) {
       const sel = document.getElementById('maint-site');
       sel.innerHTML = sites.map((s) => '<option value="' + s.id + '"' + (s.id === site ? ' selected' : '') + '>' + s.label + '</option>').join('');
       SITE = site;
-      sel.onchange = () => { SITE = sel.value; caricaMaint(); };
+      // Another site: the whole page follows - header, logo, footer - not only
+      // the operations; the choice is remembered for the other pages.
+      sel.onchange = () => { location.search = '?site=' + encodeURIComponent(sel.value); };
     }
 
     function maintShow(titolo, r) {
@@ -384,5 +376,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     })();
   })();
   </script>
+<?php echo ws_admin_chrome_footer($ws_chrome); ?>
 </body>
 </html>

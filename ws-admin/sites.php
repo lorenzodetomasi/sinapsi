@@ -202,6 +202,9 @@ function site_catalog_for_ui(): array {
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <?php /* The site being managed: its name, look, home and logo (lib/ws-admin-chrome.php). */
+  require_once __DIR__ . '/lib/ws-admin-chrome.php';
+  $ws_chrome = ws_admin_chrome_site(''); ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Siti — Gestione</title>
@@ -210,6 +213,7 @@ function site_catalog_for_ui(): array {
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
   <link rel="stylesheet" href="../ws-custom/themes/your-theme/css/cards.css">
   <link rel="stylesheet" href="../ws-custom/themes/meetoo/css/meetoo.css">
+  <?php echo ws_admin_chrome_head($ws_chrome); /* the site's look (lib/ws-admin-chrome.php) */ ?>
   <style>
     /* Solo le specificità di questa pagina: i token stanno in meetoo.css. */
     #gate { text-align: center; padding: 48px 16px; color: var(--color-hint); }
@@ -253,6 +257,7 @@ function site_catalog_for_ui(): array {
   </style>
 </head>
 <body>
+<?php echo ws_admin_chrome_header($ws_chrome); ?>
   <div class="wrap">
     <div id="gate">
       <span class="material-symbols-outlined">lock</span>
@@ -382,11 +387,8 @@ function site_catalog_for_ui(): array {
         { label: 'Gestione', href: ADMIN + 'index.php' },
         { label: 'Siti', current: true },
       ]);
-      Meetoo.setNav([
-        { label: 'Gestione', icon: 'home', href: ADMIN + 'index.php' },
-        { label: 'Luoghi e gruppi', icon: 'place', href: ADMIN + 'places/edit/' },
-        { label: 'Utenti e ruoli', icon: 'manage_accounts', href: ADMIN + 'users/' },
-      ]);
+      // The menu is the chrome's (lib/ws-admin-chrome.php): the Gestione's tools
+      // and the way back to the site being managed.
     })();
 
     const api = (action, extra) => {
@@ -694,5 +696,6 @@ function site_catalog_for_ui(): array {
     })();
   })();
   </script>
+<?php echo ws_admin_chrome_footer($ws_chrome); ?>
 </body>
 </html>

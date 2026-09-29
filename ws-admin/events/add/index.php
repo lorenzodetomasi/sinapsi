@@ -57,14 +57,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!DOCTYPE html>
 <html lang="it">
 <head>
+  <?php /* The site being managed: its name, look, home and logo (lib/ws-admin-chrome.php). */
+  require_once __DIR__ . '/../../lib/ws-admin-chrome.php';
+  $ws_chrome = ws_admin_chrome_site('events'); ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aggiungi un evento — Meetoo</title>
+  <title>Aggiungi un evento — <?php echo ws_admin_chrome_esc($ws_chrome['name']); ?></title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
   <link rel="stylesheet" href="../../../ws-custom/themes/your-theme/css/cards.css">
   <link rel="stylesheet" href="../../../ws-custom/themes/meetoo/css/meetoo.css">
+  <?php echo ws_admin_chrome_head($ws_chrome); /* the site's look (lib/ws-admin-chrome.php) */ ?>
   <style>
     /* Solo ciò che è proprio di questa pagina: colori, tipi e header stanno in
        meetoo.css. Le classi si chiamano `tipo-*` e non `card` perché `card` nel
@@ -139,6 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </style>
 </head>
 <body>
+<?php echo ws_admin_chrome_header($ws_chrome); ?>
   <div class="wrap">
     <div id="gate">
       <span class="material-symbols-outlined">lock</span>
@@ -343,5 +348,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     })();
   })();
   </script>
+<?php echo ws_admin_chrome_footer($ws_chrome); ?>
 </body>
 </html>
