@@ -13,6 +13,11 @@
  */
 ?>
 <?php
+/* Its escaping is Meetoo's helpers' (template-parts/carte.php), loaded here
+ * and not left to the page: page.php does not load them, and on a legal page
+ * a super-admin - who gets the «+» - found the page dead right after the logo
+ * (29 Sep 2026). include_template requires once: no cost where it is loaded. */
+include_template('template-parts/carte');
 /* Il «+»: lo vede chi ha il diritto di creare - un amministratore, o chi
  * gestisce un gruppo. */
 $mt_crea = (function_exists('meetoo_puo_creare') and meetoo_puo_creare('events')) ? meetoo_url_crea('events') : '';
