@@ -96,12 +96,15 @@
   --field-border-color: var(--color-link);
   --field-hover-border-color: var(--color-hover);
 
+  --section-border: var(--border-width) solid var(--color-heading);
+
   --card-background: var(--color-background-section1);
   --card-border-color: var(--card-background);
   --card-focus-border-color: var(--color1);
 
   --fieldset-border-width: var(--border-width);
   --fieldset-border-color: var(--color-heading);
+  --fieldset-padding: var(--gutter);
   --fieldset-legend-color:  var(--color-heading);
   --fieldset-legend-padding: var(--gutter-d2);
 

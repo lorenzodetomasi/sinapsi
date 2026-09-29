@@ -4,9 +4,6 @@ fieldset.field>legend {
 }
   .label.background, legend.label.background {
     padding: 0.5rem; }
-  .label.material-icons, legend.label.material-icons, .label .material-icons, legend.label .material-icons {
-    padding: 0.25rem;
-    line-height: 1.2; }
   .label .help, legend.label .help {
     display: block;
     font-size: 0.8em; }
@@ -92,8 +89,11 @@ input[type="color"] {
 
 /* Fieldsets */
 fieldset.fieldset,
+section.fieldset,
+#main section.fieldset,
 .fieldset {
   margin-bottom: var(--gutter);
+  padding: var(--fieldset-padding);
   border: var(--fieldset-border-width) solid var(--fieldset-border-color);
   legend {
     color: var(--fieldset-legend-color);
@@ -101,20 +101,51 @@ fieldset.fieldset,
     font-weight: bold;
   }
 }
+section {
+  header {
+    border-top: var(--section-border);
+    display: flex;
+    align-items: center;
+    color: var(--fieldset-legend-color);
+    .material-symbols-outlined {
+      margin-right: var(--gutter-d2);
+    }
+    h3 {
+      margin: 0;
+    }
+  }
+  .body {
+    margin-left: 2.5rem;
+  }
+}
 fieldset {
   &.question {
     padding: 0;
     border: 0 none;
+    margin-bottom: 1rem;
   }
+  &.question,
   &.field {
     &>legend {
       display: inline-flex;
-      margin: 0;
+      width: 100%;
+      align-items: center;
+      margin: 0 0 1rem 0;
       font-weight: normal;
       border-top: none;
       .material-symbols-outlined + strong {
         margin-left: var(--gutter-d2);
-      } 
+      }
+      & + p {
+        margin-top: 0;
+      }
+      strong {
+        flex: 1;
+      }
+      .button {
+        position: inherit;
+        top: 0;
+      }
     }
   }
   &.checkboxes,
@@ -145,42 +176,53 @@ fieldset.fieldset,;
 }
 /* Fields */
 .field {
+  .tag-handle.material-symbols-outlined,
+  button.material-symbols-outlined {
+    color: var(--color-link);
+  }
+  .label-icon.material-symbols-outlined {
+    align-self: center;
+    & + strong {
+      margin-left: var(--gutter-d2);
+    }
+  }
   button {
     align-self: baseline;
     background-color: transparent;
     border: 0 none;
-    &.material-symbols-outlined {
-      color: var(--color-link);
-    }
   }
   label [type="checkbox"] {
     position: relative;
     top: 0.25em;
   }
   &.width-full {
-    display: inline-block;
+    display: block;
     width: 100%;
     .input {
-      display: inline-flex;
-      align-items: center;
       width: 100%;
+      input,
+      select,
+      textarea {
+        width: 100%;
+      }
+    }
+  }
+  &.horizontal {
+    display: inline-flex;
+    align-items: baseline;
+    &.width-full {
       input,
       textarea,
       select {
         flex: 1;
       }
+      .input {
+        width: 100%;
+      }
     }
-  }
-  &.horizontal {
-    flex: 1;
-    display: inline-flex;
-    align-items: baseline;
     strong {
       padding-right: 1em;
       white-space: nowrap;
-    }
-    .input, {
-      flex: 1;
     }
   }
   &.vertical {
@@ -192,34 +234,29 @@ fieldset.fieldset,;
       align-self: center;
     }
   }
-  &.tag-array {
-
+  .input {
+    display: inline-flex;
+  }
+  .input.tag {
+    border: var(--field-border-width) solid var(--field-border-color);
+    border-radius: var(--field-border-radius);
+    align-items: center;
+    input {
+      border-bottom: 0 none;
+    }
+    button {
+      align-self: center;
+    }
   }
   small {
     color: var(--color-hint);
   }
-  .input {
-    display: inline-flex;
-  }
-  .tags {
-    .input.tag {
-      border: var(--field-border-width) solid var(--field-border-color);
-      border-radius: var(--field-border-radius);
-      align-items: center;
-      .tag-handle,
-      button {
-        padding-top: .35rem;
-      }
-      input {
-        border-bottom: 0 none;
-      }
-      button {
-        align-self: center;
-      }
-    }
-  }
 }
-label.field textarea {
+.textarea .label-icon.material-symbols-outlined {
+  top: 0.5rem;
+  position: relative;
+}
+label.field.horizontal textarea {
   position: relative;
   top: 0.1em;
 }
@@ -255,16 +292,24 @@ select,
     linear-gradient(120deg, var(--field-hover-border-color) 50%, transparent 50%);
   }
 }
-.field.tag-array {
+.field.array {
   &.horizontal {
-    .input.tag {
+    .input {
       width: auto;
       margin-right: var(--gutter);
     }
   }
   &.vertical {
-    .input.tag {
+    width: 100%;
+    .input {
+      display: flex;
+      width: 100%;
       margin-bottom: var(--gutter);
+      input,
+      select,
+      textarea {
+        flex: 1;
+      }
     }
   }
 }
@@ -296,23 +341,40 @@ img.profile-image {
 
 .button {
   display: inline-flex;
+  box-sizing: border-box;
   align-items: center;
   border: var(--button-border-width) solid var(--button-color);
   border-radius: 0.5em;
-  padding: 0.5em 1em;
+  padding: 0.547rem 1rem;
   background: var(--button-background);
   color: var(--button-color);
-  font-size: 1rem; }
-  .button:hover {
-    background: var(--button-background-hover);
-    color: var(--button-color-hover); }
-  .button .material-symbols-outlined.right {
-    margin-left: 0.25em; }
-  .button .material-symbols-outlined.left {
-    margin-right: 0.25em; }
+  font-size: 1rem;
+  &.circle {
+    position: relative;
+    top: .4rem;
+    border-radius: 50%;
+    padding: .375rem;
+  }
+}
+.button:hover {
+  background: var(--button-background-hover);
+  color: var(--button-color-hover);
+  border-color: var(--button-color-hover);
+}
+.button .material-symbols-outlined.right {
+  margin-left: 0.25em; 
+}
+.button .material-symbols-outlined.left {
+  margin-right: 0.25em; 
+}
 .button.strong {
   background: var(--button-strong-background);
   color: var(--button-strong-color);
+}
+.button.strong:hover {
+  background: var(--button-strong-background-hover);
+  color: var(--button-strong-color-hover);
+  border-color: var(--button-strong-background-hover);
 }
 
 a.button {
